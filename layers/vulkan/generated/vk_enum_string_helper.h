@@ -4163,48 +4163,6 @@ static inline const char* string_VkValidationFeatureDisableEXT(VkValidationFeatu
             return "Unhandled VkValidationFeatureDisableEXT";
     }
 }
-static inline const char* string_VkComponentTypeNV(VkComponentTypeNV input_value) {
-    switch (input_value) {
-        case VK_COMPONENT_TYPE_FLOAT16_NV:
-            return "VK_COMPONENT_TYPE_FLOAT16_NV";
-        case VK_COMPONENT_TYPE_FLOAT32_NV:
-            return "VK_COMPONENT_TYPE_FLOAT32_NV";
-        case VK_COMPONENT_TYPE_FLOAT64_NV:
-            return "VK_COMPONENT_TYPE_FLOAT64_NV";
-        case VK_COMPONENT_TYPE_SINT8_NV:
-            return "VK_COMPONENT_TYPE_SINT8_NV";
-        case VK_COMPONENT_TYPE_SINT16_NV:
-            return "VK_COMPONENT_TYPE_SINT16_NV";
-        case VK_COMPONENT_TYPE_SINT32_NV:
-            return "VK_COMPONENT_TYPE_SINT32_NV";
-        case VK_COMPONENT_TYPE_SINT64_NV:
-            return "VK_COMPONENT_TYPE_SINT64_NV";
-        case VK_COMPONENT_TYPE_UINT8_NV:
-            return "VK_COMPONENT_TYPE_UINT8_NV";
-        case VK_COMPONENT_TYPE_UINT16_NV:
-            return "VK_COMPONENT_TYPE_UINT16_NV";
-        case VK_COMPONENT_TYPE_UINT32_NV:
-            return "VK_COMPONENT_TYPE_UINT32_NV";
-        case VK_COMPONENT_TYPE_UINT64_NV:
-            return "VK_COMPONENT_TYPE_UINT64_NV";
-        default:
-            return "Unhandled VkComponentTypeNV";
-    }
-}
-static inline const char* string_VkScopeNV(VkScopeNV input_value) {
-    switch (input_value) {
-        case VK_SCOPE_DEVICE_NV:
-            return "VK_SCOPE_DEVICE_NV";
-        case VK_SCOPE_WORKGROUP_NV:
-            return "VK_SCOPE_WORKGROUP_NV";
-        case VK_SCOPE_SUBGROUP_NV:
-            return "VK_SCOPE_SUBGROUP_NV";
-        case VK_SCOPE_QUEUE_FAMILY_NV:
-            return "VK_SCOPE_QUEUE_FAMILY_NV";
-        default:
-            return "Unhandled VkScopeNV";
-    }
-}
 static inline const char* string_VkCoverageReductionModeNV(VkCoverageReductionModeNV input_value) {
     switch (input_value) {
         case VK_COVERAGE_REDUCTION_MODE_MERGE_NV:
