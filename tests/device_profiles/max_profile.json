@@ -1303,7 +1303,7 @@
                     "maxFragmentDensityTexelSize": {
                         "width": 16,
                         "height": 16
-                    },
+                    }
                 },
                 "VkPhysicalDeviceFragmentDensityMap2PropertiesEXT": {
                     "subsampledLoads": true,
@@ -5116,7 +5116,7 @@
                         "linearTilingFeatures": [],
                         "optimalTilingFeatures": [],
                         "bufferFeatures": [
-                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
+                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT"
                         ]
                     }
                 },
