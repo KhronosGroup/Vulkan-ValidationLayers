@@ -1403,10 +1403,6 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                 LvlFindInChain<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(pCreateInfo->pNext)) {
             enabled_features.depth_bias_control_features = *depth_bias_control_features;
         }
-
-        if (const auto cooperative_matrix_features = LvlFindInChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(pCreateInfo->pNext)) {
-            enabled_features.cooperative_matrix_features_khr = *cooperative_matrix_features;
-        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
