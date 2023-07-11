@@ -16,18 +16,20 @@
 
 import os
 import sys
-from generators.generator_utils import (fileIsGeneratedWarning, getVUID)
+from generators.generator_utils import (fileIsGeneratedWarning, buildListVUID, getVUID)
 from generators.vulkan_object import (Queues, CommandScope)
 from generators.base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
 class CommandValidationOutputGenerator(BaseGenerator):
-    def __init__(self):
+    def __init__(self,
+                 valid_usage_file: str = None):
         BaseGenerator.__init__(self)
-
+        self.valid_vuids = buildListVUID(valid_usage_file)
     #
     # Called at beginning of processing as file is opened
     def generate(self):
+
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -59,55 +61,55 @@ class CommandValidationOutputGenerator(BaseGenerator):
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
     def generateHeader(self):
-        self.write('#pragma once')
-        self.write('#include <array>')
+        out = []
+        out.append('''
+#pragma once
+#include <array>
+''')
         #
         # List the enum for the commands
-        out = []
         out.append('''
 // Used as key for maps of all vkCmd* calls
 // Does not include vkBeginCommandBuffer/vkEndCommandBuffer
 typedef enum CMD_TYPE {
     CMD_NONE = 0,\n''')
         counter = 1
-        for name in filter(lambda x: x.startswith('vkCmd'), self.vk.commands.keys()):
+        for name in [x.name for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             out.append(f'    CMD_{name[5:].upper()} = {str(counter)},\n')
             counter += 1
         out.append(f'    CMD_RANGE_SIZE = {str(counter)}\n')
         out.append('} CMD_TYPE;\n')
-        self.write("".join(out))
+        out.append('\n')
 
         #
         # For each CMD_TYPE give a string name
-        out = []
         out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList = {{\n')
         out.append('    "Command_Undefined",\n')
-        for name in filter(lambda x: x.startswith('vkCmd'), self.vk.commands.keys()):
+        for name in [x.name for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             out.append(f'    "{name}",\n')
         out.append('}};')
         self.write("".join(out))
 
     def generateSource(self):
-        self.write('#include "error_message/logging.h"')
-        self.write('#include "core_checks/core_validation.h"')
-
+        out = []
+        out.append('''
+#include "error_message/logging.h"
+#include "core_checks/core_validation.h"
+''')
         #
         # For each CMD_TYPE give a string name add a *-recording VUID
         # Each vkCmd* will have one
-        out = []
         out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{\n')
         out.append('    kVUIDUndefined,\n')
-        for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
+        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             name = command.name if command.alias is None else command.alias
             vuid = getVUID(self.valid_vuids, f'VUID-{name}-commandBuffer-recording')
             out.append(f'    {vuid},\n')
-        out.append('}};')
-        self.write("".join(out))
+        out.append('}};\n')
 
         #
         # For each CMD_TYPE give a queue type and string name add a *-commandBuffer-cmdpool VUID
         # Each vkCmd* will have one
-        out = []
         out.append('''
 struct CommandSupportedQueueType {
     VkQueueFlags flags;
@@ -115,7 +117,7 @@ struct CommandSupportedQueueType {
 };
 static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQueueTypeList = {{
     {VK_QUEUE_FLAG_BITS_MAX_ENUM, kVUIDUndefined},\n''')
-        for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
+        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             name = command.name if command.alias is None else command.alias
             flags = []
             flags.extend(["VK_QUEUE_GRAPHICS_BIT"] if Queues.GRAPHICS & command.queues else [])
@@ -133,12 +135,10 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
                 print(f'Warning: Could not find {vuid} in validusage.json')
                 vuid = vuid.replace('VUID-', 'UNASSIGNED-')
             out.append(f'    {{{flags}, "{vuid}"}},\n')
-        out.append('}};')
-        self.write("".join(out))
+        out.append('}};\n')
 
         #
         # For each CMD_TYPE give a the renderpass restriction and a *-renderpass VUID
-        out = []
         out.append('''
 enum CMD_SCOPE_TYPE {
     CMD_SCOPE_INSIDE,
@@ -152,7 +152,7 @@ struct CommandSupportedRenderPass {
 };
 static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRenderPassList = {{
     {CMD_SCOPE_BOTH, kVUIDUndefined}, // CMD_NONE\n''')
-        for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
+        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             name = command.name if command.alias is None else command.alias
             vuid = f'"VUID-{name}-renderpass"'
             renderPassType = ''
@@ -170,12 +170,10 @@ static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRe
                 print(f'Warning: Could not find {vuid} in validusage.json')
                 vuid = vuid.replace('VUID-', 'UNASSIGNED-')
             out.append(f'    {{{renderPassType}, {vuid}}},\n')
-        out.append('}};')
-        self.write("".join(out))
+        out.append('}};\n')
 
         #
         # For each CMD_TYPE give a videocoding restriction and a *-videocoding VUID
-        out = []
         out.append('''
 struct CommandSupportedVideoCoding {
     CMD_SCOPE_TYPE videoCoding;
@@ -183,7 +181,7 @@ struct CommandSupportedVideoCoding {
 };
 static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedVideoCodingList = {{
     {CMD_SCOPE_BOTH, kVUIDUndefined}, // CMD_NONE\n''')
-        for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
+        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             name = command.name if command.alias is None else command.alias
             vuid = f'"VUID-{name}-videocoding"'
             VideoCodingType = ''
@@ -201,15 +199,13 @@ static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedV
                 print(f'Warning: Could not find {vuid} in validusage.json')
                 vuid = vuid.replace('VUID-', 'UNASSIGNED-')
             out.append(f'    {{{VideoCodingType}, {vuid}}},\n')
-        out.append('}};')
-        self.write("".join(out))
+        out.append('}};\n')
 
         #
         # For each CMD_TYPE give a buffer level restriction and add a *-bufferlevel VUID
-        out = []
         out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedBufferLevelList = {{\n')
         out.append('    kVUIDUndefined, // CMD_NONE\n')
-        for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
+        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             name = command.name if command.alias is None else command.alias
             if command.primary and command.secondary:
                 out.append('    nullptr,\n')
@@ -221,13 +217,12 @@ static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedV
                 # Hard to predict what might change, so will error out instead if assumption breaks
                 print('cmdbufferlevel attribute was and not known, need to update generation code')
                 sys.exit(1)
-        out.append('}};')
-        self.write("".join(out))
+        out.append('}};\n')
 
         #
         # The main function to validate all the commands
         # TODO - Remove C++ code from being a single python string
-        self.write('''
+        out.append('''
 // Used to handle all the implicit VUs that are autogenerated from the registry
 bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cmd) const {
     bool skip = false;
@@ -280,3 +275,4 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cm
 
     return skip;
 }''')
+        self.write("".join(out))

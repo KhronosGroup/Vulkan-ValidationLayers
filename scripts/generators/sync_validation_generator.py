@@ -18,18 +18,10 @@
 import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
-from generators.vulkan_object import (Flag, Queues)
+from generators.vulkan_object import (Flag)
 from generators.base_generator import BaseGenerator
 
 separator = ' |\n        '
-
-transferExpansion = [
-    ('transfer copy', 'VK_PIPELINE_STAGE_2_COPY_BIT'),
-    ('transfer_resolve', 'VK_PIPELINE_STAGE_2_RESOLVE_BIT'),
-    ('transfer_blit', 'VK_PIPELINE_STAGE_2_BLIT_BIT'),
-    ('transfer_clear', 'VK_PIPELINE_STAGE_2_CLEAR_BIT'),
-    ('transfer_acceleration_structure_copy', 'VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR'),
-]
 
 def BitSuffixed(name):
     alt_bit = ('_ANDROID', '_EXT', '_IMG', '_KHR', '_NV', '_NVX', '_SYNCVAL')
@@ -118,7 +110,21 @@ class SyncValidationOutputGenerator(BaseGenerator):
 
         present_stage = 'VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL'
 
-        self.logicallyOrderedStages = self.getStagesInLogicalOrder()
+        # Get stages in logical order
+        self.logicallyOrderedStages = ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT']
+        for pipeline_name in self.pipelineNames:
+            for index, stage_info in enumerate(self.pipelineStagesOrdered[pipeline_name]):
+                stage = stage_info['stage']
+                if stage not in self.logicallyOrderedStages:
+                    later_stages =[s['stage'] for s in self.pipelineStagesOrdered[pipeline_name][index+1:]]
+                    insert_loc = len(self.logicallyOrderedStages)
+                    while insert_loc > 0:
+                        if any(s in self.logicallyOrderedStages[:insert_loc] for s in later_stages):
+                            insert_loc -= 1
+                        else:
+                            break
+                    self.logicallyOrderedStages.insert(insert_loc, stage)
+        self.logicallyOrderedStages.append('VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT')
 
         self.stages = [x.flag.name for x in self.vk.syncStage if x.equivalent.max]
         self.stages.append(present_stage)
@@ -374,6 +380,13 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 
         # special case for trasfer stage: expand it to primitive transfer operations
         if name == 'transfer':
+            transferExpansion = [
+                ('transfer copy', 'VK_PIPELINE_STAGE_2_COPY_BIT'),
+                ('transfer_resolve', 'VK_PIPELINE_STAGE_2_RESOLVE_BIT'),
+                ('transfer_blit', 'VK_PIPELINE_STAGE_2_BLIT_BIT'),
+                ('transfer_clear', 'VK_PIPELINE_STAGE_2_CLEAR_BIT'),
+                ('transfer_acceleration_structure_copy', 'VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR'),
+            ]
             for transfer_pipeline_name, transfer_stage in transferExpansion:
                 self.pipelineNames.append(transfer_pipeline_name)
                 self.pipelineStages[transfer_pipeline_name] = []
@@ -423,23 +436,6 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 
             for stage_order in unordered_list:
                 self.pipelineStagesOrdered[name].append(stage_order)
-
-    def getStagesInLogicalOrder(self):
-        logical_order = ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT']
-        for pipeline_name in self.pipelineNames:
-            for index, stage_info in enumerate(self.pipelineStagesOrdered[pipeline_name]):
-                stage = stage_info['stage']
-                if stage not in logical_order:
-                    later_stages =[s['stage'] for s in self.pipelineStagesOrdered[pipeline_name][index+1:]]
-                    insert_loc = len(logical_order)
-                    while insert_loc > 0:
-                        if any(s in logical_order[:insert_loc] for s in later_stages):
-                            insert_loc -= 1
-                        else:
-                            break
-                    logical_order.insert(insert_loc, stage)
-        logical_order.append('VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT')
-        return logical_order
 
     # Create the stage/access combination from the legal uses of access with stages
     def createStageAccessCombinations(self):

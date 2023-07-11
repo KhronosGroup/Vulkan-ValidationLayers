@@ -65,7 +65,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDevice16BitStorageFeatures *structure = (VkPhysicalDevice16BitStorageFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDevice16BitStorageFeatures", "storageBuffer16BitAccess", structure->storageBuffer16BitAccess);
@@ -89,7 +88,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkMemoryDedicatedAllocateInfo structure members
@@ -103,7 +101,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkMemoryAllocateFlagsInfo structure members
@@ -117,7 +114,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkMemoryAllocateFlagsInfo *structure = (VkMemoryAllocateFlagsInfo *) header;
                 skip |= ValidateFlags("VkMemoryAllocateFlagsInfo", "flags", "VkMemoryAllocateFlagBits", AllVkMemoryAllocateFlagBits, structure->flags, kOptionalFlags, "VUID-VkMemoryAllocateFlagsInfo-flags-parameter");
@@ -135,7 +131,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkDeviceGroupRenderPassBeginInfo *structure = (VkDeviceGroupRenderPassBeginInfo *) header;
                 skip |= ValidateArray("VkDeviceGroupRenderPassBeginInfo", "deviceRenderAreaCount", "pDeviceRenderAreas", structure->deviceRenderAreaCount, &structure->pDeviceRenderAreas, false, true, kVUIDUndefined, "VUID-VkDeviceGroupRenderPassBeginInfo-pDeviceRenderAreas-parameter");
@@ -160,7 +155,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkDeviceGroupSubmitInfo structure members
@@ -174,7 +168,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkDeviceGroupSubmitInfo *structure = (VkDeviceGroupSubmitInfo *) header;
                 skip |= ValidateArray("VkDeviceGroupSubmitInfo", "waitSemaphoreCount", "pWaitSemaphoreDeviceIndices", structure->waitSemaphoreCount, &structure->pWaitSemaphoreDeviceIndices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupSubmitInfo-pWaitSemaphoreDeviceIndices-parameter");
@@ -196,7 +189,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
@@ -210,7 +202,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkBindBufferMemoryDeviceGroupInfo *structure = (VkBindBufferMemoryDeviceGroupInfo *) header;
                 skip |= ValidateArray("VkBindBufferMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-parameter");
@@ -228,7 +219,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkBindImageMemoryDeviceGroupInfo *structure = (VkBindImageMemoryDeviceGroupInfo *) header;
                 skip |= ValidateArray("VkBindImageMemoryDeviceGroupInfo", "deviceIndexCount", "pDeviceIndices", structure->deviceIndexCount, &structure->pDeviceIndices, false, true, kVUIDUndefined, "VUID-VkBindImageMemoryDeviceGroupInfo-pDeviceIndices-parameter");
@@ -255,7 +245,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkDeviceGroupDeviceCreateInfo *structure = (VkDeviceGroupDeviceCreateInfo *) header;
                 skip |= ValidateArray("VkDeviceGroupDeviceCreateInfo", "physicalDeviceCount", "pPhysicalDevices", structure->physicalDeviceCount, &structure->pPhysicalDevices, false, true, kVUIDUndefined, "VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-parameter");
@@ -273,7 +262,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceFeatures2 *structure = (VkPhysicalDeviceFeatures2 *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceFeatures2", "features.robustBufferAccess", structure->features.robustBufferAccess);
@@ -399,7 +387,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
@@ -413,7 +400,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkRenderPassInputAttachmentAspectCreateInfo *structure = (VkRenderPassInputAttachmentAspectCreateInfo *) header;
                 skip |= ValidateArray("VkRenderPassInputAttachmentAspectCreateInfo", "aspectReferenceCount", "pAspectReferences", structure->aspectReferenceCount, &structure->pAspectReferences, true, true, "VUID-VkRenderPassInputAttachmentAspectCreateInfo-aspectReferenceCount-arraylength", "VUID-VkRenderPassInputAttachmentAspectCreateInfo-pAspectReferences-parameter");
@@ -439,7 +425,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkImageViewUsageCreateInfo *structure = (VkImageViewUsageCreateInfo *) header;
                 skip |= ValidateFlags("VkImageViewUsageCreateInfo", "usage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->usage, kRequiredFlags, "VUID-VkImageViewUsageCreateInfo-usage-parameter", "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
@@ -457,7 +442,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPipelineTessellationDomainOriginStateCreateInfo *structure = (VkPipelineTessellationDomainOriginStateCreateInfo *) header;
                 skip |= ValidateRangedEnum("VkPipelineTessellationDomainOriginStateCreateInfo", "domainOrigin", "VkTessellationDomainOrigin", structure->domainOrigin, "VUID-VkPipelineTessellationDomainOriginStateCreateInfo-domainOrigin-parameter");
@@ -475,7 +459,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkRenderPassMultiviewCreateInfo *structure = (VkRenderPassMultiviewCreateInfo *) header;
                 skip |= ValidateArray("VkRenderPassMultiviewCreateInfo", "subpassCount", "pViewMasks", structure->subpassCount, &structure->pViewMasks, false, true, kVUIDUndefined, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-parameter");
@@ -497,7 +480,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceMultiviewFeatures *structure = (VkPhysicalDeviceMultiviewFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceMultiviewFeatures", "multiview", structure->multiview);
@@ -519,7 +501,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceVariablePointersFeatures structure members
@@ -533,7 +514,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceVariablePointersFeatures *structure = (VkPhysicalDeviceVariablePointersFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceVariablePointersFeatures", "variablePointersStorageBuffer", structure->variablePointersStorageBuffer);
@@ -594,7 +574,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkSamplerYcbcrConversionInfo *structure = (VkSamplerYcbcrConversionInfo *) header;
                 skip |= ValidateRequiredHandle("VkSamplerYcbcrConversionInfo", "conversion", structure->conversion);
@@ -612,7 +591,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkBindImagePlaneMemoryInfo *structure = (VkBindImagePlaneMemoryInfo *) header;
                 skip |= ValidateFlags("VkBindImagePlaneMemoryInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter", "VUID-VkBindImagePlaneMemoryInfo-planeAspect-parameter");
@@ -630,7 +608,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkImagePlaneMemoryRequirementsInfo *structure = (VkImagePlaneMemoryRequirementsInfo *) header;
                 skip |= ValidateFlags("VkImagePlaneMemoryRequirementsInfo", "planeAspect", "VkImageAspectFlagBits", AllVkImageAspectFlagBits, structure->planeAspect, kRequiredSingleBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter", "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-parameter");
@@ -648,7 +625,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceSamplerYcbcrConversionFeatures *structure = (VkPhysicalDeviceSamplerYcbcrConversionFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceSamplerYcbcrConversionFeatures", "samplerYcbcrConversion", structure->samplerYcbcrConversion);
@@ -666,7 +642,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceExternalImageFormatInfo structure members
@@ -680,7 +655,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceExternalImageFormatInfo *structure = (VkPhysicalDeviceExternalImageFormatInfo *) header;
                 skip |= ValidateFlags("VkPhysicalDeviceExternalImageFormatInfo", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, "VUID-VkPhysicalDeviceExternalImageFormatInfo-handleType-parameter");
@@ -698,7 +672,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceIDProperties structure members
@@ -712,7 +685,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkExternalMemoryImageCreateInfo structure members
@@ -726,7 +698,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkExternalMemoryImageCreateInfo *structure = (VkExternalMemoryImageCreateInfo *) header;
                 skip |= ValidateFlags("VkExternalMemoryImageCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryImageCreateInfo-handleTypes-parameter");
@@ -744,7 +715,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkExternalMemoryBufferCreateInfo *structure = (VkExternalMemoryBufferCreateInfo *) header;
                 skip |= ValidateFlags("VkExternalMemoryBufferCreateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExternalMemoryBufferCreateInfo-handleTypes-parameter");
@@ -762,7 +732,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkExportMemoryAllocateInfo *structure = (VkExportMemoryAllocateInfo *) header;
                 skip |= ValidateFlags("VkExportMemoryAllocateInfo", "handleTypes", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportMemoryAllocateInfo-handleTypes-parameter");
@@ -780,7 +749,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkExportFenceCreateInfo *structure = (VkExportFenceCreateInfo *) header;
                 skip |= ValidateFlags("VkExportFenceCreateInfo", "handleTypes", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportFenceCreateInfo-handleTypes-parameter");
@@ -798,7 +766,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkExportSemaphoreCreateInfo *structure = (VkExportSemaphoreCreateInfo *) header;
                 skip |= ValidateFlags("VkExportSemaphoreCreateInfo", "handleTypes", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, structure->handleTypes, kOptionalFlags, "VUID-VkExportSemaphoreCreateInfo-handleTypes-parameter");
@@ -816,7 +783,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceShaderDrawParametersFeatures structure members
@@ -1011,7 +977,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkImageFormatListCreateInfo *structure = (VkImageFormatListCreateInfo *) header;
                 skip |= ValidateRangedEnumArray("VkImageFormatListCreateInfo", "viewFormatCount", "pViewFormats", "VkFormat", structure->viewFormatCount, structure->pViewFormats, false, true);
@@ -1029,7 +994,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDevice8BitStorageFeatures *structure = (VkPhysicalDevice8BitStorageFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDevice8BitStorageFeatures", "storageBuffer8BitAccess", structure->storageBuffer8BitAccess);
@@ -1051,7 +1015,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceShaderAtomicInt64Features structure members
@@ -1065,7 +1028,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceShaderAtomicInt64Features *structure = (VkPhysicalDeviceShaderAtomicInt64Features *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceShaderAtomicInt64Features", "shaderBufferInt64Atomics", structure->shaderBufferInt64Atomics);
@@ -1085,7 +1047,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceShaderFloat16Int8Features *structure = (VkPhysicalDeviceShaderFloat16Int8Features *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceShaderFloat16Int8Features", "shaderFloat16", structure->shaderFloat16);
@@ -1105,7 +1066,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkDescriptorSetLayoutBindingFlagsCreateInfo structure members
@@ -1119,7 +1079,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
                 skip |= ValidateFlagsArray("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-parameter");
@@ -1137,7 +1096,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceDescriptorIndexingFeatures *structure = (VkPhysicalDeviceDescriptorIndexingFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceDescriptorIndexingFeatures", "shaderInputAttachmentArrayDynamicIndexing", structure->shaderInputAttachmentArrayDynamicIndexing);
@@ -1193,7 +1151,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkDescriptorSetVariableDescriptorCountAllocateInfo structure members
@@ -1207,7 +1164,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkDescriptorSetVariableDescriptorCountAllocateInfo *structure = (VkDescriptorSetVariableDescriptorCountAllocateInfo *) header;
                 skip |= ValidateArray("VkDescriptorSetVariableDescriptorCountAllocateInfo", "descriptorSetCount", "pDescriptorCounts", structure->descriptorSetCount, &structure->pDescriptorCounts, false, true, kVUIDUndefined, "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pDescriptorCounts-parameter");
@@ -1225,7 +1181,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkSubpassDescriptionDepthStencilResolve structure members
@@ -1239,7 +1194,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkSubpassDescriptionDepthStencilResolve *structure = (VkSubpassDescriptionDepthStencilResolve *) header;
                 skip |= ValidateStructType("VkSubpassDescriptionDepthStencilResolve", "pDepthStencilResolveAttachment", "VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2", structure->pDepthStencilResolveAttachment, VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2, false, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-parameter", "VUID-VkAttachmentReference2-sType-sType");
@@ -1262,7 +1216,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceScalarBlockLayoutFeatures structure members
@@ -1276,7 +1229,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceScalarBlockLayoutFeatures *structure = (VkPhysicalDeviceScalarBlockLayoutFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceScalarBlockLayoutFeatures", "scalarBlockLayout", structure->scalarBlockLayout);
@@ -1294,7 +1246,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkImageStencilUsageCreateInfo *structure = (VkImageStencilUsageCreateInfo *) header;
                 skip |= ValidateFlags("VkImageStencilUsageCreateInfo", "stencilUsage", "VkImageUsageFlagBits", AllVkImageUsageFlagBits, structure->stencilUsage, kRequiredFlags, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-parameter", "VUID-VkImageStencilUsageCreateInfo-stencilUsage-requiredbitmask");
@@ -1312,7 +1263,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkSamplerReductionModeCreateInfo *structure = (VkSamplerReductionModeCreateInfo *) header;
                 skip |= ValidateRangedEnum("VkSamplerReductionModeCreateInfo", "reductionMode", "VkSamplerReductionMode", structure->reductionMode, "VUID-VkSamplerReductionModeCreateInfo-reductionMode-parameter");
@@ -1330,7 +1280,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceVulkanMemoryModelFeatures structure members
@@ -1344,7 +1293,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceVulkanMemoryModelFeatures *structure = (VkPhysicalDeviceVulkanMemoryModelFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceVulkanMemoryModelFeatures", "vulkanMemoryModel", structure->vulkanMemoryModel);
@@ -1366,7 +1314,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceImagelessFramebufferFeatures *structure = (VkPhysicalDeviceImagelessFramebufferFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceImagelessFramebufferFeatures", "imagelessFramebuffer", structure->imagelessFramebuffer);
@@ -1384,7 +1331,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkFramebufferAttachmentsCreateInfo *structure = (VkFramebufferAttachmentsCreateInfo *) header;
                 skip |= ValidateStructTypeArray("VkFramebufferAttachmentsCreateInfo", "attachmentImageInfoCount", "pAttachmentImageInfos", "VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO", structure->attachmentImageInfoCount, structure->pAttachmentImageInfos, VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO, false, true, "VUID-VkFramebufferAttachmentImageInfo-sType-sType", "VUID-VkFramebufferAttachmentsCreateInfo-pAttachmentImageInfos-parameter", kVUIDUndefined);
@@ -1414,7 +1360,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkRenderPassAttachmentBeginInfo *structure = (VkRenderPassAttachmentBeginInfo *) header;
                 skip |= ValidateArray("VkRenderPassAttachmentBeginInfo", "attachmentCount", "pAttachments", structure->attachmentCount, &structure->pAttachments, false, true, kVUIDUndefined, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter");
@@ -1432,7 +1377,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceUniformBufferStandardLayoutFeatures *structure = (VkPhysicalDeviceUniformBufferStandardLayoutFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceUniformBufferStandardLayoutFeatures", "uniformBufferStandardLayout", structure->uniformBufferStandardLayout);
@@ -1450,7 +1394,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures structure members
@@ -1464,7 +1407,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *structure = (VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures", "separateDepthStencilLayouts", structure->separateDepthStencilLayouts);
@@ -1482,7 +1424,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkAttachmentReferenceStencilLayout *structure = (VkAttachmentReferenceStencilLayout *) header;
                 skip |= ValidateRangedEnum("VkAttachmentReferenceStencilLayout", "stencilLayout", "VkImageLayout", structure->stencilLayout, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-parameter");
@@ -1500,7 +1441,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkAttachmentDescriptionStencilLayout *structure = (VkAttachmentDescriptionStencilLayout *) header;
                 skip |= ValidateRangedEnum("VkAttachmentDescriptionStencilLayout", "stencilInitialLayout", "VkImageLayout", structure->stencilInitialLayout, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-parameter");
@@ -1520,7 +1460,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceHostQueryResetFeatures *structure = (VkPhysicalDeviceHostQueryResetFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceHostQueryResetFeatures", "hostQueryReset", structure->hostQueryReset);
@@ -1538,7 +1477,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceTimelineSemaphoreFeatures *structure = (VkPhysicalDeviceTimelineSemaphoreFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceTimelineSemaphoreFeatures", "timelineSemaphore", structure->timelineSemaphore);
@@ -1556,7 +1494,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkSemaphoreTypeCreateInfo structure members
@@ -1570,7 +1507,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkSemaphoreTypeCreateInfo *structure = (VkSemaphoreTypeCreateInfo *) header;
                 skip |= ValidateRangedEnum("VkSemaphoreTypeCreateInfo", "semaphoreType", "VkSemaphoreType", structure->semaphoreType, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-parameter");
@@ -1588,7 +1524,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeatures structure members
@@ -1602,7 +1537,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceBufferDeviceAddressFeatures *structure = (VkPhysicalDeviceBufferDeviceAddressFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceBufferDeviceAddressFeatures", "bufferDeviceAddress", structure->bufferDeviceAddress);
@@ -1624,7 +1558,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members
@@ -1638,7 +1571,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceVulkan13Features structure members
@@ -1706,7 +1638,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPipelineCreationFeedbackCreateInfo *structure = (VkPipelineCreationFeedbackCreateInfo *) header;
                 skip |= ValidateRequiredPointer("VkPipelineCreationFeedbackCreateInfo", "pPipelineCreationFeedback", structure->pPipelineCreationFeedback, "VUID-VkPipelineCreationFeedbackCreateInfo-pPipelineCreationFeedback-parameter");
@@ -1737,7 +1668,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceShaderTerminateInvocationFeatures *structure = (VkPhysicalDeviceShaderTerminateInvocationFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceShaderTerminateInvocationFeatures", "shaderTerminateInvocation", structure->shaderTerminateInvocation);
@@ -1755,7 +1685,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures *structure = (VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures", "shaderDemoteToHelperInvocation", structure->shaderDemoteToHelperInvocation);
@@ -1773,7 +1702,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDevicePrivateDataFeatures *structure = (VkPhysicalDevicePrivateDataFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDevicePrivateDataFeatures", "privateData", structure->privateData);
@@ -1791,7 +1719,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDevicePipelineCreationCacheControlFeatures structure members
@@ -1805,7 +1732,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDevicePipelineCreationCacheControlFeatures *structure = (VkPhysicalDevicePipelineCreationCacheControlFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDevicePipelineCreationCacheControlFeatures", "pipelineCreationCacheControl", structure->pipelineCreationCacheControl);
@@ -1823,7 +1749,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkMemoryBarrier2 *structure = (VkMemoryBarrier2 *) header;
                 skip |= ValidateFlags("VkMemoryBarrier2", "srcStageMask", "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, structure->srcStageMask, kOptionalFlags, "VUID-VkMemoryBarrier2-srcStageMask-parameter");
@@ -1847,7 +1772,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceSynchronization2Features *structure = (VkPhysicalDeviceSynchronization2Features *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceSynchronization2Features", "synchronization2", structure->synchronization2);
@@ -1865,7 +1789,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures *structure = (VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures", "shaderZeroInitializeWorkgroupMemory", structure->shaderZeroInitializeWorkgroupMemory);
@@ -1883,7 +1806,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceImageRobustnessFeatures *structure = (VkPhysicalDeviceImageRobustnessFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceImageRobustnessFeatures", "robustImageAccess", structure->robustImageAccess);
@@ -1901,7 +1823,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceSubgroupSizeControlFeatures *structure = (VkPhysicalDeviceSubgroupSizeControlFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceSubgroupSizeControlFeatures", "subgroupSizeControl", structure->subgroupSizeControl);
@@ -1921,7 +1842,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPipelineShaderStageRequiredSubgroupSizeCreateInfo structure members
@@ -1935,7 +1855,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceInlineUniformBlockFeatures structure members
@@ -1949,7 +1868,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceInlineUniformBlockFeatures *structure = (VkPhysicalDeviceInlineUniformBlockFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceInlineUniformBlockFeatures", "inlineUniformBlock", structure->inlineUniformBlock);
@@ -1969,7 +1887,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkWriteDescriptorSetInlineUniformBlock structure members
@@ -1983,7 +1900,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkWriteDescriptorSetInlineUniformBlock *structure = (VkWriteDescriptorSetInlineUniformBlock *) header;
                 skip |= ValidateArray("VkWriteDescriptorSetInlineUniformBlock", "dataSize", "pData", structure->dataSize, &structure->pData, true, true, "VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-arraylength", "VUID-VkWriteDescriptorSetInlineUniformBlock-pData-parameter");
@@ -2001,7 +1917,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceTextureCompressionASTCHDRFeatures structure members
@@ -2015,7 +1930,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceTextureCompressionASTCHDRFeatures *structure = (VkPhysicalDeviceTextureCompressionASTCHDRFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceTextureCompressionASTCHDRFeatures", "textureCompressionASTC_HDR", structure->textureCompressionASTC_HDR);
@@ -2033,7 +1947,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceDynamicRenderingFeatures structure members
@@ -2047,7 +1960,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceDynamicRenderingFeatures *structure = (VkPhysicalDeviceDynamicRenderingFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceDynamicRenderingFeatures", "dynamicRendering", structure->dynamicRendering);
@@ -2065,7 +1977,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkCommandBufferInheritanceRenderingInfo *structure = (VkCommandBufferInheritanceRenderingInfo *) header;
                 skip |= ValidateFlags("VkCommandBufferInheritanceRenderingInfo", "flags", "VkRenderingFlagBits", AllVkRenderingFlagBits, structure->flags, kOptionalFlags, "VUID-VkCommandBufferInheritanceRenderingInfo-flags-parameter");
@@ -2091,7 +2002,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceShaderIntegerDotProductFeatures *structure = (VkPhysicalDeviceShaderIntegerDotProductFeatures *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceShaderIntegerDotProductFeatures", "shaderIntegerDotProduct", structure->shaderIntegerDotProduct);
@@ -2109,7 +2019,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceTexelBufferAlignmentProperties structure members
@@ -2123,7 +2032,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkFormatProperties3 structure members
@@ -2137,7 +2045,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkPhysicalDeviceMaintenance4Features structure members
@@ -2151,7 +2058,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
             if (is_const_param) {
                 VkPhysicalDeviceMaintenance4Features *structure = (VkPhysicalDeviceMaintenance4Features *) header;
                 skip |= ValidateBool32("VkPhysicalDeviceMaintenance4Features", "maintenance4", structure->maintenance4);
@@ -2169,7 +2075,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // No Validation code for VkImageSwapchainCreateInfoKHR structure members  -- Covers VUID-VkImageSwapchainCreateInfoKHR-sType-sType
@@ -2341,7 +2246,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                                api_name, parameter_name.get_name().c_str());
                 }
             }
-
         } break;
 
         // Validation code for VkMultiviewPerViewAttributesInfoNVX structure members

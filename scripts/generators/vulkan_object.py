@@ -66,9 +66,9 @@ class Version:
 class Handle:
     """<type> which represents a dispatch handle"""
     name: str # ex) VkBuffer
-    type: str # ex) -VK_OBJECT_TYPE_BUFFER
+    type: str # ex) VK_OBJECT_TYPE_BUFFER
     parent: 'Handle'
-    protect: str # ex) 'VK_USE_PLATFORM_ANDROID_KHR'
+    protect: str # ex) VK_USE_PLATFORM_ANDROID_KHR
 
     # Only one will be True, the other is False
     instance: bool
@@ -156,12 +156,12 @@ class Command:
     # VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
     #   const VkInstanceCreateInfo* pCreateInfo,
     #   const VkAllocationCallbacks* pAllocator,
-    #   VkInstance* pInstance);'
+    #   VkInstance* pInstance);
     cPrototype: str
 
     # function pointer typedef  - ex:
     # typedef VkResult (VKAPI_PTR *PFN_vkCreateInstance)
-    #   (const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);'
+    #   (const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
     cFunctionPointer: str
 
 @dataclass
@@ -204,9 +204,12 @@ class Struct:
     returnedOnly: bool
 
     sType: str # ex) VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
-    extends: List['Struct'] # Structs that this struct extends
-    extendedBy: List['Struct'] # Struct that can be extended by this struct
     allowDuplicate: bool # can have a pNext point to itself
+
+    # These use to be List['Struct'] but some circular loops occur and cause
+    # pydevd warnings and made debugging slow (30 seconds to index a Struct)
+    extends: List[str] # Struct names that this struct extends
+    extendedBy: List[str] # Struct names that can be extended by this struct
 
 @dataclass
 class EnumField:

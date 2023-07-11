@@ -27,7 +27,8 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
         BaseGenerator.__init__(self)
 
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out = []
+        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.
@@ -46,17 +47,17 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n'''
-        self.write(copyright)
-        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+****************************************************************************/
+''')
+        out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        self.write('''
+        out.append('''
 #pragma once
 #include <string>
-#include <vulkan/vulkan.h>''')
+#include <vulkan/vulkan.h>
+''')
 
         # TODO - this should be moved into different generated util file
-        out = []
         out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
         out.append('    switch (input_value) {\n')
 
@@ -68,9 +69,8 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
         out.append('            return false;\n')
         out.append('    }\n')
         out.append('}\n')
-        self.write("".join(out))
+        out.append('\n')
 
-        out = []
         # If there are no fields (empty enum) ignore
         for enum in [x for x in self.vk.enums.values() if len(x.fields) > 0]:
             groupType = enum.name if enum.bitWidth == 32 else 'uint64_t'
@@ -87,10 +87,9 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
             out.append('    }\n')
             out.append('}\n')
             out.extend([f'#endif //{enum.protect}\n'] if enum.protect else [])
-        self.write("".join(out))
+        out.append('\n')
 
         # For bitmask, first create a string for FlagBits, then a Flags version that calls into it
-        out = []
         # If there are no flags (empty bitmask) ignore
         for bitmask in [x for x in self.vk.bitmasks.values() if len(x.flags) > 0]:
             groupType = bitmask.name if bitmask.bitWidth == 32 else 'uint64_t'
@@ -128,6 +127,6 @@ static inline std::string string_{bitmask.flagName}({bitmask.flagName} input_val
     return ret;
 }}\n''')
             out.extend([f'#endif //{bitmask.protect}\n'] if bitmask.protect else [])
-        self.write("".join(out))
 
-        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
+        out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
+        self.write("".join(out))
