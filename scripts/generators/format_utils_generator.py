@@ -26,30 +26,18 @@ def getClassName(className: str) -> str:
         name = '_' + name
     return name
 
-def formatHasDepth(format: Format):
-    for component in format.components:
-        if component.type == 'D':
-            return True
-    return False
+def formatHasDepth(format: Format) -> bool:
+    return any(x.type == 'D' for x in format.components)
 
-def formatHasStencil(format: Format):
-    for component in format.components:
-        if component.type == 'S':
-            return True
-    return False
+def formatHasStencil(format: Format) -> bool:
+    return any(x.type == 'S' for x in format.components)
 
-def formatHas64Bit(format: Format):
-    for component in format.components:
-        if component.bits == '64':
-            return True
-    return False
+def formatHas64Bit(format: Format) -> bool:
+    return any(x.bits == '64' for x in format.components)
 
 # True if all components are same numericFormat
-def formatHasNumericFormat(format: Format, numericFormat: str):
-    for component in format.components:
-        if component.numericFormat != numericFormat:
-            return False
-    return True
+def formatHasNumericFormat(format: Format, numericFormat: str) -> bool:
+    return all(x.numericFormat == numericFormat for x in format.components)
 
 class FormatUtilsOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -106,19 +94,19 @@ class FormatUtilsOutputGenerator(BaseGenerator):
         self.maxPlaneCount = max([len(format.planes) for format in self.vk.formats.values()])
         self.maxComponentCount = max([len(format.components) for format in self.vk.formats.values()])
 
-        for f in filter(lambda x: x.compressed, self.vk.formats.values()):
-            compressed = f.compressed.replace(' ', '_')
+        for format in [x for x in self.vk.formats.values() if x.compressed]:
+            compressed = format.compressed.replace(' ', '_')
             if compressed not in self.compressedFormats:
                 # create list if first time
                 self.compressedFormats[compressed] = []
-            self.compressedFormats[compressed].append(f.name)
+            self.compressedFormats[compressed].append(format.name)
 
-        for f in self.vk.formats.values():
-            for component in f.components:
+        for format in self.vk.formats.values():
+            for component in format.components:
                 if component.type == 'D':
-                    self.depthFormats[f.name] = component
+                    self.depthFormats[format.name] = component
                 elif component.type == 'S':
-                    self.stencilFormats[f.name] = component
+                    self.stencilFormats[format.name] = component
                 self.numericFormats.add(component.numericFormat)
 
         if self.sourceFile:
@@ -239,13 +227,13 @@ struct MULTIPLANE_COMPATIBILITY {
 static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
 ''')
 
-            for f in filter(lambda x: len(x.planes) != 0, self.vk.formats.values()):
-                out.append(f'    {{ {f.name}, {{{{\n')
-                for index, plane in enumerate(f.planes):
+            for format in [x for x in self.vk.formats.values() if x.planes]:
+                out.append(f'    {{ {format.name}, {{{{\n')
+                for index, plane in enumerate(format.planes):
                     if (index != plane.index):
                         self.logMsg('error', 'index of planes were not added in order')
                     out.append(f'        {{ {plane.widthDivisor}, {plane.heightDivisor}, {plane.compatible} }}')
-                    out.append(',\n' if (index + 1 != len(f.planes)) else '\n    }}},\n')
+                    out.append(',\n' if (index + 1 != len(format.planes)) else '\n    }}},\n')
             out.append('};\n')
             out.append('// clang-format on\n')
 
@@ -461,8 +449,8 @@ bool FormatIsPacked(VkFormat format);
             out.append('bool FormatIsPacked(VkFormat format) {\n')
             out.append('    bool found = false;\n')
             out.append('    switch (format) {\n')
-            for f in filter(lambda x: x.packed, self.vk.formats.values()):
-                out.append(f'        case {f.name}:\n')
+            for name in [x.name for x in self.vk.formats.values() if x.packed]:
+                out.append(f'        case {name}:\n')
             out.append(self.commonBoolSwitch)
 
         self.write("".join(out))
@@ -483,22 +471,22 @@ bool FormatIsYChromaSubsampled(VkFormat format);
             out.append('bool FormatRequiresYcbcrConversion(VkFormat format) {\n')
             out.append('    bool found = false;\n')
             out.append('    switch (format) {\n')
-            for f in filter(lambda x: x.chroma, self.vk.formats.values()):
-                out.append(f'        case {f.name}:\n')
+            for name in [x.name for x in self.vk.formats.values() if x.chroma]:
+                out.append(f'        case {name}:\n')
             out.append(self.commonBoolSwitch)
 
             out.append('\nbool FormatIsXChromaSubsampled(VkFormat format) {\n')
             out.append('    bool found = false;\n')
             out.append('    switch (format) {\n')
-            for f in filter(lambda x: x.chroma == '420' or x.chroma == '422', self.vk.formats.values()):
-                out.append(f'        case {f.name}:\n')
+            for name in [x.name for x in self.vk.formats.values() if x.chroma == '420' or x.chroma == '422']:
+                out.append(f'        case {name}:\n')
             out.append(self.commonBoolSwitch)
 
             out.append('\nbool FormatIsYChromaSubsampled(VkFormat format) {\n')
             out.append('    bool found = false;\n')
             out.append('    switch (format) {\n')
-            for f in filter(lambda x: x.chroma == '420', self.vk.formats.values()):
-                    out.append(f'        case {f.name}:\n')
+            for name in [x.name for x in self.vk.formats.values() if x.chroma == '420']:
+                    out.append(f'        case {name}:\n')
             out.append(self.commonBoolSwitch)
 
         self.write("".join(out))
@@ -512,8 +500,8 @@ bool FormatIsYChromaSubsampled(VkFormat format);
             out.append('\nconstexpr bool FormatIsSinglePlane_422(VkFormat format) {\n')
             out.append('    bool found = false;\n')
             out.append('    switch (format) {\n')
-            for f in filter(lambda x: x.chroma == '422' and len(x.planes) == 0, self.vk.formats.values()):
-                out.append(f'        case {f.name}:\n')
+            for name in [x.name for x in self.vk.formats.values() if x.chroma == '422' and not x.planes]:
+                out.append(f'        case {name}:\n')
             out.append(self.commonBoolSwitch)
 
             out.append('\n// Returns number of planes in format (which is 1 by default)\n')

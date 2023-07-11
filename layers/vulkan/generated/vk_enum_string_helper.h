@@ -20,9 +20,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 ****************************************************************************/
-
 // NOLINTBEGIN
-
 #pragma once
 #include <string>
 #include <vulkan/vulkan.h>
@@ -8843,5 +8841,4 @@ static inline std::string string_VkAccelerationStructureCreateFlagsKHR(VkAcceler
     if (ret.empty()) ret.append("VkAccelerationStructureCreateFlagsKHR(0)");
     return ret;
 }
-
 // NOLINTEND

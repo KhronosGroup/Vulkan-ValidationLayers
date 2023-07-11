@@ -21,33 +21,6 @@ from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 from typing import List
 
-# We want to take the following C Prototype:
-#
-# VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
-#     const VkInstanceCreateInfo*                 pCreateInfo,
-#     const VkAllocationCallbacks*                pAllocator,
-#     VkInstance*                                 pInstance);
-#
-# ... and apply name change, remove macros, add result parameter to the end so it looks like:
-#
-# void PostCallRecordCreateInstance(
-#     const VkInstanceCreateInfo*                 pCreateInfo,
-#     const VkAllocationCallbacks*                pAllocator,
-#     VkInstance*                                 pInstance,
-#     VkResult                                    result);
-#
-def createPostCallRecordPrototype(prototype: str, className: str = "",
-                                    override: bool = False,
-                                    extraParam: bool = False) -> str:
-    prototype = prototype.split("VKAPI_CALL ")[1]
-    prototype = f'void {className}PostCallRecord{prototype[2:]}'
-    prototype = prototype.replace(');', ',\n    VkResult                                    result) {\n')
-    if override:
-        prototype = prototype.replace(') {', ') override;')
-    if extraParam:
-        prototype = prototype.replace(')', ',\n    void*                                       state_data)')
-    return prototype
-
 # If there is another success code other than VK_SUCCESS
 def hasNonVkSuccess(successCodes: List[str]) -> bool:
     if successCodes is None or len(successCodes) == 0:
@@ -68,7 +41,6 @@ class BestPracticesOutputGenerator(BaseGenerator):
             'vkGetValidationCacheDataEXT',
         ]
 
-        # TODO - Is this a common list across files?
         # Commands that require an extra parameter for state sharing between validate/record steps
         self.extra_parameter_list = [
             "vkCreateShaderModule",
@@ -142,86 +114,88 @@ class BestPracticesOutputGenerator(BaseGenerator):
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
     def generateHeader(self):
-        self.write('#pragma once')
-        self.write('#include <vulkan/vulkan_core.h>')
-        self.write('#include "containers/custom_containers.h"')
+        out = []
+        out.append('''
+#pragma once
+#include <vulkan/vulkan_core.h>
+#include "containers/custom_containers.h"
+''')
         # List all Function declarations
-        for name, command in self.vk.commands.items():
-            if name in self.no_autogen_list:
-                continue
-
-            out = []
+        for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
-            out.append(createPostCallRecordPrototype(command.cPrototype,
-                                                     extraParam=(name in self.extra_parameter_list),
-                                                     override=True))
-            out.append('\n')
+            prototype = command.cPrototype.split("VKAPI_CALL ")[1]
+            prototype = f'void PostCallRecord{prototype[2:]}'
+            prototype = prototype.replace(');', ',\n    VkResult                                    result) {\n')
+            prototype = prototype.replace(') {', ') override;\n')
+            if command.name in self.extra_parameter_list:
+                prototype = prototype.replace(')', ',\n    void*                                       state_data)')
+            out.append(prototype)
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
-            self.write("".join(out))
 
         # Create deprecated extension map
-        out = []
         out.append('const vvl::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n')
-        for name, info in self.vk.extensions.items():
+        for extension in self.vk.extensions.values():
             target = None
             reason = None
-            if info.promotedTo is not None:
+            if extension.promotedTo is not None:
                 reason = 'kExtPromoted'
-                target = info.promotedTo
-            elif info.obsoletedBy is not None:
+                target = extension.promotedTo
+            elif extension.obsoletedBy is not None:
                 reason = 'kExtObsoleted'
-                target = info.obsoletedBy
-            elif info.deprecatedBy is not None:
+                target = extension.obsoletedBy
+            elif extension.deprecatedBy is not None:
                 reason = 'kExtDeprecated'
-                target = info.deprecatedBy
+                target = extension.deprecatedBy
             else:
                 continue
-            out.append(f'    {{"{name}", {{{reason}, "{target}"}}}},\n')
+            out.append(f'    {{"{extension.name}", {{{reason}, "{target}"}}}},\n')
         out.append('};\n')
-        self.write("".join(out))
 
-        out = []
         out.append('const vvl::unordered_map<std::string, std::string> special_use_extensions = {\n')
-        for name, info in self.vk.extensions.items():
-            if info.specialUse is not None:
-                out.append('    {{"{}", "{}"}},\n'.format(name, ', '.join(info.specialUse)))
+        for extension in self.vk.extensions.values():
+            if extension.specialUse is not None:
+                out.append(f'    {{"{extension.name}", "{", ".join(extension.specialUse)}"}},\n')
         out.append('};\n')
         self.write("".join(out))
 
     def generateSource(self):
-        self.write('#include "chassis.h"')
-        self.write('#include "best_practices/best_practices_validation.h"')
-        for name, command in self.vk.commands.items():
-            if name in self.no_autogen_list:
-                continue
-
+        out = []
+        out.append('''
+#include "chassis.h"
+#include "best_practices/best_practices_validation.h"
+''')
+        for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             paramList = [param.name for param in command.params]
             paramList.append('result')
-            if name in self.extra_parameter_list:
+            if command.name in self.extra_parameter_list:
                 paramList.append('state_data')
             params = ', '.join(paramList)
 
-            out = []
+            out.append('\n')
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
-            out.append(createPostCallRecordPrototype(command.cPrototype,
-                                                     extraParam=(name in self.extra_parameter_list),
-                                                     className='BestPractices::'))
-            out.append(f'    ValidationStateTracker::PostCallRecord{name[2:]}({params});\n')
-            if name in self.manual_postcallrecord_list:
-                out.append('    ManualPostCallRecord{}({});\n'.format(name[2:], params))
+            prototype = command.cPrototype.split("VKAPI_CALL ")[1]
+            prototype = f'void BestPractices::PostCallRecord{prototype[2:]}'
+            prototype = prototype.replace(');', ',\n    VkResult                                    result) {\n')
+            if command.name in self.extra_parameter_list:
+                prototype = prototype.replace(')', ',\n    void*                                       state_data)')
+            out.append(prototype)
+
+            out.append(f'    ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
+            if command.name in self.manual_postcallrecord_list:
+                out.append(f'    ManualPostCallRecord{command.name[2:]}({params});\n')
 
             if hasNonVkSuccess(command.successCodes):
                 out.append('    if (result > VK_SUCCESS) {\n')
                 results = [ x for x in command.successCodes if x != 'VK_SUCCESS' ]
-                out.append('        LogPositiveSuccessCode("{}", result); // {}\n'.format(name, ', '.join(results)))
+                out.append(f'        LogPositiveSuccessCode("{command.name}", result); // {", ".join(results)}\n')
                 out.append('        return;\n')
                 out.append('    }\n')
 
             if command.errorCodes is not None:
                 out.append('    if (result < VK_SUCCESS) {\n')
-                out.append('        LogErrorCode("{}", result); // {}\n'.format(name, ', '.join(command.errorCodes)))
+                out.append(f'        LogErrorCode("{command.name}", result); // {", ".join(command.errorCodes)}\n')
                 out.append('    }\n')
 
             out.append('}\n')
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
-            self.write(''.join(out))
+        self.write(''.join(out))

@@ -61,6 +61,8 @@ The `base_generator.py` and `vulkan_object.py` are the core of all generated cod
   - "C Header" like file that describes what information can be used when generating code
   - Uses the [Python 3.7 Dataclasses](https://docs.python.org/3/library/dataclasses.html) to enforce a schema so developers
 
+Every "Generator" that extends `BaseGenerator` has a `def generate(self)` which is the "main" function
+
 ## Using VulkanObject
 
 The following are examples of helpful things that can be done with VulkanObject
@@ -100,9 +102,14 @@ for field in self.vk.enums['VkImageViewType'].fields:
 
 ### Avoid functions when possible
 
-All code gen has a single function that outputs one large string, there is zero dynamic control flow that occurs.
+All code gen has a single function that outputs one large string, there is zero dynamic control flow that occurs. (Generators don't take any runtime arguments other then file locations)
 
 While it seems useful to group your logic into a single function, it because hard to debug where all the sub-strings are appearing from in the final file.
+
+The few times it is good to use functions is
+
+- It returns a non-string value. (ex. sorting logic)
+- There is recursion needed (ex. walking down structs with more structs in it)
 
 ### Avoid writting C/C++ code in python strings
 

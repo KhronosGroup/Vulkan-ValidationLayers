@@ -16,10 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-import json
-
 from generators.vulkan_object import (VulkanObject,
     Extension, Version, Handle, Param, Queues, CommandScope, Command,
     EnumField, Enum, Flag, Bitmask, Member, Struct,
@@ -35,15 +31,18 @@ from vkconventions import VulkanConventions
 # An API style convention object
 vulkanConventions = VulkanConventions()
 
-outputDirectory = '.'
-def SetOutputDirectory(directory):
+# Helpers to set GeneratorOptions options globally
+def SetOutputDirectory(directory: str) -> None:
     global outputDirectory
     outputDirectory = directory
 
-def SetTargetApiName(apiname):
+def SetOutputFileName(fileName: str) -> None:
+    global outputFileName
+    outputFileName = fileName
+
+def SetTargetApiName(apiname: str) -> None:
     global targetApiName
     targetApiName = apiname
-
 
 # Helpers to keep things cleaner
 def splitIfGet(elem, name):
@@ -72,21 +71,6 @@ def getQueues(elem) -> Queues:
         queues |= Queues.ENCODE if 'encode' in queues_list else 0
     return queues
 
-#
-# Walk the JSON-derived dict and find all "vuid" key values
-def ExtractVUIDs(vuid_dict):
-    if hasattr(vuid_dict, 'items'):
-        for key, value in vuid_dict.items():
-            if key == "vuid":
-                yield value
-            elif isinstance(value, dict):
-                for vuid in ExtractVUIDs(value):
-                    yield vuid
-            elif isinstance (value, list):
-                for listValue in value:
-                    for vuid in ExtractVUIDs(listValue):
-                        yield vuid
-
 # Shared object used by Sync elements that don't have ones
 maxSyncSupport = SyncSupport(None, None, True)
 maxSyncEquivalent = SyncEquivalent(None, None, True)
@@ -95,19 +79,13 @@ maxSyncEquivalent = SyncEquivalent(None, None, True)
 # After years of use, it has shown that all the options are unified across each generator (file)
 # as it is easier to modifiy things per-file that need the difference
 class BaseGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 filename: str = None,
-                 helper_file_type: str = None,
-                 valid_usage_file: str = None,
-                 lvt_file_type: str = None,
-                 mergeApiNames: str = None,
-                 grammar: str = None):
+    def __init__(self):
         GeneratorOptions.__init__(self,
                 conventions = vulkanConventions,
-                filename = filename,
+                filename = outputFileName,
                 directory = outputDirectory,
                 apiname = targetApiName,
-                mergeApiNames = mergeApiNames,
+                mergeApiNames = None,
                 defaultExtensions = targetApiName,
                 emitExtensions = '.*',
                 emitSpirv = '.*',
@@ -117,14 +95,6 @@ class BaseGeneratorOptions(GeneratorOptions):
         self.apientry        = 'VKAPI_CALL '
         self.apientryp       = 'VKAPI_PTR *'
         self.alignFuncParam   = 48
-
-        # These are custom fields for VVL
-        # This allows passing data from run_generator.py into each Generator (file)
-        self.filename = filename
-        self.helper_file_type = helper_file_type
-        self.valid_usage_file = valid_usage_file
-        self.lvt_file_type = lvt_file_type
-        self.grammar = grammar
 
 #
 # This object handles all the parsing from reg.py generator scripts in the Vulkan-Headers
@@ -138,9 +108,6 @@ class BaseGenerator(OutputGenerator):
         # it will be either the Version or Extension object
         self.currentExtension = None
         self.currentVersion = None
-
-        # These are custom fields for the Validation Layers
-        self.valid_vuids = set() # Set of all valid VUIDs
 
         # Will map alias to promoted name
         #   ex. ['VK_FILTER_CUBIC_IMG' : 'VK_FILTER_CUBIC_EXT']
@@ -158,31 +125,7 @@ class BaseGenerator(OutputGenerator):
 
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-
         self.filename = genOpts.filename
-        self.helper_file_type = genOpts.helper_file_type
-        self.valid_usage_file = genOpts.valid_usage_file
-        self.lvt_file_type = genOpts.lvt_file_type
-        self.grammar = genOpts.grammar
-
-        # Build a set of all vuid text strings found in validusage.json
-        if self.valid_usage_file is not None:
-            if not os.path.isfile(self.valid_usage_file):
-                print(f'Error: Could not find, or error loading {self.valid_usage_file}')
-                sys.exit(1)
-            json_file = open(self.valid_usage_file, 'r', encoding='utf-8')
-            vuid_dict = json.load(json_file)
-            json_file.close()
-            if len(vuid_dict) == 0:
-                print(f'Error: Failed to load {self.valid_usage_file}')
-                sys.exit(1)
-            for json_vuid_string in ExtractVUIDs(vuid_dict):
-                self.valid_vuids.add(json_vuid_string)
-        # List of VUs that should exists, but have a spec bug
-        for vuid in [
-            # Currently no bugs!
-        ]:
-            self.valid_vuids.add(vuid)
 
         # No gen*() command to get these, so do it manually
         for platform in self.registry.tree.findall('platforms/platform'):
@@ -327,12 +270,6 @@ class BaseGenerator(OutputGenerator):
         # Turn handle parents into pointers to classess
         for handle in [x for x in self.vk.handles.values() if x.parent is not None]:
             handle.parent = self.vk.handles[handle.parent]
-
-        # Update structs extending each other
-        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
-            struct.extends = list(map(lambda x: self.vk.structs[x], struct.extends))
-        for struct in [x for x in self.vk.structs.values() if x.extendedBy is not None]:
-            struct.extendedBy = list(map(lambda x: self.vk.structs[x], struct.extendedBy))
 
         maxSyncSupport.queues = Queues.ALL
         maxSyncSupport.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
@@ -552,7 +489,6 @@ class BaseGenerator(OutputGenerator):
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
 
-            # Build a string list now, populate as Struct objects once all structs are known
             extends = splitIfGet(typeElem, 'structextends')
             extendedBy = self.registry.validextensionstructs[typeName] if len(self.registry.validextensionstructs[typeName]) > 0 else None
 
@@ -604,8 +540,7 @@ class BaseGenerator(OutputGenerator):
                                       externSync, cdecl))
 
             self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, protect, members,
-                                               union, returnedOnly,
-                                               sType, extends, extendedBy, allowDuplicate)
+                                               union, returnedOnly, sType, allowDuplicate, extends, extendedBy)
 
         elif category == 'handle':
             if alias is not None:

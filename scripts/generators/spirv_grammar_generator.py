@@ -21,29 +21,12 @@ import json
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
-# Lots of switch statements share same ending
-commonBoolSwitch = '''            found = true;
-            break;
-        default:
-            break;
-    }
-    return found;
-}\n
-'''
-
-def commonParamSwitch(variableName):
-        return f'''        default:
-            break;
-    }}
-    return {variableName};
-}}\n
-'''
-
 #
 # Generate SPIR-V grammar helper for SPIR-V opcodes, enums, etc
 # Has zero relationship to the Vulkan API (doesn't use vk.xml)
 class SpirvGrammarHelperOutputGenerator(BaseGenerator):
-    def __init__(self):
+    def __init__(self,
+                 grammar: str = None):
         BaseGenerator.__init__(self)
 
         self.opcodes = dict()
@@ -62,6 +45,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
 
+        self.parseGrammar(grammar)
 
     def addToStingList(self, operandKind, kind, list):
         if operandKind['kind'] == kind:
@@ -216,8 +200,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
  ****************************************************************************/\n'''
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
-
-        self.parseGrammar(self.grammar)
 
         if self.filename == 'spirv_grammar_helper.h':
             self.generateHeader()

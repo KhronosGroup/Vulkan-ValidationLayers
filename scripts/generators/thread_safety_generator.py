@@ -166,10 +166,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                     for member in param.externSyncPointer:
                         member = str(member).replace("::", "->")
                         member = str(member).replace(".", "->")
-                        # XXX TODO: Can we do better to lookup types of externsync members?
-                        suffix = ''
-                        if 'surface' in member or 'swapchain' in member.lower():
-                            suffix = 'ParentInstance'
+                        suffix = 'ParentInstance' if 'surface' in member or 'swapchain' in member.lower() else ''
                         out.append(f'    {prefix}WriteObject{suffix}({member}, "{command.name}");\n')
             elif param.externSync:
                 if param.length:

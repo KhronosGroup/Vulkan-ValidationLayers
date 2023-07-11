@@ -21,7 +21,6 @@
  * to SPIR-V. Anything related to the SPIR-V grammar belongs in spirv_grammar_helper
  *
  ****************************************************************************/
-
 // NOLINTBEGIN
 #include <string>
 #include <functional>
@@ -110,7 +109,6 @@ struct FeaturePointer {
     FeaturePointer(VkBool32 VkPhysicalDeviceCooperativeMatrixFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features_khr.*ptr; }) {}
 };
-
 // Each instance of the struct will only have a singel field non-null
 struct RequiredSpirvInfo {
     uint32_t version;
@@ -696,7 +694,6 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
     };
 };
 
-
 // Will return the Vulkan format for a given SPIR-V image format value
 // Note: will return VK_FORMAT_UNDEFINED if non valid input
 // This was in vk_format_utils but the SPIR-V Header dependency was an issue
@@ -789,8 +786,6 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
             return VK_FORMAT_UNDEFINED;
     };
 };
-
-// NOLINTEND
 
 bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn) const {
     bool skip = false;
@@ -944,3 +939,4 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
     } //spv::OpExtension
     return skip;
 }
+// NOLINTEND

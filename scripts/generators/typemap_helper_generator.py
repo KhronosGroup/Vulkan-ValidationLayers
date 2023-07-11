@@ -60,7 +60,7 @@ class TypemapHelperOutputGenerator(BaseGenerator):
 template <VkStructureType id> struct LvlSTypeMap {};
 template <typename T> struct LvlTypeMap {};\n''')
 
-        for struct in filter(lambda x: x.sType is not None, self.vk.structs.values()):
+        for struct in [x for x in self.vk.structs.values() if x.sType]:
             out.extend([f'#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
 // Map type {struct.name} to id {struct.sType}

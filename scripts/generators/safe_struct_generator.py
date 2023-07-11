@@ -36,18 +36,6 @@ def needSafeStruct(struct: Struct) -> bool:
             return True
     return False
 
-# Takes the `len` or `altlen` found in the XML and formats it in C++ friendly way
-def getFormatedLength(length: str):
-    result = None
-    if length is not None and length != 'null-terminated':
-        # For string arrays, 'len' can look like 'count,null-terminated', indicating that we
-        # have a null terminated array of strings.  We strip the null-terminated from the
-        # 'len' field and only return the parameter specifying the string count
-        result = length if 'null-terminated' not in length else length.split(',')[0]
-        # Spec has now notation for len attributes, using :: instead of platform specific pointer symbol
-        result = result.replace('::', '->')
-    return result
-
 class SafeStructOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
@@ -168,8 +156,7 @@ char *SafeStringCopy(const char *in_string);
                 # Prevents union from initializing agian
                 canInitialize = not struct.union if explicitInitialize else canInitialize
 
-                # TOOD - don't need formatted helper
-                if (getFormatedLength(member.length) is not None) and self.containsObjectHandle(member) and not member.staticArray:
+                if member.length and self.containsObjectHandle(member) and not member.staticArray:
                     out.append(f'    {member.type}* {member.name}{initialize};\n')
                 else:
                     out.append(f'{member.cDeclaration}{initialize};\n')
@@ -248,7 +235,7 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             break;
         }''')
 
-        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
+        for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
         case {struct.sType}:
@@ -297,7 +284,7 @@ void FreePnextChain(const void *pNext) {
             break;
 ''')
 
-        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
+        for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
         case {struct.sType}:

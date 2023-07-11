@@ -21,8 +21,10 @@
 ****************************************************************************/
 
 // NOLINTBEGIN
+
 #include "chassis.h"
 #include "best_practices/best_practices_validation.h"
+
 void BestPractices::PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,

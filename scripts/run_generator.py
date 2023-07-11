@@ -56,356 +56,264 @@ def RunGenerator(api: str, registry: str, grammar: str, directory: str, target: 
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
 
-    # Allow downstream users to merge other (e.g. the main "vulkan") API into
-    # the API for which code is generated
-    mergeApiNames = None
-
-    # Output target directory
-    from generators.base_generator import SetOutputDirectory
-    from generators.base_generator import SetTargetApiName
+    # These set fields that are needed by both OutputGenerator and BaseGenerator,
+    # but are uniform and don't need to be set at a per-generated file level
+    from generators.base_generator import (SetOutputDirectory, SetOutputFileName, SetTargetApiName)
     SetOutputDirectory(directory)
+    SetOutputFileName(target)
     SetTargetApiName(api)
 
     valid_usage_file = os.path.join(scripts, 'validusage.json')
 
-    genOpts = {}
-
-    # ValidationLayer Generators
-    # Options for thread safety header code-generation
-    genOpts['thread_safety_counter_definitions.h'] = [
-          ThreadSafetyOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'thread_safety_counter_definitions.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['thread_safety_counter_instances.h'] = [
-          ThreadSafetyOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'thread_safety_counter_instances.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['thread_safety_counter_bodies.h'] = [
-          ThreadSafetyOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'thread_safety_counter_bodies.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['thread_safety_commands.h'] = [
-          ThreadSafetyOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'thread_safety_commands.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['thread_safety.cpp'] = [
-          ThreadSafetyOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'thread_safety.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['stateless_validation_helper.cpp'] = [
-          StatelessValidationHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'stateless_validation_helper.cpp',
-            valid_usage_file  = valid_usage_file)
-          ]
-
-    genOpts['stateless_validation_helper.h'] = [
-          StatelessValidationHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'stateless_validation_helper.h',
-            valid_usage_file  = valid_usage_file)
-          ]
-
-    genOpts['enum_flag_bits.h'] = [
-          EnumFlagBitsOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'enum_flag_bits.h',
-            mergeApiNames     = mergeApiNames)
-          ]
-
-    genOpts['valid_enum_values.h'] = [
-          ValidEnumValuesOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'valid_enum_values.h',
-            mergeApiNames     = mergeApiNames)
-          ]
-
-    genOpts['valid_enum_values.cpp'] = [
-          ValidEnumValuesOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'valid_enum_values.cpp',
-            mergeApiNames     = mergeApiNames)
-          ]
-
-    genOpts['object_tracker.cpp'] = [
-          ObjectTrackerOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'object_tracker.cpp',
-            mergeApiNames     = mergeApiNames,
-            valid_usage_file  = valid_usage_file)
-        ]
-
-    genOpts['object_tracker.h'] = [
-          ObjectTrackerOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'object_tracker.h',
-            mergeApiNames     = mergeApiNames,
-            valid_usage_file  = valid_usage_file)
-        ]
-
-    genOpts['vk_dispatch_table_helper.h'] = [
-          DispatchTableHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_dispatch_table_helper.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_function_pointers.h'] = [
-          FunctionPointersOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_function_pointers.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_function_pointers.cpp'] = [
-          FunctionPointersOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_function_pointers.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_layer_dispatch_table.h'] = [
-          LayerDispatchTableOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_layer_dispatch_table.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_enum_string_helper.h'] = [
-          EnumStringHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_enum_string_helper.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_safe_struct.h'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_safe_struct_utils.cpp'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct_utils.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_safe_struct_core.cpp'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct_core.cpp',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'safe_struct_source')
-        ]
-
-    genOpts['vk_safe_struct_khr.cpp'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct_khr.cpp',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'safe_struct_source')
-        ]
-
-    genOpts['vk_safe_struct_ext.cpp'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct_ext.cpp',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'safe_struct_source')
-        ]
-
-    genOpts['vk_safe_struct_vendor.cpp'] = [
-          SafeStructOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_safe_struct_vendor.cpp',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'safe_struct_source')
-        ]
-
-    genOpts['vk_object_types.h'] = [
-          ObjectTypesOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_object_types.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_extension_helper.h'] = [
-          ExtensionHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_extension_helper.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_typemap_helper.h'] = [
-          TypemapHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_typemap_helper.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['chassis.h'] = [
-          LayerChassisOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'chassis.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'layer_chassis_header')
-        ]
-
-    genOpts['chassis.cpp'] = [
-          LayerChassisOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'chassis.cpp',
-            helper_file_type  = 'layer_chassis_source')
-        ]
-
-    genOpts['chassis_dispatch_helper.h'] = [
-          LayerChassisOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'chassis_dispatch_helper.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'layer_chassis_helper_header')
-        ]
-
-    genOpts['layer_chassis_dispatch.cpp'] = [
-          LayerChassisDispatchOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'layer_chassis_dispatch.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['layer_chassis_dispatch.h'] = [
-          LayerChassisDispatchOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'layer_chassis_dispatch.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['best_practices.cpp'] = [
-          BestPracticesOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'best_practices.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['best_practices.h'] = [
-          BestPracticesOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'best_practices.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['sync_validation_types.h'] = [
-          SyncValidationOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'sync_validation_types.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['sync_validation_types.cpp'] = [
-          SyncValidationOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'sync_validation_types.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['spirv_validation_helper.cpp'] = [
-          SpirvValidationHelperOutputGenerator,
-          BaseGeneratorOptions(filename = 'spirv_validation_helper.cpp')
-        ]
-
-    # Options for spirv_grammar_helper code-generated source
-    # Only uses spirv grammar and not the vk.xml
-    genOpts['spirv_grammar_helper.cpp'] = [
-          SpirvGrammarHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'spirv_grammar_helper.cpp',
-            grammar           = grammar)
-        ]
-
-    # Options for spirv_grammar_helper code-generated header
-    # Only uses spirv grammar and not the vk.xml
-    genOpts['spirv_grammar_helper.h'] = [
-          SpirvGrammarHelperOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'spirv_grammar_helper.h',
-            grammar           = grammar)
-        ]
-
-    genOpts['spirv_tools_commit_id.h'] = [
-          SpirvToolCommitIdOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'spirv_tools_commit_id.h')
-        ]
-
-    genOpts['command_validation.cpp'] = [
-          CommandValidationOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'command_validation.cpp',
-            mergeApiNames     = mergeApiNames,
-            valid_usage_file  = valid_usage_file)
-        ]
-
-    genOpts['command_validation.h'] = [
-          CommandValidationOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'command_validation.h',
-            mergeApiNames     = mergeApiNames,
-            valid_usage_file  = valid_usage_file)
-        ]
-
-    genOpts['dynamic_state_helper.cpp'] = [
-          DynamicStateOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'dynamic_state_helper.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['dynamic_state_helper.h'] = [
-          DynamicStateOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'dynamic_state_helper.h',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_format_utils.cpp'] = [
-          FormatUtilsOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_format_utils.cpp',
-            mergeApiNames     = mergeApiNames)
-        ]
-
-    genOpts['vk_format_utils.h'] = [
-          FormatUtilsOutputGenerator,
-          BaseGeneratorOptions(
-            filename          = 'vk_format_utils.h',
-            mergeApiNames     = mergeApiNames)
-        ]
+    # Build up a list of all generators
+    # Note: Options variable names MUST match name of constructor variable names
+    genOpts = {
+        'thread_safety_counter_definitions.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'thread_safety_counter_instances.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'thread_safety_counter_bodies.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'thread_safety_commands.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'thread_safety.cpp' : {
+            'generator' : ThreadSafetyOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'stateless_validation_helper.h' : {
+            'generator' : StatelessValidationHelperOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'stateless_validation_helper.cpp' : {
+            'generator' : StatelessValidationHelperOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'enum_flag_bits.h' : {
+            'generator' : EnumFlagBitsOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'valid_enum_values.h' : {
+            'generator' : ValidEnumValuesOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'valid_enum_values.cpp' : {
+            'generator' : ValidEnumValuesOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'object_tracker.h' : {
+            'generator' : ObjectTrackerOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'object_tracker.cpp' : {
+            'generator' : ObjectTrackerOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'vk_dispatch_table_helper.h' : {
+            'generator' : DispatchTableHelperOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_function_pointers.h' : {
+            'generator' : FunctionPointersOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_function_pointers.cpp' : {
+            'generator' : FunctionPointersOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_layer_dispatch_table.h' : {
+            'generator' : LayerDispatchTableOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_enum_string_helper.h' : {
+            'generator' : EnumStringHelperOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct.h' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct_utils.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct_core.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct_khr.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct_ext.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_safe_struct_vendor.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_object_types.h' : {
+            'generator' : ObjectTypesOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_extension_helper.h' : {
+            'generator' : ExtensionHelperOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_typemap_helper.h' : {
+            'generator' : TypemapHelperOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'chassis.h' : {
+            'generator' : LayerChassisOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'chassis.cpp' : {
+            'generator' : LayerChassisOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'chassis_dispatch_helper.h' : {
+            'generator' : LayerChassisOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'layer_chassis_dispatch.h' : {
+            'generator' : LayerChassisDispatchOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'layer_chassis_dispatch.cpp' : {
+            'generator' : LayerChassisDispatchOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'best_practices.h' : {
+            'generator' : BestPracticesOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'best_practices.cpp' : {
+            'generator' : BestPracticesOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'sync_validation_types.h' : {
+            'generator' : SyncValidationOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'sync_validation_types.cpp' : {
+            'generator' : SyncValidationOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'spirv_validation_helper.cpp' : {
+            'generator' : SpirvValidationHelperOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'spirv_grammar_helper.h' : {
+            'generator' : SpirvGrammarHelperOutputGenerator,
+            'options' : [grammar],
+            'baseGenOptions' : []
+        },
+        'spirv_grammar_helper.cpp' : {
+            'generator' : SpirvGrammarHelperOutputGenerator,
+            'options' : [grammar],
+            'baseGenOptions' : []
+        },
+        'spirv_tools_commit_id.h' : {
+            'generator' : SpirvToolCommitIdOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'command_validation.h' : {
+            'generator' : CommandValidationOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'command_validation.cpp' : {
+            'generator' : CommandValidationOutputGenerator,
+            'options' : [valid_usage_file],
+            'baseGenOptions' : []
+        },
+        'dynamic_state_helper.h' : {
+            'generator' : DynamicStateOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'dynamic_state_helper.cpp' : {
+            'generator' : DynamicStateOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_format_utils.h' : {
+            'generator' : FormatUtilsOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+        'vk_format_utils.cpp' : {
+            'generator' : FormatUtilsOutputGenerator,
+            'options' : [],
+            'baseGenOptions' : []
+        },
+    }
 
     if (target not in genOpts.keys()):
         print(f'ERROR: No generator options for unknown target: {target}', file=sys.stderr)
         return
 
-    createGenerator = genOpts[target][0]
-    gen = createGenerator()
+    # First grab a class contructor object
+    generator = genOpts[target]['generator']
+    # Get array of argument for the class contructor
+    options = genOpts[target]['options']
+    # This is same as going
+    #   gen = CommandValidationOutputGenerator(*[valid_usage_file = valid_usage_file])
+    gen = generator(*options)
 
-    options = genOpts[target][1]
+    baseGenOptions = genOpts[target]['baseGenOptions']
+    options = BaseGeneratorOptions(*baseGenOptions)
 
     # Create the registry object with the specified generator and generator
     # options. The options are set before XML loading as they may affect it.

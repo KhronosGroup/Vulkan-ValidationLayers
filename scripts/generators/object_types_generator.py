@@ -26,18 +26,17 @@ class ObjectTypesOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
+    def generate(self):
         # Helper for VkDebugReportObjectTypeEXT
         # Maps [ 'VkBuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT' ]
         # Will be 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT' if no type
-        self.debugReportObject = dict()
-
-    def generate(self):
+        debugReportObject = dict()
 
         # Search all fields of the Enum to see if has a DEBUG_REPORT_OBJECT
         for handle in self.vk.handles.values():
             debugObjects = ([enum.name for enum in self.vk.enums['VkDebugReportObjectTypeEXT'].fields if f'{handle.type[3:]}_EXT' in enum.name])
             object = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT' if len(debugObjects) == 0 else debugObjects[0]
-            self.debugReportObject[handle.name] = object
+            debugReportObject[handle.name] = object
 
         out = []
         out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
@@ -86,7 +85,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version
 const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n''')
-        out.extend([f'    {self.debugReportObject[handle.name]},   // kVulkanObjectType{handle.name[2:]}\n' for handle in self.vk.handles.values()])
+        out.extend([f'    {debugReportObject[handle.name]},   // kVulkanObjectType{handle.name[2:]}\n' for handle in self.vk.handles.values()])
         out.append('};\n')
 
         out.append('''
@@ -112,7 +111,7 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
     switch (core_report_obj) {
         case VK_OBJECT_TYPE_UNKNOWN: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n''')
         for handle in self.vk.handles.values():
-            object = self.debugReportObject[handle.name]
+            object = debugReportObject[handle.name]
             if object != 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT':
                 out.append(f'        case {handle.type}: return {object};\n')
         out.append('''        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -145,12 +144,12 @@ template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeUnknown> {
 
 #endif //  VK_DEFINE_HANDLE logic duplication\n''')
 
-        for handle in filter(lambda x: x.dispatchable, self.vk.handles.values()):
+        for handle in [x for x in self.vk.handles.values() if x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
             out.append(f'''
 template <> struct VkHandleInfo<{handle.name}> {{
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectType{handle.name[2:]};
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {self.debugReportObject[handle.name]};
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {debugReportObject[handle.name]};
     static const VkObjectType kVkObjectType = {handle.type};
     static const char* Typename() {{
         return "{handle.name}";
@@ -162,12 +161,12 @@ template <> struct VulkanObjectTypeInfo<kVulkanObjectType{handle.name[2:]}> {{
             out.extend([f'#endif //{handle.protect}\n'] if handle.protect else [])
         out.append('#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n')
 
-        for handle in filter(lambda x: not x.dispatchable, self.vk.handles.values()):
+        for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
             out.append(f'''
 template <> struct VkHandleInfo<{handle.name}> {{
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectType{handle.name[2:]};
-    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {self.debugReportObject[handle.name]};
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {debugReportObject[handle.name]};
     static const VkObjectType kVkObjectType = {handle.type};
     static const char* Typename() {{
         return "{handle.name}";

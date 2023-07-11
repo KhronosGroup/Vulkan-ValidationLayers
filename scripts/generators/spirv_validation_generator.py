@@ -155,7 +155,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         return "".join(out)
 
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out = []
+        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
  *
  * Copyright (c) 2020-2023 The Khronos Group Inc.
@@ -175,20 +176,21 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
  * This file is related to anything that is found in the Vulkan XML related
  * to SPIR-V. Anything related to the SPIR-V grammar belongs in spirv_grammar_helper
  *
- ****************************************************************************/\n'''
-        self.write(copyright)
-        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
-        self.write('#include <string>')
-        self.write('#include <functional>')
-        self.write('#include <spirv/unified1/spirv.hpp>')
-        self.write('#include "vk_extension_helper.h"')
-        self.write('#include "state_tracker/shader_module.h"')
-        self.write('#include "state_tracker/device_state.h"')
-        self.write('#include "core_checks/core_validation.h"')
+ ****************************************************************************/
+''')
+        out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        out.append('''
+#include <string>
+#include <functional>
+#include <spirv/unified1/spirv.hpp>
+#include "vk_extension_helper.h"
+#include "state_tracker/shader_module.h"
+#include "state_tracker/device_state.h"
+#include "core_checks/core_validation.h"
+''')
 
         #
         # Creates the FeaturePointer struct to map features with those in the layers state tracker
-        out = []
         out.append('''
 struct FeaturePointer {
     // Callable object to test if this feature is enabled in the given aggregate feature struct
@@ -207,9 +209,8 @@ struct FeaturePointer {
             out.append('    FeaturePointer(VkBool32 {}::*ptr)\n'.format(feature['vulkan']))
             out.append('        : IsEnabled([=](const DeviceFeatures &features) {{ return features.{}.*ptr; }}) {{}}\n'.format(feature['layer']))
         out.append('};')
-        self.write("".join(out))
 
-        self.write('''
+        out.append('''
 // Each instance of the struct will only have a singel field non-null
 struct RequiredSpirvInfo {
     uint32_t version;
@@ -217,14 +218,14 @@ struct RequiredSpirvInfo {
     ExtEnabled DeviceExtensions::*extension;
     const char* property; // For human readability and make some capabilities unique
 };
+
 ''')
 
         #
         # Build the struct with all the requirments for the spirv capabilities
-        out = []
         out.append('// clang-format off\n')
         out.append('static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {\n')
-        for spirv in filter(lambda x: x.capability, self.vk.spirv):
+        for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in spirv.enable:
                 if enable.struct is not None and enable.struct in self.promotedFeatures:
                     continue
@@ -233,27 +234,24 @@ struct RequiredSpirvInfo {
                 out.append(f'    {{spv::Capability{spirv.name}, {self.createMapValue(spirv.name, enable, False)}}},\n')
         out.append('};\n')
         out.append('// clang-format on\n')
-        self.write("".join(out))
+        out.append('\n')
 
         #
         # Build the struct with all the requirments for the spirv extensions
-        out = []
         out.append('// clang-format off\n')
         out.append('static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtensions = {\n')
-        for spirv in filter(lambda x: x.extension, self.vk.spirv):
+        for spirv in [x for x in self.vk.spirv if x.extension]:
             for enable in spirv.enable:
                 out.append(f'    {{"{spirv.name}", {self.createMapValue(spirv.name, enable, True)}}},\n')
         out.append('};\n')
         out.append('// clang-format on\n')
-        self.write("".join(out))
-
+        out.append('\n')
 
         #
         # Creates the Enum string helpers for better error messages. Same idea of vk_enum_string_helper.h but for SPIR-V
-        out = []
         out.append('static inline const char* string_SpvCapability(uint32_t input_value) {\n')
         out.append('    switch ((spv::Capability)input_value) {\n')
-        for spirv in filter(lambda x: x.capability, self.vk.spirv):
+        for spirv in [x for x in self.vk.spirv if x.capability]:
             if (spirv.name not in self.capabilityAliasList) and (spirv.name not in self.capabilityExcludeList):
                 out.append(f'         case spv::Capability{spirv.name}:\n')
                 out.append(f'            return "{spirv.name}";\n')
@@ -261,11 +259,8 @@ struct RequiredSpirvInfo {
         out.append('            return \"Unhandled OpCapability\";\n')
         out.append('    };\n')
         out.append('};\n')
-        self.write("".join(out))
-
         #
         # Creates SPIR-V image format helper
-        out = []
         out.append('''
 // Will return the Vulkan format for a given SPIR-V image format value
 // Note: will return VK_FORMAT_UNDEFINED if non valid input
@@ -274,14 +269,13 @@ struct RequiredSpirvInfo {
 VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) const {
     switch (spirv_image_format) {
 ''')
-        for format in filter(lambda x: x.spirvImageFormat is not None, self.vk.formats.values()):
+        for format in [x for x in self.vk.formats.values() if x.spirvImageFormat]:
             out.append(f'        case spv::ImageFormat{format.spirvImageFormat}:\n')
             out.append(f'            return {format.name};\n')
         out.append('        default:\n')
         out.append('            return VK_FORMAT_UNDEFINED;\n')
         out.append('    };\n')
         out.append('};\n')
-        self.write("".join(out))
 
         # The chance of an SPIR-V extension having a property as a requirement is low
         # Instead of writting complex (and more confusing) code, just go back match what
@@ -292,7 +286,6 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
 
         #
         # The main function to validate all the extensions and capabilities
-        out = []
         out.append('''
 bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn) const {
     bool skip = false;
@@ -412,6 +405,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
         }
     } //spv::OpExtension
     return skip;
-}''')
-        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
+}
+''')
+        out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))
