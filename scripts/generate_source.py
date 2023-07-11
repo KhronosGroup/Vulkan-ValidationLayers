@@ -27,6 +27,9 @@ import tempfile
 import difflib
 import json
 
+# helper to define paths relative to the repo root
+def repo_relative(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
 # files to exclude from --verify check
 verify_exclude = ['.clang-format']
@@ -47,9 +50,8 @@ def main(argv):
 
     # We need modules from the registry directory, add it here so no one has to set it in PYTHONPATH
     sys.path.insert(0, args.registry)
-    import common_codegen
 
-    gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
+    gen_cmds = [*[[repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
                    '-quiet',
@@ -98,22 +100,22 @@ def main(argv):
                                               "dynamic_state_helper.h",
                                               "vk_format_utils.cpp",
                                               "vk_format_utils.h"]],
-                [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
+                [repo_relative('scripts/vk_validation_stats.py'),
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
                  '-export_header'],
-                [common_codegen.repo_relative('scripts/generators/external_revision_generator.py'),
-                 '--json_file', common_codegen.repo_relative('scripts/known_good.json'),
+                [repo_relative('scripts/generators/external_revision_generator.py'),
+                 '--json_file', repo_relative('scripts/known_good.json'),
                  '--json_keys', 'repos,3,commit',
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',
                  '-o', 'spirv_tools_commit_id.h']]
 
-    repo_dir = common_codegen.repo_relative(f'layers/{args.api}/generated')
+    repo_dir = repo_relative(f'layers/{args.api}/generated')
 
     # Update the api_version in the respective json files
     if args.generated_version:
         json_files = []
-        json_files.append(common_codegen.repo_relative('layers/VkLayer_khronos_validation.json.in'))
-        json_files.append(common_codegen.repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
+        json_files.append(repo_relative('layers/VkLayer_khronos_validation.json.in'))
+        json_files.append(repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
         for json_file in json_files:
             with open(json_file) as f:
                 data = json.load(f)

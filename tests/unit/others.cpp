@@ -2939,7 +2939,7 @@ TEST_F(VkLayerTest, InvalidExtEnum) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ExtensionNotEnabled) {
+TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2965,7 +2965,8 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     m_errorMonitor->SetUnexpectedError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled");
+    // The feature bit samplerYcbcrConversion prevents the function from being called even in Vulkan 1.0
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateSamplerYcbcrConversion-None-01648");
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
     ycbcr_create_info.format = VK_FORMAT_UNDEFINED;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
