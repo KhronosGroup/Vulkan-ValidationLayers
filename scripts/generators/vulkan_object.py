@@ -24,19 +24,19 @@ from typing import List, Dict
 @dataclass
 class Extension:
     """<extension>"""
-    name: str
-    nameString: str # marco with string, ex. VK_KHR_SURFACE_EXTENSION_NAME
+    name: str # ex) VK_KHR_SURFACE
+    nameString: str # marco with string, ex) VK_KHR_SURFACE_EXTENSION_NAME
 
     # Only one will be True, the other is False
     instance: bool
     device: bool
 
     depends: str
-    vendorTag: str # 'EXT', 'KHR', etc
-    platform: str # ex. 'android'
-    protect: str # ex. 'VK_USE_PLATFORM_ANDROID_KHR'
+    vendorTag: str # EXT, KHR, etc
+    platform: str # ex) android
+    protect: str # ex) VK_USE_PLATFORM_ANDROID_KHR
     provisional: bool
-    promotedTo: str # ex. 'VK_VERSION_1_1'
+    promotedTo: str # ex) VK_VERSION_1_1
     deprecatedBy: str
     obsoletedBy: str
     specialUse: List[str]
@@ -57,29 +57,31 @@ class Version:
     <feature> which represents a version
     This will NEVER be Version 1.0, since having 'no version' is same as being 1.0
     """
-    name: str # VK_VERSION_1_1
-    nameString: str # "VK_VERSION_1_1" (no marco, so has quotes)
-    nameApi: str # VK_API_VERSION_1_1
-    number: str # 1.1
+    name: str # ex) VK_VERSION_1_1
+    nameString: str # ex) "VK_VERSION_1_1" (no marco, so has quotes)
+    nameApi: str # ex) VK_API_VERSION_1_1
+    number: str # ex) 1.1
 
 @dataclass
 class Handle:
     """<type> which represents a dispatch handle"""
-    name: str
-    type: str    # ex. 'VK_OBJECT_TYPE_BUFFER'
+    name: str # ex) VkBuffer
+    type: str # ex) -VK_OBJECT_TYPE_BUFFER
     parent: 'Handle'
-    protect: str # ex. 'VK_USE_PLATFORM_ANDROID_KHR'
+    protect: str # ex) 'VK_USE_PLATFORM_ANDROID_KHR'
+
     # Only one will be True, the other is False
     instance: bool
     device: bool
+
     dispatchable: bool
 
 @dataclass
-class CommandParam:
+class Param:
     """<command/param>"""
     name: str
-    type: str
     alias: str
+    type: str # ex) void, VkFormat, etc
 
     noAutoValidity: bool
 
@@ -121,26 +123,25 @@ class CommandScope(Enum):
 @dataclass
 class Command:
     """<command>"""
-    # Attributes of <command>
-    name: str
+    name: str # ex) vkCmdDraw
     alias: str # Because commands are interfaces into layers/drivers, we need all command alias
 
     extensions: List[Extension] # All extensions that enable the struct
     version: Version # None if Version 1.0
-    protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    protect: str # ex) 'VK_ENABLE_BETA_EXTENSIONS'
 
-    returnType: str # 'void', 'VkResult', etc
+    returnType: str # ex) void, VkResult, etc
 
-    params: List[CommandParam] # Each parameter of the command
+    params: List[Param] # Each parameter of the command
 
     # Only one will be True, the other is False
     instance: bool
     device: bool
 
-    tasks: List[str]          # ex. [ 'action', 'state', 'synchronization' ]
-    queues: Queues            # zero == No Queues found
-    successCodes: List[str]   # ex. [ 'VK_SUCCESS', 'VK_INCOMPLETE' ]
-    errorCodes: List[str]     # ex. [ 'VK_ERROR_OUT_OF_HOST_MEMORY' ]
+    tasks: List[str] # ex) [ action, state, synchronization ]
+    queues: Queues # zero == No Queues found
+    successCodes: List[str] # ex) [ VK_SUCCESS, VK_INCOMPLETE ]
+    errorCodes: List[str] # ex) [ VK_ERROR_OUT_OF_HOST_MEMORY ]
 
     # Shows support if command can be in a primary and/or secondary command buffer
     primary: bool
@@ -164,61 +165,13 @@ class Command:
     cFunctionPointer: str
 
 @dataclass
-class EnumField:
-    """<enum> of type enum"""
-    name: str
-    negative: bool # True if negative values are allowed (ex. VkResult)
-    protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
-
-    # some fields are enabled from 2 extensions (ex. VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
-    extensions: List[Extension] # None if part of 1.0 core
-
-@dataclass
-class Enum:
-    """<enums> of type enum"""
-    name: str
-    bitWidth: int # 32 or 64
-    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
-    returnedOnly: bool
-    fields: List[EnumField]
-
-    extensions: List[Extension] # None if part of 1.0 core
-    # Unique list of all extension that are involved in 'fields' (superset of 'extensions')
-    fieldExtensions: List[Extension]
-
-@dataclass
-class Flag:
-    """<enum> of type bitmask"""
-    name: str
-    value: int     # Value of flag
-    multiBit: bool # if true, more than one bit is set (ex. VK_SHADER_STAGE_ALL_GRAPHICS)
-    zero: bool     # if true, the value is zero (ex. VK_PIPELINE_STAGE_NONE)
-    protect: str   # ex. 'VK_ENABLE_BETA_EXTENSIONS'
-
-    # some fields are enabled from 2 extensions (ex. VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
-    extensions: List[str] # None if part of 1.0 core
-
-@dataclass
-class Bitmask:
-    """<enums> of type bitmask"""
-    name: str     # ex. 'VkAccessFlagBits2'
-    flagName: str # ex. 'VkAccessFlags2'
-    bitWidth: int # 32 or 64
-    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
-    flags: List[Flag]
-
-    extensions: List[Extension] # None if part of 1.0 core
-    # Unique list of all extension that are involved in 'flag' (superset of 'extensions')
-    flagExtensions: List[Extension]
-
-@dataclass
 class Member:
     """<member>"""
-    name: str
-    type: str
+    name: str # ex) sharingMode
+    type: str # ex) VkSharingMode
 
     noAutoValidity: bool
-    limitType: str # ex. 'max', 'bitmask', 'bits', 'min,mul'
+    limitType: str # ex) 'max', 'bitmask', 'bits', 'min,mul'
 
     const: bool # type contains 'const'
     length: str # the known length of pointer, will never be 'null-terminated'
@@ -240,27 +193,75 @@ class Member:
 @dataclass
 class Struct:
     """<type category="struct"> or <type category="union">"""
-    name: str
+    name: str # ex. VkBufferCreateInfo
     extensions: List[Extension] # All extensions that enable the struct
     version: Version # None if Version 1.0
-    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    protect: str # ex) VK_ENABLE_BETA_EXTENSIONS
 
     members: List[Member]
 
     union: bool # Unions are just a subset of a Structs
     returnedOnly: bool
 
-    sType: str # VK_STRUCTURE_TYPE_*
+    sType: str # ex) VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
     extends: List['Struct'] # Structs that this struct extends
     extendedBy: List['Struct'] # Struct that can be extended by this struct
     allowDuplicate: bool # can have a pNext point to itself
 
 @dataclass
+class EnumField:
+    """<enum> of type enum"""
+    name: str # ex) VK_DYNAMIC_STATE_SCISSOR
+    negative: bool # True if negative values are allowed (ex. VkResult)
+    protect: str # ex) VK_ENABLE_BETA_EXTENSIONS
+
+    # some fields are enabled from 2 extensions (ex) VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
+    extensions: List[Extension] # None if part of 1.0 core
+
+@dataclass
+class Enum:
+    """<enums> of type enum"""
+    name: str # ex) VkDynamicState
+    bitWidth: int # 32 or 64
+    protect: str # ex) VK_ENABLE_BETA_EXTENSIONS
+    returnedOnly: bool
+    fields: List[EnumField]
+
+    extensions: List[Extension] # None if part of 1.0 core
+    # Unique list of all extension that are involved in 'fields' (superset of 'extensions')
+    fieldExtensions: List[Extension]
+
+@dataclass
+class Flag:
+    """<enum> of type bitmask"""
+    name: str # ex) VK_ACCESS_2_SHADER_READ_BIT
+    value: int
+    multiBit: bool # if true, more than one bit is set (ex) VK_SHADER_STAGE_ALL_GRAPHICS)
+    zero: bool # if true, the value is zero (ex) VK_PIPELINE_STAGE_NONE)
+    protect: str # ex) VK_ENABLE_BETA_EXTENSIONS
+
+    # some fields are enabled from 2 extensions (ex) VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
+    extensions: List[str] # None if part of 1.0 core
+
+@dataclass
+class Bitmask:
+    """<enums> of type bitmask"""
+    name: str # ex) VkAccessFlagBits2
+    flagName: str # ex) VkAccessFlags2
+    bitWidth: int # 32 or 64
+    protect: str # ex) VK_ENABLE_BETA_EXTENSIONS
+    flags: List[Flag]
+
+    extensions: List[Extension] # None if part of 1.0 core
+    # Unique list of all extension that are involved in 'flag' (superset of 'extensions')
+    flagExtensions: List[Extension]
+
+@dataclass
 class FormatComponent:
     """<format/component>"""
-    type: str # 'R', 'G', 'B', 'A', 'D', 'S', etc
+    type: str # ex) R, G, B, A, D, S, etc
     bits: str # will be an INT or 'compressed'
-    numericFormat: str # 'UNORM', 'SINT', etc
+    numericFormat: str # ex) UNORM, SINT, etc
     planeIndex: int # None if no planeIndex in format
 
 @dataclass
@@ -361,9 +362,9 @@ class VulkanObject():
 
     handles:  Dict[str, Handle]      = field(default_factory=dict, init=False)
     commands: Dict[str, Command]     = field(default_factory=dict, init=False)
+    structs:  Dict[str, Struct]      = field(default_factory=dict, init=False)
     enums:    Dict[str, Enum]        = field(default_factory=dict, init=False)
     bitmasks: Dict[str, Bitmask]     = field(default_factory=dict, init=False)
-    structs:  Dict[str, Struct]      = field(default_factory=dict, init=False)
     formats:  Dict[str, Format]      = field(default_factory=dict, init=False)
 
     syncStage:    List[SyncStage]    = field(default_factory=list, init=False)
@@ -372,9 +373,9 @@ class VulkanObject():
 
     spirv: List[Spirv]               = field(default_factory=list, init=False)
 
-    # ex. [ 'xlib' : 'VK_USE_PLATFORM_XLIB_KHR' ]
+    # ex) [ xlib : VK_USE_PLATFORM_XLIB_KHR ]
     platforms: Dict[str, str]        = field(default_factory=dict, init=False)
-    # List of all vendor Sufix names (ex. 'KHR', 'EXT', etc. )
+    # List of all vendor Sufix names (KHR, EXT, etc. )
     vendorTags: List[str]            = field(default_factory=list, init=False)
-    # ex. [ Queues.COMPUTE : 'VK_QUEUE_COMPUTE_BIT' ]
+    # ex) [ Queues.COMPUTE : VK_QUEUE_COMPUTE_BIT ]
     queueBits: Dict[IntFlag, str]    = field(default_factory=dict, init=False)

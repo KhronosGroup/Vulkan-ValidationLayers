@@ -21,7 +21,7 @@
 import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
-from generators.vulkan_object import (Handle, Command, Struct, Member, CommandParam)
+from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
 from typing import List
 
@@ -349,7 +349,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                     return True
         return False
 
-    def getAllocVUID(self, param: CommandParam, allocType: str) -> str:
+    def getAllocVUID(self, param: Param, allocType: str) -> str:
         lookup_string = '%s-%s' %(param.name, allocType)
         vuid = self.manual_vuids.get(lookup_string, None)
         if vuid is not None:

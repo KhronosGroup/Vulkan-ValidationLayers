@@ -56,11 +56,37 @@ The `base_generator.py` and `vulkan_object.py` are the core of all generated cod
   - "C Header" like file that describes what information can be used when generating code
   - Uses the [Python 3.7 Dataclasses](https://docs.python.org/3/library/dataclasses.html) to enforce a schema so developers
 
-For example if one wants to loop all Vulkan structs it is as simple as
+## Using VulkanObject
+
+The following are examples of helpful things that can be done with VulkanObject
 
 ```python
-for struct in self.vk.structs.values():
+#
+# Loop structs that have a sType
+for struct in [x for x in self.vk.structs.values() if x.sType]:
     print(struct.name)
+
+#
+# Print each command parameter C string
+for command in self.vk.commands.value():
+    for param in command.params:
+        print(param.cDeclaration)
+
+#
+# Loop commands with Transfer Queues
+for command in [x for x in self.vk.commands.value() if Queues.TRANSFER & x.queues]:
+    print(command.name)
+
+#
+# Find enums that are extended with an Instance extension
+for enum in self.vk.enum.values():
+    for extension in [x for x in enum.extensions if x.instance]:
+        print(f'{enum.name} - {extension.name}')
+
+#
+# List all VkImageViewType enum flags
+for field in self.vk.enums['VkImageViewType'].fields:
+    print(field.name)
 ```
 
 ## Design philosophy
