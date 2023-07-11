@@ -31,6 +31,10 @@ from collections import defaultdict
 from collections import OrderedDict
 from dataclasses import dataclass
 
+# helper to define paths relative to the repo root
+def repo_relative(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
+
 verbose_mode = False
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 
@@ -730,9 +734,8 @@ def main(argv):
     # and hasn't been copied elsewhere.
     registry_dir = os.path.dirname(args.json_file)
     sys.path.insert(0, registry_dir)
-    import common_codegen
 
-    layer_source_files = [common_codegen.repo_relative(path) for path in [
+    layer_source_files = [repo_relative(path) for path in [
         'layers/error_message/unimplementable_validation.h',
         'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
         'layers/state_tracker/descriptor_sets.cpp',
@@ -745,14 +748,14 @@ def main(argv):
         f'layers/{args.api}/generated/command_validation.cpp',
     ]]
     # Be careful not to add vk_validation_error_messages.h or it will show 100% test coverage
-    layer_source_files.extend(glob.glob(os.path.join(common_codegen.repo_relative('layers/core_checks/'), '*.cpp')))
-    layer_source_files.extend(glob.glob(os.path.join(common_codegen.repo_relative('layers/stateless/'), '*.cpp')))
-    layer_source_files.extend(glob.glob(os.path.join(common_codegen.repo_relative('layers/sync/'), '*.cpp')))
-    layer_source_files.extend(glob.glob(os.path.join(common_codegen.repo_relative('layers/object_tracker/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/core_checks/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/stateless/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/sync/'), '*.cpp')))
+    layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/object_tracker/'), '*.cpp')))
 
-    test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests/negative'), '*.cpp'))
+    test_source_files = glob.glob(os.path.join(repo_relative('tests/negative'), '*.cpp'))
 
-    unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
+    unassigned_vuid_files = [repo_relative(path) for path in [
         'layers/best_practices/best_practices_error_enums.h',
         'layers/stateless/stateless_validation.h',
         'layers/error_message/validation_error_enums.h',

@@ -25,7 +25,9 @@ import struct
 import re
 import argparse
 
-import common_codegen
+# helper to define paths relative to the repo root
+def repo_relative(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
 SPIRV_MAGIC = 0x07230203
 COLUMNS = 4
@@ -114,7 +116,7 @@ static const uint32_t %s[%d] = {
     if outfilename:
       out_file = outfilename
     else:
-      out_file = os.path.join(common_codegen.repo_relative(f'layers/{apiname}/generated'), name + '.h')
+      out_file = os.path.join(repo_relative(f'layers/{apiname}/generated'), name + '.h')
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         print(header, end="", file=f)
@@ -138,13 +140,13 @@ def main():
     else:
         # Get all shaders in gpu_shaders folder
         shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
-        gpu_shaders = common_codegen.repo_relative('layers/gpu_shaders')
+        gpu_shaders = repo_relative('layers/gpu_shaders')
         for filename in os.listdir(gpu_shaders):
             if (filename.split(".")[-1] in shader_type):
                 generate_shaders.append(os.path.join(gpu_shaders, filename))
 
     # default glslangValidator path
-    glslang_validator =  common_codegen.repo_relative('external/glslang/build/install/bin/glslangValidator')
+    glslang_validator =  repo_relative('external/glslang/build/install/bin/glslangValidator')
     if args.glslang:
         glslang_validator = args.glslang
     if not os.path.isfile(glslang_validator):

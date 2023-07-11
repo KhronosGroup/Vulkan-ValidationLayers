@@ -22,12 +22,10 @@ import os
 import sys
 import re
 
-from common_codegen import (exprToCpp, exprValues, parseExpr)
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 from typing import List
-
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
@@ -220,8 +218,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         self.flags = set()
         # Map of flag bits typename to list of values
         self.flagBits = dict()
-        # Dictionary of required extension boolean expressions for each item in the current extension
-        self.required_extension_expressions = dict()
 
     def generate(self):
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
@@ -398,33 +394,23 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
-            if 'DestroySurfaceKH' in command.name:
-                print("A")
             lines = self.genFuncBody(command.params[startIndex:], command.name, '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
-            if (command.name in self.required_extension_expressions) and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
-                for expr in self.required_extension_expressions[command.name]:
-                    contains_or = len([c for v in expr for c in v if c == ',']) > 0
-                    def ext_fn(x):
-                        ex_name = x.lower()
-                        instance = command.instance
-                        if 'VK_VERSION_' in x:
-                            ex_name = f'vk_feature_{ex_name[3:]}'
-                            instance = True
-                        if instance:
-                            return f'instance_extensions.{ex_name}'
-                        else:
-                            return f'IsExtEnabled(device_extensions.{ex_name})'
-                    if contains_or:
-                        expr_str = exprToCpp(expr, ext_fn)
-                        name_str = exprToCpp(expr)
-                        lines.insert(0, f'if (!({expr_str})) skip |= OutputExtensionError("{command.name}", "{name_str}");\n')
+            if command.extensions and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
+                cExpression =  []
+                outExpression =  []
+                for extension in command.extensions:
+                    outExpression.append(f'{extension.name}')
+                    if extension.instance:
+                        cExpression.append(f'instance_extensions.{extension.name.lower()}')
                     else:
-                        for ext in exprValues(expr):
-                            if command.instance:
-                                lines.insert(0, f'if (!{ext_fn(ext)}) skip |= OutputExtensionError("{command.name}", "{ext}");\n')
-                            else:
-                                lines.insert(0, f'if (!{ext_fn(ext)}) skip |= OutputExtensionError("{command.name}", "{ext}");\n')
+                        cExpression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
+
+                cExpression = " || ".join(cExpression)
+                if len(outExpression) > 1:
+                    cExpression = f'({cExpression})'
+
+                lines.insert(0, f'if (!{cExpression}) skip |= OutputExtensionError("{command.name}", "{" || ".join(outExpression)}");\n')
             if lines:
                 prototype = command.cPrototype[:-1].split('\n')
                 prototype = '\n'.join(prototype)
@@ -468,43 +454,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         if indent and (len(indent) > self.INDENT_SPACES):
             return indent[:-self.INDENT_SPACES]
         return ''
-
-    # TODO - Improve this to not be so complex
-    def beginFeature(self, interface, emit):
-        # Start processing in superclass
-        BaseGenerator.beginFeature(self, interface, emit)
-        # Get base list of extension dependencies for all items in this extension
-        base_required_extension_expressions = []
-        base_req_exts = []
-        if "VK_VERSION_1" not in self.featureName:
-            # Save Name Define to get correct enable name later
-            base_req_exts.append(self.featureName)
-        # Add any defined extension dependencies to the base dependency list for this extension
-        requires = interface.get('depends')
-        if requires is not None:
-            base_req_exts.append(f'({requires})')
-        if len(base_req_exts) > 0:
-            # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
-            expr_str = re.sub(r',VK_VERSION_1_\d+', '', '+'.join(base_req_exts))
-            base_required_extension_expressions.append(parseExpr(expr_str))
-        # Build dictionary of extension dependencies for each item in this extension
-        for require_element in interface.findall('require'):
-            # Copy base extension dependency list
-            required_extension_expressions = list(base_required_extension_expressions)
-            # Add any additional extension dependencies specified in this require block
-            additional_extensions = require_element.get('depends')
-            # require tags must split here by '+' as it is an AND operation according registry.adoc:
-            #    == Attributes of tag:require tags
-            #    attr:extension - optional, and only for tag:require tags.
-            #    String containing one or more API extension names separated by , or +.
-            #    Interfaces in the tag are only required if enabled extensions satisfy
-            #    the logical expression in the string, where , is interpreted as a
-            #    logical OR and '+' as a logical AND.
-            if additional_extensions:
-                required_extension_expressions.append(parseExpr(additional_extensions))
-            # Save full extension list for all named items
-            for element in require_element.findall('*[@name]'):
-                self.required_extension_expressions[element.get('name')] = required_extension_expressions
 
     def genType(self, typeinfo, name, alias):
         BaseGenerator.genType(self, typeinfo, name, alias)
