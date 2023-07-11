@@ -21,7 +21,7 @@ import sys
 import json
 
 from generators.vulkan_object import (VulkanObject,
-    Extension, Version, Handle, CommandParam, Queues, CommandScope, Command,
+    Extension, Version, Handle, Param, Queues, CommandScope, Command,
     EnumField, Enum, Flag, Bitmask, Member, Struct,
     FormatComponent, FormatPlane, Format,
     SyncSupport, SyncEquivalent, SyncStage, SyncAccess, SyncPipelineStage, SyncPipeline,
@@ -435,7 +435,7 @@ class BaseGenerator(OutputGenerator):
             if not externSync and externSyncPointer is not None:
                 externSync = True
 
-            params.append(CommandParam(paramName, paramType, paramAlias, paramNoautovalidity,
+            params.append(Param(paramName, paramAlias, paramType, paramNoautovalidity,
                                        paramConst, length, nullTerminated, pointer, staticArray,
                                        optional, optionalPointer,
                                        externSync, externSyncPointer, cdecl))

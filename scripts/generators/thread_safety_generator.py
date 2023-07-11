@@ -22,10 +22,10 @@ import os
 import sys
 
 from generators.generator_utils import (fileIsGeneratedWarning)
-from generators.vulkan_object import (Command, CommandParam)
+from generators.vulkan_object import (Command, Param)
 from generators.base_generator import BaseGenerator
 
-def GetParentInstance(param: CommandParam) -> str:
+def GetParentInstance(param: Param) -> str:
     wrapParenet = ['VkSurfaceKHR',
                    'VkSwapchainKHR',
                    'VkDebugReportCallbackEXT',
