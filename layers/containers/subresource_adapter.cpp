@@ -284,7 +284,8 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
 
     // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
     if (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
-        subres = {static_cast<VkImageAspectFlags>(AspectBit(0)), 0, 0};
+        const VkImageAspectFlags first_aspect = AspectBit(0);  // AspectBit returns aspects by index
+        subres = {first_aspect, 0, 0};
         DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
         if (layout.size > 0) {
             linear_image_ = true;
