@@ -156,7 +156,7 @@ char *SafeStringCopy(const char *in_string);
                 # Prevents union from initializing agian
                 canInitialize = not struct.union if explicitInitialize else canInitialize
 
-                if member.length and self.containsObjectHandle(member) and not member.staticArray:
+                if member.length and self.containsObjectHandle(member) and not member.fixedSizeArray:
                     out.append(f'    {member.type}* {member.name}{initialize};\n')
                 else:
                     out.append(f'{member.cDeclaration}{initialize};\n')
@@ -954,7 +954,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                             construct_txt += f'    {member.name} = in_struct->{member.name};\n'
                         else:
                             init_func_txt += f'    {member.name} = nullptr;\n'
-                            if not member.staticArray and (member.length is None or '/' in member.length):
+                            if not member.fixedSizeArray and (member.length is None or '/' in member.length):
                                 construct_txt += f'    if (in_struct->{member.name}) {{\n'
                                 construct_txt += f'        {member.name} = new {m_type}(*in_struct->{member.name});\n'
                                 construct_txt += '    }\n'
@@ -979,9 +979,9 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                 construct_txt += '    }\n'
                                 destruct_txt += f'    if ({member.name})\n'
                                 destruct_txt += f'        delete[] {member.name};\n'
-                elif member.staticArray or member.length is not None:
-                    if member.staticArray:
-                        construct_txt += f'    for (uint32_t i = 0; i < {member.staticArray[0]}; ++i) {{\n'
+                elif member.fixedSizeArray or member.length is not None:
+                    if member.fixedSizeArray:
+                        construct_txt += f'    for (uint32_t i = 0; i < {member.fixedSizeArray[0]}; ++i) {{\n'
                         construct_txt += f'        {member.name}[i] = in_struct->{member.name}[i];\n'
                         construct_txt += '    }\n'
                     else:

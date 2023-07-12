@@ -626,7 +626,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                     checkedExpr.append(localIndent + '}\n')
                 checkExpr = [checkedExpr]
         # This is an individual struct that is not allowed to be NULL
-        elif not (member.optional or member.optionalPointer or member.staticArray):
+        elif not (member.optional or member.optionalPointer or member.fixedSizeArray):
             # Function pointers need a reinterpret_cast to void*
             ptr_required_vuid = self.GetVuid(vuid_tag_name, f"{member.name}-parameter")
             if member.type.startswith('PFN_'):
@@ -799,7 +799,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             #
             # Check for NULL pointers, ignore the in-out count parameters that
             # will be validated with their associated array
-            if (member.pointer or member.staticArray) and not [x for x in members if x.length and member.name == x.length]:
+            if (member.pointer or member.fixedSizeArray) and not [x for x in members if x.length and member.name == x.length]:
                 # Parameters for function argument generation
                 req = 'true'    # Parameter cannot be NULL
                 cpReq = 'true'  # Count pointer cannot be NULL

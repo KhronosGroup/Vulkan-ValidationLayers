@@ -83,11 +83,11 @@ class Param:
 
     noAutoValidity: bool
 
-    const: bool            # type contains 'const'
-    length:  (str | None)  # the known length of pointer, will never be 'null-terminated'
-    nullTerminated: bool   # If a UTF-8 string that will be null-terminated
-    pointer: bool          # type contains a pointer
-    staticArray: list[str] # for VkTransformMatrixKHR:matrix this is [3, 4]
+    const: bool           # type contains 'const'
+    length:  (str | None) # the known length of pointer, will never be 'null-terminated'
+    nullTerminated: bool  # If a UTF-8 string, it will be null-terminated
+    pointer: bool         # type contains a pointer (include 'PFN' function pointers)
+    fixedSizeArray: list[str] # for VkTransformMatrixKHR:matrix this is [3, 4]
 
     optional: bool
     optionalPointer: bool # if type contains a pointer, is the pointer value optional
@@ -171,11 +171,11 @@ class Member:
     noAutoValidity: bool
     limitType: (str | None) # ex) 'max', 'bitmask', 'bits', 'min,mul'
 
-    const: bool            # type contains 'const'
-    length:  (str | None)  # the known length of pointer, will never be 'null-terminated'
-    nullTerminated: bool   # If a UTF-8 string that will be null-terminated
-    pointer: bool          # type contains a pointer
-    staticArray: list[str] # for VkTransformMatrixKHR:matrix this is [3, 4]
+    const: bool           # type contains 'const'
+    length:  (str | None) # the known length of pointer, will never be 'null-terminated'
+    nullTerminated: bool  # If a UTF-8 string, it will be null-terminated
+    pointer: bool         # type contains a pointer (include 'PFN' function pointers)
+    fixedSizeArray: list[str] # for VkTransformMatrixKHR:matrix this is [3, 4]
 
     optional: bool
     optionalPointer: bool # if type contains a pointer, is the pointer value optional

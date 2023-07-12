@@ -337,7 +337,7 @@ class BaseGenerator(OutputGenerator):
             cdecl = self.makeCParamDecl(param, 0)
             pointer = '*' in cdecl or paramType.startswith('PFN_')
             paramConst = 'const' in cdecl
-            staticArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
+            fixedSizeArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
 
             paramNoautovalidity = boolGet(param, 'noautovalidity')
 
@@ -350,8 +350,8 @@ class BaseGenerator(OutputGenerator):
                 length = length.replace(',null-terminated', '') if 'null-terminated' in length else length
                 length = None if length == 'null-terminated' else length
 
-            if staticArray and not length:
-                length = ','.join(staticArray)
+            if fixedSizeArray and not length:
+                length = ','.join(fixedSizeArray)
 
             # See Member::optional code for details of this
             optionalValues = splitIfGet(param, 'optional')
@@ -366,7 +366,7 @@ class BaseGenerator(OutputGenerator):
                 externSync = True
 
             params.append(Param(paramName, paramAlias, paramType, paramNoautovalidity,
-                                paramConst, length, nullTerminated, pointer, staticArray,
+                                paramConst, length, nullTerminated, pointer, fixedSizeArray,
                                 optional, optionalPointer,
                                 externSync, externSyncPointer, cdecl))
 
@@ -520,10 +520,10 @@ class BaseGenerator(OutputGenerator):
                 pointer = '*' in cdecl or type.startswith('PFN_')
                 const = 'const' in cdecl
                 # Some structs like VkTransformMatrixKHR have a 2D array
-                staticArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
+                fixedSizeArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
 
-                if staticArray and not length:
-                    length = ','.join(staticArray)
+                if fixedSizeArray and not length:
+                    length = ','.join(fixedSizeArray)
 
                 # if a pointer, this can be a something like:
                 #     optional="true,false" for ppGeometries
@@ -535,7 +535,7 @@ class BaseGenerator(OutputGenerator):
                 optionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
 
                 members.append(Member(name, type, noautovalidity, limittype,
-                                      const, length, nullTerminated, pointer, staticArray,
+                                      const, length, nullTerminated, pointer, fixedSizeArray,
                                       optional, optionalPointer,
                                       externSync, cdecl))
 
