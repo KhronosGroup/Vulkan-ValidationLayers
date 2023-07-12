@@ -19,7 +19,7 @@
 #include "core_checks/cc_shader.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/state_tracker.h"
-#include "vma/vma.h"
+#include "vma.h"
 #include "state_tracker/queue_state.h"
 
 class GpuAssistedBase;

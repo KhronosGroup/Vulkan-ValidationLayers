@@ -20,7 +20,7 @@
 #include <atomic>
 #include <mutex>
 #include "state_tracker/descriptor_sets.h"
-#include "vma/vma.h"
+#include "vma.h"
 
 namespace gpuav_state {
 

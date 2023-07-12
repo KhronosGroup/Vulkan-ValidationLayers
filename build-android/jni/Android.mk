@@ -87,6 +87,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gv_descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/debug_printf.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/vma.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices/best_practices_utils.cpp
 LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_buffer.cpp
 LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_cmd_buffer.cpp
@@ -147,7 +148,6 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_ext.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_vendor.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)

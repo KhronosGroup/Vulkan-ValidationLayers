@@ -239,8 +239,6 @@ target_sources(vvl PRIVATE
     error_message/core_error_location.cpp
     error_message/core_error_location.h
     error_message/validation_error_enums.h
-    external/vma/vma.h
-    external/vma/vma.cpp
     ${API_TYPE}/generated/best_practices.cpp
     ${API_TYPE}/generated/best_practices.h
     ${API_TYPE}/generated/chassis.cpp
@@ -278,6 +276,8 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_validation.h
     gpu_validation/gv_descriptor_sets.cpp
     gpu_validation/gv_descriptor_sets.h
+    gpu_validation/vma.h
+    gpu_validation/vma.cpp
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/base_node.cpp
@@ -380,6 +380,10 @@ elseif(MSVC)
         /wd4389 # signed/unsigned mismatch
     )
 endif()
+
+# Needed for gpu validation
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+target_link_libraries(vvl PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # Khronos validation additional dependencies
 if (USE_ROBIN_HOOD_HASHING)

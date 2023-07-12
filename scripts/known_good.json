@@ -21,6 +21,14 @@
             "commit": "v1.3.257"
         },
         {
+            "name": "Vulkan-Memory-Allocator",
+            "url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator",
+            "sub_dir": "VulkanMemoryAllocator",
+            "build_dir": "VulkanMemoryAllocator/build",
+            "install_dir": "VulkanMemoryAllocator/build/install",
+            "commit": "2a28bc4b39b9b80dad909036442f629f570d7ae1"
+        },
+        {
             "name": "SPIRV-Headers",
             "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
             "sub_dir": "SPIRV-Headers",
@@ -101,6 +109,7 @@
     "install_names": {
         "glslang": "GLSLANG_INSTALL_DIR",
         "Vulkan-Headers": "VULKAN_HEADERS_INSTALL_DIR",
+        "Vulkan-Memory-Allocator": "VULKAN_MEMORY_ALLOCATOR_INSTALL_DIR",
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
         "SPIRV-Reflect": "SPIRV_REFLECT_INSTALL_DIR",
