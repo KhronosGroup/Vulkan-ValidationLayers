@@ -15,7 +15,7 @@
 1. CMake >= 3.17.2
 2. C++17 compatible toolchain
 3. Git
-4. Python >= 3.8
+4. Python >= 3.10
 
 NOTE: Python is needed for working on generated code, and helping grab dependencies.
 While it's not technically required, it's practically required for most users.

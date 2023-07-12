@@ -38,8 +38,8 @@ class Extension:
     provisional: bool
     promotedTo: str # ex) VK_VERSION_1_1
     deprecatedBy: str
-    obsoletedBy: str
-    specialUse: List[str]
+    obsoletedBy: (str | None)
+    specialUse: list[str]
 
     # These are here to allow for easy reverse lookups
     # Quotes allow us to forward declare the dataclass
