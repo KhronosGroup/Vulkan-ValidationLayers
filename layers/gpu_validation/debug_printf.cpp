@@ -21,6 +21,87 @@
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
 
+void DebugPrintf::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, void *modified_ci) {
+    GpuAssistedBase::PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_ci);
+
+    std::string use_uncached_buffer_string = getLayerOption("khronos_validation.printf_uncached_buffer");
+    vvl::ToLower(use_uncached_buffer_string);
+    use_uncached_buffer = !use_uncached_buffer_string.compare("true");
+
+    if (use_uncached_buffer)
+    {
+        static const std::string dcm_ext{"VK_AMD_device_coherent_memory"};
+        {
+            bool dcm_supported = false;
+            uint32_t property_count = 0;
+            if (DispatchEnumerateDeviceExtensionProperties(gpu, nullptr, &property_count, nullptr) == VK_SUCCESS) {
+                std::vector<VkExtensionProperties> property_list(property_count);
+                if (DispatchEnumerateDeviceExtensionProperties(gpu, nullptr, &property_count, property_list.data()) ==
+                    VK_SUCCESS) {
+                    for (const VkExtensionProperties &properties : property_list) {
+                        if (dcm_ext == properties.extensionName) {
+                            dcm_supported = true;
+                        }
+                    }
+                }
+            }
+            if (!dcm_supported) {
+                ReportSetupProblem(
+                    device, "Debug Printf with uncached buffer requires VK_AMD_device_coherent_memory which is not supported");
+                aborted = true;
+                return;
+            }
+        }
+
+        // See CreateDevice() in chassis.cpp. modified_ci is a pointer to a safe struct stored on the stack.
+        // This code follows the safe struct memory memory management scheme. That is, we must delete any memory
+        // remove from the safe struct, and any additions must be allocated in a way that is compatible with
+        // the safe struct destructor.
+        auto *modified_create_info = static_cast<safe_VkDeviceCreateInfo *>(modified_ci);
+
+        bool found_ext = false;
+        for (uint32_t i = 0; i < modified_create_info->enabledExtensionCount; i++) {
+            if (dcm_ext == modified_create_info->ppEnabledExtensionNames[i]) {
+                found_ext = true;
+                break;
+            }
+        }
+        if (!found_ext) {
+            LogInfo(gpu, "UNASSIGNED-DEBUG-PRINTF", "VK_AMD_device_coherent_memory extension not enabled but use_uncached_buffer is true. Forcing extension.");
+            const char **ext_names = new const char *[modified_create_info->enabledExtensionCount + 1];
+            // Copy the existing pointer table
+            std::copy(modified_create_info->ppEnabledExtensionNames,
+                      modified_create_info->ppEnabledExtensionNames + modified_create_info->enabledExtensionCount, ext_names);
+            // Add our new extension
+            char *dcm_ext_copy = new char[dcm_ext.size() + 1]{};
+            dcm_ext.copy(dcm_ext_copy, dcm_ext.size());
+            dcm_ext_copy[dcm_ext.size()] = '\0';
+            ext_names[modified_create_info->enabledExtensionCount] = dcm_ext_copy;
+            // Patch up the safe struct
+            delete[] modified_create_info->ppEnabledExtensionNames;
+            modified_create_info->ppEnabledExtensionNames = ext_names;
+            modified_create_info->enabledExtensionCount++;
+        }
+        auto *dcm_features = const_cast<VkPhysicalDeviceCoherentMemoryFeaturesAMD *>(
+            LvlFindInChain<VkPhysicalDeviceCoherentMemoryFeaturesAMD>(modified_create_info));
+        if (dcm_features) {
+            if (dcm_features->deviceCoherentMemory != VK_TRUE) {
+                LogInfo(gpu, "UNASSIGNED-DEBUG-PRINTF",
+                        "use_uncached_buffer is true, but deviceCoherentMemory feature is not enabled. Force enabling feature.");
+                dcm_features->deviceCoherentMemory = VK_TRUE;
+            }
+        } else {
+            LogInfo(gpu, "UNASSIGNED-DEBUG-PRINTF",
+                    "use_uncached_buffer is true, but deviceCoherentMemory feature is not enabled. Force enabling feature.");
+            auto new_dcm_features = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+            new_dcm_features.deviceCoherentMemory = VK_TRUE;
+            new_dcm_features.pNext = const_cast<void *>(modified_create_info->pNext);
+            modified_create_info->pNext = new VkPhysicalDeviceCoherentMemoryFeaturesAMD(new_dcm_features);
+        }
+    }
+}
+
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (enabled[gpu_validation]) {
@@ -42,7 +123,16 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     use_stdout = !stdout_string.compare("true");
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
 
-    // GpuAssistedBase::CreateDevice will set up bindings
+    // Need to get this option again, because PreCallRecordCreateDevice was done
+    // in separate DebugPrintf instance (during VkInstance creation).
+    std::string use_uncached_buffer_string = getLayerOption("khronos_validation.printf_uncached_buffer");
+    vvl::ToLower(use_uncached_buffer_string);
+    use_uncached_buffer = !use_uncached_buffer_string.compare("true");
+    if (use_uncached_buffer) {
+        force_device_coherent_memory = true; // vma needs to know it.
+    }
+
+    // GpuAssistedBase::CreateDevice will set up bindings.
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT |
                                                 VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT |
@@ -135,6 +225,49 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
+    }
+}
+
+// Override GpuAssistedBase version to allow processing in case of VK_ERROR_DEVICE_LOST when using uncached buffer.
+void DebugPrintf::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                            VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+
+    bool device_lost = (result == VK_ERROR_DEVICE_LOST);
+
+    if (aborted) return;
+
+    if (result != VK_SUCCESS) {
+        if (!use_uncached_buffer) {
+            return;
+        } else if (!device_lost) {
+            return;  // VK_ERROR_OUT_OF_HOST_MEMORY or VK_ERROR_OUT_OF_DEVICE_MEMORY
+        }
+    }
+
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            buffers_present |= CommandBufferNeedsProcessing(submit->pCommandBuffers[i]);
+        }
+    }
+    if (!buffers_present) return;
+
+    if (!device_lost) {
+        SubmitBarrier(queue);
+
+        DispatchQueueWaitIdle(queue); /// @todo Dispatch wait idle only after SubmitBarrier() succeeded.
+    } else {
+        assert(use_uncached_buffer);
+    }
+
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
+        }
     }
 }
 
@@ -308,10 +441,14 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     //    9         Printf Values Word 0 (optional)
     //    10         Printf Values Word 1 (optional)
     uint32_t expect = debug_output_buffer[1];
-    if (!expect) return;
+    // Total size of all messages are written by AtomicAdd. Atomics in uncached memory seems to be working in caches anyway
+    // and are not flushed to uncached memory at the end. In that case, expect will contain zero.
+    // As a WA just parse messages using individual sizes (written correctly).
+    // Can the messages be overridden because of those atomics?
+    if (!expect && !use_uncached_buffer) return;
 
     uint32_t index = spvtools::kDebugOutputDataOffset;
-    while (debug_output_buffer[index]) {
+    while ((index < output_buffer_size) && debug_output_buffer[index]) {
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
@@ -412,7 +549,8 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         }
         index += debug_record->size;
     }
-    if ((index - spvtools::kDebugOutputDataOffset) != expect) {
+    if ((use_uncached_buffer && (index >= output_buffer_size)) ||
+        (!use_uncached_buffer && (index - spvtools::kDebugOutputDataOffset) != expect)) {
         LogWarning(device, "UNASSIGNED-DEBUG-PRINTF",
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
@@ -429,7 +567,6 @@ void debug_printf_state::CommandBuffer::Process(VkQueue queue) {
         uint32_t ray_trace_index = 0;
 
         for (auto &buffer_info : gpu_buffer_list) {
-            char *data;
 
             uint32_t operation_index = 0;
             if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -445,10 +582,16 @@ void debug_printf_state::CommandBuffer::Process(VkQueue queue) {
                 assert(false);
             }
 
-            VkResult result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&data);
+            VkResult result = VK_SUCCESS;
+            if (buffer_info.output_mem_block.data == nullptr) {
+                result = vmaMapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation,
+                                      (void **)&buffer_info.output_mem_block.data);
+            }
             if (result == VK_SUCCESS) {
-                device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)data);
+                device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index,
+                                                         (uint32_t *)buffer_info.output_mem_block.data);
                 vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
+                buffer_info.output_mem_block.data = nullptr;
             }
         }
     }
@@ -672,6 +815,9 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    if (use_uncached_buffer) {
+        alloc_info.requiredFlags |= VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD | VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+    }
     result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.");
@@ -680,11 +826,15 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     }
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
-    uint32_t *data;
-    result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&data));
+    result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&output_block.data));
     if (result == VK_SUCCESS) {
-        memset(data, 0, output_buffer_size);
-        vmaUnmapMemory(vmaAllocator, output_block.allocation);
+        memset(output_block.data, 0, output_buffer_size);
+        // Mapping may fail after DEVICE_LOST. Keep it mapped for now in such case.
+        // Will be unmapped in debug_printf_state::CommandBuffer::Process
+        if (!use_uncached_buffer) {
+            vmaUnmapMemory(vmaAllocator, output_block.allocation);
+            output_block.data = nullptr;
+        }
     }
 
     auto desc_writes = LvlInitStruct<VkWriteDescriptorSet>();

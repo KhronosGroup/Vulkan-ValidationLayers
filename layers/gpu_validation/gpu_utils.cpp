@@ -192,7 +192,8 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address, VmaAllocator *pAllocator) {
+VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
+                           bool use_device_coherent_memory, VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
@@ -201,6 +202,10 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
 
     if (use_buffer_device_address) {
         allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    }
+
+    if (use_device_coherent_memory) {
+        allocator_info.flags |= VMA_ALLOCATOR_CREATE_AMD_DEVICE_COHERENT_MEMORY_BIT;
     }
 
     functions.vkGetInstanceProcAddr = static_cast<PFN_vkGetInstanceProcAddr>(gpuVkGetInstanceProcAddr);
@@ -373,7 +378,8 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
     desc_set_bind_index = adjusted_max_desc_sets - 1;
 
-    VkResult result1 = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address, &vmaAllocator);
+    VkResult result1 = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address,
+                                         force_device_coherent_memory, &vmaAllocator);
     assert(result1 == VK_SUCCESS);
     desc_set_manager = std::make_unique<UtilDescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
 

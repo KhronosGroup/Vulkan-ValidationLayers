@@ -79,7 +79,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_utils_state::Queue, QUEUE_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_utils_state::CommandBuffer, CMD_BUFFER_STATE)
 
 VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
-                           VmaAllocator *pAllocator);
+                           bool use_device_coherent_memory, VmaAllocator *pAllocator);
 
 void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
 void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
@@ -216,6 +216,7 @@ class GpuAssistedBase : public ValidationStateTracker {
   public:
     bool aborted = false;
     bool force_buffer_device_address;
+    bool force_device_coherent_memory = false;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     const char *setup_vuid;
     VkPhysicalDeviceFeatures supported_features{};

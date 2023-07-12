@@ -750,6 +750,26 @@
                                             }
                                         },
                                         {
+                                            "key": "printf_uncached_buffer",
+                                            "label": "Printf using uncached buffer (ALPHA)",
+                                            "description": "Use VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD(from VK_AMD_device_coherent_memory) to allocate destination buffer. Slower, but useful in case of instrumenting shader causing VK_ERROR_DEVICE_LOST.",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
                                             "key": "printf_verbose",
                                             "label": "Printf verbose",
                                             "description": "Set the verbosity of debug printf messages",

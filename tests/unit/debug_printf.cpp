@@ -13,7 +13,25 @@
 
 #include "../framework/layer_validation_tests.h"
 
-void NegativeDebugPrintf::InitDebugPrintfFramework() {
+class UncachedBufferSetting {
+  public:
+    UncachedBufferSetting(const bool use_uncached_buffer /*= false*/) {
+        setting_value_data.valueBool = use_uncached_buffer;
+
+        strncpy(setting_val.name, "printf_uncached_buffer", sizeof(setting_val.name));
+        setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_BOOL_EXT;
+        setting_val.data = setting_value_data;
+        setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &setting_val};
+    }
+    VkLayerSettingsEXT *pnext{&setting};
+
+  private:
+    VkLayerSettingValueDataEXT setting_value_data{};
+    VkLayerSettingValueEXT setting_val;
+    VkLayerSettingsEXT setting;
+};
+
+void NegativeDebugPrintf::InitDebugPrintfFramework(bool use_uncached_buffer) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
@@ -23,6 +41,11 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
     features.disabledValidationFeatureCount = 4;
     features.pEnabledValidationFeatures = enables;
     features.pDisabledValidationFeatures = disables;
+
+    auto uncached_buffer_setting = UncachedBufferSetting(use_uncached_buffer);
+    if (use_uncached_buffer) {
+        features.pNext = uncached_buffer_setting.pnext;
+    }
 
     InitFramework(m_errorMonitor, &features);
 }
@@ -1061,5 +1084,115 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, UncachedBuffer) {
+    TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);  // It must be supported but if not enabled
+                                                                          // Debug Printf can force enable it.
+    InitDebugPrintfFramework(true /*use_uncached_buffer*/);
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // deviceCoherentMemory feature needs to be supported, but if not specified or enabled, Debug Printf will force enable it.
+    auto dcm_features = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+    auto features2 = GetPhysicalDeviceFeatures2(dcm_features);
+    if (dcm_features.deviceCoherentMemory == 0) {
+        GTEST_SKIP() << "deviceCoherentMemory feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dcm_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto features = m_device->phy().features();
+    if (!features.vertexPipelineStoresAndAtomics || !features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "GPU-Assisted printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+    // Make a uniform buffer to be passed to the shader that contains the test number
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bci.size = 8;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4};
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    float push_constants[4] = {0.0, 1.0, 2.0, 3.0};
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(push_constant, std430) uniform foo { float x[4]; } constants;
+
+        void main() {
+            float myfloat = 3.1415f;
+            gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
+            if (gl_VertexIndex == 0) {
+                debugPrintfEXT("Here are three float values %f, %f, %f", 1.0, myfloat, gl_Position.x);
+                float x = constants.x[0];
+                while(x > -1.f) { // infinite loop
+                    x += 0.000001f;
+                }
+                debugPrintfEXT("Here is a value that should not be printed %f", x);
+            }
+        }
+    )glsl";
+    char const *message = "Here are three float values 1.000000, 3.141500, 0.000000";
+
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
+
+    VkViewport viewport = m_viewports[0];
+    VkRect2D scissors = m_scissors[0];
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    begin_info.pInheritanceInfo = &hinfo;
+
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants),
+                         push_constants);
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, message);
+
+    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST)) << vk_result_string(err);
+    if (err == VK_SUCCESS) {
+        err = vk::QueueWaitIdle(m_device->m_queue);
+        ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST)) << vk_result_string(err);
+    }
     m_errorMonitor->VerifyFound();
 }

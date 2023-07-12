@@ -280,7 +280,7 @@ class VkGpuAssistedLayerTest : public VkLayerTest {
 
 class NegativeDebugPrintf : public VkLayerTest {
   public:
-    void InitDebugPrintfFramework();
+    void InitDebugPrintfFramework(bool use_uncached_buffer = false);
 
   protected:
 };
