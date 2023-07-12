@@ -19,10 +19,9 @@
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
-from typing import List
 
 # If there is another success code other than VK_SUCCESS
-def hasNonVkSuccess(successCodes: List[str]) -> bool:
+def hasNonVkSuccess(successCodes: list[str]) -> bool:
     if successCodes is None or len(successCodes) == 0:
         return False
     return len(successCodes) > 1 or 'VK_SUCCESS' not in successCodes

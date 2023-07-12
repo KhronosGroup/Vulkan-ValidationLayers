@@ -23,7 +23,6 @@ import re
 from generators.generator_utils import (fileIsGeneratedWarning, buildListVUID, incIndent, decIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
-from typing import List
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
@@ -774,7 +773,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         return expr
 
     # Generate the parameter checking code
-    def genFuncBody(self, members: List[Member], funcName, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
+    def genFuncBody(self, members: list[Member], funcName, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
         struct = self.vk.structs[structTypeName] if structTypeName in self.vk.structs else None
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
