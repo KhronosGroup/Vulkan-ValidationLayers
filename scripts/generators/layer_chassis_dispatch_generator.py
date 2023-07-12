@@ -22,7 +22,6 @@ import os
 from generators.generator_utils import (fileIsGeneratedWarning, incIndent, decIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
-from typing import List
 
 class LayerChassisDispatchOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -361,7 +360,7 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
     # topLevel indicates if elements are passed directly into the function else they're below a ptr/struct
     # isCreate means that this is API creates or allocates NDOs
     # isDestroy indicates that this API destroys or frees NDOs
-    def uniquifyMembers(self, members: List[Member], indent: str, prefix: str, arrayIndex: int, isCreate: bool, isDestroy: bool, topLevel: bool):
+    def uniquifyMembers(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, isCreate: bool, isDestroy: bool, topLevel: bool):
         decls = ''
         pre_code = ''
         post_code = ''

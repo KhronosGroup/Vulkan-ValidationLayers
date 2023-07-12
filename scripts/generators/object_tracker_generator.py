@@ -22,7 +22,6 @@ import os
 from generators.generator_utils import (fileIsGeneratedWarning, buildListVUID, incIndent, decIndent)
 from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
-from typing import List
 
 class ObjectTrackerOutputGenerator(BaseGenerator):
     def __init__(self,
@@ -345,7 +344,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
         return "kVUIDUndefined"
 
     # recursively walks struct members (and command params)
-    def validateObjects(self, members: List[Member], indent: str, prefix: str, arrayIndex: int, parentName, isTopLevelCreate: bool) -> str:
+    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName, isTopLevelCreate: bool) -> str:
         pre_call_validate = ''
         index = f'index{str(arrayIndex)}'
         arrayIndex += 1

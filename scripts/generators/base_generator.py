@@ -366,9 +366,9 @@ class BaseGenerator(OutputGenerator):
                 externSync = True
 
             params.append(Param(paramName, paramAlias, paramType, paramNoautovalidity,
-                                       paramConst, length, nullTerminated, pointer, staticArray,
-                                       optional, optionalPointer,
-                                       externSync, externSyncPointer, cdecl))
+                                paramConst, length, nullTerminated, pointer, staticArray,
+                                optional, optionalPointer,
+                                externSync, externSyncPointer, cdecl))
 
         attrib = cmdinfo.elem.attrib
         alias = attrib.get('alias')
@@ -403,7 +403,7 @@ class BaseGenerator(OutputGenerator):
         implicitElem = cmdinfo.elem.find('implicitexternsyncparams')
         implicitExternSyncParams = [x.text for x in implicitElem.findall('param')] if implicitElem else []
 
-        self.vk.commands[name] = Command(name, alias, [], self.currentVersion, protect,
+        self.vk.commands[name] = Command(name, alias, protect, [], self.currentVersion,
                                          returnType, params, instance, device,
                                          tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
@@ -439,7 +439,7 @@ class BaseGenerator(OutputGenerator):
                 if next((x for x in fields if x.name == fieldName), None) is None:
                     fields.append(EnumField(fieldName, negative, protect, []))
 
-            self.vk.enums[groupName] = Enum(groupName, bitwidth, groupProtect, True, fields, [], [])
+            self.vk.enums[groupName] = Enum(groupName, groupProtect, bitwidth, True, fields, [], [])
 
         else: # "bitmask"
             if alias is not None:
@@ -465,10 +465,10 @@ class BaseGenerator(OutputGenerator):
                 # Some values have multiple extensions (ex VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
                 # genGroup() lists them twice
                 if next((x for x in fields if x.name == flagName), None) is None:
-                    fields.append(Flag(flagName, flagValue, flagMultiBit, flagZero, protect, []))
+                    fields.append(Flag(flagName, protect, flagValue, flagMultiBit, flagZero, []))
 
             flagName = groupName.replace('FlagBits', 'Flags')
-            self.vk.bitmasks[groupName] = Bitmask(groupName, flagName, bitwidth, groupProtect, fields, [], [])
+            self.vk.bitmasks[groupName] = Bitmask(groupName, flagName, groupProtect, bitwidth, fields, [], [])
 
     def genType(self, typeInfo, typeName, alias):
         OutputGenerator.genType(self, typeInfo, typeName, alias)
@@ -551,7 +551,7 @@ class BaseGenerator(OutputGenerator):
             device = not instance
             dispatchable = typeElem.find('type').text == 'VK_DEFINE_HANDLE'
 
-            self.vk.handles[typeName] = Handle(typeName, type, parent, protect, instance, device, dispatchable)
+            self.vk.handles[typeName] = Handle(typeName, type, protect, parent, instance, device, dispatchable)
 
         elif category == 'define':
             if typeName == 'VK_HEADER_VERSION':
