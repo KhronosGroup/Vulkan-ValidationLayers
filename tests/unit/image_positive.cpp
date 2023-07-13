@@ -14,12 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <mutex>
-#include <thread>
-
 #include "utils/vk_layer_utils.h"
 
 // A reasonable well supported default VkImageCreateInfo for image creation

@@ -16,8 +16,6 @@
 #include "generated/vk_extension_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
-#include <array>
-
 TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
     unsigned int i;
