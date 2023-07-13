@@ -53,7 +53,9 @@ def buildListVUID(valid_usage_file: str) -> set:
 
     # List of VUs that should exists, but have a spec bug
     for vuid in [
-        # Currently no bugs!
+        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553
+        "VUID-VkImageViewCreateInfo-commonparent",
+        "VUID-VkMicromapBuildInfoEXT-commonparent",
         ]:
         valid_vuids.add(vuid)
 
