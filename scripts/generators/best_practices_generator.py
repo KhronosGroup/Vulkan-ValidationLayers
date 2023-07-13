@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 # If there is another success code other than VK_SUCCESS
@@ -72,7 +71,9 @@ class BestPracticesOutputGenerator(BaseGenerator):
         self.extension_info = dict()
 
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.
@@ -90,8 +91,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n'''
-        self.write(copyright)
+****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         # Build additional pass of functions to ignore

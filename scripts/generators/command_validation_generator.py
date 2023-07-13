@@ -16,21 +16,22 @@
 
 import os
 import sys
-from generators.generator_utils import (fileIsGeneratedWarning, buildListVUID, getVUID)
+from generators.generator_utils import (buildListVUID, getVUID)
 from generators.vulkan_object import (Queues, CommandScope)
 from generators.base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
 class CommandValidationOutputGenerator(BaseGenerator):
     def __init__(self,
-                 valid_usage_file: str = None):
+                 valid_usage_file):
         BaseGenerator.__init__(self)
         self.valid_vuids = buildListVUID(valid_usage_file)
     #
     # Called at beginning of processing as file is opened
     def generate(self):
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
 
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
 * Copyright (c) 2021-2023 Valve Corporation
@@ -47,8 +48,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n'''
-        self.write(copyright)
+****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'command_validation.h':

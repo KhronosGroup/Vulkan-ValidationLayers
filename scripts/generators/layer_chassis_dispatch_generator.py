@@ -19,7 +19,7 @@
 
 import sys
 import os
-from generators.generator_utils import (fileIsGeneratedWarning, incIndent, decIndent)
+from generators.generator_utils import (incIndent, decIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 
@@ -111,7 +111,9 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
 
     # Now that the data is all collected and complete, generate and output the wrapping/unwrapping routines
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.
@@ -129,8 +131,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n'''
-        self.write(copyright)
+****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'layer_chassis_dispatch.h':

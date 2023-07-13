@@ -16,7 +16,6 @@
 
 import sys
 import os
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (SpirvEnables)
 from generators.base_generator import BaseGenerator
 
@@ -156,7 +155,9 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
     def generate(self):
         out = []
-        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
  *
  * Copyright (c) 2020-2023 The Khronos Group Inc.

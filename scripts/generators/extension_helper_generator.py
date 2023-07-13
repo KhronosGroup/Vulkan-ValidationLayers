@@ -20,7 +20,6 @@
 
 import os
 import re
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 from pyparsing import ParseResults
@@ -90,7 +89,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
         fieldName['VK_VERSION_1_3'] = "vk_feature_version_1_3"
 
         out = []
-        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.

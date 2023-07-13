@@ -18,9 +18,6 @@ import os
 import sys
 import json
 
-def fileIsGeneratedWarning(file: str) -> str:
-    return f'// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n// See {file} for modifications\n'
-
 # Build a set of all vuid text strings found in validusage.json
 def buildListVUID(valid_usage_file: str) -> set:
 

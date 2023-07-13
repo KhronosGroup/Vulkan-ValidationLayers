@@ -20,13 +20,13 @@
 
 import os
 import re
-from generators.generator_utils import (fileIsGeneratedWarning, buildListVUID, incIndent, decIndent)
+from generators.generator_utils import (buildListVUID, incIndent, decIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
-                 valid_usage_file: str = None):
+                 valid_usage_file):
         BaseGenerator.__init__(self)
         self.valid_vuids = buildListVUID(valid_usage_file)
 
@@ -216,7 +216,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         self.flagBits = dict()
 
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.
@@ -234,8 +236,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n'''
-        self.write(copyright)
+****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'stateless_validation_helper.h':
