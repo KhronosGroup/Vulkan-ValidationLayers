@@ -26,7 +26,233 @@ import sys
 import tempfile
 import difflib
 import json
-from run_generator import RunGenerator
+from xml.etree import ElementTree
+
+def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetFilter: str):
+
+    # These live in the Vulkan-Docs repo, but are pulled in via the
+    # Vulkan-Headers/registry folder
+    # At runtime we inject python path to find these helper scripts
+    scripts = os.path.dirname(registry)
+    scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
+    registry_headers_path = os.path.join(scripts_directory_path, scripts)
+    sys.path.insert(0, registry_headers_path)
+    from reg import Registry
+
+    from generators.base_generator import BaseGeneratorOptions
+    from generators.thread_safety_generator import ThreadSafetyOutputGenerator
+    from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
+    from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
+    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
+    from generators.extension_helper_generator import ExtensionHelperOutputGenerator
+    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
+    from generators.layer_chassis_generator import LayerChassisOutputGenerator
+    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
+    from generators.function_pointers_generator import FunctionPointersOutputGenerator
+    from generators.best_practices_generator import BestPracticesOutputGenerator
+    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
+    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
+    from generators.command_validation_generator import CommandValidationOutputGenerator
+    from generators.format_utils_generator import FormatUtilsOutputGenerator
+    from generators.dynamic_state_generator import DynamicStateOutputGenerator
+    from generators.sync_validation_generator import SyncValidationOutputGenerator
+    from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
+    from generators.typemap_helper_generator import TypemapHelperOutputGenerator
+    from generators.object_types_generator import ObjectTypesOutputGenerator
+    from generators.safe_struct_generator import SafeStructOutputGenerator
+    from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
+    from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
+    from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
+
+    # These set fields that are needed by both OutputGenerator and BaseGenerator,
+    # but are uniform and don't need to be set at a per-generated file level
+    from generators.base_generator import (SetOutputDirectory, SetTargetApiName)
+    SetOutputDirectory(directory)
+    SetTargetApiName(api)
+
+    valid_usage_file = os.path.join(scripts, 'validusage.json')
+
+    # Build up a list of all generators
+    # Note: Options variable names MUST match order of constructor variable in generator
+    generators = {
+        'thread_safety_counter_definitions.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+        },
+        'thread_safety_counter_instances.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+        },
+        'thread_safety_counter_bodies.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+        },
+        'thread_safety_commands.h' : {
+            'generator' : ThreadSafetyOutputGenerator,
+        },
+        'thread_safety.cpp' : {
+            'generator' : ThreadSafetyOutputGenerator,
+        },
+        'stateless_validation_helper.h' : {
+            'generator' : StatelessValidationHelperOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'stateless_validation_helper.cpp' : {
+            'generator' : StatelessValidationHelperOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'enum_flag_bits.h' : {
+            'generator' : EnumFlagBitsOutputGenerator,
+        },
+        'valid_enum_values.h' : {
+            'generator' : ValidEnumValuesOutputGenerator,
+        },
+        'valid_enum_values.cpp' : {
+            'generator' : ValidEnumValuesOutputGenerator,
+        },
+        'object_tracker.h' : {
+            'generator' : ObjectTrackerOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'object_tracker.cpp' : {
+            'generator' : ObjectTrackerOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'vk_dispatch_table_helper.h' : {
+            'generator' : DispatchTableHelperOutputGenerator,
+        },
+        'vk_function_pointers.h' : {
+            'generator' : FunctionPointersOutputGenerator,
+        },
+        'vk_function_pointers.cpp' : {
+            'generator' : FunctionPointersOutputGenerator,
+        },
+        'vk_layer_dispatch_table.h' : {
+            'generator' : LayerDispatchTableOutputGenerator,
+        },
+        'vk_enum_string_helper.h' : {
+            'generator' : EnumStringHelperOutputGenerator,
+        },
+        'vk_safe_struct.h' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_safe_struct_utils.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_safe_struct_core.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_safe_struct_khr.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_safe_struct_ext.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_safe_struct_vendor.cpp' : {
+            'generator' : SafeStructOutputGenerator,
+        },
+        'vk_object_types.h' : {
+            'generator' : ObjectTypesOutputGenerator,
+        },
+        'vk_extension_helper.h' : {
+            'generator' : ExtensionHelperOutputGenerator,
+        },
+        'vk_typemap_helper.h' : {
+            'generator' : TypemapHelperOutputGenerator,
+        },
+        'chassis.h' : {
+            'generator' : LayerChassisOutputGenerator,
+        },
+        'chassis.cpp' : {
+            'generator' : LayerChassisOutputGenerator,
+        },
+        'chassis_dispatch_helper.h' : {
+            'generator' : LayerChassisOutputGenerator,
+        },
+        'layer_chassis_dispatch.h' : {
+            'generator' : LayerChassisDispatchOutputGenerator,
+        },
+        'layer_chassis_dispatch.cpp' : {
+            'generator' : LayerChassisDispatchOutputGenerator,
+        },
+        'best_practices.h' : {
+            'generator' : BestPracticesOutputGenerator,
+        },
+        'best_practices.cpp' : {
+            'generator' : BestPracticesOutputGenerator,
+        },
+        'sync_validation_types.h' : {
+            'generator' : SyncValidationOutputGenerator,
+        },
+        'sync_validation_types.cpp' : {
+            'generator' : SyncValidationOutputGenerator,
+        },
+        'spirv_validation_helper.cpp' : {
+            'generator' : SpirvValidationHelperOutputGenerator,
+        },
+        'spirv_grammar_helper.h' : {
+            'generator' : SpirvGrammarHelperOutputGenerator,
+            'options' : [grammar],
+        },
+        'spirv_grammar_helper.cpp' : {
+            'generator' : SpirvGrammarHelperOutputGenerator,
+            'options' : [grammar],
+        },
+        'spirv_tools_commit_id.h' : {
+            'generator' : SpirvToolCommitIdOutputGenerator,
+        },
+        'command_validation.h' : {
+            'generator' : CommandValidationOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'command_validation.cpp' : {
+            'generator' : CommandValidationOutputGenerator,
+            'options' : [valid_usage_file],
+        },
+        'dynamic_state_helper.h' : {
+            'generator' : DynamicStateOutputGenerator,
+        },
+        'dynamic_state_helper.cpp' : {
+            'generator' : DynamicStateOutputGenerator,
+        },
+        'vk_format_utils.h' : {
+            'generator' : FormatUtilsOutputGenerator,
+        },
+        'vk_format_utils.cpp' : {
+            'generator' : FormatUtilsOutputGenerator,
+        },
+    }
+
+    if (targetFilter and targetFilter not in generators.keys()):
+        print(f'ERROR: No generator options for unknown target: {targetFilter}', file=sys.stderr)
+        sys.exit(1)
+
+    # Filter if --target is passed in
+    targets = [x for x in generators.keys() if not targetFilter or x == targetFilter]
+
+    for index, target in enumerate(targets, start=1):
+        print(f'[{index}|{len(targets)}] Generating {target}')
+
+        # First grab a class contructor object and create an instance
+        targetGenerator = generators[target]['generator']
+        generatorOptions = generators[target]['options'] if 'options' in generators[target] else []
+        generator = targetGenerator(*generatorOptions)
+
+        baseOptions = BaseGeneratorOptions(customFileName = target)
+
+        # Create the registry object with the specified generator and generator
+        # options. The options are set before XML loading as they may affect it.
+        reg = Registry(generator, baseOptions)
+
+        # Parse the specified registry XML into an ElementTree object
+        tree = ElementTree.parse(registry)
+
+        # Filter out non-Vulkan extensions
+        if api == 'vulkan':
+            [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and baseOptions.apiname not in sup.split(',')]
+
+        # Load the XML tree into the registry object
+        reg.loadElementTree(tree)
+
+        # Finally, use the output generator to create the requested target
+        reg.apiGen()
 
 # helper to define paths relative to the repo root
 def repo_relative(path):
@@ -35,54 +261,6 @@ def repo_relative(path):
 def main(argv):
     # files to exclude from --verify check
     verify_exclude = ['.clang-format']
-
-    generated_layer_files = [
-        "chassis.cpp",
-        "chassis.h",
-        "chassis_dispatch_helper.h",
-        "layer_chassis_dispatch.cpp",
-        "layer_chassis_dispatch.h",
-        "object_tracker.cpp",
-        "object_tracker.h",
-        "stateless_validation_helper.cpp",
-        "stateless_validation_helper.h",
-        "enum_flag_bits.h",
-        "valid_enum_values.cpp",
-        "valid_enum_values.h",
-        "sync_validation_types.cpp",
-        "sync_validation_types.h",
-        "thread_safety.cpp",
-        "thread_safety_commands.h",
-        "thread_safety_counter_definitions.h",
-        "thread_safety_counter_instances.h",
-        "thread_safety_counter_bodies.h",
-        "vk_dispatch_table_helper.h",
-        "vk_enum_string_helper.h",
-        "vk_extension_helper.h",
-        "vk_layer_dispatch_table.h",
-        "vk_object_types.h",
-        "vk_safe_struct.h",
-        "vk_safe_struct_utils.cpp",
-        "vk_safe_struct_core.cpp",
-        "vk_safe_struct_khr.cpp",
-        "vk_safe_struct_ext.cpp",
-        "vk_safe_struct_vendor.cpp",
-        "vk_function_pointers.cpp",
-        "vk_function_pointers.h",
-        "vk_typemap_helper.h",
-        "best_practices.h",
-        "best_practices.cpp",
-        "spirv_validation_helper.cpp",
-        "spirv_grammar_helper.cpp",
-        "spirv_grammar_helper.h",
-        "command_validation.cpp",
-        "command_validation.h",
-        "dynamic_state_helper.cpp",
-        "dynamic_state_helper.h",
-        "vk_format_utils.cpp",
-        "vk_format_utils.h",
-        "spirv_tools_commit_id.h"
-    ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('--api',
@@ -124,13 +302,9 @@ def main(argv):
         # generate directly in the repo
         gen_dir = repo_dir
 
-    # Filter if --target is passed in
-    generated_layer_files = [x for x in generated_layer_files if (args.target and args.target == x) or (args.target is None)]
-    for index, file in enumerate(generated_layer_files, start=1):
-        registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
-        grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
-        print(f'[{index}|{len(generated_layer_files)}] Generating {file}')
-        RunGenerator(args.api, registry, grammar, gen_dir, file)
+    registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
+    grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
+    RunGenerators(args.api, registry, grammar, gen_dir, args.target)
 
     # Generate vk_validation_error_messages.h
     try:
