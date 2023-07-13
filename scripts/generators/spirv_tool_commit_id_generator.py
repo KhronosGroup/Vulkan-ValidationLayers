@@ -19,7 +19,6 @@
 
 import os
 import json
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 class SpirvToolCommitIdOutputGenerator(BaseGenerator):
@@ -42,7 +41,9 @@ class SpirvToolCommitIdOutputGenerator(BaseGenerator):
             raise ValueError(f'commit ID for SPIRV_TOOLS_COMMIT_ID ({commit_id}) must be a SHA1 hash.')
 
         out = []
-        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.

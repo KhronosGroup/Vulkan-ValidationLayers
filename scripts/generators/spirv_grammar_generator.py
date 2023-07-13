@@ -18,7 +18,6 @@ import sys
 import os
 import re
 import json
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 #
@@ -26,7 +25,7 @@ from generators.base_generator import BaseGenerator
 # Has zero relationship to the Vulkan API (doesn't use vk.xml)
 class SpirvGrammarHelperOutputGenerator(BaseGenerator):
     def __init__(self,
-                 grammar: str = None):
+                 grammar):
         BaseGenerator.__init__(self)
 
         self.opcodes = dict()
@@ -60,7 +59,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
     # Emulates the gen*() functions the vk.xml calls
     #
     # In the future, IF more then this generator wants to use the grammar
-    # it would be better to move the file opening to run_generator.py
+    # it would be better to move the file opening to run_generators.py
     def parseGrammar(self, grammar):
         with open(grammar, 'r') as jsonFile:
             data = json.load(jsonFile)
@@ -177,7 +176,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         self.sampledImageAccessOps.append(opname)
 
     def generate(self):
-        copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
  *
  * Copyright (c) 2021-2023 The Khronos Group Inc.
@@ -197,8 +198,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
  * This file is related to anything that is found in the SPIR-V grammar
  * file found in the SPIRV-Headers. Mainly used for SPIR-V util functions.
  *
- ****************************************************************************/\n'''
-        self.write(copyright)
+ ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'spirv_grammar_helper.h':

@@ -18,7 +18,6 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 class LayerDispatchTableOutputGenerator(BaseGenerator):
@@ -27,7 +26,9 @@ class LayerDispatchTableOutputGenerator(BaseGenerator):
 
     def generate(self):
         out = []
-        out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
+        out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See {os.path.basename(__file__)} for modifications
+
 /***************************************************************************
 *
 * Copyright (c) 2015-2023 The Khronos Group Inc.
