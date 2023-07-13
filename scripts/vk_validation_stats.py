@@ -753,7 +753,7 @@ def main(argv):
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/sync/'), '*.cpp')))
     layer_source_files.extend(glob.glob(os.path.join(repo_relative('layers/object_tracker/'), '*.cpp')))
 
-    test_source_files = glob.glob(os.path.join(repo_relative('tests/negative'), '*.cpp'))
+    test_source_files = glob.glob(os.path.join(repo_relative('tests/unit'), '*.cpp'))
 
     unassigned_vuid_files = [repo_relative(path) for path in [
         'layers/best_practices/best_practices_error_enums.h',
