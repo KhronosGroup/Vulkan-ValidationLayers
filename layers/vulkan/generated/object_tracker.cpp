@@ -916,7 +916,7 @@ bool ObjectLifetimes::PreCallValidateCreateImageView(
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateImageView-device-parameter", kVUIDUndefined, "vkCreateImageView");
     if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->image, kVulkanObjectTypeImage, false, "VUID-VkImageViewCreateInfo-image-parameter", kVUIDUndefined, "VkImageViewCreateInfo");
+        skip |= ValidateObject(pCreateInfo->image, kVulkanObjectTypeImage, false, "VUID-VkImageViewCreateInfo-image-parameter", "VUID-VkImageViewCreateInfo-commonparent", "VkImageViewCreateInfo");
     }
 
     return skip;
@@ -7581,7 +7581,7 @@ bool ObjectLifetimes::PreCallValidateCmdBuildMicromapsEXT(
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBuildMicromapsEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdBuildMicromapsEXT");
     if (pInfos) {
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined, "VkMicromapBuildInfoEXT");
+            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, "VUID-VkMicromapBuildInfoEXT-commonparent", "VkMicromapBuildInfoEXT");
         }
     }
 
@@ -7598,7 +7598,7 @@ bool ObjectLifetimes::PreCallValidateBuildMicromapsEXT(
     skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true, "VUID-vkBuildMicromapsEXT-deferredOperation-parameter", "VUID-vkBuildMicromapsEXT-deferredOperation-parent", "vkBuildMicromapsEXT");
     if (pInfos) {
         for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined, "VkMicromapBuildInfoEXT");
+            skip |= ValidateObject(pInfos[index0].dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, "VUID-VkMicromapBuildInfoEXT-commonparent", "VkMicromapBuildInfoEXT");
         }
     }
 
@@ -7741,7 +7741,7 @@ bool ObjectLifetimes::PreCallValidateGetMicromapBuildSizesEXT(
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetMicromapBuildSizesEXT-device-parameter", kVUIDUndefined, "vkGetMicromapBuildSizesEXT");
     if (pBuildInfo) {
-        skip |= ValidateObject(pBuildInfo->dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, kVUIDUndefined, "VkMicromapBuildInfoEXT");
+        skip |= ValidateObject(pBuildInfo->dstMicromap, kVulkanObjectTypeMicromapEXT, true, kVUIDUndefined, "VUID-VkMicromapBuildInfoEXT-commonparent", "VkMicromapBuildInfoEXT");
     }
 
     return skip;
