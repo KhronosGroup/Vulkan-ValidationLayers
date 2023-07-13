@@ -198,6 +198,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/unit/command.cpp \
                    $(SRC_DIR)/tests/unit/dynamic_state.cpp \
                    $(SRC_DIR)/tests/unit/fragment_shading_rate.cpp \
+                   $(SRC_DIR)/tests/unit/multi_device.cpp \
                    $(SRC_DIR)/tests/unit/multiview.cpp \
                    $(SRC_DIR)/tests/unit/transform_feedback.cpp \
                    $(SRC_DIR)/tests/unit/subgroups.cpp \

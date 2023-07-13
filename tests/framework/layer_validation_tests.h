@@ -534,6 +534,12 @@ class CooperativeMatrixTest : public VkLayerTest {};
 class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
+class MultiDeviceTest : public VkLayerTest {
+  public:
+    ~MultiDeviceTest();
+    VkDeviceObj *m_second_device = nullptr;
+};
+
 class VkBufferTest {
   public:
     enum eTestEnFlags {
