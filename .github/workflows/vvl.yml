@@ -212,16 +212,6 @@ jobs:
           working-directory: ./build
           run: ctest --output-on-failure -C Debug
 
-  android_mk:
-      runs-on: ubuntu-22.04
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-python@v4
-          with:
-            python-version: '3.10'
-        - name: Build
-          run: python3 scripts/github_ci_android.py --abi arm64-v8a
-
   macos:
     runs-on: macos-latest
     strategy:
