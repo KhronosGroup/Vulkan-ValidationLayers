@@ -1001,8 +1001,8 @@ class CoreChecks : public ValidationStateTracker {
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
 
     template <typename RegionType>
-    bool ValidateImageCopyData(VkCommandBuffer cb, const uint32_t regionCount, const RegionType* pRegions,
-                               const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, CMD_TYPE cmd_type) const;
+    bool ValidateImageCopyData(const VulkanTypedHandle handle, const uint32_t regionCount, const RegionType* pRegions,
+                               const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, bool is_host, CMD_TYPE cmd_type) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
