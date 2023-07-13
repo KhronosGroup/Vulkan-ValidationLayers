@@ -19,8 +19,6 @@
 #include "wayland-client.h"
 #endif
 
-#include <array>
-
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 

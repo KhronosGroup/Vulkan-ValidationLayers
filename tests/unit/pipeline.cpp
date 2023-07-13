@@ -14,9 +14,6 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
-#include "error_message/validation_error_enums.h"
-
-#include <limits>
 
 TEST_F(NegativePipeline, NotBound) {
     TEST_DESCRIPTION("Pass in an invalid pipeline object handle into a Vulkan API call.");

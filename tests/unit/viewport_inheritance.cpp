@@ -11,7 +11,6 @@
 
 #include <array>
 #include <cassert>
-#include <stdio.h>
 #include <vector>
 
 #include "../framework/layer_validation_tests.h"

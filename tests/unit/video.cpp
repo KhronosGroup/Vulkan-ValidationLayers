@@ -11,10 +11,6 @@
 
 #include "../framework/video_objects.h"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-
 TEST_F(VkVideoLayerTest, VideoCodingScope) {
     TEST_DESCRIPTION("Tests calling functions inside/outside video coding scope");
 

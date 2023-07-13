@@ -13,7 +13,6 @@
  */
 
 #include "utils/cast_utils.h"
-#include "error_message/validation_error_enums.h"
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"

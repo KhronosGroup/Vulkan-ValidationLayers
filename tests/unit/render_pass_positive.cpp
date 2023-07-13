@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-#include <array>
-
 TEST_F(PositiveRenderPass, AttachmentUsedTwiceOK) {
     TEST_DESCRIPTION("Attachment is used simultaneously as color and input, with the same layout. This is OK.");
 
