@@ -162,3 +162,119 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_commandBuffer->end();
 }
+
+// Regression test for vkWaitSemaphores timeout while waiting for vkSignalSemaphore.
+// This scenario is not an issue for validation objects that use fine grained locking.
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
+TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
+    TEST_DESCRIPTION("Signal semaphore on the host and wait on the host");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (IsPlatform(kMockICD)) {
+        // Mock does not support proper ordering of events, e.g. wait can return before signal
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    constexpr uint64_t max_signal_value = 10'000;
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    // Send signals
+    auto signaling_thread = std::thread{[&] {
+        uint64_t last_signalled_value = 0;
+        while (last_signalled_value != max_signal_value) {
+            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            signal_info.semaphore = semaphore;
+            signal_info.value = ++last_signalled_value;
+            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            if (bailout.load()) {
+                break;
+            }
+        }
+    }};
+    // Wait for each signal
+    uint64_t wait_value = 1;
+    while (wait_value <= max_signal_value) {
+        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
+        wait_info.semaphoreCount = 1;
+        wait_info.pSemaphores = &semaphore.handle();
+        wait_info.pValues = &wait_value;
+        ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
+        ++wait_value;
+        if (bailout.load()) {
+            break;
+        }
+    }
+    signaling_thread.join();
+}
+
+// Regression test for vkGetSemaphoreCounterValue timeout while waiting for vkSignalSemaphore.
+// This scenario is not an issue for validation objects that use fine grained locking.
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
+TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
+    TEST_DESCRIPTION("Singal semaphore on the host and regularly read semaphore payload value");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (IsPlatform(kMockICD)) {
+        // Mock does not support precise semaphore counter reporting
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    constexpr uint64_t max_signal_value = 1'000;
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    // Send signals
+    auto signaling_thread = std::thread{[&] {
+        uint64_t last_signalled_value = 0;
+        while (last_signalled_value != max_signal_value) {
+            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            signal_info.semaphore = semaphore;
+            signal_info.value = ++last_signalled_value;
+            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            if (bailout.load()) {
+                break;
+            }
+        }
+    }};
+    // Spin until semaphore payload value equals maximum signaled value
+    uint64_t counter = 0;
+    while (counter != max_signal_value) {
+        ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+        if (bailout.load()) {
+            break;
+        }
+    }
+    signaling_thread.join();
+}
