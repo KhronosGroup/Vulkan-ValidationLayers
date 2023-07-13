@@ -31,19 +31,6 @@ from vkconventions import VulkanConventions
 # An API style convention object
 vulkanConventions = VulkanConventions()
 
-# Helpers to set GeneratorOptions options globally
-def SetOutputDirectory(directory: str) -> None:
-    global outputDirectory
-    outputDirectory = directory
-
-def SetOutputFileName(fileName: str) -> None:
-    global outputFileName
-    outputFileName = fileName
-
-def SetTargetApiName(apiname: str) -> None:
-    global targetApiName
-    targetApiName = apiname
-
 # Helpers to keep things cleaner
 def splitIfGet(elem, name):
     return elem.get(name).split(',') if elem.get(name) is not None else None
@@ -75,18 +62,34 @@ def getQueues(elem) -> Queues:
 maxSyncSupport = SyncSupport(None, None, True)
 maxSyncEquivalent = SyncEquivalent(None, None, True)
 
-# This Generator Option is used across all Validation Layer generators
-# After years of use, it has shown that all the options are unified across each generator (file)
+# Helpers to set GeneratorOptions options globally
+def SetOutputFileName(fileName: str) -> None:
+    global globalFileName
+    globalFileName = fileName
+
+def SetOutputDirectory(directory: str) -> None:
+    global globalDirectory
+    globalDirectory = directory
+
+def SetTargetApiName(apiname: str) -> None:
+    global globalApiName
+    globalApiName = apiname
+
+# This Generator Option is used across all generators.
+# After years of use, it has shown that most the options are unified across each generator (file)
 # as it is easier to modifiy things per-file that need the difference
 class BaseGeneratorOptions(GeneratorOptions):
-    def __init__(self):
+    def __init__(self,
+                 customFileName = None,
+                 customDirectory = None,
+                 customApiName = None):
         GeneratorOptions.__init__(self,
                 conventions = vulkanConventions,
-                filename = outputFileName,
-                directory = outputDirectory,
-                apiname = targetApiName,
+                filename = customFileName if customFileName else globalFileName,
+                directory = customDirectory if customDirectory else globalDirectory,
+                apiname = customApiName if customApiName else globalApiName,
                 mergeApiNames = None,
-                defaultExtensions = targetApiName,
+                defaultExtensions = customApiName if customApiName else globalApiName,
                 emitExtensions = '.*',
                 emitSpirv = '.*',
                 emitFormats = '.*')
