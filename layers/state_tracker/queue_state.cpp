@@ -508,7 +508,9 @@ void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
     if (scope_ == kSyncScopeInternal) {
         Notify(payload);
         auto waiter = Wait(payload);
+        dev_data_.BeginBlockingOperation();
         auto result = waiter.wait_until(GetCondWaitTimeout());
+        dev_data_.EndBlockingOperation();
         if (result != std::future_status::ready) {
             dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
                                "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
