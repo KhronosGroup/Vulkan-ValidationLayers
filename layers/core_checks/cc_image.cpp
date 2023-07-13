@@ -218,9 +218,17 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
             skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251",
-                             "vkCreateImage(): Format %s is not supported for this combination of parameters and "
-                             "VkGetPhysicalDeviceImageFormatProperties returned back %s.",
-                             string_VkFormat(pCreateInfo->format), string_VkResult(result));
+                             "vkCreateImage(): The following parameters -\n"
+                             "format (%s)\n"
+                             "type (%s)\n"
+                             "tiling (%s)\n"
+                             "usage (%s)\n"
+                             "flags (%s)\n"
+                             "returned a non-success result (%s) when calling VkGetPhysicalDeviceImageFormatProperties (which "
+                             "makes all things undefined).",
+                             string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
+                             string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
+                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result));
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
