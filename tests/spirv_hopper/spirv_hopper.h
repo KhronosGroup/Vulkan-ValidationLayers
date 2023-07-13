@@ -40,10 +40,9 @@ class Hopper {
 
     // For Pass Through shaders
     bool IsBuiltinType(const SpvReflectInterfaceVariable& variable);
-    std::string GetTypeDescription(SpvReflectTypeDescription& description, SpvReflectFormat format);
-    std::string DefineCustomStruct(const SpvReflectInterfaceVariable& variable);
-    void BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
-                                 std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map);
+    std::string GetTypeDescription(SpvReflectTypeDescription& description);
+    std::string DefineCustomStruct(const SpvReflectTypeDescription& description);
+    void DefineAllStruct(const SpvReflectTypeDescription& description);
     bool BuildPassThroughShader(std::string& source, VkShaderStageFlagBits stage);
     bool CreatePassThroughVertex();
     bool CreatePassThroughVertexNoInterface();
@@ -61,6 +60,9 @@ class Hopper {
     std::vector<SpvReflectDescriptorSet*> descriptor_sets;
     std::vector<SpvReflectBlockVariable*> push_constants;
     std::vector<const SpvReflectDescriptorBinding*> input_attachments;
+
+    // For passthrough shaders who need to build this up recursively
+    std::map<uint32_t, const SpvReflectTypeDescription*> struct_ordered_map;
 
     std::vector<VkAttachmentReference> color_attachment_references;
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;

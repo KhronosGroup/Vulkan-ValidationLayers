@@ -515,5 +515,9 @@ bool Hopper::Run() {
             break;
     }
 
+    // Cleanup so Hopper object can be reused
+    // TODO - Seperate Vulkan object with reflect logic
+    struct_ordered_map.clear();
+
     return success;
 }

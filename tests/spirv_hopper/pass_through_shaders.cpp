@@ -14,29 +14,9 @@
 #include "glslang/SPIRV/GlslangToSpv.h"
 #include <iostream>
 
-static constexpr bool IsFloatFormat(SpvReflectFormat format) {
-    switch (format) {
-        case SPV_REFLECT_FORMAT_R16_SFLOAT:
-        case SPV_REFLECT_FORMAT_R16G16_SFLOAT:
-        case SPV_REFLECT_FORMAT_R16G16B16_SFLOAT:
-        case SPV_REFLECT_FORMAT_R16G16B16A16_SFLOAT:
-        case SPV_REFLECT_FORMAT_R32_SFLOAT:
-        case SPV_REFLECT_FORMAT_R32G32_SFLOAT:
-        case SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:
-        case SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT:
-        case SPV_REFLECT_FORMAT_R64_SFLOAT:
-        case SPV_REFLECT_FORMAT_R64G64_SFLOAT:
-        case SPV_REFLECT_FORMAT_R64G64B64_SFLOAT:
-        case SPV_REFLECT_FORMAT_R64G64B64A64_SFLOAT:
-            return true;
-        default:
-            return false;
-    }
-}
-
 // Can't pass the variable as members in structs can't get information
 // But need the variable format to know which Numeric Type it is (float vs uint vs int)
-std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, SpvReflectFormat format) {
+std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description) {
     std::string type;
     if (description.op == SpvOp::SpvOpTypeArray) {
         // An array input has a <type> output from the shader
@@ -77,10 +57,10 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
             break;
         }
         case SpvOp::SpvOpTypeVector: {
-            if (!IsFloatFormat(format)) {
+            if (description.type_flags & SpvReflectTypeFlagBits::SPV_REFLECT_TYPE_FLAG_FLOAT) {
+                type += is32Bit ? "" : "f";
+            } else {
                 type += isSigned ? "i" : "u";
-            } else if (!is32Bit) {
-                type += "f";
             }
             type += is32Bit ? "" : width;
             type += "vec";
@@ -110,14 +90,13 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
     return type;
 }
 
-std::string Hopper::DefineCustomStruct(const SpvReflectInterfaceVariable& variable) {
-    SpvReflectTypeDescription& description = *variable.type_description;
+std::string Hopper::DefineCustomStruct(const SpvReflectTypeDescription& description) {
     std::string shader = "struct ";
     shader += (description.type_name) ? description.type_name : "UNKNOWN_STRUCT_" + std::to_string(description.id);
     shader += " {\n";
     for (uint32_t i = 0; i < description.member_count; i++) {
         shader += "\t";
-        shader += GetTypeDescription(description.members[i], variable.members[i].format);
+        shader += GetTypeDescription(description.members[i]);
         shader += " ";
         shader += (description.members[i].struct_member_name) ? description.members[i].struct_member_name
                                                               : "UNKNOWN_MEMBER_" + std::to_string(i);
@@ -141,39 +120,42 @@ std::string Hopper::DefineCustomStruct(const SpvReflectInterfaceVariable& variab
 //
 // we can't forward declare in GLSL, so first get all structs, since it is SSA, just print
 // out the structs by ID found
-void Hopper::BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
-                                     std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map) {
-    for (auto variable : variables) {
-        if (!IsBuiltinType(*variable) && variable->type_description->op == SpvOp::SpvOpTypeStruct) {
-            variable_ordered_map.insert({variable->type_description->id, variable});
-        } else {
-            variable_ordered_map.insert({variable->spirv_id, variable});
+void Hopper::DefineAllStruct(const SpvReflectTypeDescription& description) {
+    if (description.op == SpvOp::SpvOpTypeStruct) {
+        struct_ordered_map.insert({description.id, &description});
+        for (uint32_t i = 0; i < description.member_count; i++) {
+            DefineAllStruct(description.members[i]);
         }
+    } else if (description.struct_type_description) {
+        // There is an array-of-structs
+        struct_ordered_map.insert({description.struct_type_description->id, &description});
     }
 }
 
 bool Hopper::CreatePassThroughVertex() {
-    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
-    BuildOrderedVariableMap(input_variables, variable_ordered_map);
-
     std::string shader = "#version 450\n";
     // Add extensions regardless, keeps things simple
     shader += "#extension GL_EXT_shader_explicit_arithmetic_types: enable\n";
     shader += "#extension GL_EXT_shader_16bit_storage: enable\n";
     shader += "#extension GL_EXT_shader_8bit_storage: enable\n";
 
-    for (auto entry : variable_ordered_map) {
-        const SpvReflectInterfaceVariable& variable = *entry.second;
+    for (auto p_variable : input_variables) {
+        if (IsBuiltinType(*p_variable)) {
+            continue;
+        }
+        DefineAllStruct(*p_variable->type_description);
+    }
+    for (auto entry : struct_ordered_map) {
+        shader += DefineCustomStruct(*entry.second);
+    }
+
+    for (auto p_variable : input_variables) {
+        const SpvReflectInterfaceVariable& variable = *p_variable;
         if (IsBuiltinType(variable)) {
             continue;
         } else if ((shader_stage == VK_SHADER_STAGE_GEOMETRY_BIT && variable.format == SPV_REFLECT_FORMAT_UNDEFINED)) {
             // TODO - Figure out why some Geometry shaders can these bogus variables
             continue;
-        }
-
-        // Need to define struct to match
-        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(variable);
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
@@ -185,7 +167,7 @@ bool Hopper::CreatePassThroughVertex() {
             shader += ", component = " + std::to_string(component);
         }
         shader += ") out ";
-        shader += GetTypeDescription(*variable.type_description, variable.format);
+        shader += GetTypeDescription(*variable.type_description);
         shader += " ";
         // Names might not be valid GLSL names, so just give unique name
         shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
@@ -210,22 +192,24 @@ bool Hopper::CreatePassThroughVertexNoInterface() {
 
 // TODO - The CreatePassThrough*() function share a lot, could make a common
 bool Hopper::CreatePassThroughTessellationEval() {
-    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
-    BuildOrderedVariableMap(output_variables, variable_ordered_map);
-
     std::string shader = "#version 450\n";
     const size_t patchIndex = shader.size();
     shader += "layout(triangles, equal_spacing, cw) in;\n";
 
-    for (auto entry : variable_ordered_map) {
-        const SpvReflectInterfaceVariable& variable = *entry.second;
-        if (IsBuiltinType(variable) == true) {
+    for (auto p_variable : output_variables) {
+        if (IsBuiltinType(*p_variable)) {
             continue;
         }
+        DefineAllStruct(*p_variable->type_description);
+    }
+    for (auto entry : struct_ordered_map) {
+        shader += DefineCustomStruct(*entry.second);
+    }
 
-        // Need to define struct to match
-        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(variable);
+    for (auto p_variable : output_variables) {
+        const SpvReflectInterfaceVariable& variable = *p_variable;
+        if (IsBuiltinType(variable) == true) {
+            continue;
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
@@ -238,10 +222,10 @@ bool Hopper::CreatePassThroughTessellationEval() {
         }
         shader += ") in ";
         if (variable.type_description->type_name != nullptr) {
-            std::string patch = DefineCustomStruct(variable);
+            std::string patch = DefineCustomStruct(*variable.type_description);
             shader.insert(patchIndex, patch);
         }
-        shader += GetTypeDescription(*variable.type_description, variable.format);
+        shader += GetTypeDescription(*variable.type_description);
         shader += " ";
         shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
         shader += "[]";
@@ -252,22 +236,24 @@ bool Hopper::CreatePassThroughTessellationEval() {
 }
 
 bool Hopper::CreatePassThroughTessellationControl() {
-    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
-    BuildOrderedVariableMap(input_variables, variable_ordered_map);
-
     std::string shader = "#version 450\n";
     const size_t patchIndex = shader.size();
     shader += "layout(vertices = 3) out;\n";
 
-    for (auto entry : variable_ordered_map) {
-        const SpvReflectInterfaceVariable& variable = *entry.second;
-        if (IsBuiltinType(variable) == true) {
+    for (auto p_variable : input_variables) {
+        if (IsBuiltinType(*p_variable)) {
             continue;
         }
+        DefineAllStruct(*p_variable->type_description);
+    }
+    for (auto entry : struct_ordered_map) {
+        shader += DefineCustomStruct(*entry.second);
+    }
 
-        // Need to define struct to match
-        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(variable);
+    for (auto p_variable : input_variables) {
+        const SpvReflectInterfaceVariable& variable = *p_variable;
+        if (IsBuiltinType(variable) == true) {
+            continue;
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
@@ -280,10 +266,10 @@ bool Hopper::CreatePassThroughTessellationControl() {
         }
         shader += ") out ";
         if (variable.type_description->type_name != nullptr) {
-            std::string patch = DefineCustomStruct(variable);
+            std::string patch = DefineCustomStruct(*variable.type_description);
             shader.insert(patchIndex, patch);
         }
-        shader += GetTypeDescription(*variable.type_description, variable.format);
+        shader += GetTypeDescription(*variable.type_description);
         shader += " ";
         shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
         shader += "[]";
