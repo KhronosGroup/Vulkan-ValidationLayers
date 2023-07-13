@@ -3785,6 +3785,33 @@ class ValidationObject {
             return WriteLockGuard(validation_object_mutex);
         }
 
+        // If the Record phase calls a function that blocks, we might need to release
+        // the lock that protects Record itself in order to avoid mutual waiting.
+        WriteLockGuard* record_guard = nullptr;
+
+        // Should be used instead of WriteLock() if the Record phase wants to release
+        // its lock during the blocking operation.
+        void GetWriteLockForBlockingOperation(WriteLockGuard& write_lock) {
+            write_lock = WriteLock();
+            // Initialize record_guard only when Record is actually protected by the
+            // mutex. It's not the case when fine grained locking is enabled.
+            record_guard = write_lock.owns_lock() ? &write_lock : nullptr;
+        }
+
+        // The following Begin/End methods should be called during the Record phase
+        // around blocking operation that causes mutual waiting (deadlock).
+        void BeginBlockingOperation() {
+            if (record_guard) {
+                record_guard->unlock();
+            }
+        }
+        void EndBlockingOperation() {
+            if (record_guard) {
+                record_guard->lock();
+                record_guard = nullptr;
+            }
+        }
+
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
