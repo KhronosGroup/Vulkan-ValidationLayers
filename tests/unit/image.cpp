@@ -6322,3 +6322,22 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
+    TEST_DESCRIPTION("fail a call to GetPhysicalDeviceImageFormatProperties");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 is a hardcoded format that is known to fail in MockICD
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_IMAGE_USAGE_STORAGE_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    VkImageObj image(m_device);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
+    image.Init(128, 128, 1, VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    m_errorMonitor->VerifyFound();
+}

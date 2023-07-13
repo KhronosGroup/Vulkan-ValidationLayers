@@ -217,6 +217,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+            const char *dispatchFunction = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
+                                               ? "VkGetPhysicalDeviceImageFormatProperties2"
+                                               : "VkGetPhysicalDeviceImageFormatProperties";
             skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251",
                              "vkCreateImage(): The following parameters -\n"
                              "format (%s)\n"
@@ -224,11 +227,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "tiling (%s)\n"
                              "usage (%s)\n"
                              "flags (%s)\n"
-                             "returned a non-success result (%s) when calling VkGetPhysicalDeviceImageFormatProperties (which "
-                             "makes all things undefined).",
+                             "returned (%s) when calling %s.",
                              string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
                              string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
-                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result));
+                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result), dispatchFunction);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
