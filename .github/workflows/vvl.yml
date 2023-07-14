@@ -194,8 +194,6 @@ jobs:
             -D ANDROID_PLATFORM=26 \
             -D CMAKE_ANDROID_ARCH_ABI=${{ matrix.abi }} \
             -D CMAKE_ANDROID_STL_TYPE=${{ matrix.stl_type }} \
-            -D CMAKE_ANDROID_RTTI=YES \
-            -D CMAKE_ANDROID_EXCEPTIONS=YES \
             -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
             -D CMAKE_BUILD_TYPE=Debug \
             -D BUILD_TESTS=${{ matrix.build_tests }} \

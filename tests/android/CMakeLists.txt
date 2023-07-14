@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-if (CMAKE_VERSION VERSION_LESS "3.19")
-    message(FATAL_ERROR "This file utilizes JSON parsing functionality added in 3.19!")
-endif()
 
 # "CMAKE_ANDROID_STL_TYPE specifies the C++ STL implementation to be used. Earlier NDK releases
 # supported a range of different options, but projects should now use either c++_shared or c++_static.
