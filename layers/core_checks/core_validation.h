@@ -1000,8 +1000,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, const VkRect2D& render_area,
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
 
-    template <typename RegionType>
-    bool ValidateImageCopyData(const VulkanTypedHandle handle, const uint32_t regionCount, const RegionType* pRegions,
+    template <typename HandleT, typename RegionType>
+    bool ValidateImageCopyData(const HandleT handle, const uint32_t regionCount, const RegionType* pRegions,
                                const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, bool is_host, CMD_TYPE cmd_type) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
@@ -1102,6 +1102,11 @@ class CoreChecks : public ValidationStateTracker {
     void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, const VkDependencyInfoKHR& dep_info);
 
     void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* cb_state);
+
+    template <typename HandleT, typename RegionType>
+    bool ValidateCopyImageCommon(HandleT handle, const IMAGE_STATE& src_image_state,
+                                 const IMAGE_STATE& dst_image_state, uint32_t regionCount, const RegionType* pRegions, const char* func_name, bool is_2,
+                                 bool is_host) const;
 
     template <typename RegionType>
     bool ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
