@@ -1619,8 +1619,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                                    &phys_dev_props->subgroup_size_control_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer_density,
-                                   &phys_dev_props->descriptor_buffer_density_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_props);
     }

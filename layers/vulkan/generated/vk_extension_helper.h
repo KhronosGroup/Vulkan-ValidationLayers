@@ -155,7 +155,6 @@ struct InstanceExtensions {
     ExtEnabled vk_qnx_screen_surface{kNotEnabled};
     ExtEnabled vk_google_surfaceless_query{kNotEnabled};
     ExtEnabled vk_lunarg_direct_driver_loading{kNotEnabled};
-    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};
 
     struct InstanceReq {
         const ExtEnabled InstanceExtensions::* enabled;
@@ -704,7 +703,6 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
     ExtEnabled vk_ext_mesh_shader{kNotEnabled};
-    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::* enabled;
