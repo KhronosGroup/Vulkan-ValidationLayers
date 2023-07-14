@@ -213,8 +213,6 @@ struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_3{kNotEnabled};
 ''')
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.instance])
-        # TODO Issue 4841 -  It looks like framework is not ready for two properties structs per extension (like VK_EXT_descriptor_buffer have). Workarounding.
-        out.append('    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};\n')
 
         out.append('''
     struct InstanceReq {
@@ -334,8 +332,6 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_feature_version_1_3{kNotEnabled};
 ''')
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.device])
-        # TODO Issue 4841 -  It looks like framework is not ready for two properties structs per extension (like VK_EXT_descriptor_buffer have). Workarounding.
-        out.append('    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};\n')
 
         out.append('''
     struct DeviceReq {
