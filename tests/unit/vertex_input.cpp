@@ -780,9 +780,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
 }
 
-// Currently are not checking structs inside vertex input correctly
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5906
-TEST_F(NegativeVertexInput, DISABLED_AttributeStructType) {
+TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -790,26 +788,30 @@ TEST_F(NegativeVertexInput, DISABLED_AttributeStructType) {
 
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
 
-    VkVertexInputAttributeDescription input_attrib;
-    memset(&input_attrib, 0, sizeof(input_attrib));
-    input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;  // vec3
-    input_attrib.location = 4;
+    VkVertexInputAttributeDescription input_attribs[2] = {
+        {4, 0, VK_FORMAT_R32G32B32A32_UINT, 0},
+        {6, 0, VK_FORMAT_R32G32B32A32_UINT, 0},
+    };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
     //     in VertexIn {
     //         layout(location = 4) vec4 x;
+    //         layout(location = 6) uvec4 y;
     //     } x_struct;
     char const *vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
                OpMemberDecorate %_struct_3 0 Location 4
+               OpMemberDecorate %_struct_3 1 Location 6
                OpDecorate %_struct_3 Block
        %void = OpTypeVoid
           %5 = OpTypeFunction %void
       %float = OpTypeFloat 32
+      %uint  = OpTypeInt 32 0
     %v4float = OpTypeVector %float 4
-  %_struct_3 = OpTypeStruct %v4float
+     %v4uint = OpTypeVector %uint 4
+  %_struct_3 = OpTypeStruct %v4float %v4uint
 %_ptr_Input__struct_3 = OpTypePointer Input %_struct_3
           %2 = OpVariable %_ptr_Input__struct_3 Input
           %1 = OpFunction %void None %5
@@ -825,8 +827,118 @@ TEST_F(NegativeVertexInput, DISABLED_AttributeStructType) {
     pipe.InitInfo();
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
+    TEST_DESCRIPTION("Input is OpTypeStruct but doesn't match for location given");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    VkVertexInputAttributeDescription input_attribs[2] = {
+        {4, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
+        {6, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
+    };
+
+    // This is not valid GLSL (but is valid SPIR-V) - would look like:
+    //     in VertexIn {
+    //         layout(location = 4) ivec4 x;
+    //         layout(location = 6) uvec4 y;
+    //     } x_struct;
+    char const *vsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical Simple
+               OpEntryPoint Vertex %1 "main" %2
+               OpMemberDecorate %_struct_3 0 Location 4
+               OpMemberDecorate %_struct_3 1 Location 6
+               OpDecorate %_struct_3 Block
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %sint = OpTypeInt 32 1
+      %uint  = OpTypeInt 32 0
+     %v4sint = OpTypeVector %sint 4
+     %v4uint = OpTypeVector %uint 4
+  %_struct_3 = OpTypeStruct %v4sint %v4uint
+%_ptr_Input__struct_3 = OpTypePointer Input %_struct_3
+          %2 = OpVariable %_ptr_Input__struct_3 Input
+          %1 = OpFunction %void None %5
+         %13 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
+    TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    VkVertexInputAttributeDescription input_attribs[2] = {
+        {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0}, {5, 0, VK_FORMAT_R32G32B32A32_SINT, 0},  // should be uint
+    };
+
+    // This is not valid GLSL (but is valid SPIR-V) - would look like:
+    //     layout(location = 4) in VertexIn {
+    //         ivec4 x;
+    //         uvec4 y;
+    //     } x_struct;
+    char const *vsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical Simple
+               OpEntryPoint Vertex %1 "main" %2
+               OpDecorate %_struct_3 Block
+               OpDecorate %2 Location 4
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+      %uint  = OpTypeInt 32 0
+    %v4float = OpTypeVector %float 4
+     %v4uint = OpTypeVector %uint 4
+  %_struct_3 = OpTypeStruct %v4float %v4uint
+%_ptr_Input__struct_3 = OpTypePointer Input %_struct_3
+          %2 = OpVariable %_ptr_Input__struct_3 Input
+          %1 = OpFunction %void None %5
+         %13 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
@@ -1028,6 +1140,75 @@ TEST_F(NegativeVertexInput, Attribute64bitMissingComponent) {
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkGraphicsPipelineCreateInfo-Component-64bit");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
+    TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
+    }
+
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
+    if (!(format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_R64G64B64A64_SFLOAT vertex buffers";
+    }
+
+    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    VkVertexInputAttributeDescription input_attribs[3] = {
+        {4, 0, VK_FORMAT_R32G32B32A32_UINT, 0},    // should be SINT
+        {5, 0, VK_FORMAT_R64G64B64A64_SFLOAT, 0},  // takes 2 slots
+        {7, 0, VK_FORMAT_R32G32B32A32_UINT, 0},    // should be SINT
+    };
+
+    // This is not valid GLSL (but is valid SPIR-V) - would look like:
+    //     layout(location = 4) in VertexIn {
+    //         ivec4 x;
+    //         float64 y;
+    //         ivec4 z;
+    //     } x_struct;
+    char const *vsSource = R"(
+               OpCapability Shader
+               OpCapability Float64
+               OpMemoryModel Logical Simple
+               OpEntryPoint Vertex %1 "main" %2
+               OpDecorate %_struct_3 Block
+               OpDecorate %2 Location 4
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+    %float64 = OpTypeFloat 64
+      %sint  = OpTypeInt 32 1
+  %v4float64 = OpTypeVector %float64 4
+     %v4sint = OpTypeVector %sint 4
+  %_struct_3 = OpTypeStruct %v4sint %v4float64 %v4sint
+%_ptr_Input__struct_3 = OpTypePointer Input %_struct_3
+          %2 = OpVariable %_ptr_Input__struct_3 Input
+          %1 = OpFunction %void None %5
+         %13 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 4
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");  // loc 7
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
