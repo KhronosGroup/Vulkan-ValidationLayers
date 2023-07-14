@@ -396,6 +396,7 @@ struct EntryPoint {
     bool written_builtin_viewport_mask_nv{false};
 
     bool has_passthrough{false};
+    bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
 
     EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map);
 

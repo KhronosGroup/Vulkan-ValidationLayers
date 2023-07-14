@@ -697,6 +697,9 @@ EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instructio
                             max_output_slot = &slot;
                             max_output_slot_variable = &variable;
                         }
+                        if (slot.Location() == 0 && slot.Component() == 3) {
+                            has_alpha_to_coverage_variable = true;
+                        }
                     }
                 }
             }

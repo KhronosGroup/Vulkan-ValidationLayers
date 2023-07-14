@@ -133,6 +133,7 @@ struct DrawDispatchVuid {
     const char* dynamic_rasterization_samples_07622 = kVUIDUndefined;
     const char* dynamic_sample_mask_07623 = kVUIDUndefined;
     const char* dynamic_alpha_to_coverage_enable_07624 = kVUIDUndefined;
+    const char* dynamic_alpha_to_coverage_component_08919 = kVUIDUndefined;
     const char* dynamic_alpha_to_one_enable_07625 = kVUIDUndefined;
     const char* dynamic_logic_op_enable_07626 = kVUIDUndefined;
     const char* dynamic_color_blend_enable_07476 = kVUIDUndefined;
@@ -906,8 +907,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE& pipeline) const;
-    bool ValidateViAgainstVsInputs(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                   const EntryPoint& entrypoint) const;
+    bool ValidateInterfaceVertexInput(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
+                                      const EntryPoint& entrypoint) const;
+    bool ValidateInterfaceFragmentOutput(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
+                                         const EntryPoint& entrypoint) const;
     bool ValidateShaderInputAttachment(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable) const;
     bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
