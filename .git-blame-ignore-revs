@@ -159,3 +159,9 @@ ef74b1167d16187042028893328f87ee6f884e1d
 
 # Refactor validation layer tests
 aae202333dda8a6ca1422a773d02c4d7853f71b7
+
+# Move tests to Unit folder and rename
+7fd356061a073389d5b25a063e512214400f0d14
+
+# Move ExternalMemorySync helpers to test file
+9b0f5bfa14f5a9837214e147c08644e5a7391c68
