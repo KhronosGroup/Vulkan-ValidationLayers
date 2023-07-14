@@ -37,8 +37,15 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
 
-    // Build index by location
-    std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
+    struct AttribInputPair {
+        const VkFormat *attribute_input = nullptr;
+        const Instruction *shader_input = nullptr;
+    };
+    // For vertex input, we only need to care about Location.
+    // You are not allowed to offset into the Component words
+    // or have 2 variables in a location
+    std::map<uint32_t, AttribInputPair> location_map;
+
     if (vi) {
         for (uint32_t i = 0; i < vi->vertexAttributeDescriptionCount; ++i) {
             // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
@@ -50,79 +57,92 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
             const uint32_t bytes_in_location = 16;
             const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
             for (uint32_t j = 0; j < num_locations; ++j) {
-                attribs[vi->pVertexAttributeDescriptions[i].location + j] = &vi->pVertexAttributeDescriptions[i];
+                location_map[vi->pVertexAttributeDescriptions[i].location + j].attribute_input =
+                    &(vi->pVertexAttributeDescriptions[i].format);
             }
         }
     }
 
-    struct AttribInputPair {
-        const VkVertexInputAttributeDescription *attrib = nullptr;
-        const StageInteraceVariable *input = nullptr;
-    };
-    std::map<uint32_t, AttribInputPair> location_map;
-    for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
-    for (const auto *variable : entrypoint.user_defined_interface_variables) {
-        if ((variable->storage_class != spv::StorageClassInput)) {
+    for (const auto *variable_ptr : entrypoint.user_defined_interface_variables) {
+        const auto &variable = *variable_ptr;
+        if ((variable.storage_class != spv::StorageClassInput)) {
             continue;  // not an input interface
         }
-        for (const auto &slot : variable->interface_slots) {
-            location_map[slot.Location()].input = variable;
+        // It is possible to have a struct block for the vertex input.
+        // All members of struct must all have Locations or none of them will.
+        // If the interface variable doesn't have the Locations, find them inside the struct members
+        if (!variable.type_struct_info) {
+            for (const auto &slot : variable.interface_slots) {
+                location_map[slot.Location()].shader_input = &variable.base_type;
+            }
+        } else if (variable.decorations.location != DecorationSet::kInvalidValue) {
+            // Variable is decorated with Location
+            uint32_t location = variable.decorations.location;
+            for (uint32_t i = 0; i < variable.type_struct_info->members.size(); i++) {
+                const auto &member = variable.type_struct_info->members[i];
+                // can be 64-bit formats in the struct
+                const uint32_t num_locations = module_state.GetLocationsConsumedByType(member.id);
+                for (uint32_t j = 0; j < num_locations; ++j) {
+                    location_map[location + j].shader_input = member.insn;
+                }
+                location += num_locations;
+            }
+        } else {
+            // Can't be nested so only need to look at first level of members
+            for (const auto &member : variable.type_struct_info->members) {
+                location_map[member.decorations->location].shader_input = member.insn;
+            }
         }
     }
 
     for (const auto &location_it : location_map) {
         const auto location = location_it.first;
-        const auto attrib = location_it.second.attrib;
-        const auto input = location_it.second.input;
+        const auto attribute_input = location_it.second.attribute_input;
+        const auto shader_input = location_it.second.shader_input;
 
-        if (attrib && !input) {
+        if (attribute_input && !shader_input) {
             skip |= LogPerformanceWarning(module_state.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                           "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                           "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader",
                                           pipeline.create_index, location);
-        } else if (!attrib && input) {
+        } else if (!attribute_input && shader_input) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-07904",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Vertex shader consumes input at location %" PRIu32 " but not provided",
                              pipeline.create_index, location);
-        } else if (attrib && input) {
-            const VkFormat attribute_format = attrib->format;
-            const auto attrib_type = GetFormatType(attribute_format);
-            const uint32_t input_base_type_id = input->base_type.ResultId();
-            const auto input_type = module_state.GetNumericType(input_base_type_id);
-
-            // TODO 5906 - This means there is a struct and we are not currently searching inside of it
-            if (input_type == NumericTypeUnknown) {
-                continue;
-            }
+        } else if (attribute_input && shader_input) {
+            const VkFormat attribute_format = *attribute_input;
+            const auto attribute_type = GetFormatType(attribute_format);
+            const uint32_t var_base_type_id = shader_input->ResultId();
+            const auto var_numeric_type = module_state.GetNumericType(var_base_type_id);
 
             // Type checking
-            if (!(attrib_type & input_type)) {
+            if (!(attribute_type & var_numeric_type)) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-08733",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
                                  pipeline.create_index, string_VkFormat(attribute_format), location,
-                                 module_state.DescribeType(input_base_type_id).c_str());
+                                 module_state.DescribeType(var_base_type_id).c_str());
             } else {
                 // 64-bit can't be used if both the Vertex Attribute AND Shader Input Variable are both not 64-bit.
                 const bool attribute64 = FormatIs64bit(attribute_format);
-                const bool input64 = module_state.GetBaseTypeInstruction(input_base_type_id)->GetBitWidth() == 64;
-                if (attribute64 && !input64) {
+                const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
+                if (attribute64 && !shader64) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
                                      " is a 64-bit format (%s) but vertex shader input is 32-bit type (%s)",
                                      pipeline.create_index, location, string_VkFormat(attribute_format),
-                                     module_state.DescribeType(input_base_type_id).c_str());
-                } else if (!attribute64 && input64) {
+                                     module_state.DescribeType(var_base_type_id).c_str());
+                } else if (!attribute64 && shader64) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
                                      " is a not a 64-bit format (%s) but vertex shader input is 64-bit type (%s)",
                                      pipeline.create_index, location, string_VkFormat(attribute_format),
-                                     module_state.DescribeType(input_base_type_id).c_str());
-                } else if (attribute64 && input64) {
+                                     module_state.DescribeType(var_base_type_id).c_str());
+                } else if (attribute64 && shader64) {
                     // Unlike 32-bit, the components for 64-bit inputs have to match exactly
                     const uint32_t attribute_components = FormatComponentCount(attribute_format);
-                    const uint32_t input_components = module_state.GetNumComponentsInBaseType(&input->base_type);
+                    const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
                     if (attribute_components != input_components) {
                         skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Component-64bit",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
@@ -130,7 +150,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                          "-wide 64-bit type (%s), 64-bit vertex input don't have default values and require "
                                          "matching components.",
                                          pipeline.create_index, location, attribute_components, string_VkFormat(attribute_format),
-                                         input_components, module_state.DescribeType(input_base_type_id).c_str());
+                                         input_components, module_state.DescribeType(var_base_type_id).c_str());
                     }
                 }
             }
