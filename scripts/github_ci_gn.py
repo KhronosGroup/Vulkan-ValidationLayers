@@ -15,17 +15,16 @@
 # limitations under the License.
 
 import os
-import argparse
 import subprocess
 import sys
 import common_ci
-#
-# Build VVL repo using gn and Ninja
+
 def BuildGn():
     if not os.path.exists(common_ci.RepoRelative("depot_tools")):
         print("Cloning Chromium depot_tools\n")
         clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'
         common_ci.RunShellCmd(clone_cmd)
+
     os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.RepoRelative("depot_tools")
 
     print("Updating Repo Dependencies and GN Toolchain\n")
@@ -47,9 +46,6 @@ def BuildGn():
 #
 # Module Entrypoint
 def main():
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-
     try:
         BuildGn()
 

@@ -115,20 +115,6 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
-  gn:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install build dependencies
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Build Vulkan-ValidationLayers Using Ninja
-        run: python3 scripts/github_ci_gn.py
-
   windows:
     runs-on: ${{matrix.os}}
     strategy:
@@ -266,10 +252,9 @@ jobs:
       - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
         run: ccache --show-stats
 
-  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, or Vulkan-Profiles
-  # If we do intentionally want to break them, we just need to update the integration test code to account for that.
+  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, Vulkan-Profiles, or the Chromium build.
   integration_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -284,11 +269,13 @@ jobs:
         run: |
           sudo apt-get -qq update
           sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Configure Integration Test
+      - name: Configure SDK Integration Test
         run: cmake -S tests/integration -B tests/integration/build
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
           CMAKE_GENERATOR: Ninja
-      - name: Build Integration Test
+      - name: Build SDK Integration Test
         run: cmake --build tests/integration/build
+      - name: Test chromium build
+        run: python scripts/github_ci_gn.py
