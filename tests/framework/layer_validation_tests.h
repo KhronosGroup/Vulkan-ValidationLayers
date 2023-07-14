@@ -330,7 +330,11 @@ class DynamicRenderingTest : public VkLayerTest {
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 class PositiveDynamicRendering : public DynamicRenderingTest {};
 
-class DynamicStateTest : public VkLayerTest {};
+class DynamicStateTest : public VkLayerTest {
+  public:
+    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
+    void InitBasicExtendedDynamicState3(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT &features);
+};
 class NegativeDynamicState : public DynamicStateTest {
     // helper functions for tests in this file
   public:
@@ -341,10 +345,7 @@ class NegativeDynamicState : public DynamicStateTest {
     // VK_EXT_line_rasterization - Init with LineRasterization features off
     void InitLineRasterizationFeatureDisabled();
 };
-class PositiveDynamicState : public DynamicStateTest {
-  public:
-    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
-};
+class PositiveDynamicState : public DynamicStateTest {};
 
 class ExternalMemorySyncTest : public VkLayerTest {
   public:

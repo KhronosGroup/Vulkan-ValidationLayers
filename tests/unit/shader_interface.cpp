@@ -801,8 +801,7 @@ TEST_F(NegativeShaderInterface, DISABLED_InputAndOutputComponents) {
     }
 }
 
-// Currently need to clarify the VU - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5520
-TEST_F(NegativeShaderInterface, DISABLED_NoOutputLocation0ButAlphaToCoverageEnabled) {
+TEST_F(NegativeShaderInterface, AlphaToCoverageOutputLocation0) {
     TEST_DESCRIPTION("Test that an error is produced when alpha to coverage is enabled but no output at location 0 is declared.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -818,12 +817,10 @@ TEST_F(NegativeShaderInterface, DISABLED_NoOutputLocation0ButAlphaToCoverageEnab
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.pipe_ms_state_ci_ = ms_state_ci;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
 
-// Currently need to clarify the VU - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5520
-TEST_F(NegativeShaderInterface, DISABLED_NoAlphaLocation0ButAlphaToCoverageEnabled) {
+TEST_F(NegativeShaderInterface, AlphaToCoverageOutputNoAlpha) {
     TEST_DESCRIPTION(
         "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha component.");
 
@@ -847,6 +844,57 @@ TEST_F(NegativeShaderInterface, DISABLED_NoAlphaLocation0ButAlphaToCoverageEnabl
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.pipe_ms_state_ci_ = ms_state_ci;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
+}
+
+TEST_F(PositiveShaderInterface, AlphaToCoverageArrayIndex) {
+    TEST_DESCRIPTION("Have array out outputs, but start at index 1");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=1) out vec4 fragData[4];
+        void main() {
+            fragData[0] = vec4(1.0);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
+}
+
+TEST_F(PositiveShaderInterface, AlphaToCoverageArrayVec3) {
+    TEST_DESCRIPTION("Have array out outputs, but not contain the alpha component");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec3 fragData[4];
+        void main() {
+            fragData[0] = vec3(1.0);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }

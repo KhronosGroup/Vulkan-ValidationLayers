@@ -4902,3 +4902,51 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
+    TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to true and not have component set.");
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec3 x;
+        void main(){
+           x = vec3(1);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    auto ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_FALSE;  // should be ignored
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.pipe_ms_state_ci_ = ms_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08919");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
