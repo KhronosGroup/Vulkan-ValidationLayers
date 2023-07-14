@@ -32,8 +32,8 @@
 #include "generated/spirv_grammar_helper.h"
 #include "external/xxhash.h"
 
-bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                           const EntryPoint &entrypoint) const {
+bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+                                              const EntryPoint &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
 
@@ -159,6 +159,23 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+                                                 const EntryPoint &entrypoint) const {
+    bool skip = false;
+    const auto *ms_state = pipeline.MultisampleState();
+    if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
+        // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
+        // Currently lack support to test each index.
+        if (!entrypoint.has_alpha_to_coverage_variable && !pipeline.DualSourceBlending()) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891",
+                             "vkCreateGraphicsPipelines(): alphaToCoverageEnable is set, but pCreateInfos[%" PRIu32
+                             "] fragment shader doesn't declare a variable that covers Location 0, Component 3.",
+                             pipeline.create_index);
+        }
+    }
     return skip;
 }
 
@@ -3269,7 +3286,12 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), *vertex_stage->entrypoint);
+        skip |= ValidateInterfaceVertexInput(pipeline, *vertex_stage->module_state.get(), *vertex_stage->entrypoint);
+    }
+
+    if (pipeline.fragment_shader_state && fragment_stage && fragment_stage->entrypoint &&
+        fragment_stage->module_state->has_valid_spirv) {
+        skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->module_state.get(), *fragment_stage->entrypoint);
     }
 
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {

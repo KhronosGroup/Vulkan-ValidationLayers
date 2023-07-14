@@ -217,6 +217,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         bool stippled_line_enable;
         // VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE
         bool rasterizer_discard_enable;
+        // VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT
+        bool alpha_to_coverage_enable;
 
         uint32_t color_write_enable_attachment_count;
 
