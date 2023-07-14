@@ -1037,3 +1037,55 @@ TEST_F(PositiveShaderInterface, NestedStructs) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
+    TEST_DESCRIPTION("Only set the needed component and nothing else.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0, component = 3) out float x;
+        void main(){
+            x = 1.0;
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
+    TEST_DESCRIPTION("Have array out outputs");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
+
+    char const *fsSource = R"glsl(
+        #version 450
+        // Just need to declare variable
+        layout(location=0) out vec4 fragData[4];
+        void main() {
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}

@@ -14,7 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-void PositiveDynamicState::InitBasicExtendedDynamicState() {
+void DynamicStateTest::InitBasicExtendedDynamicState() {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
@@ -27,6 +27,17 @@ void PositiveDynamicState::InitBasicExtendedDynamicState() {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+}
+
+void DynamicStateTest::InitBasicExtendedDynamicState3(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT &features) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    GetPhysicalDeviceFeatures2(features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features));
 }
 
 TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
@@ -779,5 +790,82 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
 
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
+    TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to false so its not checked.");
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location = 0) out float x;
+        void main(){
+            x = 1.0;
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    auto ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;  // should be ignored
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.pipe_ms_state_ci_ = ms_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
+    TEST_DESCRIPTION("Dynamically set alphaToCoverageEnabled to true, but have component set.");
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state_features.extendedDynamicState3AlphaToCoverageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
