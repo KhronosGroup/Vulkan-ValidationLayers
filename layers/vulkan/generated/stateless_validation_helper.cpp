@@ -19254,6 +19254,7 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(
         }
     }
     skip |= ValidateArray("vkCreateShadersEXT", "createInfoCount", "pShaders", createInfoCount, &pShaders, true, true, "VUID-vkCreateShadersEXT-createInfoCount-arraylength", "VUID-vkCreateShadersEXT-pShaders-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
     return skip;
 }
 
@@ -19296,6 +19297,7 @@ bool StatelessValidation::PreCallValidateGetShaderBinaryDataEXT(
     if (!IsExtEnabled(device_extensions.vk_ext_shader_object)) skip |= OutputExtensionError("vkGetShaderBinaryDataEXT", "VK_EXT_shader_object");
     skip |= ValidateRequiredHandle("vkGetShaderBinaryDataEXT", "shader", shader);
     skip |= ValidateArray("vkGetShaderBinaryDataEXT", "pDataSize", "pData", pDataSize, &pData, true, false, false, kVUIDUndefined, "VUID-vkGetShaderBinaryDataEXT-pData-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
     return skip;
 }
 

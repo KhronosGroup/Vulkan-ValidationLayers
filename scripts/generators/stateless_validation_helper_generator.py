@@ -180,6 +180,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdSetExclusiveScissorEnableNV',
             'vkGetMemoryWin32HandlePropertiesKHR',
             'vkGetMemoryFdPropertiesKHR',
+            'vkCreateShadersEXT',
+            'vkGetShaderBinaryDataEXT',
             ]
 
         # Commands to ignore

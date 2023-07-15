@@ -1517,6 +1517,13 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) const override;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                         VkPipeline pipeline) const override;
+    bool PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                         const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) const override;
+    bool PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
+                                         const VkAllocationCallbacks* pAllocator) const override;
+    bool PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
+                                          const VkShaderEXT* pShaders) const override;
+    bool PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) const override;
     bool ForbidInheritedViewportScissor(const CMD_BUFFER_STATE& cb_state, const char* vuid, const CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                        const VkViewport* pViewports) const override;
