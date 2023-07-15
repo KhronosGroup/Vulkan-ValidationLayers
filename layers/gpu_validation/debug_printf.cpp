@@ -16,10 +16,10 @@
  */
 
 #include "gpu_validation/debug_printf.h"
-#include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "generated/layer_chassis_dispatch.h"
+#include "utils/shader_utils.h"
 
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {

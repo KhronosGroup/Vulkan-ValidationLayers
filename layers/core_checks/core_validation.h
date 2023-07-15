@@ -23,7 +23,6 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/image_layout_map.h"
 #include "gpu_validation/gpu_validation.h"
-#include "cc_shader.h"
 #include "error_message/core_error_location.h"
 #include "containers/qfo_transfer.h"
 #include "state_tracker/cmd_buffer_state.h"

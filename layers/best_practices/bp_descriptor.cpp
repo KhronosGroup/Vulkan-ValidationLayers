@@ -19,7 +19,6 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
-#include "core_checks/cc_shader.h"
 
 bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                           VkDescriptorSet* pDescriptorSets, void* ads_state_data) const {

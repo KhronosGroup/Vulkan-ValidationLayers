@@ -148,6 +148,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_vendor.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/shader_utils.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
