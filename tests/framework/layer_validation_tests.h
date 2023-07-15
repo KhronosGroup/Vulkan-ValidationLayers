@@ -470,6 +470,13 @@ class ShaderComputeTest : public VkLayerTest {};
 class NegativeShaderCompute : public ShaderComputeTest {};
 class PositiveShaderCompute : public ShaderComputeTest {};
 
+class ShaderObjectTest : public VkLayerTest {
+  public:
+    void InitBasicShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1);
+};
+class NegativeShaderObject : public ShaderObjectTest {};
+class PositiveShaderObject : public ShaderObjectTest {};
+
 class ShaderInterfaceTest : public VkLayerTest {};
 class NegativeShaderInterface : public ShaderInterfaceTest {};
 class PositiveShaderInterface : public ShaderInterfaceTest {};

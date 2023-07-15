@@ -63,7 +63,6 @@ class BufferView;
 class Image;
 class ImageView;
 class DepthStencilView;
-class Shader;
 class Pipeline;
 class PipelineDelta;
 class Sampler;
@@ -746,6 +745,17 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
     VkResult init_try(const Device &dev, const VkShaderModuleCreateInfo &info);
 
     static VkShaderModuleCreateInfo create_info(size_t code_size, const uint32_t *code, VkFlags flags);
+};
+
+class Shader : public internal::NonDispHandle<VkShaderEXT> {
+  public:
+    Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { init(dev, info); }
+    ~Shader() noexcept;
+    void destroy() noexcept;
+
+    // vkCreateShaderModule()
+    void init(const Device &dev, const VkShaderCreateInfoEXT &info);
+    VkResult init_try(const Device &dev, const VkShaderCreateInfoEXT &info);
 };
 
 class Pipeline : public internal::NonDispHandle<VkPipeline> {

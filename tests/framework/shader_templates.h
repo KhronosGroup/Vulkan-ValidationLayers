@@ -120,6 +120,15 @@ static char const kFragmentColorOutputGlsl[] = R"glsl(
     }
 )glsl";
 
+[[maybe_unused]] static const char *kTaskMinimalGlsl = R"glsl(
+    #version 460
+    #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+    layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+    void main() {
+        EmitMeshTasksEXT(1u, 1u, 1u);
+    }
+)glsl";
+
 [[maybe_unused]] static const char *kMeshMinimalGlsl = R"glsl(
     #version 460
     #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
