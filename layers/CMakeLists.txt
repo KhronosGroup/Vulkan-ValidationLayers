@@ -232,6 +232,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_render_pass.cpp
     core_checks/cc_shader.cpp
     core_checks/cc_shader_interface.cpp
+    core_checks/cc_shader_object.cpp
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
     core_checks/cc_wsi.cpp
@@ -329,6 +330,7 @@ target_sources(vvl PRIVATE
     stateless/sl_pipeline.cpp
     stateless/sl_ray_tracing.cpp
     stateless/sl_render_pass.cpp
+    stateless/sl_shader_object.cpp
     stateless/sl_synchronization.cpp
     stateless/sl_utils.cpp
     stateless/sl_wsi.cpp

@@ -871,6 +871,10 @@ class StatelessValidation : public ValidationObject {
                                                         uint32_t viewportCount,
                                                         const VkViewportWScalingNV *pViewportWScalings) const;
 
+    bool manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders) const;
+    bool manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize,
+                                                      void *pData) const;
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) const override;
