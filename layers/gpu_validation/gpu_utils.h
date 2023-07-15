@@ -16,7 +16,6 @@
  */
 #pragma once
 #include "generated/chassis.h"
-#include "core_checks/cc_shader.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/state_tracker.h"
 #include "vma/vma.h"

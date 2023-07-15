@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-#include <climits>
 #include <cmath>
 #include "utils/cast_utils.h"
+#include "utils/shader_utils.h"
 #include "gpu_validation/gpu_validation.h"
-#include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
 #include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"

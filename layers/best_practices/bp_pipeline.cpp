@@ -19,7 +19,6 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
-#include "core_checks/cc_shader.h"
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     switch (format) {

@@ -20,15 +20,17 @@
 
 #pragma once
 
-#include <cstdlib>
-
 #include "vulkan/vulkan.h"
-#include <generated/spirv_tools_commit_id.h>
-#include "state_tracker/shader_module.h"
 #include "utils/vk_layer_utils.h"
+#include "generated/spirv_tools_commit_id.h"
+
+#include <spirv/unified1/spirv.hpp>
+#include <spirv-tools/libspirv.h>
+#include <spirv-tools/optimizer.hpp>
 
 struct DeviceFeatures;
 struct DeviceExtensions;
+class APIVersion;
 
 class ValidationCache {
   public:
@@ -145,7 +147,7 @@ class ValidationCache {
     mutable std::shared_mutex lock_;
 };
 
-spv_target_env PickSpirvEnv(APIVersion api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);

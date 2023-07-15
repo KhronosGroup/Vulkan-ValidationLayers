@@ -17,20 +17,18 @@
  * limitations under the License.
  */
 
-#include "cc_shader.h"
-
 #include <cassert>
 #include <cinttypes>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <spirv/unified1/spirv.hpp>
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "external/xxhash.h"
+#include "utils/shader_utils.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                               const EntryPoint &entrypoint) const {
@@ -3673,53 +3671,4 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
                          local_size_x * local_size_y * local_size_z, max_workgroup_size);
     }
     return skip;
-}
-
-spv_target_env PickSpirvEnv(APIVersion api_version, bool spirv_1_4) {
-    if (api_version >= VK_API_VERSION_1_3) {
-        return SPV_ENV_VULKAN_1_3;
-    } else if (api_version >= VK_API_VERSION_1_2) {
-        return SPV_ENV_VULKAN_1_2;
-    } else if (api_version >= VK_API_VERSION_1_1) {
-        if (spirv_1_4) {
-            return SPV_ENV_VULKAN_1_1_SPIRV_1_4;
-        } else {
-            return SPV_ENV_VULKAN_1_1;
-        }
-    }
-    return SPV_ENV_VULKAN_1_0;
-}
-
-// Some Vulkan extensions/features are just all done in spirv-val behind optional settings
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &options) {
-    // VK_KHR_relaxed_block_layout never had a feature bit so just enabling the extension allows relaxed layout
-    // Was promotoed in Vulkan 1.1 so anyone using Vulkan 1.1 also gets this for free
-    if (IsExtEnabled(device_extensions.vk_khr_relaxed_block_layout)) {
-        // --relax-block-layout
-        options.SetRelaxBlockLayout(true);
-    }
-
-    // The rest of the settings are controlled from a feature bit, which are set correctly in the state tracking. Regardless of
-    // Vulkan version used, the feature bit is needed (also described in the spec).
-
-    if (enabled_features.core12.uniformBufferStandardLayout == VK_TRUE) {
-        // --uniform-buffer-standard-layout
-        options.SetUniformBufferStandardLayout(true);
-    }
-    if (enabled_features.core12.scalarBlockLayout == VK_TRUE) {
-        // --scalar-block-layout
-        options.SetScalarBlockLayout(true);
-    }
-    if (enabled_features.workgroup_memory_explicit_layout_features.workgroupMemoryExplicitLayoutScalarBlockLayout) {
-        // --workgroup-scalar-block-layout
-        options.SetWorkgroupScalarBlockLayout(true);
-    }
-    if (enabled_features.core13.maintenance4) {
-        // --allow-localsizeid
-        options.SetAllowLocalSizeId(true);
-    }
-
-    // Faster validation without friendly names.
-    options.SetFriendlyNames(false);
 }

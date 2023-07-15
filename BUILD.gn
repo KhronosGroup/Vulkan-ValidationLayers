@@ -135,7 +135,6 @@ core_validation_sources = [
   "layers/core_checks/cc_ray_tracing.cpp",
   "layers/core_checks/cc_render_pass.cpp",
   "layers/core_checks/cc_shader.cpp",
-  "layers/core_checks/cc_shader.h",
   "layers/core_checks/cc_synchronization.cpp",
   "layers/core_checks/cc_video.cpp",
   "layers/core_checks/cc_wsi.cpp",
@@ -212,6 +211,8 @@ core_validation_sources = [
   "layers/sync/sync_vuid_maps.h",
   "layers/sync/sync_validation.cpp",
   "layers/sync/sync_validation.h",
+  "layers/utils/shader_utils.cpp",
+  "layers/utils/shader_utils.h",
 ]
 
 object_lifetimes_sources = [

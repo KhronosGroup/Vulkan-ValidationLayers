@@ -30,6 +30,7 @@
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
 #include "core_validation.h"
+#include "utils/shader_utils.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
                                            const char *error_code, bool optional = false) const {
