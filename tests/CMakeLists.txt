@@ -117,6 +117,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_limits.cpp
     unit/shader_limits_positive.cpp
     unit/shader_mesh.cpp
+    unit/shader_object.cpp
+    unit/shader_object_positive.cpp
     unit/shader_push_constants.cpp
     unit/shader_push_constants_positive.cpp
     unit/shader_spirv.cpp
