@@ -541,7 +541,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                 insn = FindDef(insn->Word(1));
             } else if (insn->Opcode() == spv::OpTypePointer) {
                 insn = FindDef(insn->Word(3));
-            } else if (insn->Opcode() == spv::OpTypeArray || insn->Opcode() == spv::OpTypeRuntimeArray) {
+            } else if (insn->IsArray()) {
                 insn = FindDef(insn->Word(2));
             } else if (insn->Opcode() == spv::OpTypeStruct) {
                 return GetTypeStructInfo(insn->Word(1));

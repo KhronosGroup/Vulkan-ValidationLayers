@@ -1641,10 +1641,8 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     const Instruction* type = module_state.FindDef(variable.type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypePointer ||
-           type->Opcode() == spv::OpTypeRuntimeArray || type->Opcode() == spv::OpTypeSampledImage) {
-        if (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypeRuntimeArray ||
-            type->Opcode() == spv::OpTypeSampledImage) {
+    while (type->IsArray() || type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeSampledImage) {
+        if (type->IsArray() || type->Opcode() == spv::OpTypeSampledImage) {
             // currently just tracks 1D arrays
             if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
                 variable.array_length = module_state.GetConstantValueById(type->Word(3));
@@ -1687,9 +1685,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
       base_type(FindBaseType(*this, module_state)),
       image_format_type(FindImageFormatType(module_state, base_type)),
       image_dim(base_type.FindImageDim()),
-      is_image_array(base_type.IsArrayed()),
-      is_multisampled(base_type.IsMultisampled()),
-      image_sampled_type_width(base_type.IsMultisampled()),
+      is_image_array(base_type.IsImageArray()),
+      is_multisampled(base_type.IsImageMultisampled()),
+      image_sampled_type_width(base_type.IsImageMultisampled()),
       is_storage_buffer(IsStorageBuffer(*this)) {
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type

@@ -222,8 +222,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SHADER_MODULE_STATE &mod
     std::set<uint32_t> ret;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypePointer ||
-           type->Opcode() == spv::OpTypeRuntimeArray) {
+    while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
         if (type->Opcode() == spv::OpTypeRuntimeArray) {
             descriptor_count = 0;
             type = module_state.FindDef(type->Word(2));
@@ -453,7 +452,7 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
     const Instruction *type_def = module_state.FindDef(pointer_def->Word(3));
 
     // Unpack an optional level of arraying
-    if (type_def && (type_def->Opcode() == spv::OpTypeArray || type_def->Opcode() == spv::OpTypeRuntimeArray)) {
+    if (type_def && type_def->IsArray()) {
         type_def = module_state.FindDef(type_def->Word(2));
     }
 
