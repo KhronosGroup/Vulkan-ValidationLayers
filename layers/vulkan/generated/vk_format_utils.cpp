@@ -21,10 +21,10 @@
 ****************************************************************************/
 
 // NOLINTBEGIN
+
 #include "vk_format_utils.h"
 #include "utils/vk_layer_utils.h"
 #include <vector>
-
 
 enum class COMPONENT_TYPE {
     NONE,
@@ -944,7 +944,6 @@ static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplan
 };
 // clang-format on
 
-
 // Return true if all components in the format are an SFLOAT
 bool FormatIsSFLOAT(VkFormat format) {
     bool found = false;
@@ -1297,7 +1296,6 @@ bool FormatIsUSCALED(VkFormat format) {
     return found;
 }
 
-
 // Return true if the format is a ASTC_HDR compressed image format
 bool FormatIsCompressed_ASTC_HDR(VkFormat format) {
     bool found = false;
@@ -1457,7 +1455,6 @@ bool FormatIsCompressed(VkFormat format) {
       FormatIsCompressed_PVRTC(format));
 }
 
-
 // Return true if format is a depth OR stencil format
 bool FormatIsDepthOrStencil(VkFormat format) {
     bool found = false;
@@ -1581,7 +1578,6 @@ FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format) {
      }
 }
 
-
 // Return true if format is a packed format
 bool FormatIsPacked(VkFormat format) {
     bool found = false;
@@ -1647,7 +1643,6 @@ bool FormatIsPacked(VkFormat format) {
     }
     return found;
 }
-
 
 // Return true if format requires sampler YCBCR conversion
 // for VK_IMAGE_ASPECT_COLOR_BIT image views
@@ -1751,7 +1746,6 @@ bool FormatIsYChromaSubsampled(VkFormat format) {
     return found;
 }
 
-
 // Will return VK_FORMAT_UNDEFINED if given a plane aspect that doesn't exist for the format
 VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     const uint32_t plane_idx = GetPlaneIndex(plane_aspect);
@@ -1776,7 +1770,6 @@ VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plan
     divisors.height = it->second.per_plane[plane_idx].height_divisor;
     return divisors;
 }
-
 
 uint32_t FormatComponentCount(VkFormat format) {
     auto format_info = kVkFormatTable.find(format);
