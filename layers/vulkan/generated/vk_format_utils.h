@@ -21,13 +21,13 @@
 ****************************************************************************/
 
 // NOLINTBEGIN
+
 #pragma once
 #include <vulkan/vk_layer.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 static constexpr uint32_t FORMAT_MAX_PLANES = 3;
 static constexpr uint32_t FORMAT_MAX_COMPONENTS = 4;
 
@@ -129,9 +129,7 @@ enum class FORMAT_COMPATIBILITY_CLASS {
     _8BIT_3PLANE_444,
     _96BIT
 };
-
-// Numeric
-// Formats with more then one numeric type (VK_FORMAT_D16_UNORM_S8_UINT) will return false
+// Numeric formats with more then one numeric type (D16_UNORM_S8_UINT) will return false
 bool FormatIsSFLOAT(VkFormat format);
 bool FormatIsSINT(VkFormat format);
 bool FormatIsSNORM(VkFormat format);
@@ -150,7 +148,6 @@ static inline bool FormatIsSampledFloat(VkFormat format) {
             FormatIsUFLOAT(format)  || FormatIsSFLOAT(format)  ||
             FormatIsSRGB(format));
 }
-
 // Compressed
 bool FormatIsCompressed_ASTC_HDR(VkFormat format);
 bool FormatIsCompressed_ASTC_LDR(VkFormat format);
@@ -247,8 +244,8 @@ FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
 bool FormatElementIsTexel(VkFormat format);
 uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-// True if Format contains a 64-bit component
 
+// True if Format contains a 64-bit component
 constexpr bool FormatIs64bit(VkFormat format) {
     bool found = false;
     switch (format) {
@@ -280,7 +277,6 @@ bool FormatHasBlue(VkFormat format);
 bool FormatHasAlpha(VkFormat format);
 bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b);
 
-
 // Utils/misc
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
 // "blocked image" are defined in the spec (vkspec.html#blocked-image)
@@ -296,4 +292,5 @@ static inline bool FormatIsColor(VkFormat format) {
 #ifdef __cplusplus
 }
 #endif
+
 // NOLINTEND
