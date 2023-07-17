@@ -41,6 +41,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <condition_variable>
 
 using std::string;
 using std::vector;
@@ -155,9 +156,23 @@ T NearestSmaller(const T from) {
     return std::nextafter(from, negative_direction);
 }
 
+// Defining VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK allows downstream users
+// to inject custom test framework changes. This includes the ability
+// to override the the base class of the VkLayerTest class so that
+// appropriate test framework customizations can be injected into the
+// class hierarchy at the closest possible place to the base class used
+// by all validation layer tests. Downstream users can provide their
+// own version of custom_test_framework.h to define the appropriate
+// custom base class to use through the VkLayerTestBase type identifier.
+#ifdef VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK
+#include "framework/custom_test_framework.h"
+#else
+using VkLayerTestBase = VkRenderFramework;
+#endif
+
 // VkLayerTest is the main GTest test class
 // It is the root for all other test class variations
-class VkLayerTest : public VkRenderFramework {
+class VkLayerTest : public VkLayerTestBase {
   public:
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
     const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";

@@ -25,6 +25,165 @@ import os
 from generators.vulkan_object import (Command)
 from generators.base_generator import BaseGenerator
 
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    # Returns the list of validation layers for the target API
+    @staticmethod
+    def getValidationLayerList(targetApiName: str) -> list[dict[str, str]]:
+        match targetApiName:
+
+            # Vulkan specific validation layer list
+            case 'vulkan':
+                return [
+                    {
+                        'include': 'thread_tracker/thread_safety_validation.h',
+                        'class': 'ThreadSafety',
+                        'enabled': '!disables[thread_safety]'
+                    },
+                    {
+                        'include': 'stateless/stateless_validation.h',
+                        'class': 'StatelessValidation',
+                        'enabled': '!disables[stateless_checks]'
+                    },
+                    {
+                        'include': 'object_tracker/object_lifetime_validation.h',
+                        'class': 'ObjectLifetimes',
+                        'enabled': '!disables[object_tracking]'
+                    },
+                    {
+                        'include': 'core_checks/core_validation.h',
+                        'class': 'CoreChecks',
+                        'enabled': '!disables[core_checks]'
+                    },
+                    {
+                        'include': 'best_practices/best_practices_validation.h',
+                        'class': 'BestPractices',
+                        'enabled': 'enables[best_practices]'
+                    },
+                    {
+                        'include': 'gpu_validation/gpu_validation.h',
+                        'class': 'GpuAssisted',
+                        'enabled': 'enables[gpu_validation]'
+                    },
+                    {
+                        'include': 'gpu_validation/debug_printf.h',
+                        'class': 'DebugPrintf',
+                        'enabled': 'enables[debug_printf]'
+                    },
+                    {
+                        'include': 'sync/sync_validation.h',
+                        'class': 'SyncValidator',
+                        'enabled': 'enables[sync_validation]'
+                    }
+                ]
+
+
+    # Returns the list of instance extensions exposed by the validation layers
+    @staticmethod
+    def getInstanceExtensionList(targetApiName: str) -> list[str]:
+        match targetApiName:
+
+            # Vulkan specific instance extension list
+            case 'vulkan':
+                return [
+                    'VK_EXT_debug_report',
+                    'VK_EXT_debug_utils',
+                    'VK_EXT_validation_features'
+                ]
+
+
+    # Returns the list of device extensions exposed by the validation layers
+    @staticmethod
+    def getDeviceExtensionList(targetApiName: str) -> list[str]:
+        match targetApiName:
+
+            # Vulkan specific device extension list
+            case 'vulkan':
+                return [
+                'VK_EXT_validation_cache',
+                'VK_EXT_debug_marker',
+                'VK_EXT_tooling_info'
+            ]
+
+
+    # Generates source code for InitObjectDispatchVector
+    @staticmethod
+    def genInitObjectDispatchVectorSource(targetApiName: str) -> str:
+        match targetApiName:
+
+            # Vulkan specific InitObjectDispatchVector
+            case 'vulkan':
+                return '''
+void ValidationObject::InitObjectDispatchVectors() {
+
+#define BUILD_DISPATCH_VECTOR(name) \\
+    init_object_dispatch_vector(InterceptId ## name, \\
+                                typeid(&ValidationObject::name), \\
+                                typeid(&ThreadSafety::name), \\
+                                typeid(&StatelessValidation::name), \\
+                                typeid(&ObjectLifetimes::name), \\
+                                typeid(&CoreChecks::name), \\
+                                typeid(&BestPractices::name), \\
+                                typeid(&GpuAssisted::name), \\
+                                typeid(&DebugPrintf::name), \\
+                                typeid(&SyncValidator::name));
+
+    auto init_object_dispatch_vector = [this](InterceptId id,
+                                              const std::type_info& vo_typeid,
+                                              const std::type_info& tt_typeid,
+                                              const std::type_info& tpv_typeid,
+                                              const std::type_info& tot_typeid,
+                                              const std::type_info& tcv_typeid,
+                                              const std::type_info& tbp_typeid,
+                                              const std::type_info& tga_typeid,
+                                              const std::type_info& tdp_typeid,
+                                              const std::type_info& tsv_typeid) {
+        for (auto item : this->object_dispatch) {
+            auto intercept_vector = &this->intercept_vectors[id];
+            switch (item->container_type) {
+            case LayerObjectTypeThreading:
+                if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeParameterValidation:
+                if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeObjectTracker:
+                if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeCoreValidation:
+                if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeBestPractices:
+                if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeGpuAssisted:
+                if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeDebugPrintf:
+                if (tdp_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeSyncValidation:
+                if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeInstance:
+            case LayerObjectTypeDevice:
+                break;
+            default:
+                /* Chassis codegen needs to be updated for unknown validation object type */
+                assert(0);
+            }
+        }
+    };
+
+    intercept_vectors.resize(InterceptIdCount);
+'''
+
+
 # Generates a LayerFactory layer that intercepts all API entrypoints
 #  This is intended to be used as a starting point for creating custom layers
 class LayerChassisOutputGenerator(BaseGenerator):
@@ -59,63 +218,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkMergeValidationCachesEXT',
         'vkGetValidationCacheDataEXT',
         'vkGetPhysicalDeviceToolPropertiesEXT',
-    ]
-
-    # Vulkan validation layer list
-    vk_validation_layers = [
-        {
-            'include': 'thread_tracker/thread_safety_validation.h',
-            'class': 'ThreadSafety',
-            'enabled': '!disables[thread_safety]'
-        },
-        {
-            'include': 'stateless/stateless_validation.h',
-            'class': 'StatelessValidation',
-            'enabled': '!disables[stateless_checks]'
-        },
-        {
-            'include': 'object_tracker/object_lifetime_validation.h',
-            'class': 'ObjectLifetimes',
-            'enabled': '!disables[object_tracking]'
-        },
-        {
-            'include': 'core_checks/core_validation.h',
-            'class': 'CoreChecks',
-            'enabled': '!disables[core_checks]'
-        },
-        {
-            'include': 'best_practices/best_practices_validation.h',
-            'class': 'BestPractices',
-            'enabled': 'enables[best_practices]'
-        },
-        {
-            'include': 'gpu_validation/gpu_validation.h',
-            'class': 'GpuAssisted',
-            'enabled': 'enables[gpu_validation]'
-        },
-        {
-            'include': 'gpu_validation/debug_printf.h',
-            'class': 'DebugPrintf',
-            'enabled': 'enables[debug_printf]'
-        },
-        {
-            'include': 'sync/sync_validation.h',
-            'class': 'SyncValidator',
-            'enabled': 'enables[sync_validation]'
-        }
-    ]
-
-    # Vulkan extension lists
-    vk_instance_extensions = [
-        'VK_EXT_debug_report',
-        'VK_EXT_debug_utils',
-        'VK_EXT_validation_features'
-    ]
-
-    vk_device_extensions = [
-        'VK_EXT_validation_cache',
-        'VK_EXT_debug_marker',
-        'VK_EXT_tooling_info'
     ]
 
     def __init__(self):
@@ -651,7 +753,7 @@ bool wrap_handles = true;
 
         out.append('// Include layer validation object definitions\n')
         # Add #include directives for the used layers
-        for layer in self.vk_validation_layers:
+        for layer in APISpecific.getValidationLayerList(self.targetApiName):
             out.append(f'#include "{layer["include"]}"\n')
         out.append('\n')
 
@@ -661,11 +763,11 @@ bool wrap_handles = true;
 
         out.append('// Extension exposed by the validation layer\n')
         out.append('static constexpr std::array kInstanceExtensions = {\n')
-        for ext in [x.upper() for x in self.vk_instance_extensions]:
+        for ext in [x.upper() for x in APISpecific.getInstanceExtensionList(self.targetApiName)]:
             out.append(f'    VkExtensionProperties{{{ext}_EXTENSION_NAME, {ext}_SPEC_VERSION}},\n')
         out.append('};\n')
         out.append('static constexpr std::array kDeviceExtensions = {\n')
-        for ext in [x.upper() for x in self.vk_device_extensions]:
+        for ext in [x.upper() for x in APISpecific.getDeviceExtensionList(self.targetApiName)]:
             out.append(f'    VkExtensionProperties{{{ext}_EXTENSION_NAME, {ext}_SPEC_VERSION}},\n')
         out.append('};\n')
 
@@ -677,7 +779,7 @@ static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
 ''')
 
-        for layer in self.vk_validation_layers:
+        for layer in APISpecific.getValidationLayerList(self.targetApiName):
             constructor = layer['class']
             constructor += '(nullptr)' if layer['class'] == 'ThreadSafety' else ''
             out.append(f'''
@@ -695,7 +797,7 @@ static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, Val
 
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 ''')
-        for layer in self.vk_validation_layers:
+        for layer in APISpecific.getValidationLayerList(self.targetApiName):
             constructor = layer['class']
             if layer['class'] == 'ThreadSafety':
                 constructor += ('(static_cast<ThreadSafety *>(\n' +
@@ -1741,70 +1843,8 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
         out.append('    InterceptIdCount,\n')
         out.append('} InterceptId;\n')
 
-        out.append('''
-void ValidationObject::InitObjectDispatchVectors() {
+        out.append(APISpecific.genInitObjectDispatchVectorSource(self.targetApiName))
 
-#define BUILD_DISPATCH_VECTOR(name) \\
-    init_object_dispatch_vector(InterceptId ## name, \\
-                                typeid(&ValidationObject::name), \\
-                                typeid(&ThreadSafety::name), \\
-                                typeid(&StatelessValidation::name), \\
-                                typeid(&ObjectLifetimes::name), \\
-                                typeid(&CoreChecks::name), \\
-                                typeid(&BestPractices::name), \\
-                                typeid(&GpuAssisted::name), \\
-                                typeid(&DebugPrintf::name), \\
-                                typeid(&SyncValidator::name));
-
-    auto init_object_dispatch_vector = [this](InterceptId id,
-                                              const std::type_info& vo_typeid,
-                                              const std::type_info& tt_typeid,
-                                              const std::type_info& tpv_typeid,
-                                              const std::type_info& tot_typeid,
-                                              const std::type_info& tcv_typeid,
-                                              const std::type_info& tbp_typeid,
-                                              const std::type_info& tga_typeid,
-                                              const std::type_info& tdp_typeid,
-                                              const std::type_info& tsv_typeid) {
-        for (auto item : this->object_dispatch) {
-            auto intercept_vector = &this->intercept_vectors[id];
-            switch (item->container_type) {
-            case LayerObjectTypeThreading:
-                if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeParameterValidation:
-                if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeObjectTracker:
-                if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeCoreValidation:
-                if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeBestPractices:
-                if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeGpuAssisted:
-                if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeDebugPrintf:
-                if (tdp_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeSyncValidation:
-                if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeInstance:
-            case LayerObjectTypeDevice:
-                break;
-            default:
-                /* Chassis codegen needs to be updated for unknown validation object type */
-                assert(0);
-            }
-        }
-    };
-
-    intercept_vectors.resize(InterceptIdCount);
-''')
         for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in self.manual_functions]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             out.append(f'    BUILD_DISPATCH_VECTOR(PreCallValidate{command.name[2:]});\n')

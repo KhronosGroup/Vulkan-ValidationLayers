@@ -16,9 +16,8 @@
 # limitations under the License.
 # ~~~
 
-# These variables enable downstream users to customize the CMake targets
+# This variable enables downstream users to customize the CMake targets
 # based on the target API variant (e.g. Vulkan SC)
-set(API_TYPE "vulkan")
 set(LAYER_NAME "VkLayer_khronos_validation")
 
 add_library(VkLayer_utils STATIC)

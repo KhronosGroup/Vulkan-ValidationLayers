@@ -24,6 +24,23 @@ from generators.generator_utils import (buildListVUID, incIndent, decIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    # Generates custom validation for a function parameter or returns None
+    @staticmethod
+    def genCustomValidation(targetApiName: str, funcName: str, member) -> list[str]:
+        match targetApiName:
+
+            # Vulkan specific custom validation (currently none)
+            case 'vulkan':
+                return None
+
+
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
                  valid_usage_file):
@@ -347,6 +364,16 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
             if struct.sType in stype_version_dict.keys():
                 ext_name = stype_version_dict[struct.sType]
+
+                # Skip extensions that are not in the target API
+                # This check is needed because parts of the base generator code bypass the
+                # dependency resolution logic in the registry tooling and thus the generator
+                # may attempt to generate code for extensions which are not supported in the
+                # target API variant, thus this check needs to happen even if any specific
+                # target API variant may not specifically need it
+                if not ext_name in self.vk.extensions:
+                    continue
+
                 # Dependent on enabled extension
                 extension = self.vk.extensions[ext_name]
                 extension_check = ''
@@ -865,7 +892,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 # members not tagged as 'noautovalidity' will be validated
                 # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
                 AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction', 'PFN_vkInternalAllocationNotification', 'PFN_vkInternalFreeNotification']
-                if member.noAutoValidity and member.type not in AllocatorFunctions and not countRequiredVuid:
+                api_specific_custom_validation = APISpecific.genCustomValidation(self.targetApiName, funcName, member)
+                if api_specific_custom_validation is not None:
+                    usedLines.extend(api_specific_custom_validation)
+                elif member.noAutoValidity and member.type not in AllocatorFunctions and not countRequiredVuid:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     objectName = structTypeName if structTypeName else funcName
                     self.logMsg('diag', f'ParameterValidation: No validation for {objectName} {member.name}')

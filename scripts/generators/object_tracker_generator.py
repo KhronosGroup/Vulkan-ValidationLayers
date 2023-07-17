@@ -23,6 +23,54 @@ from generators.generator_utils import (buildListVUID, incIndent, decIndent)
 from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
 
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    # Returns VUIDs to report when detecting undestroyed objects
+    @staticmethod
+    def getUndestroyedObjectVUID(targetApiName: str, scope: str) -> str:
+        match targetApiName:
+
+            # Vulkan specific undestroyed object VUIDs
+            case 'vulkan':
+                per_scope = {
+                    'instance': 'VUID-vkDestroyInstance-instance-00629',
+                    'device': 'VUID-vkDestroyDevice-device-00378'
+                }
+
+        return per_scope[scope]
+
+
+    # Tells whether an object handle type is implicitly destroyed because it does not have
+    # destroy APIs or its parent object type does not have destroy APIs
+    @staticmethod
+    def IsImplicitlyDestroyed(targetApiName: str, handleType: str) -> bool:
+        match targetApiName:
+
+            # Vulkan specific implicitly destroyed handle types
+            case 'vulkan':
+                implicitly_destroyed_set = {
+                'VkDisplayKHR',
+                'VkDisplayModeKHR'
+                }
+
+        return handleType in implicitly_destroyed_set
+
+
+    # Returns whether allocation callback related VUIDs are enabled
+    @staticmethod
+    def AreAllocVUIDsEnabled(targetApiName: str) -> bool:
+        match targetApiName:
+
+            # Vulkan has allocation callback related VUIDs
+            case 'vulkan':
+                return True
+
+
 class ObjectTrackerOutputGenerator(BaseGenerator):
     def __init__(self,
                  valid_usage_file):
@@ -242,12 +290,12 @@ WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_o
 // ObjectTracker undestroyed objects validation function
 bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) const {
     bool skip = false;
-    const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
-''')
+    const std::string error_code = "%s";
+''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'instance'))
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and not self.isParentDevice(x)]:
             comment_prefix = ''
-            if (handle.name == 'VkDisplayKHR' or handle.name == 'VkDisplayModeKHR'):
-                comment_prefix = '// No destroy API -- do not report: '
+            if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
+                comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
             out.append(f'    {comment_prefix}skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectType{handle.name[2:]}, error_code);\n')
         out.append('    return skip;\n')
         out.append('}\n')
@@ -255,12 +303,19 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) cons
         out.append('''
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
     bool skip = false;
-    const std::string error_code = "VUID-vkDestroyDevice-device-00378";
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
-''')
+    const std::string error_code = "%s";
+''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'device'))
+
+        comment_prefix = ''
+        if APISpecific.IsImplicitlyDestroyed(self.targetApiName, 'VkCommandBuffer'):
+            comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
+        out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n')
 
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and self.isParentDevice(x)]:
-            out.append(f'    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectType{handle.name[2:]}, error_code);\n')
+            comment_prefix = ''
+            if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
+                comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
+            out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectType{handle.name[2:]}, error_code);\n')
         out.append('    return skip;\n')
         out.append('}\n')
 
@@ -334,6 +389,10 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
         return False
 
     def getAllocVUID(self, param: Param, allocType: str) -> str:
+        # Do not report allocation callback VUIDs if the target API does not support them
+        if not APISpecific.AreAllocVUIDsEnabled(self.targetApiName):
+            return "kVUIDUndefined"
+
         lookup_string = '%s-%s' %(param.name, allocType)
         vuid = self.manual_vuids.get(lookup_string, None)
         if vuid is not None:
