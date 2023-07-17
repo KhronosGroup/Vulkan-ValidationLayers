@@ -691,7 +691,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateReferencePictureUseCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateImageSampleCount(const VulkanTypedHandle handle, const IMAGE_STATE& image_state,
+    template<typename HandleT>
+    bool ValidateImageSampleCount(const HandleT handle, const IMAGE_STATE& image_state,
                                   VkSampleCountFlagBits sample_count, const char* location, const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd) const;
@@ -961,8 +962,8 @@ class CoreChecks : public ValidationStateTracker {
                                                                      const IMAGE_VIEW_STATE& image_view_state,
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                      uint32_t attachment_index, const char* variable_name) const;
-    template <typename RegionType>
-    bool ValidateBufferMemoryImageCopyData(const VulkanTypedHandle handle, uint32_t regionCount, const RegionType* pRegions,
+    template <typename HandleT, typename RegionType>
+    bool ValidateBufferMemoryImageCopyData(const HandleT handle, uint32_t regionCount, const RegionType* pRegions,
                                            const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type, bool from_image,
                                            bool is_memory) const;
     bool UsageHostTransferCheck(VkDevice device, const IMAGE_STATE& image_state, bool has_stencil, bool has_non_stencil,
@@ -1220,8 +1221,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const BUFFER_STATE& src_buffer_state, const BUFFER_STATE& dst_buffer_state,
                                      uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
 
-    template <typename RegionType>
-    bool ValidateImageBounds(const VulkanTypedHandle typed_handle, const IMAGE_STATE& image_state, const uint32_t regionCount,
+    template <typename HandleT, typename RegionType>
+    bool ValidateImageBounds(const HandleT handle, const IMAGE_STATE& image_state, const uint32_t regionCount,
                              const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
@@ -1233,10 +1234,12 @@ class CoreChecks : public ValidationStateTracker {
                                                                 const RegionType* region, const uint32_t i, const char* function,
                                                                 const char* vuid) const;
 
-    bool ValidateImageMipLevel(const VulkanTypedHandle handle, const IMAGE_STATE& img, uint32_t mip_level, const uint32_t i,
+    template <typename HandleT>
+    bool ValidateImageMipLevel(const HandleT handle, const IMAGE_STATE& img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
 
-    bool ValidateImageArrayLayerRange(const VulkanTypedHandle handle, const IMAGE_STATE& img, const uint32_t base_layer,
+    template <typename HandleT>
+    bool ValidateImageArrayLayerRange(const HandleT handle, const IMAGE_STATE& img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
                                       const char* vuid) const;
     bool ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, const char* apiName) const;
