@@ -230,8 +230,8 @@ bool CoreChecks::CheckItgExtent(const LogObjectList &objlist, const VkExtent3D &
     }
     return skip;
 }
-
-bool CoreChecks::ValidateImageMipLevel(const VulkanTypedHandle handle, const IMAGE_STATE &img, uint32_t mip_level,
+template <typename HandleT>
+bool CoreChecks::ValidateImageMipLevel(const HandleT handle, const IMAGE_STATE &img, uint32_t mip_level,
                                        const uint32_t i, const char *function, const char *member, const char *vuid) const {
     bool skip = false;
     if (mip_level >= img.createInfo.mipLevels) {
@@ -242,8 +242,8 @@ bool CoreChecks::ValidateImageMipLevel(const VulkanTypedHandle handle, const IMA
     }
     return skip;
 }
-
-bool CoreChecks::ValidateImageArrayLayerRange(const VulkanTypedHandle handle, const IMAGE_STATE &img, const uint32_t base_layer,
+template <typename HandleT>
+bool CoreChecks::ValidateImageArrayLayerRange(const HandleT handle, const IMAGE_STATE &img, const uint32_t base_layer,
                                               const uint32_t layer_count, const uint32_t i, const char *function,
                                               const char *member, const char *vuid) const {
     bool skip = false;
@@ -562,8 +562,8 @@ template <>
 uint32_t GetImageHeight<VkImageToMemoryCopyEXT>(VkImageToMemoryCopyEXT data) {
     return data.memoryImageHeight;
 }
-template <typename RegionType>
-bool CoreChecks::ValidateBufferMemoryImageCopyData(const VulkanTypedHandle handle, uint32_t regionCount,
+template <typename HandleT, typename RegionType>
+bool CoreChecks::ValidateBufferMemoryImageCopyData(const HandleT handle, uint32_t regionCount,
                                                    const RegionType *pRegions, const IMAGE_STATE &image_state, const char *function,
                                                    CMD_TYPE cmd_type, bool from_image, bool is_memory) const {
 
@@ -831,8 +831,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
 
     const VkFormat image_format = image_state.createInfo.format;
 
-    skip |= ValidateBufferMemoryImageCopyData(VulkanTypedHandle(cb_state.commandBuffer(), kVulkanObjectTypeCommandBuffer),
-                                              regionCount, pRegions, image_state, function, cmd_type, image_to_buffer, false);
+    skip |= ValidateBufferMemoryImageCopyData(cb_state.commandBuffer(), regionCount, pRegions, image_state, function, cmd_type,
+                                              image_to_buffer, false);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         const RegionType region = pRegions[i];
@@ -2004,8 +2004,8 @@ void CoreChecks::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, cons
                         pCopyBufferInfos->pRegions, CMD_COPYBUFFER2);
 }
 
-template <typename RegionType>
-bool CoreChecks::ValidateImageBounds(const VulkanTypedHandle typed_handle, const IMAGE_STATE &image_state, const uint32_t regionCount,
+template <typename HandleT, typename RegionType>
+bool CoreChecks::ValidateImageBounds(const HandleT handle, const IMAGE_STATE &image_state, const uint32_t regionCount,
                                      const RegionType *pRegions, const char *func_name, const char *msg_code) const {
     bool skip = false;
     const VkImageCreateInfo *image_info = &(image_state.createInfo);
@@ -2033,7 +2033,7 @@ bool CoreChecks::ValidateImageBounds(const VulkanTypedHandle typed_handle, const
         }
 
         if (0 != ExceedsBounds(&offset, &extent, &image_extent)) {
-            const LogObjectList objlist(typed_handle, image_state.Handle());
+            const LogObjectList objlist(handle, image_state.Handle());
             skip |= LogError(objlist, msg_code, "%s: pRegion[%d] exceeds image bounds.", func_name, i);
         }
     }
@@ -2069,8 +2069,9 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &ima
     return skip;
 }
 
+template<typename HandleT>
 // Validate that an image's sampleCount matches the requirement for a specific API call
-bool CoreChecks::ValidateImageSampleCount(const VulkanTypedHandle handle,
+bool CoreChecks::ValidateImageSampleCount(const HandleT handle,
                                           const IMAGE_STATE &image_state, VkSampleCountFlagBits sample_count,
                                           const char *location, const std::string &msgCode) const {
     bool skip = false;
@@ -2099,7 +2100,6 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     const bool is_2 = (cmd_type == CMD_COPYIMAGETOBUFFER2KHR || cmd_type == CMD_COPYIMAGETOBUFFER2);
     const char *func_name = CommandTypeString(cmd_type);
     const char *vuid;
-    auto typed_handle = VulkanTypedHandle(cb_state.commandBuffer(), kVulkanObjectTypeCommandBuffer);
 
     skip |= ValidateBufferImageCopyData(cb_state, regionCount, pRegions, *src_image_state, func_name, cmd_type, true);
 
@@ -2121,14 +2121,14 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     }
 
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-04566" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07970";
-    skip |= ValidateImageBounds(typed_handle, *src_image_state, regionCount, pRegions, func_name, vuid);
+    skip |= ValidateImageBounds(commandBuffer, *src_image_state, regionCount, pRegions, func_name, vuid);
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
     skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, regionCount, pRegions, func_name, vuid);
 
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-07973" : "VUID-vkCmdCopyImageToBuffer-srcImage-07973";
     std::string location = func_name;
     location.append("() : srcImage");
-    skip |= ValidateImageSampleCount(typed_handle, *src_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
+    skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
 
     vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer-srcImage-07966" : "VUID-vkCmdCopyImageToBuffer-srcImage-07966";
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, *src_image_state, func_name, vuid);
@@ -2177,10 +2177,10 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, &region, i, func_name, vuid);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07967" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07967";
-        skip |= ValidateImageMipLevel(typed_handle, *src_image_state, region.imageSubresource.mipLevel, i, func_name,
+        skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07968" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07968";
-        skip |= ValidateImageArrayLayerRange(typed_handle, *src_image_state, region.imageSubresource.baseArrayLayer,
+        skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
     }
     return skip;
@@ -2498,7 +2498,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     // TODO If *Image is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource
     // Memory
 
-    skip |= ValidateBufferMemoryImageCopyData(typed_handle, regionCount, info_ptr->pRegions, *image_state, func_name, CMD_NONE,
+    skip |= ValidateBufferMemoryImageCopyData(device, regionCount, info_ptr->pRegions, *image_state, func_name, CMD_NONE,
                                               false, true);
     // TODO Is this 7965, 7966, or both?
     skip |= ValidateMemoryIsBoundToImage(
@@ -2611,7 +2611,7 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
     auto regionCount = pCopyMemoryToImageInfo->regionCount;
     const char func_name[] = "vkCopyMemoryToImageEXT";
 
-    skip |= ValidateBufferMemoryImageCopyData(typed_handle, regionCount, pCopyMemoryToImageInfo->pRegions, *image_state, func_name,
+    skip |= ValidateBufferMemoryImageCopyData(device, regionCount, pCopyMemoryToImageInfo->pRegions, *image_state, func_name,
                                               CMD_NONE, false, true);
     skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, false);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
@@ -2630,7 +2630,7 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
     const char func_name[] = "vkCopyImageToMemoryEXT";
 
     skip |=
-        ValidateBufferMemoryImageCopyData(VulkanTypedHandle(device, kVulkanObjectTypeDevice), pCopyImageToMemoryInfo->regionCount,
+        ValidateBufferMemoryImageCopyData(device, pCopyImageToMemoryInfo->regionCount,
                                           pCopyImageToMemoryInfo->pRegions, *image_state, func_name, CMD_NONE, true, true);
 
     skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, true);
