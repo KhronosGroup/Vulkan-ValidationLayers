@@ -7,7 +7,7 @@
 5. [Linux Build](#building-on-linux)
 6. [Windows Build](#building-on-windows)
 7. [MacOS build](#building-on-macos)
-8. [Android Build](#building-on-android)
+8. [Android Build](#building-for-android)
 9. [Installed Files](#installed-files)
 
 ## Requirements
@@ -183,7 +183,12 @@ cmake --open build
 
 See the [CMake documentation](https://cmake.org/cmake/help/latest/generator/Xcode.html) for further information on the Xcode generator.
 
-## Building On Android
+## Building For Android
+
+- CMake 3.21+
+- NDK r25+
+- Ninja 1.10+
+- Android SDK Build-Tools 34.0.0+
 
 ### Android Build Requirements
 
@@ -195,10 +200,9 @@ See the [CMake documentation](https://cmake.org/cmake/help/latest/generator/Xcod
   - SDK Tools > Android SDK Platform-Tools
   - SDK Tools > Android SDK Tools
   - SDK Tools > NDK
+  - SDK Tools > CMake
 
 #### Add Android specifics to environment
-
-For each of the below, you may need to specify a different build-tools version, as Android Studio will roll it forward fairly regularly.
 
 NOTE: The following commands are streamlined for Linux but easily transferable to other platforms.
 The main intent is setting 2 environment variables and ensuring the NDK and build tools are in the `PATH`.
@@ -213,11 +217,18 @@ export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/X.Y.Z
 export PATH=$ANDROID_NDK_HOME:$PATH
 export PATH=$ANDROID_SDK_ROOT/build-tools/X.Y.Z:$PATH
 
+# (Optional if you have new enough version of CMake + Ninja)
+export PATH=$ANDROID_SDK_ROOT/cmake/3.22.1/bin:$PATH
+
 # Verify SDK build-tools is set correctly
 which aapt
 
 # Verify NDK path is set correctly
 which ndk-build
+
+# Verify CMake/Ninja are in the path
+which cmake
+which ninja
 
 # Check apksigner
 apksigner --help
@@ -232,52 +243,65 @@ sudo apt install default-jre
 
 ### Android Build
 
-There are two options for building the Android layers. Either using the SPIRV
-tools provided as part of the Android NDK, or using upstream sources. To build
-with SPIRV tools from the NDK, remove the build-android/third_party directory
-created by running update_external_sources_android.sh, (or avoid running
-update_external_sources_android.sh). Use the following script to build
-everything in the repository for Android, including validation layers, tests,
-demos, and APK packaging: This script does retrieve and use the upstream SPRIV
-tools.
+1. Building libraries to package with your APK
 
-```bash
-# NOTE: If you haven't already you will need to generate a key with keytool before running build_all.sh
-keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
+Invoking CMake directly to build the binary is relatively simple.
 
-cd build-android
-./build_all.sh
-```
-
-> **NOTE:** To allow manual installation of Android layer libraries on development devices, `build_all.sh` will use the static version of the c++ library (libc++_static.so). For testing purposes and general usage including installation via APK the c++ shared library should be used (libc++_shared.so). See comments in [build_all.sh](build-android/build_all.sh) for details.
-
-> **NOTE:** By default, the `build_all.sh` script will build for all Android ABI variations. To **speed up the build time** if you know your target(s), set `APP_ABI` in both [build-android/jni/Application.mk](build-android/jni/Application.mk) and [build-android/jni/shaderc/Application.mk](build-android/jni/shaderc/Application.mk) to the desired [Android ABI](https://developer.android.com/ndk/guides/application_mk#app_abi)
-
-Resulting validation layer binaries will be in `build-android/libs`. Test and demo APKs can be installed on production devices with:
+See https://developer.android.com/ndk/guides/cmake#command-line for CMake NDK documentation.
 
 ```sh
-./install_all.sh [-s <serial number>]
+# Build release binary for arm64-v8a
+cmake -S . -B build \
+  -D CMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+  -D ANDROID_PLATFORM=26 \
+  -D CMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+  -D CMAKE_ANDROID_STL_TYPE=c++_static \
+  -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
+  -D CMAKE_BUILD_TYPE=Release \
+  -D UPDATE_DEPS=ON \
+  -G Ninja
+
+cmake --build build
+
+cmake --install build --prefix build/install
 ```
 
-Note that there are no equivalent scripts on Windows yet, that work needs to
-be completed. The following per platform commands can be used for layer only
-builds:
+Then you just package the library into your APK under the appropriate lib directory based on the ABI:
+https://en.wikipedia.org/wiki/Apk_(file_format)#Package_contents
 
-#### Linux and OSX
+Alternatively users can also use `scripts/android.py` to build the binaries.
 
-Follow the setup steps for Linux or OSX above, then from your terminal:
+Note: `scripts/android.py` will place the binaries in the `build-android/libs` directory.
 
-    cd build-android
-    ./update_external_sources_android.sh --no-build
-    ndk-build -j4
+```sh
+# Build release binary for arm64-v8a
+python3 scripts/android.py --config Release --app-abi arm64-v8a --app-stl c++_static
+```
 
-#### Windows
+`android.py` can also streamline building for multiple ABIs:
 
-Follow the setup steps for Windows above, then from the Developer Command Prompt:
+```sh
+# Build release binaries for all ABIs
+python3 scripts/android.py --config Release --app-abi 'armeabi-v7a arm64-v8a x86 x86_64' --app-stl c++_static
+```
 
-    cd build-android
-    update_external_sources_android.bat
-    ndk-build
+2. Building the test APK for development purposes
+
+Creating the test APK is a bit of an involved process since it requires running multiple CLI tools after the CMake build has finished.
+
+As a result users are enouraged to use `scripts/android.py` to build the test APK.
+
+This script handles wrapping CMake and various Android CLI tools to create the APK for you.
+
+```sh
+# Build a complete test APK with debug binaries for all ABIS
+python3 scripts/android.py --config Debug --app-abi 'armeabi-v7a arm64-v8a x86 x86_64' --app-stl c++_shared --apk --tests
+
+# Build a test APK with release binaries for arm64-v8a
+python3 scripts/android.py --config Release --app-abi arm64-v8a --app-stl c++_shared --apk --tests
+```
+
+Note: `scripts/android.py` will place the APK in the `build-android/bin` directory.
 
 ## CMake Installed Files
 
