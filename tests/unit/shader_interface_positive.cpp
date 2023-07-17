@@ -1099,7 +1099,6 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
     char const *vsSource = R"glsl(
         #version 450
         struct S {
-            vec4 a[2];
             float b;
             int[2] c;
         };
@@ -1107,19 +1106,15 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         out block {
             layout(location=0) float x;
             layout(location=6) S[3] y; // difference, but can have extra output locations
-            layout(location=30) int[4] z;
+            layout(location=16) int[4] z;
         } outBlock;
 
-        void main() {
-            outBlock.y[1].a[1] = vec4(1);
-            gl_Position = vec4(1);
-        }
+        void main() {}
     )glsl";
 
     char const *fsSource = R"glsl(
         #version 450
         struct S {
-            vec4 a[2];
             float b;
             int[2] c;
         };
@@ -1127,13 +1122,11 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         in block {
             layout(location=0) float x;
             layout(location=6) S[2] y;
-            layout(location=30) int[4] z;
+            layout(location=16) int[4] z;
         } inBlock;
 
         layout(location=0) out vec4 color;
-        void main(){
-            color = inBlock.y[1].a[1];
-        }
+        void main(){}
     )glsl";
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1278,19 +1271,98 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray) {
     char const *vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][2][2] x;
-
-        void main() {
-            x[1][1][1] = 1.0;
-        }
+        void main() {}
     )glsl";
 
     char const *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[4][2][2] x;
         layout(location=0) out float color;
-        void main(){
-            color = x[1][1][1];
-        }
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
+    TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][3][2] x;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[4][2][2] x;
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
+    TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][3][2] x; // 24 locations
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[3][2][4] x; // 24 locations
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
+    TEST_DESCRIPTION("multidimensional arrays but have lingering vertex output");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][3][2] x; // 24 locations
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[24] x;
+        layout(location=0) out float color;
+        void main(){}
     )glsl";
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);

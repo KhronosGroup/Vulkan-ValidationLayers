@@ -791,19 +791,15 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
         struct S {
             vec4 a[2];
             float b;
-            float c;
         };
 
         out block {
             layout(location=0) float x;
-            layout(location=6) S[2][2] y; // difference
-            layout(location=30) int[4] z;
+            layout(location=2) S[2][2] y; // difference
+            layout(location=21) int[2] z;
         } outBlock;
 
-        void main() {
-            outBlock.y[1][0].a[1] = vec4(1);
-            gl_Position = vec4(1);
-        }
+        void main() {}
     )glsl";
 
     char const *fsSource = R"glsl(
@@ -811,19 +807,16 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
         struct S {
             vec4 a[2];
             float b;
-            float c;
         };
 
         in block {
             layout(location=0) float x;
-            layout(location=6) S[2][3] y; // difference
-            layout(location=30) int[4] z;
+            layout(location=2) S[2][3] y; // difference
+            layout(location=21) int[2] z;
         } inBlock;
 
         layout(location=0) out vec4 color;
-        void main(){
-            color = inBlock.y[1][0].a[1];
-        }
+        void main(){}
     )glsl";
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1353,4 +1346,60 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArrayVec3) {
         helper.pipe_ms_state_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
+}
+
+TEST_F(NegativeShaderInterface, MultidimensionalArray) {
+    TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][2][2] x;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[4][3][2] x; // 2 extra Locations
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
+    TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][2][2] x;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[17] x; // 1 extra Locations
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
