@@ -1373,3 +1373,70 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
+    TEST_DESCRIPTION("Make sure multidimensional arrays are handled for 64bits");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit floats";
+    }
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location=0) out f64vec3[2][2][3] x; // take 2 locations each (total 24)
+        layout(location=24) out float y;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location=0) flat in f64vec3[2][3][2] x;
+        layout(location=24) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, PackingInsideArray) {
+    TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0, component = 1) out float[2] x;
+        layout(location = 1, component = 0) out int y;
+        layout(location = 1, component = 2) out int z;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location = 0, component = 1) in float x1;
+        layout(location = 1, component = 0) flat in int y;
+        layout(location = 1, component = 1) in float x2;
+        layout(location = 1, component = 2) flat in int z;
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}

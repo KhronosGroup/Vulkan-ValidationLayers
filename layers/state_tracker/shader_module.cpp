@@ -1484,7 +1484,7 @@ const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& va
     // This is allowed only here because interface variables are never Phyiscal pointers
     const Instruction* base_type = module_state.FindDef(module_state.FindDef(variable.type_id)->Word(3));
 
-    // Strip away the first array, if any, if speical interface array
+    // Strip away the first array, if any, if special interface array
     // Most times won't be anything to strip
     if (variable.is_array_interface && base_type->IsArray()) {
         const uint32_t type_id = base_type->Word(2);
@@ -1587,7 +1587,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
                 // The spec says all or non of the member variables must have Location
                 const auto member_decoration = variable.type_struct_info->decorations.member_decorations.at(i);
                 uint32_t location = member_decoration.location;
-                const uint32_t starting_componet = member_decoration.component;
+                const uint32_t starting_component = member_decoration.component;
 
                 if (member.type_struct_info) {
                     const uint32_t array_size = module_state.GetFlattenArraySize(*member.insn);
@@ -1603,7 +1603,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
                     const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
                     for (uint32_t j = 0; j < components; j++) {
-                        slots.emplace_back(location, starting_componet + j, numerical_type_opcode, numerical_type_width);
+                        slots.emplace_back(location, starting_component + j, numerical_type_opcode, numerical_type_width);
                     }
                 }
             }
@@ -1614,6 +1614,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         uint32_t type_id = variable.base_type.ResultId();
 
         locations = module_state.GetLocationsConsumedByType(type_id);
+        const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
 
         // Info needed to test type matching later
         const Instruction* numerical_type = module_state.GetBaseTypeInstruction(type_id);
@@ -1621,13 +1622,12 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
         const uint32_t starting_location = variable.decorations.location;
-        const uint32_t starting_componet = variable.decorations.component;
+        const uint32_t starting_component = variable.decorations.component;
         for (uint32_t array_index = 0; array_index < variable.array_size; array_index++) {
             // offet into array if there is one
             const uint32_t location = starting_location + (locations * array_index);
-            const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
             for (uint32_t component = 0; component < components; component++) {
-                slots.emplace_back(location, component + starting_componet, numerical_type_opcode, numerical_type_width);
+                slots.emplace_back(location, component + starting_component, numerical_type_opcode, numerical_type_width);
             }
         }
     }

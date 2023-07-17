@@ -436,7 +436,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
         uint32_t input_type = 0;
         uint32_t input_width = 0;
     };
-    // <Location, Components[4]> (only 4 componets in a Location)
+    // <Location, Components[4]> (only 4 components in a Location)
     vvl::unordered_map<uint32_t, std::array<ComponentInfo, 4>> slot_map;
 
     for (const auto &interface_slot : producer_entrypoint.output_interface_slots) {
