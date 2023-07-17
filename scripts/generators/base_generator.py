@@ -75,6 +75,30 @@ def SetTargetApiName(apiname: str) -> None:
     global globalApiName
     globalApiName = apiname
 
+def SetMergedApiNames(names: str) -> None:
+    global mergedApiNames
+    mergedApiNames = names
+
+
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    # Version object factory method
+    @staticmethod
+    def createApiVersion(targetApiName: str, name: str, number: str) -> Version:
+        match targetApiName:
+
+            # Vulkan specific API version creation
+            case 'vulkan':
+                nameApi = name.replace('VK_', 'VK_API_')
+                nameString = f'"{name}"'
+                return Version(name, nameString, nameApi, number)
+
+
 # This Generator Option is used across all generators.
 # After years of use, it has shown that most the options are unified across each generator (file)
 # as it is easier to modifiy things per-file that need the difference
@@ -88,7 +112,7 @@ class BaseGeneratorOptions(GeneratorOptions):
                 filename = customFileName if customFileName else globalFileName,
                 directory = customDirectory if customDirectory else globalDirectory,
                 apiname = customApiName if customApiName else globalApiName,
-                mergeApiNames = None,
+                mergeApiNames = mergedApiNames,
                 defaultExtensions = customApiName if customApiName else globalApiName,
                 emitExtensions = '.*',
                 emitSpirv = '.*',
@@ -106,6 +130,7 @@ class BaseGenerator(OutputGenerator):
     def __init__(self):
         OutputGenerator.__init__(self, None, None, None)
         self.vk = VulkanObject()
+        self.targetApiName = globalApiName
 
         # reg.py has a `self.featureName` but this is nicer because
         # it will be either the Version or Extension object
@@ -171,6 +196,15 @@ class BaseGenerator(OutputGenerator):
             #  one or more extension and/or core version names
             for required in dict:
                 for commandName in dict[required]:
+                    # Skip commands removed in the target API
+                    # This check is needed because parts of the base generator code bypass the
+                    # dependency resolution logic in the registry tooling and thus the generator
+                    # may attempt to generate code for commands which are not supported in the
+                    # target API variant, thus this check needs to happen even if any specific
+                    # target API variant may not specifically need it
+                    if not commandName in self.vk.commands:
+                        continue
+
                     command = self.vk.commands[commandName]
                     # Make sure list is unique
                     command.extensions.extend([extension] if extension not in command.extensions else [])
@@ -316,9 +350,7 @@ class BaseGenerator(OutputGenerator):
         else: # version
             number = interface.get('number')
             if number != '1.0':
-                nameApi = name.replace('VK_', 'VK_API_')
-                nameString = f'"{name}"'
-                self.currentVersion = Version(name, nameString, nameApi, number)
+                self.currentVersion = APISpecific.createApiVersion(self.targetApiName, name, number)
                 self.vk.versions[name] = self.currentVersion
 
     def endFeature(self):
@@ -647,8 +679,10 @@ class BaseGenerator(OutputGenerator):
             equivalent = SyncEquivalent(stages, accesses, False)
 
         flagName = syncElem.get('name')
-        flag = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name == flagName][0]
-        self.vk.syncStage.append(SyncStage(flag, support, equivalent))
+        flag = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name == flagName]
+        # This check is needed because not all API variants have VK_KHR_synchronization2
+        if flag:
+            self.vk.syncStage.append(SyncStage(flag[0], support, equivalent))
 
     def genSyncAccess(self, sync):
         OutputGenerator.genSyncAccess(self, sync)
@@ -672,8 +706,10 @@ class BaseGenerator(OutputGenerator):
             equivalent = SyncEquivalent(stages, accesses, False)
 
         flagName = syncElem.get('name')
-        flag = [x for x in self.vk.bitmasks['VkAccessFlagBits2'].flags if x.name == flagName][0]
-        self.vk.syncAccess.append(SyncAccess(flag, support, equivalent))
+        flag = [x for x in self.vk.bitmasks['VkAccessFlagBits2'].flags if x.name == flagName]
+        # This check is needed because not all API variants have VK_KHR_synchronization2
+        if flag:
+            self.vk.syncAccess.append(SyncAccess(flag[0], support, equivalent))
 
     def genSyncPipeline(self, sync):
         OutputGenerator.genSyncPipeline(self, sync)

@@ -40,6 +40,8 @@ if (UPDATE_DEPS)
     endif()
     list(APPEND update_dep_command "--config")
     list(APPEND update_dep_command "${_build_type}")
+    list(APPEND update_dep_command "--api")
+    list(APPEND update_dep_command "${API_TYPE}")
 
     set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
     if (ANDROID)

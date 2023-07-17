@@ -21,6 +21,23 @@
 import os
 from generators.base_generator import BaseGenerator
 
+# This class is a container for any source code, data, or other behavior that is necessary to
+# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
+# all of these API-specific interfaces and their use in the generator script are part of the
+# contract between this repository and its downstream users. Changing or removing any of these
+# interfaces or their use in the generator script will have downstream effects and thus
+# should be avoided unless absolutely necessary.
+class APISpecific:
+    # Generates manual constants
+    @staticmethod
+    def genManualConstants(targetApiName: str) -> list[str]:
+        match targetApiName:
+
+            # Vulkan specific manual constant generation
+            case 'vulkan':
+                return []
+
+
 class EnumFlagBitsOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
@@ -86,6 +103,8 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
             out.append(f'const {bitmask.flagName} All{bitmask.name} = {"|".join([flag.name for flag in bitmask.flags])}')
             out.append(';\n')
             out.extend([f'#endif //{bitmask.protect}\n'] if bitmask.protect else [])
+
+        out.extend(APISpecific.genManualConstants(self.targetApiName))
 
         out.append('\n')
         out.append('// mask of all the VK_PIPELINE_STAGE_*_SHADER_BIT stages\n')

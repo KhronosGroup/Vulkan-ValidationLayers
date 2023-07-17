@@ -34,8 +34,8 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) cons
     bool skip = false;
     const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
-    // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
-    // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
+    // No destroy API or implicitly freed/destroyed -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
+    // No destroy API or implicitly freed/destroyed -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     return skip;

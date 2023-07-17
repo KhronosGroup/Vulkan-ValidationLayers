@@ -3556,6 +3556,13 @@ void android_main(struct android_app *app) {
 #include <crtdbg.h>
 #endif
 
+// Defining VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK allows downstream users
+// to inject custom test framework changes. This includes the ability
+// to override the main entry point of the test executable in order to
+// add custom command line arguments and use a custom test environment
+// class. This #ifndef thus makes sure that when the definition is
+// present we do not include the default main entry point.
+#ifndef VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK
 int main(int argc, char **argv) {
     int result;
 
@@ -3581,3 +3588,4 @@ int main(int argc, char **argv) {
     VkTestFramework::Finish();
     return result;
 }
+#endif

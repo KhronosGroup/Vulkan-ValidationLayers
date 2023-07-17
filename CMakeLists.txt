@@ -18,6 +18,10 @@ cmake_minimum_required(VERSION 3.17.2)
 
 project(VVL LANGUAGES CXX)
 
+# This variable enables downstream users to customize the target API
+# variant (e.g. Vulkan SC)
+set(API_TYPE "vulkan")
+
 add_subdirectory(scripts)
 
 set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")

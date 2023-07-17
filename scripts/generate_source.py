@@ -66,7 +66,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
-    from generators.base_generator import (SetOutputDirectory, SetTargetApiName)
+    from generators.base_generator import (SetOutputDirectory, SetTargetApiName, SetMergedApiNames)
     SetOutputDirectory(directory)
     SetTargetApiName(api)
 
@@ -77,146 +77,191 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     generators = {
         'thread_safety_counter_definitions.h' : {
             'generator' : ThreadSafetyOutputGenerator,
+            'genCombined': True,
         },
         'thread_safety_counter_instances.h' : {
             'generator' : ThreadSafetyOutputGenerator,
+            'genCombined': True,
         },
         'thread_safety_counter_bodies.h' : {
             'generator' : ThreadSafetyOutputGenerator,
+            'genCombined': True,
         },
         'thread_safety_commands.h' : {
             'generator' : ThreadSafetyOutputGenerator,
+            'genCombined': True,
         },
         'thread_safety.cpp' : {
             'generator' : ThreadSafetyOutputGenerator,
+            'genCombined': True,
         },
         'stateless_validation_helper.h' : {
             'generator' : StatelessValidationHelperOutputGenerator,
+            'genCombined': False,
             'options' : [valid_usage_file],
         },
         'stateless_validation_helper.cpp' : {
             'generator' : StatelessValidationHelperOutputGenerator,
+            'genCombined': False,
             'options' : [valid_usage_file],
         },
         'enum_flag_bits.h' : {
             'generator' : EnumFlagBitsOutputGenerator,
+            'genCombined': False,
         },
         'valid_enum_values.h' : {
             'generator' : ValidEnumValuesOutputGenerator,
+            'genCombined': False,
         },
         'valid_enum_values.cpp' : {
             'generator' : ValidEnumValuesOutputGenerator,
+            'genCombined': False,
         },
         'object_tracker.h' : {
             'generator' : ObjectTrackerOutputGenerator,
+            'genCombined': True,
             'options' : [valid_usage_file],
         },
         'object_tracker.cpp' : {
             'generator' : ObjectTrackerOutputGenerator,
+            'genCombined': True,
             'options' : [valid_usage_file],
         },
         'vk_dispatch_table_helper.h' : {
             'generator' : DispatchTableHelperOutputGenerator,
+            'genCombined': True,
         },
         'vk_function_pointers.h' : {
             'generator' : FunctionPointersOutputGenerator,
+            'genCombined': True,
         },
         'vk_function_pointers.cpp' : {
             'generator' : FunctionPointersOutputGenerator,
+            'genCombined': True,
         },
         'vk_layer_dispatch_table.h' : {
             'generator' : LayerDispatchTableOutputGenerator,
+            'genCombined': True,
         },
         'vk_enum_string_helper.h' : {
             'generator' : EnumStringHelperOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct.h' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct_utils.cpp' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct_core.cpp' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct_khr.cpp' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct_ext.cpp' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_safe_struct_vendor.cpp' : {
             'generator' : SafeStructOutputGenerator,
+            'genCombined': True,
         },
         'vk_object_types.h' : {
             'generator' : ObjectTypesOutputGenerator,
+            'genCombined': True,
         },
         'vk_extension_helper.h' : {
             'generator' : ExtensionHelperOutputGenerator,
+            'genCombined': True,
         },
         'vk_typemap_helper.h' : {
             'generator' : TypemapHelperOutputGenerator,
+            'genCombined': True,
         },
         'chassis.h' : {
             'generator' : LayerChassisOutputGenerator,
+            'genCombined': True,
         },
         'chassis.cpp' : {
             'generator' : LayerChassisOutputGenerator,
+            'genCombined': False,
         },
         'chassis_dispatch_helper.h' : {
             'generator' : LayerChassisOutputGenerator,
+            'genCombined': True,
         },
         'layer_chassis_dispatch.h' : {
             'generator' : LayerChassisDispatchOutputGenerator,
+            'genCombined': True,
         },
         'layer_chassis_dispatch.cpp' : {
             'generator' : LayerChassisDispatchOutputGenerator,
+            'genCombined': True,
         },
         'best_practices.h' : {
             'generator' : BestPracticesOutputGenerator,
+            'genCombined': True,
         },
         'best_practices.cpp' : {
             'generator' : BestPracticesOutputGenerator,
+            'genCombined': True,
         },
         'sync_validation_types.h' : {
             'generator' : SyncValidationOutputGenerator,
+            'genCombined': False,
         },
         'sync_validation_types.cpp' : {
             'generator' : SyncValidationOutputGenerator,
+            'genCombined': False,
         },
         'spirv_validation_helper.cpp' : {
             'generator' : SpirvValidationHelperOutputGenerator,
+            'genCombined': False,
         },
         'spirv_grammar_helper.h' : {
             'generator' : SpirvGrammarHelperOutputGenerator,
+            'genCombined': False,
             'options' : [grammar],
         },
         'spirv_grammar_helper.cpp' : {
             'generator' : SpirvGrammarHelperOutputGenerator,
+            'genCombined': False,
             'options' : [grammar],
         },
         'spirv_tools_commit_id.h' : {
+            'genCombined': False,
             'generator' : SpirvToolCommitIdOutputGenerator,
         },
         'command_validation.h' : {
             'generator' : CommandValidationOutputGenerator,
+            'genCombined': True,
             'options' : [valid_usage_file],
         },
         'command_validation.cpp' : {
             'generator' : CommandValidationOutputGenerator,
+            'genCombined': True,
             'options' : [valid_usage_file],
         },
         'dynamic_state_helper.h' : {
             'generator' : DynamicStateOutputGenerator,
+            'genCombined': False,
         },
         'dynamic_state_helper.cpp' : {
             'generator' : DynamicStateOutputGenerator,
+            'genCombined': False,
         },
         'vk_format_utils.h' : {
             'generator' : FormatUtilsOutputGenerator,
+            'genCombined': True,
         },
         'vk_format_utils.cpp' : {
             'generator' : FormatUtilsOutputGenerator,
+            'genCombined': True,
         },
     }
 
@@ -235,6 +280,17 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         generatorOptions = generators[target]['options'] if 'options' in generators[target] else []
         generator = targetGenerator(*generatorOptions)
 
+        # This code and the 'genCombined' generator metadata is used by downstream
+        # users to generate code with all Vulkan APIs merged into the target API variant
+        # (e.g. Vulkan SC) when needed. The constructed apiList is also used to filter
+        # out non-applicable extensions later below.
+        apiList = [api]
+        if api != 'vulkan' and generators[target]['genCombined']:
+            SetMergedApiNames('vulkan')
+            apiList.append('vulkan')
+        else:
+            SetMergedApiNames(None)
+
         baseOptions = BaseGeneratorOptions(customFileName = target)
 
         # Create the registry object with the specified generator and generator
@@ -244,9 +300,8 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         # Parse the specified registry XML into an ElementTree object
         tree = ElementTree.parse(registry)
 
-        # Filter out non-Vulkan extensions
-        if api == 'vulkan':
-            [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and baseOptions.apiname not in sup.split(',')]
+        # Filter out extensions that are not on the API list
+        [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and all(api not in sup.split(',') for api in apiList)]
 
         # Load the XML tree into the registry object
         reg.loadElementTree(tree)
