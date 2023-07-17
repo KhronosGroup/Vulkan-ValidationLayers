@@ -251,6 +251,7 @@ struct StageInteraceVariable : public VariableBase {
     const bool is_per_task_nv;  // VK_NV_mesh_shader
 
     const bool is_array_interface;
+    uint32_t array_size = 1;  // flatten size of all dimensions; 1 if no array
     const Instruction &base_type;
     const bool is_builtin;
     bool nested_struct;
@@ -264,7 +265,7 @@ struct StageInteraceVariable : public VariableBase {
   protected:
     static bool IsPerTaskNV(const StageInteraceVariable &variable);
     static bool IsArrayInterface(const StageInteraceVariable &variable);
-    static const Instruction &FindBaseType(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static const Instruction &FindBaseType(StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static bool IsBuiltin(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static std::vector<InterfaceSlot> GetInterfaceSlots(StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);

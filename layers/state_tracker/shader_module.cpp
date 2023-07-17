@@ -1479,19 +1479,24 @@ bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variab
     return false;
 }
 
-const Instruction& StageInteraceVariable::FindBaseType(const StageInteraceVariable& variable,
-                                                       const SHADER_MODULE_STATE& module_state) {
+const Instruction& StageInteraceVariable::FindBaseType(StageInteraceVariable& variable, const SHADER_MODULE_STATE& module_state) {
     // base type is always just grabbing the type of the OpTypePointer tied to the variables
     // This is allowed only here because interface variables are never Phyiscal pointers
-    const Instruction& base_type = *module_state.FindDef(module_state.FindDef(variable.type_id)->Word(3));
+    const Instruction* base_type = module_state.FindDef(module_state.FindDef(variable.type_id)->Word(3));
 
-    // Strip away the array if one
-    if (variable.is_array_interface && (base_type.Opcode() == spv::OpTypeArray || base_type.Opcode() == spv::OpTypeRuntimeArray)) {
-        const uint32_t type_id = base_type.Word(2);
-        return *module_state.FindDef(type_id);
-    }
+    // Strip away the first array, if any, if speical interface array
     // Most times won't be anything to strip
-    return base_type;
+    if (variable.is_array_interface && base_type->IsArray()) {
+        const uint32_t type_id = base_type->Word(2);
+        base_type = module_state.FindDef(type_id);
+    }
+
+    while (base_type->Opcode() == spv::OpTypeArray) {
+        variable.array_size *= module_state.GetConstantValueById(base_type->Word(3));
+        base_type = module_state.FindDef(base_type->Word(2));
+    }
+
+    return *base_type;
 }
 
 bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const SHADER_MODULE_STATE& module_state) {
@@ -1604,27 +1609,23 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
             }
         }
     } else {
-        uint32_t array_size = 1;
         uint32_t locations = 0;
-        uint32_t sub_type_id = variable.type_id;
-        // If there is a 64vec3[], each array index takes 2 location, so easier to pull it out here
-        if (variable.base_type.Opcode() == spv::OpTypeArray) {
-            array_size = module_state.GetConstantValueById(variable.base_type.Word(3));
-            sub_type_id = variable.base_type.Word(2);
-        }
-        locations = module_state.GetLocationsConsumedByType(sub_type_id);
+        // Will have array peeled off already
+        uint32_t type_id = variable.base_type.ResultId();
+
+        locations = module_state.GetLocationsConsumedByType(type_id);
 
         // Info needed to test type matching later
-        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(sub_type_id);
+        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(type_id);
         const uint32_t numerical_type_opcode = numerical_type->Opcode();
         const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
         const uint32_t starting_location = variable.decorations.location;
         const uint32_t starting_componet = variable.decorations.component;
-        for (uint32_t array_index = 0; array_index < array_size; array_index++) {
+        for (uint32_t array_index = 0; array_index < variable.array_size; array_index++) {
             // offet into array if there is one
             const uint32_t location = starting_location + (locations * array_index);
-            const uint32_t components = module_state.GetComponentsConsumedByType(sub_type_id);
+            const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
             for (uint32_t component = 0; component < components; component++) {
                 slots.emplace_back(location, component + starting_componet, numerical_type_opcode, numerical_type_width);
             }
