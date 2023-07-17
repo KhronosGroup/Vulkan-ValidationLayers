@@ -185,21 +185,16 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
 
     for (const auto *variable : entrypoint.built_in_variables) {
         // Currently don't need to search in structs
-        if (variable->decorations.builtin == spv::BuiltInSampleMask) {
-            if (variable->base_type.Opcode() == spv::OpTypeArray) {
-                uint32_t length = module_state.GetConstantValueById(variable->base_type.Word(3));
-                // Handles both the input and output sampleMask
-                if (length > phys_dev_props.limits.maxSampleMaskWords) {
-                    skip |=
-                        LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] The BuiltIns SampleMask array sizes is %u which exceeds "
-                                 "maxSampleMaskWords of %u in %s.",
-                                 pipeline.create_index, length, phys_dev_props.limits.maxSampleMaskWords,
-                                 report_data->FormatHandle(module_state.vk_shader_module()).c_str());
-                }
-                break;
-            }
+        // Handles both the input and output sampleMask
+        if (variable->decorations.builtin == spv::BuiltInSampleMask &&
+            variable->array_size > phys_dev_props.limits.maxSampleMaskWords) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] The BuiltIns SampleMask array sizes is %u which exceeds "
+                             "maxSampleMaskWords of %u in %s.",
+                             pipeline.create_index, variable->array_size, phys_dev_props.limits.maxSampleMaskWords,
+                             report_data->FormatHandle(module_state.vk_shader_module()).c_str());
+            break;
         }
     }
 
@@ -484,7 +479,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     skip |=
                         LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-07754",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on Location %" PRIu32
-                                 " Component %" PRIu32 ", between\n%s stage:\n%s\n%s stage:\n%s",
+                                 " Component %" PRIu32 ", between\n%s stage:\n%s\n%s stage:\n%s\n",
                                  pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage),
                                  producer.DescribeType(output_var->type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
                                  consumer.DescribeType(input_var->type_id).c_str());

@@ -578,6 +578,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const Instruction *GetBaseTypeInstruction(uint32_t type) const;
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
+    uint32_t GetFlattenArraySize(const Instruction &insn) const;
 
     bool HasCapability(spv::Capability find_capability) const {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),

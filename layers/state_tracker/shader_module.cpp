@@ -1211,6 +1211,7 @@ uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type) const {
             return GetComponentsConsumedByType(insn->Word(3));
         case spv::OpTypeArray:
             // Skip array as each array element is a whole new Location and we care only about the base type
+            // ex. vec3[5] will only return 3
             return GetComponentsConsumedByType(insn->Word(2));
         case spv::OpTypeMatrix: {
             const uint32_t column_type = insn->Word(2);
@@ -1499,6 +1500,44 @@ bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, con
     return decoration_set.HasBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasBuiltIn());
 }
 
+// This logic is based off assumption that the Location are implicit and not member decorations
+// when we have structs-of-structs, only the top struct can have explicit locations given
+static uint32_t GetStructInterfaceSlots(const SHADER_MODULE_STATE& module_state,
+                                        std::shared_ptr<const TypeStructInfo> type_struct_info, std::vector<InterfaceSlot>& slots,
+                                        uint32_t starting_location) {
+    uint32_t locations_added = 0;
+    for (uint32_t i = 0; i < type_struct_info->length; i++) {
+        const auto& member = type_struct_info->members[i];
+
+        // Keep walking down nested structs
+        if (member.type_struct_info) {
+            const uint32_t array_size = module_state.GetFlattenArraySize(*member.insn);
+            for (uint32_t j = 0; j < array_size; j++) {
+                locations_added +=
+                    GetStructInterfaceSlots(module_state, member.type_struct_info, slots, starting_location + locations_added);
+            }
+            continue;
+        }
+
+        const uint32_t member_id = member.id;
+        const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+        const uint32_t locations = module_state.GetLocationsConsumedByType(member_id);
+
+        // Info needed to test type matching later
+        const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+        const uint32_t numerical_type_opcode = numerical_type->Opcode();
+        const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+
+        for (uint32_t j = 0; j < locations; j++) {
+            for (uint32_t k = 0; k < components; k++) {
+                slots.emplace_back(starting_location + locations_added, k, numerical_type_opcode, numerical_type_width);
+            }
+            locations_added++;
+        }
+    }
+    return locations_added;
+}
+
 std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable,
                                                                     const SHADER_MODULE_STATE& module_state) {
     std::vector<InterfaceSlot> slots;
@@ -1537,21 +1576,30 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         } else {
             // Option 2
             for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
-                const uint32_t member_id = variable.type_struct_info->members[i].id;
+                const auto& member = variable.type_struct_info->members[i];
+                const uint32_t member_id = member.id;
                 // Location/Components cant be decorated in nested structs, so no need to keep checking further
                 // The spec says all or non of the member variables must have Location
                 const auto member_decoration = variable.type_struct_info->decorations.member_decorations.at(i);
-                const uint32_t location = member_decoration.location;
+                uint32_t location = member_decoration.location;
                 const uint32_t starting_componet = member_decoration.component;
-                const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
 
-                // Info needed to test type matching later
-                const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
-                const uint32_t numerical_type_opcode = numerical_type->Opcode();
-                const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+                if (member.type_struct_info) {
+                    const uint32_t array_size = module_state.GetFlattenArraySize(*member.insn);
+                    for (uint32_t j = 0; j < array_size; j++) {
+                        location += GetStructInterfaceSlots(module_state, member.type_struct_info, slots, location);
+                    }
+                } else {
+                    const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
 
-                for (uint32_t j = 0; j < components; j++) {
-                    slots.emplace_back(location, starting_componet + j, numerical_type_opcode, numerical_type_width);
+                    // Info needed to test type matching later
+                    const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                    const uint32_t numerical_type_opcode = numerical_type->Opcode();
+                    const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+
+                    for (uint32_t j = 0; j < components; j++) {
+                        slots.emplace_back(location, starting_componet + j, numerical_type_opcode, numerical_type_width);
+                    }
                 }
             }
         }
@@ -1993,4 +2041,18 @@ uint32_t SHADER_MODULE_STATE::GetTexelComponentCount(const Instruction& insn) co
             break;
     }
     return texel_component_count;
+}
+
+// Takes an array like [3][2][4] and returns 24
+// If not an array, returns 1
+uint32_t SHADER_MODULE_STATE::GetFlattenArraySize(const Instruction& insn) const {
+    uint32_t array_size = 1;
+    if (insn.Opcode() == spv::OpTypeArray) {
+        array_size = GetConstantValueById(insn.Word(3));
+        const Instruction* element_insn = FindDef(insn.Word(2));
+        if (element_insn->Opcode() == spv::OpTypeArray) {
+            array_size *= GetFlattenArraySize(*element_insn);
+        }
+    }
+    return array_size;
 }
