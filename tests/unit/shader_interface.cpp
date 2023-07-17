@@ -503,6 +503,462 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maintenance4-06817");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
+    TEST_DESCRIPTION("Have a struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int c; // difference
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S y;
+            layout(location=10) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y.a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c; // difference
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S y;
+            layout(location=10) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y.a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockArrayOfStruct) {
+    TEST_DESCRIPTION("Have an array of struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int c; // difference
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y; // each array is 4 locations slots
+            layout(location=14) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c; // difference
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=14) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
+    TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[2] c; // difference
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=18) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[3] c; // difference
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=18) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuterArraySize) {
+    TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y; // difference
+            layout(location=20) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[3] y; // difference
+            layout(location=20) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
+    TEST_DESCRIPTION(
+        "Have an struct inside a block between shaders, array size is difference, but from the vertex shader being too large");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[3] c; // difference
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=18) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[2] c; // difference
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=18) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
+    TEST_DESCRIPTION("Have an struct inside a block between shaders, array size is difference");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[2][2] y; // difference
+            layout(location=30) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1][0].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            float c;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[2][3] y; // difference
+            layout(location=30) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1][0].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType) {
+    TEST_DESCRIPTION("Have nested struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_; // difference
+        };
+        struct B {
+            int b0_;
+            A b1_;
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } outBlock;
+
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct A {
+            int a0_; // difference
+        };
+        struct B {
+            int b0_;
+            A b1_;
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
+    TEST_DESCRIPTION("Have nested struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_; // difference
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } outBlock;
+
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_[2];  // difference
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
 TEST_F(NegativeShaderInterface, VsFsMismatchByLocation) {
     TEST_DESCRIPTION(
         "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "

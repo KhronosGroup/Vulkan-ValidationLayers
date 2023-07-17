@@ -1089,3 +1089,215 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
+    TEST_DESCRIPTION("Have an struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[2] c;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=6) S[3] y; // difference, but can have extra output locations
+            layout(location=30) int[4] z;
+        } outBlock;
+
+        void main() {
+            outBlock.y[1].a[1] = vec4(1);
+            gl_Position = vec4(1);
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            int[2] c;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=6) S[2] y;
+            layout(location=30) int[4] z;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){
+            color = inBlock.y[1].a[1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArray) {
+    TEST_DESCRIPTION("Have nested struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_[2]; // on last element, so just a dangling vertex output
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } outBlock;
+
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_;
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
+    TEST_DESCRIPTION("Have nested struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_[2][3];
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        out block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } outBlock;
+
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct A {
+            float a0_;
+        };
+        struct B {
+            int b0_;
+            A b1_[3][2];
+        };
+        struct C {
+            vec4 c0_[2];
+            A c1_;
+            B c2_;
+        };
+
+        in block {
+            layout(location=0) float x;
+            layout(location=1) C y;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderInterface, MultidimensionalArray) {
+    TEST_DESCRIPTION("Make sure multidimensional arrays are handled");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float[4][2][2] x;
+
+        void main() {
+            x[1][1][1] = 1.0;
+        }
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float[4][2][2] x;
+        layout(location=0) out float color;
+        void main(){
+            color = x[1][1][1];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
