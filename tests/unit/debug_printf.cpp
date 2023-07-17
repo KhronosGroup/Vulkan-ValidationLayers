@@ -1101,7 +1101,7 @@ TEST_F(NegativeDebugPrintf, UncachedBuffer) {
 
     // deviceCoherentMemory feature needs to be supported, but if not specified or enabled, Debug Printf will force enable it.
     auto dcm_features = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
-    auto features2 = GetPhysicalDeviceFeatures2(dcm_features);
+    GetPhysicalDeviceFeatures2(dcm_features);
     if (dcm_features.deviceCoherentMemory == 0) {
         GTEST_SKIP() << "deviceCoherentMemory feature not supported";
     }
@@ -1121,13 +1121,6 @@ TEST_F(NegativeDebugPrintf, UncachedBuffer) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    // Make a uniform buffer to be passed to the shader that contains the test number
-    uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
-    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    bci.size = 8;
-    bci.queueFamilyIndexCount = 1;
-    bci.pQueueFamilyIndices = &qfi;
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4};
 
