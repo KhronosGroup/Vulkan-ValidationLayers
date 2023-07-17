@@ -617,8 +617,8 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
         GetPhysicalDeviceFeatures2(portability_features);
         
-        if (portability_features.imageView2DOn3DImage == VK_FALSE) {
-            GTEST_SKIP() << "Required feature 'imageView2DOn3DImage' not supported by portability extension.";
+    if (portability_features.imageView2DOn3DImage == VK_FALSE) {
+        GTEST_SKIP() << "Required feature 'imageView2DOn3DImage' not supported by portability extension.";
         }
     }
 
