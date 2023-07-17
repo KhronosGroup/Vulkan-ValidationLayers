@@ -214,6 +214,11 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    }
+    
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -237,13 +242,23 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     }
 
     VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>(&features2);
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+        dev_info.enabledExtensionCount = device_extensions.size();
+        dev_info.ppEnabledExtensionNames = device_extensions.data();
+    } else {
+        dev_info.enabledExtensionCount = 0;
+        dev_info.ppEnabledExtensionNames = nullptr;
+    }
+    
+    
     dev_info.flags = 0;
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = 0;
-    dev_info.ppEnabledExtensionNames = nullptr;
     dev_info.pEnabledFeatures = nullptr;
 
     VkDevice device;
