@@ -558,6 +558,62 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStruct64bit) {
+    TEST_DESCRIPTION("Have a struct inside a block between shaders");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit floats";
+    }
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+
+        struct S {
+            vec4 a[2];
+            float b;
+            f64vec3 c; // difference (takes 2 locations)
+        };
+
+        out block {
+            layout(location=0) S x[2];
+            layout(location=10) int y;
+        } outBlock;
+
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        struct S {
+            vec4 a[2];
+            float b;
+            vec4 c; // difference
+            vec2 d;
+        };
+
+        in block {
+            layout(location=0) S x[2];
+            layout(location=10) int y;
+        } inBlock;
+
+        layout(location=0) out vec4 color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    // One for component 0 and 1
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockArrayOfStruct) {
     TEST_DESCRIPTION("Have an array of struct inside a block between shaders");
 
@@ -665,6 +721,8 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
+    // Both are errors, depending on compiler, the order of variables listed will hit one before the other
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpEntryPoint-07754");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
@@ -776,7 +834,8 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+    // Both are errors, depending on compiler, the order of variables listed will hit one before the other
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpEntryPoint-08743");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
@@ -828,23 +887,27 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
-TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType) {
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType64bit) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit floats";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+
         struct A {
-            float a0_; // difference
+            float a0_;
         };
         struct B {
-            int b0_;
+            f64vec3 b0_;
             A b1_;
         };
         struct C {
-            vec4 c0_[2];
             A c1_;
             B c2_;
         };
@@ -860,14 +923,13 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType) {
     char const *fsSource = R"glsl(
         #version 450
         struct A {
-            int a0_; // difference
+            float a0_;
         };
         struct B {
-            int b0_;
+            vec3 b0_;
             A b1_;
         };
         struct C {
-            vec4 c0_[2];
             A c1_;
             B c2_;
         };
@@ -887,6 +949,8 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructType) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
+    // Depending on compiler sorting order, might report multiple 07754 VUs
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpEntryPoint-07754");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
@@ -1391,6 +1455,69 @@ TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
     char const *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[17] x; // 1 extra Locations
+        layout(location=0) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
+    TEST_DESCRIPTION("Make sure multidimensional arrays are handled for 64bits");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit floats";
+    }
+
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location=0) out f64vec3[2][2][2] x; // take 2 locations each (total 16)
+        layout(location=24) out float y;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location=0) flat in f64vec3[2][3][2] x;
+        layout(location=24) out float color;
+        void main(){}
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
+}
+
+TEST_F(NegativeShaderInterface, PackingInsideArray) {
+    TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0, component = 1) out float[2] x;
+        void main() {}
+    )glsl";
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location = 0, component = 1) in float x;
+        layout(location = 1, component = 0) in float y;
         layout(location=0) out float color;
         void main(){}
     )glsl";
