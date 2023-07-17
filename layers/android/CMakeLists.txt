@@ -26,7 +26,7 @@ endif()
 #
 # Example:
 # The NDK toolchain file in r23 contains a bug which means CMAKE_ANDROID_EXCEPTIONS might not be set correctly in some circumstances, if not set directly by the developer.
-if (ANDROID_NDK_REVISION VERSION_LESS "24")
+if (ANDROID_NDK_REVISION VERSION_LESS "25")
     message(FATAL_ERROR "Android build requires at least NDK r25!")
 endif()
 
