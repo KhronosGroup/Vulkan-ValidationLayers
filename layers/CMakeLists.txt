@@ -231,6 +231,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_ray_tracing.cpp
     core_checks/cc_render_pass.cpp
     core_checks/cc_shader.cpp
+    core_checks/cc_shader_interface.cpp
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
     core_checks/cc_wsi.cpp

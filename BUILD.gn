@@ -135,6 +135,7 @@ core_validation_sources = [
   "layers/core_checks/cc_ray_tracing.cpp",
   "layers/core_checks/cc_render_pass.cpp",
   "layers/core_checks/cc_shader.cpp",
+  "layers/core_checks/cc_shader_interface.cpp",
   "layers/core_checks/cc_synchronization.cpp",
   "layers/core_checks/cc_video.cpp",
   "layers/core_checks/cc_wsi.cpp",

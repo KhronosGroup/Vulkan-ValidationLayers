@@ -78,6 +78,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_buffer.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_module.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_instruction.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_shader.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_shader_interface.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_synchronization.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/spirv_validation_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/spirv_grammar_helper.cpp
