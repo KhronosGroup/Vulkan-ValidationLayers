@@ -360,6 +360,18 @@ class ExternalMemorySyncTest : public VkLayerTest {
     VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(
         VkExternalSemaphoreFeatureFlags requested_features);
 
+    VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkBufferCreateInfo &buffer_create_info,
+                                                                           VkExternalMemoryFeatureFlags requested_features);
+    VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkImageCreateInfo &image_create_info,
+                                                                           VkExternalMemoryFeatureFlags requested_features);
+    VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkImageCreateInfo &image_create_info,
+                                                                               VkExternalMemoryFeatureFlagsNV requested_features);
+
+    bool HandleTypeNeedsDedicatedAllocation(const VkBufferCreateInfo &buffer_create_info,
+                                            VkExternalMemoryHandleTypeFlagBits handle_type);
+    bool HandleTypeNeedsDedicatedAllocation(const VkImageCreateInfo &image_create_info,
+                                            VkExternalMemoryHandleTypeFlagBits handle_type);
+
   protected:
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     using ExternalHandle = HANDLE;
@@ -1046,32 +1058,12 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci);
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kU32Max);
 
-VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
-                                                                       const VkBufferCreateInfo &buffer_create_info,
-                                                                       VkExternalMemoryFeatureFlags requested_features);
-
-bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
-                                        VkExternalMemoryHandleTypeFlagBits handle_type);
-
-VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
-                                                                       const VkImageCreateInfo &image_create_info,
-                                                                       VkExternalMemoryFeatureFlags requested_features);
-
-VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkLayerTest &test,
-                                                                           const VkImageCreateInfo &image_create_info,
-                                                                           VkExternalMemoryFeatureFlagsNV requested_features);
-
-bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
-                                        VkExternalMemoryHandleTypeFlagBits handle_type);
-
 bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type);
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane);
-
-void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor);
 
 void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");
 
