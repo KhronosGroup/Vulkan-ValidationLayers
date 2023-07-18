@@ -3558,8 +3558,51 @@ TEST_F(NegativeDynamicState, SetViewportParamMaintenance1) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    const auto &limits = m_device->props.limits;
+    m_commandBuffer->begin();
 
-    NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-height-01773");
+    // not necessarily boundary values (unspecified cast rounding), but guaranteed to be over limit
+    const float one_before_min_h = NearestSmaller(-static_cast<float>(limits.maxViewportDimensions[1]));
+    VkViewport viewport = {0.0, 0.0, 64.0, one_before_min_h, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-height-01773");
+    const float one_past_max_h = NearestGreater(static_cast<float>(limits.maxViewportDimensions[1]));
+    viewport = {0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-height-01773");
+    viewport = {0.0, 0.0, 64.0, NAN, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    const float min_bound = limits.viewportBoundsRange[0];
+    const float max_bound = limits.viewportBoundsRange[1];
+    const float one_before_min_bound = NearestSmaller(min_bound);
+    const float one_past_max_bound = NearestGreater(max_bound);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-y-01775");
+    viewport = {0.0, one_before_min_bound, 64.0, 1.0, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-y-01776");
+    viewport = {0.0, one_past_max_bound, 64.0, -1.0, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-y-01777");
+    viewport = {0.0, min_bound, 64.0, -1.0, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkViewport-y-01233");
+    viewport = {0.0, max_bound, 64.0, 1.0, 0.0, 1.0};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
