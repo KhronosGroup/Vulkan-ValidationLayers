@@ -341,7 +341,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
                     !pipeline_state.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                     const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
-                        LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->activeRenderPassBeginInfo.pNext);
+                        LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->active_render_pass_begin_info.pNext);
                     bool found = false;
                     if (sample_locations_begin_info) {
                         for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {

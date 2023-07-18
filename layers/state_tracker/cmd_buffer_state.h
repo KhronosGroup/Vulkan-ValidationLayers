@@ -252,7 +252,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         }
     } dynamic_state_value;
 
-    std::string begin_rendering_func_name;
     // Currently storing "lastBound" objects on per-CB basis
     //  long-term may want to create caches of "lastBound" states and could have
     //  each individual CMD_NODE referencing its own "lastBound" state
@@ -304,15 +303,18 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     uint32_t initial_device_mask;
 
-    safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
+    // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
+    // Used for both type of renderPass
+    vvl::unordered_set<uint32_t> active_color_attachments_index;
+    uint32_t active_render_pass_device_mask;
+    // only when not using dynamic rendering
+    safe_VkRenderPassBeginInfo active_render_pass_begin_info;
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
     std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> active_attachments;
     std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
-    vvl::unordered_set<uint32_t> active_color_attachments_index;
 
     VkSubpassContents activeSubpassContents;
-    uint32_t active_render_pass_device_mask;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
     void SetActiveSubpass(uint32_t subpass);
     std::optional<VkSampleCountFlagBits> GetActiveSubpassRasterizationSampleCount() const { return active_subpass_sample_count_; }
@@ -482,6 +484,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void EndRenderPass(CMD_TYPE cmd_type);
 
     void BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo);
+    void EndRendering(CMD_TYPE cmd_type);
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);

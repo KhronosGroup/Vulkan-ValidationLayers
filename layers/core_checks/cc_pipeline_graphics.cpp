@@ -2537,26 +2537,23 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
-    if (cb_state.activeRenderPass) {
-        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-            ValidatePipelineDynamicRenderpassDraw(last_bound_state, cmd_type);
-        } else {
-            ValidatePipelineRenderpassDraw(last_bound_state, cmd_type);
-        }
+    if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+        ValidatePipelineDynamicRenderpassDraw(last_bound_state, cmd_type);
+    } else {
+        ValidatePipelineRenderpassDraw(last_bound_state, cmd_type);
+    }
 
-        if (pipeline.DualSourceBlending()) {
-            uint32_t count =
-                cb_state.activeRenderPass->UsesDynamicRendering()
-                    ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
-                    : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
-            if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-                skip |= LogError(
-                    objlist, "VUID-RuntimeSpirv-Fragment-06427",
-                    "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
-                    ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
-                    caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
-            }
+    if (pipeline.DualSourceBlending()) {
+        uint32_t count = cb_state.activeRenderPass->UsesDynamicRendering()
+                             ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
+                             : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
+        if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |=
+                LogError(objlist, "VUID-RuntimeSpirv-Fragment-06427",
+                         "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
+                         ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
+                         caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
         }
     }
 
@@ -2699,127 +2696,116 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     // Skip the check if rasterization is disabled.
     const auto *raster_state = pipeline.RasterizationState();
     if (!raster_state || (raster_state->rasterizerDiscardEnable == VK_FALSE)) {
-        if (cb_state.activeRenderPass) {
-            if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-                // TODO: Mirror the below VUs but using dynamic rendering
-                const auto dynamic_rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
-            } else {
-                const auto render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
-                const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
-                uint32_t i;
-                unsigned subpass_num_samples = 0;
+        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+            // TODO: Mirror the below VUs but using dynamic rendering
+            const auto dynamic_rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
+        } else {
+            const auto render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
+            const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
+            uint32_t i;
+            unsigned subpass_num_samples = 0;
 
-                for (i = 0; i < subpass_desc->colorAttachmentCount; i++) {
-                    const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-                    if (attachment != VK_ATTACHMENT_UNUSED) {
-                        subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
+            for (i = 0; i < subpass_desc->colorAttachmentCount; i++) {
+                const auto attachment = subpass_desc->pColorAttachments[i].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
 
-                        const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
-                        const auto *color_blend_state = pipeline.ColorBlendState();
-                        if (imageview_state && color_blend_state && (attachment < color_blend_state->attachmentCount)) {
-                            if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0 &&
-                                color_blend_state->pAttachments[i].blendEnable != VK_FALSE) {
-                                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                            cb_state.activeRenderPass->renderPass());
-                                skip |=
-                                    LogError(objlist, vuid.blend_enable_04727,
+                    const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
+                    const auto *color_blend_state = pipeline.ColorBlendState();
+                    if (imageview_state && color_blend_state && (attachment < color_blend_state->attachmentCount)) {
+                        if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0 &&
+                            color_blend_state->pAttachments[i].blendEnable != VK_FALSE) {
+                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                        cb_state.activeRenderPass->renderPass());
+                            skip |= LogError(objlist, vuid.blend_enable_04727,
                                              "%s: Image view's format features of the color attachment (%" PRIu32
                                              ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
                                              "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
                                              caller, attachment, attachment);
-                            }
-                        }
-                    }
-                }
-
-                if (subpass_desc->pDepthStencilAttachment &&
-                    subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-                    subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
-                }
-
-                const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
-                if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-                      IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
-                      enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
-                    ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.msrtss_rasterization_samples_07284,
-                                     "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
-                                     caller, report_data->FormatHandle(pipeline.pipeline()).c_str(),
-                                     string_VkSampleCountFlagBits(rasterization_samples),
-                                     report_data->FormatHandle(cb_state.activeRenderPass->renderPass()).c_str(),
-                                     string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
-                }
-
-                const bool dynamic_line_raster_mode = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
-                const bool dynamic_line_stipple_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
-                if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
-                    const auto raster_line_state =
-                        LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(raster_state->pNext);
-
-                    const VkLineRasterizationModeEXT line_rasterization_mode =
-                        (dynamic_line_raster_mode) ? cb_state.dynamic_state_value.line_rasterization_mode
-                                                   : raster_line_state->lineRasterizationMode;
-                    const bool stippled_line_enable = (dynamic_line_stipple_enable)
-                                                          ? cb_state.dynamic_state_value.stippled_line_enable
-                                                          : raster_line_state->stippledLineEnable;
-
-                    if (stippled_line_enable) {
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
-                            (!enabled_features.line_rasterization_features.stippledRectangularLines)) {
-                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                        cb_state.activeRenderPass->renderPass());
-                            skip |=
-                                LogError(objlist, vuid.stippled_rectangular_lines_07495,
-                                         "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
-                                         "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
-                                         caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
-                        }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
-                            (!enabled_features.line_rasterization_features.stippledBresenhamLines)) {
-                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                        cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(objlist, vuid.stippled_bresenham_lines_07496,
-                                             "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
-                                             "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
-                                             caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                             dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
-                        }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
-                            (!enabled_features.line_rasterization_features.stippledSmoothLines)) {
-                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                        cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(
-                                objlist, vuid.stippled_smooth_lines_07497,
-                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
-                                "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
-                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
-                        }
-                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
-                            (!enabled_features.line_rasterization_features.stippledRectangularLines ||
-                             !phys_dev_props.limits.strictLines)) {
-                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                        cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(
-                                objlist, vuid.stippled_default_strict_07498,
-                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
-                                "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
-                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
-                                enabled_features.line_rasterization_features.stippledRectangularLines ? "enabled" : "not enabled",
-                                phys_dev_props.limits.strictLines ? "VK_TRUE" : "VK_FALSE");
                         }
                     }
                 }
             }
-        } else {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-            skip |=
-                LogError(objlist, kVUID_Core_DrawState_NoActiveRenderpass, "%s: No active render pass found at draw-time.", caller);
+
+            if (subpass_desc->pDepthStencilAttachment &&
+                subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
+            }
+
+            const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
+            if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
+                  IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+                  enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
+                ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.msrtss_rasterization_samples_07284,
+                                 "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
+                                 caller, report_data->FormatHandle(pipeline.pipeline()).c_str(),
+                                 string_VkSampleCountFlagBits(rasterization_samples),
+                                 report_data->FormatHandle(cb_state.activeRenderPass->renderPass()).c_str(),
+                                 string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
+            }
+
+            const bool dynamic_line_raster_mode = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+            const bool dynamic_line_stipple_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+            if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
+                const auto raster_line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(raster_state->pNext);
+
+                const VkLineRasterizationModeEXT line_rasterization_mode =
+                    (dynamic_line_raster_mode) ? cb_state.dynamic_state_value.line_rasterization_mode
+                                               : raster_line_state->lineRasterizationMode;
+                const bool stippled_line_enable = (dynamic_line_stipple_enable) ? cb_state.dynamic_state_value.stippled_line_enable
+                                                                                : raster_line_state->stippledLineEnable;
+
+                if (stippled_line_enable) {
+                    if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                        (!enabled_features.line_rasterization_features.stippledRectangularLines)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.stippled_rectangular_lines_07495,
+                                         "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
+                                         "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
+                                         caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                    }
+                    if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                        (!enabled_features.line_rasterization_features.stippledBresenhamLines)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.stippled_bresenham_lines_07496,
+                                         "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
+                                         "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
+                                         caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                    }
+                    if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                        (!enabled_features.line_rasterization_features.stippledSmoothLines)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(
+                            objlist, vuid.stippled_smooth_lines_07497,
+                            "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
+                            "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
+                            caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                            dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                    }
+                    if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                        (!enabled_features.line_rasterization_features.stippledRectangularLines ||
+                         !phys_dev_props.limits.strictLines)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(
+                            objlist, vuid.stippled_default_strict_07498,
+                            "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
+                            "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
+                            caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                            dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
+                            enabled_features.line_rasterization_features.stippledRectangularLines ? "enabled" : "not enabled",
+                            phys_dev_props.limits.strictLines ? "VK_TRUE" : "VK_FALSE");
+                    }
+                }
+            }
         }
     }
 

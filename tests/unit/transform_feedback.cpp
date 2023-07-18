@@ -479,11 +479,13 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer");
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-None-02286");
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
+    // TODO - When proper VU above is added, see if 02286 is still needed
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-None-02286");
+    // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    // m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeTransformFeedback, BindPipeline) {
@@ -504,12 +506,14 @@ TEST_F(NegativeTransformFeedback, BindPipeline) {
     pipe_two.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_one.pipeline_);
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-None-02323");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_two.pipeline_);
     m_errorMonitor->VerifyFound();
     vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
 
@@ -1158,5 +1162,30 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-None-02349");
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
+    TEST_DESCRIPTION("call vkCmdBeginTransformFeedbackEXT without renderpass");
+    InitBasicTransformFeedback();
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    auto info = LvlInitStruct<VkBufferCreateInfo>();
+    info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
+    info.size = 4;
+    VkBufferObj const buffer_obj(*m_device, info);
+    VkDeviceSize const offsets[1]{1};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-renderpass");
+    vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), offsets);
     m_errorMonitor->VerifyFound();
 }

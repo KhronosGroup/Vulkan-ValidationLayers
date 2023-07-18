@@ -485,10 +485,10 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
                         }
                     }
                 }
-                for (uint32_t i = 0; i < cmd_state->activeRenderPassBeginInfo.clearValueCount; ++i) {
+                for (uint32_t i = 0; i < cmd_state->active_render_pass_begin_info.clearValueCount; ++i) {
                     const auto& attachment = rp->createInfo.pAttachments[i];
                     if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                        const auto& clear_color = cmd_state->activeRenderPassBeginInfo.pClearValues[i].color;
+                        const auto& clear_color = cmd_state->active_render_pass_begin_info.pClearValues[i].color;
                         RecordClearColor(attachment.format, clear_color);
                     }
                 }

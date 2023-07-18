@@ -2676,7 +2676,6 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
 // Action command == vkCmdDraw*, vkCmdDispatch*, vkCmdTraceRays*, etc.
 bool CoreChecks::ValidateActionCmd(const CMD_BUFFER_STATE &cb_state, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const {
     bool skip = false;
-    skip |= ValidateCmd(cb_state, cmd_type);
     skip |= ValidateCmdBufDrawState(cb_state, cmd_type, bind_point);
     skip |= ValidateCmdRayQueryState(cb_state, cmd_type, bind_point);
     return skip;
@@ -2699,7 +2698,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint3
     const char *caller = CommandTypeString(cmd_type);
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_state.activeRenderPass && cb_state.activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
+    if (cb_state.activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
         ((instanceCount + firstInstance) > phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
         const LogObjectList objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
         skip |= LogError(objlist, vuid.max_multiview_instance_index_02688,
@@ -2756,6 +2755,9 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
                                         uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DRAW);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAW);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW);
     skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAW);
@@ -2778,6 +2780,9 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
                          drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
     }
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMULTIEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWMULTIEXT);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIEXT);
     skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWMULTIEXT);
@@ -2810,6 +2815,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DRAWINDEXED);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWINDEXED);
     skip |= ValidateGraphicsIndexedCmd(*cb_state, CMD_DRAWINDEXED);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED);
@@ -2836,6 +2844,9 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
                          drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
     }
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMULTIINDEXEDEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWMULTIINDEXEDEXT);
     skip |= ValidateGraphicsIndexedCmd(*cb_state, CMD_DRAWMULTIINDEXEDEXT);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIINDEXEDEXT);
@@ -2852,7 +2863,11 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                 uint32_t drawCount, uint32_t stride) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWINDIRECT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWINDIRECT);
     if (drawCount > 1) {
@@ -2878,6 +2893,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                                                        uint32_t drawCount, uint32_t stride) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWINDEXEDINDIRECT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateGraphicsIndexedCmd(*cb_state, CMD_DRAWINDEXEDINDIRECT);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
@@ -2905,6 +2923,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DISPATCH);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH);
     return skip;
 }
@@ -2930,6 +2951,9 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
                                                 uint32_t groupCountZ) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DISPATCHBASE);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASE);
     skip |= ValidateBaseGroups(*cb_state, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBase()");
     return skip;
@@ -2940,6 +2964,9 @@ bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer
                                                    uint32_t groupCountZ) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DISPATCHBASEKHR);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHBASEKHR);
     skip |= ValidateBaseGroups(*cb_state, baseGroupX, baseGroupY, baseGroupZ, "vkCmdDispatchBaseKHR()");
     return skip;
@@ -2947,7 +2974,11 @@ bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer
 
 bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DISPATCHINDIRECT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DISPATCHINDIRECT);
     if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->createInfo.size) {
@@ -2979,6 +3010,9 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     }
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, cmd_type);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
@@ -3023,6 +3057,9 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
                                                 offset, buffer_state.get());
     }
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, cmd_type);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateGraphicsIndexedCmd(*cb_state, cmd_type);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
@@ -3062,6 +3099,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                          "vkCmdDrawIndirectByteCountEXT()");
     }
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_DRAWINDIRECTBYTECOUNTEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWINDIRECTBYTECOUNTEXT);
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT);
     auto counter_buffer_state = Get<BUFFER_STATE>(counterBuffer);
@@ -3079,6 +3119,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                uint32_t width, uint32_t height, uint32_t depth) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_TRACERAYSNV);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV);
     auto callable_shader_buffer_state = Get<BUFFER_STATE>(callableShaderBindingTableBuffer);
     if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->createInfo.size) {
@@ -3213,6 +3256,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 uint32_t height, uint32_t depth) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_TRACERAYSKHR);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR);
     skip |= ValidateCmdTraceRaysKHR(CMD_TRACERAYSKHR, *cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                     pHitShaderBindingTable, pCallableShaderBindingTable);
@@ -3227,6 +3273,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         VkDeviceAddress indirectDeviceAddress) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, CMD_TRACERAYSINDIRECTKHR);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
     skip |= ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR);
     skip |= ValidateCmdTraceRaysKHR(CMD_TRACERAYSINDIRECTKHR, *cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                     pHitShaderBindingTable, pCallableShaderBindingTable);
@@ -3235,14 +3284,22 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
 
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
                                                          VkDeviceAddress indirectDeviceAddress) const {
+    bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECT2KHR);
+    skip |= ValidateCmd(*cb_state, CMD_TRACERAYSINDIRECT2KHR);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECT2KHR);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSNV);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV);
     skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSNV, true);
     return skip;
 }
@@ -3250,7 +3307,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            uint32_t drawCount, uint32_t stride) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSINDIRECTNV);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTNV);
     if (drawCount > 1) {
@@ -3271,7 +3332,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                 uint32_t maxDrawCount, uint32_t stride) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSNV);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
@@ -3290,7 +3355,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                     uint32_t groupCountZ) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSEXT);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSEXT);
     skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSEXT, false);
     return skip;
 }
@@ -3298,7 +3367,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             uint32_t drawCount, uint32_t stride) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTEXT);
+    bool skip = false;
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSINDIRECTEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTEXT);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTEXT);
     if (drawCount > 1) {
@@ -3328,8 +3401,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller_name = CommandTypeString(cmd_type);
 
+    bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
+    skip |= ValidateCmd(*cb_state, CMD_DRAWMESHTASKSEXT);
+    if (skip) return skip;  // basic validation failed, might have null pointers
+
+    skip = ValidateActionCmd(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
@@ -3400,7 +3477,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
         skip |= ValidateDrawDynamicState(last_bound_state, cmd_type);
         skip |= ValidatePipelineDrawtimeState(last_bound_state, cmd_type);
 
-        if (cb_state.activeRenderPass && cb_state.activeFramebuffer) {
+        if (cb_state.activeFramebuffer) {
             // Verify attachments for unprotected/protected command buffer.
             if (enabled_features.core11.protectedMemory == VK_TRUE && cb_state.active_attachments) {
                 uint32_t i = 0;

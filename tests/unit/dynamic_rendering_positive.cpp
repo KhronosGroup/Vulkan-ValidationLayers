@@ -199,10 +199,10 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
 
     m_commandBuffer->begin();
 
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
 
     m_commandBuffer->end();
 }
@@ -968,18 +968,18 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     dependency_info.imageMemoryBarrierCount = 0;
     dependency_info.pImageMemoryBarriers = VK_NULL_HANDLE;
 
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
 
     auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
     memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0,
                            nullptr, 0, nullptr);
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
 

@@ -812,6 +812,71 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCommand, ClearAttachmentsOutsideRenderPass) {
+    TEST_DESCRIPTION("Call CmdClearAttachments outside renderpass");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    VkClearAttachment attachment;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-renderpass");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, DrawOutsideRenderPass) {
+    TEST_DESCRIPTION("call vkCmdDraw without renderpass");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderpass");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    if (!multi_draw_features.multiDraw) {
+        GTEST_SKIP() << "Test requires (unsupported) multiDraw";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMultiDrawInfoEXT multi_draws[3] = {};
+    multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-renderpass");
+    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a primary command buffer (should only be secondary)");
 

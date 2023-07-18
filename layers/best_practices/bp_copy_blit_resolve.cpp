@@ -112,7 +112,7 @@ bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& c
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
     for (uint32_t i = 0; i < rectCount; i++) {
         auto& rect = pRects[i];
-        auto& render_area = cmd.activeRenderPassBeginInfo.renderArea;
+        auto& render_area = cmd.active_render_pass_begin_info.renderArea;
         if (rect.rect.extent.width == render_area.extent.width && rect.rect.extent.height == render_area.extent.height) {
             return true;
         }
