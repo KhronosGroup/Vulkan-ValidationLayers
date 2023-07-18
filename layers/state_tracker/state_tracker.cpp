@@ -3714,12 +3714,6 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
     cb_state->conditional_rendering_subpass = 0;
 }
 
-void ValidationStateTracker::RecordCmdEndRenderingRenderPassState(VkCommandBuffer commandBuffer) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->activeRenderPass = nullptr;
-    cb_state->active_color_attachments_index.clear();
-}
-
 void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                                                const VkRenderingInfoKHR *pRenderingInfo) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
@@ -3732,11 +3726,13 @@ void ValidationStateTracker::PreCallRecordCmdBeginRendering(VkCommandBuffer comm
 }
 
 void ValidationStateTracker::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
-    RecordCmdEndRenderingRenderPassState(commandBuffer);
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndRendering(CMD_ENDRENDERING);
 }
 
 void ValidationStateTracker::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer) {
-    RecordCmdEndRenderingRenderPassState(commandBuffer);
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndRendering(CMD_ENDRENDERINGKHR);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,

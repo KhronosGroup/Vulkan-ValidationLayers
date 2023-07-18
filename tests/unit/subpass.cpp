@@ -1309,3 +1309,22 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     pipe.CreateVKPipeline(pl.handle(), rp.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
+    TEST_DESCRIPTION("call next subpass outside a renderpass");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-renderpass");
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass-renderpass");
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}

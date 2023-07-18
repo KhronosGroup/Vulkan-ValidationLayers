@@ -2617,7 +2617,7 @@ TEST_F(NegativeDynamicRendering, WithBarrier) {
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
 
     VkBufferObj buffer;
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -2642,7 +2642,7 @@ TEST_F(NegativeDynamicRendering, WithBarrier) {
                            nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
 
@@ -2689,7 +2689,7 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
 
     auto memory_barrier_2 = LvlInitStruct<VkMemoryBarrier2KHR>();
     memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -2720,7 +2720,7 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
                            nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
 
@@ -2763,7 +2763,7 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 
-    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    m_commandBuffer->BeginRendering(begin_rendering_info);
 
     auto memory_barrier_2 = LvlInitStruct<VkMemoryBarrier2KHR>();
     memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -2887,7 +2887,7 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
                            nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
 
@@ -6392,11 +6392,11 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDisabled) {
 
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-dynamicRendering-06446");
-        vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+        m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRendering-None-06161");
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdEndRendering(m_commandBuffer->handle());
+        m_commandBuffer->EndRendering();
         m_errorMonitor->VerifyFound();
         m_commandBuffer->EndRenderPass();
     }

@@ -4653,3 +4653,26 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
         }
     }
 }
+
+TEST_F(NegativeRenderPass, BeginInfoWithoutRenderPass) {
+    TEST_DESCRIPTION("call VkRenderPassBeginInfo with invalid renderpass");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassBeginInfo-renderPass-parameter");
+    m_renderPassBeginInfo.renderPass = CastFromUint64<VkRenderPass>(0xFFFFEEEE);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeRenderPass, EndWithoutRenderPass) {
+    TEST_DESCRIPTION("call vkCmdEndRenderPass never starting a renderpass");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass-renderpass");
+    m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}

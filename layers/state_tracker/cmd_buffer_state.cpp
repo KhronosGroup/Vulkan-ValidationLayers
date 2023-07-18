@@ -152,7 +152,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     usedDynamicViewportCount = false;
     usedDynamicScissorCount = false;
 
-    activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
+    active_render_pass_begin_info = safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
     active_attachments = nullptr;
     active_subpasses = nullptr;
@@ -486,20 +486,18 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
     RecordCmd(cmd_type);
     activeFramebuffer = dev_data->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
-    activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
+    active_render_pass_begin_info = safe_VkRenderPassBeginInfo(pRenderPassBegin);
     SetActiveSubpass(0);
     activeSubpassContents = contents;
 
-    if (activeRenderPass) {
-        // Connect this RP to cmdBuffer
-        if (!dev_data->disabled[command_buffer_state]) {
-            AddChild(activeRenderPass);
-        }
+    // Connect this RP to cmdBuffer
+    if (!dev_data->disabled[command_buffer_state]) {
+        AddChild(activeRenderPass);
+    }
 
-        // Spec states that after BeginRenderPass all resources should be rebound
-        if (activeRenderPass->has_multiview_enabled) {
-            UnbindResources();
-        }
+    // Spec states that after BeginRenderPass all resources should be rebound
+    if (activeRenderPass->has_multiview_enabled) {
+        UnbindResources();
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -533,21 +531,19 @@ void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents
     activeSubpassContents = contents;
 
     // Update cb_state->active_subpasses
-    if (activeRenderPass) {
-        if (activeFramebuffer) {
-            active_subpasses = nullptr;
-            active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
+    if (activeFramebuffer) {
+        active_subpasses = nullptr;
+        active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
 
-            if (GetActiveSubpass() < activeRenderPass->createInfo.subpassCount) {
-                const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
-                UpdateSubpassAttachments(subpass, *active_subpasses);
-            }
+        if (GetActiveSubpass() < activeRenderPass->createInfo.subpassCount) {
+            const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
+            UpdateSubpassAttachments(subpass, *active_subpasses);
         }
+    }
 
-        // Spec states that after NextSubpass all resources should be rebound
-        if (activeRenderPass->has_multiview_enabled) {
-            UnbindResources();
-        }
+    // Spec states that after NextSubpass all resources should be rebound
+    if (activeRenderPass->has_multiview_enabled) {
+        UnbindResources();
     }
 }
 
@@ -563,7 +559,6 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
 
 void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(cmd_type);
-    begin_rendering_func_name = CommandTypeString(cmd_type);
     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo, true);
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
@@ -585,7 +580,6 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     hasRenderPassInstance = true;
 
     active_attachments = nullptr;
-    active_color_attachments_index.clear();
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
@@ -637,6 +631,12 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
             stencilResolveAttachment = res.first->get();
         }
     }
+}
+
+void CMD_BUFFER_STATE::EndRendering(CMD_TYPE cmd_type) {
+    RecordCmd(cmd_type);
+    activeRenderPass = nullptr;
+    active_color_attachments_index.clear();
 }
 
 void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {

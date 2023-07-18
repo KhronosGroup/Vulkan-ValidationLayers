@@ -2266,19 +2266,19 @@ void VkCommandBufferObj::NextSubpass(VkSubpassContents contents) { vk::CmdNextSu
 void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
 
 void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
-    PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR =
-        (PFN_vkCmdBeginRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderingKHR");
-    assert(vkCmdBeginRenderingKHR != nullptr);
-
-    vkCmdBeginRenderingKHR(handle(), &renderingInfo);
+    if (vk::CmdBeginRenderingKHR) {
+        vk::CmdBeginRenderingKHR(handle(), &renderingInfo);
+    } else {
+        vk::CmdBeginRendering(handle(), &renderingInfo);
+    }
 }
 
 void VkCommandBufferObj::EndRendering() {
-    PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR =
-        (PFN_vkCmdEndRenderingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderingKHR");
-    assert(vkCmdEndRenderingKHR != nullptr);
-
-    vkCmdEndRenderingKHR(handle());
+    if (vk::CmdEndRenderingKHR) {
+        vk::CmdEndRenderingKHR(handle());
+    } else {
+        vk::CmdEndRendering(handle());
+    }
 }
 
 void VkCommandBufferObj::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
