@@ -65,20 +65,13 @@ cd build-android
 # Optional
 adb uninstall com.example.VulkanLayerValidationTests
 
-adb install -r bin/VulkanLayerValidationTests.apk
+adb install  -r -g --no-incremental bin/VulkanLayerValidationTests.apk
 
-# Runs all test
-adb shell am start com.example.VulkanLayerValidationTests/android.app.NativeActivity
+# Runs all test (And print the VUIDs)
+adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.VulkanLayerValidationTests/android.app.NativeActivity --es args --print-vu
 
 # Run test with gtest_filter
 adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.VulkanLayerValidationTests/android.app.NativeActivity --es args --gtest_filter="*AndroidHardwareBuffer*"
-```
-
-Alternatively, you can use the test_APK script to install and run the layer
-validation tests:
-
-```bash
-test_APK.sh -s <serial number> -p <plaform name> -f <gtest_filter>
 ```
 
 To view to logging while running in a separate terminal run

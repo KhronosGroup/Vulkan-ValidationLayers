@@ -79,7 +79,9 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
     common_ci.RunShellCmd(f'apksigner sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {test_apk}')
 
 # Android APKs can contain binaries for multiple ABIs (armeabi-v7a, arm64-v8a, x86, x86_64).
-# CMake will need to be run multiple times to create a complete test APK that can run on any Android device.
+# https://en.wikipedia.org/wiki/Apk_(file_format)#Package_contents
+#
+# As a result CMake will need to be run multiple times to create a complete test APK that can be run on any Android device.
 def main():
     configs = ['Release', 'Debug']
 
@@ -134,7 +136,6 @@ def main():
 
     cmake_install_dir = common_ci.RepoRelative(f'build-android/libs')
 
-    # NOTE: I'm trying to roughly match what build-android/build_all.sh currently does.
     for abi in android_abis:
         build_dir = common_ci.RepoRelative(f'build-android/obj/{abi}')
         lib_dir = f'lib/{abi}'
