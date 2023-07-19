@@ -32,6 +32,8 @@
 #include "layer_options.h"
 #include "layer_chassis_dispatch.h"
 
+thread_local WriteLockGuard* ValidationObject::record_guard{};
+
 small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
 // Global unique object identifier.
