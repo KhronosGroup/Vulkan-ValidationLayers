@@ -278,3 +278,77 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     }
     signaling_thread.join();
 }
+
+TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
+    TEST_DESCRIPTION("Read semaphore counter value from multiple threads");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (IsPlatform(kMockICD)) {
+        // Mock does not support precise semaphore counter reporting
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    constexpr uint64_t max_signal_value = 15'000;
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    constexpr int waiter_count = 24;
+    ThreadTimeoutHelper timeout_helper(waiter_count + 1 /* signaling thread*/);
+
+    // Start a bunch of waiter threads
+    auto waiting_thread = [&]() {
+        auto timeout_guard = timeout_helper.ThreadGuard();
+        uint64_t counter = 0;
+        while (counter != max_signal_value) {
+            ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+            if (bailout.load()) {
+                break;
+            }
+        }
+    };
+    std::vector<std::thread> waiters;
+    for (int i = 0; i < waiter_count; i++) {
+        waiters.emplace_back(waiting_thread);
+    }
+    // The signaling thread advances semaphore's payload value
+    auto signaling_thread = std::thread([&] {
+        auto timeout_guard = timeout_helper.ThreadGuard();
+        uint64_t last_signalled_value = 0;
+        while (last_signalled_value != max_signal_value) {
+            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            signal_info.semaphore = semaphore;
+            signal_info.value = ++last_signalled_value;
+            ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
+            if (bailout.load()) {
+                break;
+            }
+        }
+    });
+
+    // In the regression case we expect crashes or deadlocks.
+    // Timeout helper will unstack CI machines in case of a deadlock.
+    constexpr int wait_time = 100;
+    if (!timeout_helper.WaitForThreads(wait_time)) {
+        ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
+        return;
+    }
+    for (auto &waiter : waiters) {
+        waiter.join();
+    }
+    signaling_thread.join();
+}
