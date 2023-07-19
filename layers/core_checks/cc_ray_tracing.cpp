@@ -1090,7 +1090,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
-    skip |= ValidateCmdRayQueryState(*cb_state, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    // TODO - This is not called in vkCmdBuildAccelerationStructuresKHR and only seems used for ValidateActionState
+    skip |= ValidateCmdRayQueryState(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
         auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
@@ -1269,8 +1270,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     return skip;
 }
 
-bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
-                                          const VkPipelineBindPoint bind_point) const {
+bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, const VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
