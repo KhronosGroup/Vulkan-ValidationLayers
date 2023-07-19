@@ -2802,6 +2802,68 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     return skip;
 }
 
+bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_STATE &src_image_state, const IMAGE_STATE &dst_image_state) const {
+    bool skip = false;
+    std::stringstream mismatch_stream{};
+    const VkImageCreateInfo src_info = src_image_state.createInfo;
+    const VkImageCreateInfo dst_info = dst_image_state.createInfo;
+
+    if (src_info.flags != dst_info.flags) {
+        mismatch_stream << "srcImage flags = " << string_VkImageCreateFlags(src_info.flags)
+                        << "and dstImage flags = " << string_VkImageCreateFlags(dst_info.flags) << "\n";
+    }
+    if (src_info.imageType != dst_info.imageType) {
+        mismatch_stream << "srcImage imageType = " << string_VkImageType(src_info.imageType)
+                        << "and dstImage imageType = " << string_VkImageType(dst_info.imageType) << "\n";
+    }
+    if (src_info.format != dst_info.format) {
+        mismatch_stream << "srcImage format = " << string_VkFormat(src_info.format)
+                        << "and dstImage format = " << string_VkFormat(dst_info.format) << "\n";
+    }
+    if ((src_info.extent.width != dst_info.extent.width) || (src_info.extent.height != dst_info.extent.height) ||
+        (src_info.extent.depth != dst_info.extent.depth)) {
+        mismatch_stream << "srcImage extent.width = " << src_info.extent.width << " extent.height = " << src_info.extent.height
+                        << " extent.depth = " << src_info.extent.depth << " but dstImage extent.width = " << dst_info.extent.width
+                        << " extent.height = " << dst_info.extent.height << " extent.depth = " << dst_info.extent.depth << "\n";
+    }
+    if (src_info.mipLevels != dst_info.mipLevels) {
+        mismatch_stream << "srcImage mipLevels = " << src_info.mipLevels << "and dstImage mipLevels = " << dst_info.mipLevels
+                        << "\n";
+    }
+    if (src_info.arrayLayers != dst_info.arrayLayers) {
+        mismatch_stream << "srcImage arrayLayers = " << src_info.arrayLayers
+                        << "and dstImage arrayLayers = " << dst_info.arrayLayers << "\n";
+    }
+    if (src_info.samples != dst_info.samples) {
+        mismatch_stream << "srcImage samples = " << string_VkSampleCountFlagBits(src_info.samples)
+                        << "and dstImage samples = " << string_VkSampleCountFlagBits(dst_info.samples) << "\n";
+    }
+    if (src_info.tiling != dst_info.tiling) {
+        mismatch_stream << "srcImage tiling = " << string_VkImageTiling(src_info.tiling)
+                        << "and dstImage tiling = " << string_VkImageTiling(dst_info.tiling) << "\n";
+    }
+    if (src_info.usage != dst_info.usage) {
+        mismatch_stream << "srcImage usage = " << string_VkImageUsageFlags(src_info.usage)
+                        << "and dstImage usage = " << string_VkImageUsageFlags(dst_info.usage) << "\n";
+    }
+    if (src_info.sharingMode != dst_info.sharingMode) {
+        mismatch_stream << "srcImage sharingMode = " << string_VkSharingMode(src_info.sharingMode)
+                        << "and dstImage sharingMode = " << string_VkSharingMode(dst_info.sharingMode) << "\n";
+    }
+    if (src_info.initialLayout != dst_info.initialLayout) {
+        mismatch_stream << "srcImage initialLayout = " << string_VkImageLayout(src_info.initialLayout)
+                        << "and dstImage initialLayout = " << string_VkImageLayout(dst_info.initialLayout) << "\n";
+    }
+
+    if (mismatch_stream.str().length() > 0) {
+        std::stringstream ss;
+        ss << "VkImageToImageCopyEXT(): The creation parameters for srcImage and dstImage differ:\n" << mismatch_stream.str();
+        LogObjectList objlist(device, src_image_state.image(), dst_image_state.image());
+        skip |= LogError(objlist, "VUID-VkCopyImageToImageInfoEXT-srcImage-XXXXX", "%s.", ss.str().c_str());
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
                                          const VkImageLayout *supported_image_layouts, const VkImageLayout image_layout,
                                          const char *func_name, const char *field_name, const char *supported_name,
@@ -2865,6 +2927,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     auto pRegions = pCopyImageToImageInfo->pRegions;
     const char func_name[] = "vkCopyImageToImageEXT";
 
+    skip = ValidateHostCopyImageCreateInfos(device, *src_image_state, *dst_image_state);
     skip =
         ValidateImageCopyData(device, pCopyImageToImageInfo->regionCount,
                               pCopyImageToImageInfo->pRegions, *src_image_state, *dst_image_state, true, CMD_NONE);
