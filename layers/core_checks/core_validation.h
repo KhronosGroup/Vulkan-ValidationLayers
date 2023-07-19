@@ -975,7 +975,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
                                      const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type,
                                      bool image_to_buffer) const;
-    bool ValidateCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
+    bool ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
                                  const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
                                  const char* func_name, const char* field_name, const char* supported_name, const char* vuid) const;
     bool ValidateBufferViewRange(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
