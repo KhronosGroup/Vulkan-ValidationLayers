@@ -1182,10 +1182,11 @@ TEST_F(NegativeDebugPrintf, UncachedBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, message);
 
     err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST)) << vk_result_string(err);
+    // Some drivers return VK_TIMEOUT (spec does not allow it).
+    ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST) || (err == VK_TIMEOUT)) << vk_result_string(err);
     if (err == VK_SUCCESS) {
         err = vk::QueueWaitIdle(m_device->m_queue);
-        ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST)) << vk_result_string(err);
+        ASSERT_TRUE((err == VK_SUCCESS) || (err == VK_ERROR_DEVICE_LOST) || (err == VK_TIMEOUT)) << vk_result_string(err);
     }
     m_errorMonitor->VerifyFound();
 }
