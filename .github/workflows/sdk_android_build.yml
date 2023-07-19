@@ -39,6 +39,9 @@ jobs:
   android:
     name: Android SDK Release
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        abi: [ armeabi-v7a, arm64-v8a, x86, x86_64 ]
     steps:
     - name: Clone repository
       uses: actions/checkout@v3
@@ -47,7 +50,7 @@ jobs:
       with:
         python-version: '3.10'
     - name: CMake Build
-      run: python scripts/android.py --config Release --app-abi 'armeabi-v7a arm64-v8a x86 x86_64' --app-stl c++_static
+      run: python scripts/android.py --config Release --app-abi ${{ matrix.abi }} --app-stl c++_static
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
