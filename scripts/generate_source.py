@@ -265,12 +265,13 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         },
     }
 
-    if (targetFilter and targetFilter not in generators.keys()):
-        print(f'ERROR: No generator options for unknown target: {targetFilter}', file=sys.stderr)
-        sys.exit(1)
+    unknownTargets = [x for x in (targetFilter if targetFilter else []) if x not in generators.keys()]
+    if unknownTargets:
+        print(f'ERROR: No generator options for unknown target(s): {", ".join(unknownTargets)}', file=sys.stderr)
+        return 1
 
     # Filter if --target is passed in
-    targets = [x for x in generators.keys() if not targetFilter or x == targetFilter]
+    targets = [x for x in generators.keys() if not targetFilter or x in targetFilter]
 
     for index, target in enumerate(targets, start=1):
         print(f'[{index}|{len(targets)}] Generating {target}')
@@ -326,7 +327,7 @@ def main(argv):
     parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
     parser.add_argument('--generated-version', help='sets the header version used to generate the repo')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--target', help='only generate file name passed in')
+    group.add_argument('--target', nargs='+', help='only generate file names passed in')
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
     args = parser.parse_args(argv)
