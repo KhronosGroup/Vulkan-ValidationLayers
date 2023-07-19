@@ -44,6 +44,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
     from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
+    from generators.api_version_generator import ApiVersionOutputGenerator
     from generators.extension_helper_generator import ExtensionHelperOutputGenerator
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
@@ -150,6 +151,9 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         },
         'vk_object_types.h' : {
             'generator' : ObjectTypesOutputGenerator,
+        },
+        'vk_api_version.h' : {
+            'generator' : ApiVersionOutputGenerator,
         },
         'vk_extension_helper.h' : {
             'generator' : ExtensionHelperOutputGenerator,
