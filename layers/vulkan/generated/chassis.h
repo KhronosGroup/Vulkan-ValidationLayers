@@ -3787,11 +3787,18 @@ class ValidationObject {
 
         // If the Record phase calls a function that blocks, we might need to release
         // the lock that protects Record itself in order to avoid mutual waiting.
-        WriteLockGuard* record_guard = nullptr;
+        static thread_local WriteLockGuard* record_guard;
 
         // Should be used instead of WriteLock() if the Record phase wants to release
         // its lock during the blocking operation.
         void GetWriteLockForBlockingOperation(WriteLockGuard& write_lock) {
+
+            // This assert detects recursive calls. It is here mostly for documentation purposes
+            // because WriteLock() also triggers errors during recursion.
+            // Recursion is not allowed since record_guard is a thread-local variable and it can
+            // reference only one frame of the callstack.
+            assert(record_guard == nullptr);
+
             write_lock = WriteLock();
             // Initialize record_guard only when Record is actually protected by the
             // mutex. It's not the case when fine grained locking is enabled.
