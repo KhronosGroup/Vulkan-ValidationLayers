@@ -1081,7 +1081,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
             }
 
             // We can skip updating the state if "nothing" has changed since the last validation.
-            // See CoreChecks::ValidateCmdBufDrawState for more details.
+            // See CoreChecks::ValidateActionState for more details.
             const bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
                                                 // Update if descriptor set (or contents) has changed
                                                 set_info.validated_set != descriptor_set.get() ||

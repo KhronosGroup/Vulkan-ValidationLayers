@@ -573,7 +573,6 @@ class CoreChecks : public ValidationStateTracker {
     const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawInstance(const CMD_BUFFER_STATE& cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                  CMD_TYPE cmd_type) const;
-    bool ValidateActionCmd(const CMD_BUFFER_STATE& cb_state, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
     bool ValidateGraphicsIndexedCmd(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
@@ -745,8 +744,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
-    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
-    bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
+    bool ValidateActionState(const CMD_BUFFER_STATE& cb_state,const VkPipelineBindPoint bind_point,  CMD_TYPE cmd_type) const;
+    bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, const VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
     static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
                                        VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
     bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE& cb_state, VkQueue queue) const;

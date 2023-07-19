@@ -803,7 +803,7 @@ struct LAST_BOUND_STATE {
         std::vector<uint32_t> dynamicOffsets;
         PipelineLayoutCompatId compat_id_for_set{0};
 
-        // Cache most recently validated descriptor state for ValidateCmdBufDrawState/UpdateDrawState
+        // Cache most recently validated descriptor state for ValidateActionState/UpdateDrawState
         const cvdescriptorset::DescriptorSet *validated_set{nullptr};
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};
