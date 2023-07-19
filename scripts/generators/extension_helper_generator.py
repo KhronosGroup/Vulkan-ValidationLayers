@@ -84,9 +84,8 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 for reqs in exprValues(parseExpr(temp)):
                     feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
                     requiredExpression[extension.name].append(feature)
-        fieldName['VK_VERSION_1_1'] = "vk_feature_version_1_1"
-        fieldName['VK_VERSION_1_2'] = "vk_feature_version_1_2"
-        fieldName['VK_VERSION_1_3'] = "vk_feature_version_1_3"
+        for version in self.vk.versions.values():
+            fieldName[version.name] = version.name.replace('_VERSION', '_FEATURE_VERSION').lower()
 
         out = []
         out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -207,12 +206,9 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
 }
 ''')
 
-        out.append('''
-struct InstanceExtensions {
-    ExtEnabled vk_feature_version_1_1{kNotEnabled};
-    ExtEnabled vk_feature_version_1_2{kNotEnabled};
-    ExtEnabled vk_feature_version_1_3{kNotEnabled};
-''')
+        out.append('\n')
+        out.append('struct InstanceExtensions {\n')
+        out.extend([f'    ExtEnabled {fieldName[x.name]}{{kNotEnabled}};\n' for x in self.vk.versions.values()])
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.instance])
 
         out.append('''
@@ -230,10 +226,8 @@ struct InstanceExtensions {
     typedef vvl::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
     static const InstanceInfoMap &get_info_map() {
         static const InstanceInfoMap info_map = {
-            {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
-            {"VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})},
-            {"VK_VERSION_1_3", InstanceInfo(&InstanceExtensions::vk_feature_version_1_3, {})},
 ''')
+        out.extend([f'            {{"{x.name}", InstanceInfo(&InstanceExtensions::{fieldName[x.name]}, {{}})}},\n' for x in self.vk.versions.values()])
 
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
@@ -263,49 +257,30 @@ struct InstanceExtensions {
 
     APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
 ''')
-        promoted_1_1_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_1' and x.instance]
-        promoted_1_2_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_2' and x.instance]
-        promoted_1_3_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_3' and x.instance]
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_1_ext_list)}> V_1_1_promoted_instance_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_1_ext_list])
-        out.append('        };\n')
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_2_ext_list)}> V_1_2_promoted_instance_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_2_ext_list])
-        out.append('        };\n')
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_3_ext_list)}> V_1_3_promoted_instance_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_3_ext_list])
-        out.append('        };\n')
+
+        for version in self.vk.versions.values():
+            promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version.name and x.instance]
+            out.append(f'        constexpr std::array<const char*, {len(promoted_ext_list)}> {version.name.lower()}_promoted_instance_apis = {{\n')
+            out.extend(['            %s,\n' % ext.nameString for ext in promoted_ext_list])
+            out.append('        };\n')
 
         out.append('''
         // Initialize struct data, robust to invalid pCreateInfo
-        auto api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
+        auto api_version = NormalizeApiVersion(requested_api_version);\n''')
+
+        for version in self.vk.versions.values():
+            out.append(f'''
+        if (api_version >= {version.nameApi}) {{
+            auto info = get_info("{version.name}");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_instance_apis) {
+            for (auto promoted_ext : {version.name.lower()}_promoted_instance_apis) {{
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_3) {
-            auto info = get_info("VK_VERSION_1_3");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
+            }}
+        }}''')
+
+        out.append('''
         // CreateInfo takes precedence over promoted
         if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -326,12 +301,9 @@ struct InstanceExtensions {
             out.extend([f'#endif\n'] if extension.protect else [])
         out.append('};\n')
 
-        out.append('''
-struct DeviceExtensions : public InstanceExtensions {
-    ExtEnabled vk_feature_version_1_1{kNotEnabled};
-    ExtEnabled vk_feature_version_1_2{kNotEnabled};
-    ExtEnabled vk_feature_version_1_3{kNotEnabled};
-''')
+        out.append('\n')
+        out.append('struct DeviceExtensions : public InstanceExtensions {\n')
+        out.extend([f'    ExtEnabled {fieldName[x.name]}{{kNotEnabled}};\n' for x in self.vk.versions.values()])
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.device])
 
         out.append('''
@@ -349,10 +321,8 @@ struct DeviceExtensions : public InstanceExtensions {
     typedef vvl::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
     static const DeviceInfoMap &get_info_map() {
         static const DeviceInfoMap info_map = {
-            {"VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})},
-            {"VK_VERSION_1_2", DeviceInfo(&DeviceExtensions::vk_feature_version_1_2, {})},
-            {"VK_VERSION_1_3", DeviceInfo(&DeviceExtensions::vk_feature_version_1_3, {})},
 ''')
+        out.extend([f'            {{"{x.name}", DeviceInfo(&DeviceExtensions::{fieldName[x.name]}, {{}})}},\n' for x in self.vk.versions.values()])
 
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
@@ -390,49 +360,29 @@ struct DeviceExtensions : public InstanceExtensions {
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
 ''')
-        promoted_1_1_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_1' and x.device]
-        promoted_1_2_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_2' and x.device]
-        promoted_1_3_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == 'VK_VERSION_1_3' and x.device]
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_1_ext_list)}> V_1_1_promoted_device_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_1_ext_list])
-        out.append('        };\n')
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_2_ext_list)}> V_1_2_promoted_device_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_2_ext_list])
-        out.append('        };\n')
-        out.append(f'        constexpr std::array<const char*, {len(promoted_1_3_ext_list)}> V_1_3_promoted_device_apis = {{\n')
-        out.extend(['            %s,\n' % ext.nameString for ext in promoted_1_3_ext_list])
-        out.append('        };\n')
+        for version in self.vk.versions.values():
+            promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version.name and x.device]
+            out.append(f'        constexpr std::array<const char*, {len(promoted_ext_list)}> {version.name.lower()}_promoted_device_apis = {{\n')
+            out.extend(['            %s,\n' % ext.nameString for ext in promoted_ext_list])
+            out.append('        };\n')
 
         out.append('''
         // Initialize struct data, robust to invalid pCreateInfo
-        auto api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
+        auto api_version = NormalizeApiVersion(requested_api_version);\n''')
+
+        for version in self.vk.versions.values():
+            out.append(f'''
+        if (api_version >= {version.nameApi}) {{
+            auto info = get_info("{version.name}");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_device_apis) {
+            for (auto promoted_ext : {version.name.lower()}_promoted_device_apis) {{
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
-        if (api_version >= VK_API_VERSION_1_3) {
-            auto info = get_info("VK_VERSION_1_3");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }
-        }
+            }}
+        }}''')
+
+        out.append('''
         // CreateInfo takes precedence over promoted
         if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {

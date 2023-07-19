@@ -285,24 +285,25 @@ struct InstanceExtensions {
     }
 
     APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-        constexpr std::array<const char*, 5> V_1_1_promoted_instance_apis = {
+        constexpr std::array<const char*, 5> vk_version_1_1_promoted_instance_apis = {
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
             VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
             VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
         };
-        constexpr std::array<const char*, 0> V_1_2_promoted_instance_apis = {
+        constexpr std::array<const char*, 0> vk_version_1_2_promoted_instance_apis = {
         };
-        constexpr std::array<const char*, 0> V_1_3_promoted_instance_apis = {
+        constexpr std::array<const char*, 0> vk_version_1_3_promoted_instance_apis = {
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);
+
         if (api_version >= VK_API_VERSION_1_1) {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_instance_apis) {
+            for (auto promoted_ext : vk_version_1_1_promoted_instance_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -311,7 +312,7 @@ struct InstanceExtensions {
         if (api_version >= VK_API_VERSION_1_2) {
             auto info = get_info("VK_VERSION_1_2");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_instance_apis) {
+            for (auto promoted_ext : vk_version_1_2_promoted_instance_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -320,7 +321,7 @@ struct InstanceExtensions {
         if (api_version >= VK_API_VERSION_1_3) {
             auto info = get_info("VK_VERSION_1_3");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_instance_apis) {
+            for (auto promoted_ext : vk_version_1_3_promoted_instance_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -1387,7 +1388,7 @@ struct DeviceExtensions : public InstanceExtensions {
         // Initialize: this to defaults,  base class fields to input.
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
-        constexpr std::array<const char*, 18> V_1_1_promoted_device_apis = {
+        constexpr std::array<const char*, 18> vk_version_1_1_promoted_device_apis = {
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
             VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
@@ -1407,7 +1408,7 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
             VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
         };
-        constexpr std::array<const char*, 24> V_1_2_promoted_device_apis = {
+        constexpr std::array<const char*, 24> vk_version_1_2_promoted_device_apis = {
             VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
             VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
             VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
@@ -1433,7 +1434,7 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
             VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
         };
-        constexpr std::array<const char*, 23> V_1_3_promoted_device_apis = {
+        constexpr std::array<const char*, 23> vk_version_1_3_promoted_device_apis = {
             VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
             VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
             VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
@@ -1461,10 +1462,11 @@ struct DeviceExtensions : public InstanceExtensions {
 
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);
+
         if (api_version >= VK_API_VERSION_1_1) {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_1_promoted_device_apis) {
+            for (auto promoted_ext : vk_version_1_1_promoted_device_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -1473,7 +1475,7 @@ struct DeviceExtensions : public InstanceExtensions {
         if (api_version >= VK_API_VERSION_1_2) {
             auto info = get_info("VK_VERSION_1_2");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_2_promoted_device_apis) {
+            for (auto promoted_ext : vk_version_1_2_promoted_device_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -1482,7 +1484,7 @@ struct DeviceExtensions : public InstanceExtensions {
         if (api_version >= VK_API_VERSION_1_3) {
             auto info = get_info("VK_VERSION_1_3");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : V_1_3_promoted_device_apis) {
+            for (auto promoted_ext : vk_version_1_3_promoted_device_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
