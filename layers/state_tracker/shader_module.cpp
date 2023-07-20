@@ -1565,6 +1565,11 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
 
                 // Info needed to test type matching later
                 const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                // TODO 5374 - Handle PhysicalStorageBuffer interfaces
+                if (!numerical_type) {
+                    variable.physical_storage_buffer = true;
+                    break;
+                }
                 const uint32_t numerical_type_opcode = numerical_type->Opcode();
                 // TODO - Handle nested structs
                 if (numerical_type_opcode == spv::OpTypeStruct) {
@@ -1679,6 +1684,7 @@ StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_s
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
       nested_struct(false),
+      physical_storage_buffer(false),
       interface_slots(GetInterfaceSlots(*this, module_state)),
       builtin_block(GetBuiltinBlock(*this, module_state)),
       total_builtin_components(GetBuiltinComponents(*this, module_state)) {}
