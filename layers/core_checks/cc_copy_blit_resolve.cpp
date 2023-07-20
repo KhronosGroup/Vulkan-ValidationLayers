@@ -2225,18 +2225,43 @@ void CoreChecks::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, cons
                         pCopyBufferInfos->pRegions, CMD_COPYBUFFER2);
 }
 
+template <typename T>
+VkImageSubresourceLayers GetImageSubresource(T data, bool is_src) {
+    return data.imageSubresource;
+}
+template <>
+VkImageSubresourceLayers GetImageSubresource<VkImageCopy2>(VkImageCopy2 data, bool is_src) {
+    return is_src ? data.srcSubresource : data.dstSubresource;
+}
+template <typename T>
+VkOffset3D GetOffset(T data, bool is_src) {
+    return data.imageOffset;
+}
+template <>
+VkOffset3D GetOffset<VkImageCopy2>(VkImageCopy2 data, bool is_src) {
+    return is_src ? data.srcOffset : data.dstOffset;
+}
+template <typename T>
+VkExtent3D GetExtent(T data) {
+    return data.imageExtent;
+}
+template <>
+VkExtent3D GetExtent<VkImageCopy2>(VkImageCopy2 data) {
+    return data.extent;
+}
 template <typename HandleT, typename RegionType>
 bool CoreChecks::ValidateImageBounds(const HandleT handle, const IMAGE_STATE &image_state, const uint32_t regionCount,
-                                     const RegionType *pRegions, const char *func_name, const char *msg_code) const {
+                                     const RegionType *pRegions, const char *func_name, const char *msg_code, bool is_src) const {
     bool skip = false;
     const VkImageCreateInfo *image_info = &(image_state.createInfo);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         const RegionType region = pRegions[i];
-        VkExtent3D extent = region.imageExtent;
-        VkOffset3D offset = region.imageOffset;
+        VkExtent3D extent = GetExtent(region);
+        VkOffset3D offset = GetOffset(region, is_src);
+        VkImageSubresourceLayers subresource_layout = GetImageSubresource(region, is_src);
 
-        VkExtent3D image_extent = image_state.GetEffectiveSubresourceExtent(region.imageSubresource);
+        VkExtent3D image_extent = image_state.GetEffectiveSubresourceExtent(subresource_layout);
 
         // If we're using a blocked image format, valid extent is rounded up to multiple of block size (per
         // vkspec.html#_common_operation)
@@ -2919,20 +2944,123 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
     return skip;
 };
 
+bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, uint32_t i, const IMAGE_STATE &image_state, bool is_src) const{
+    bool skip = false;
+    if (region.srcOffset.x != 0 || region.srcOffset.y != 0 || region.srcOffset.z != 0) {
+        const char *vuid = is_src ? "VUID-vkCopyImageToImageEXT-pRegions-XXXXX" : "VUID-vkCopyImageToImageEXT-pRegions-XXXXX";
+        const char *type_name = is_src ? "srcOffset" : "dstOffset";
+        LogObjectList objlist(device);
+        skip |= LogError(objlist, vuid,
+                 "vkCopyMemoryToImageEXT(): VkCopyImageToImageInfoEXT.flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
+                 "means that pRegions[%d].%s x(%u), y(%u) and z(%u) must all be zero",
+                 i, type_name, region.srcOffset.x, region.srcOffset.y, region.srcOffset.z);
+    }
+    if (!IsExtentEqual(region.extent, image_state.createInfo.extent)) {
+        const char *vuid =
+            is_src ? "VUID-vkCopyImageToMemoryEXT-pRegions-XXXXX" : "VUID-vkCopyMemoryToImageEXT-pRegions-XXXXX";
+        LogObjectList objlist(device, image_state.image());
+        skip |= LogError(objlist, vuid,
+                            "vkCopyMemoryToImageEXT(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
+                            "extents (w=%d, h=%d, d=%d) when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                            i, region.extent.width, region.extent.height, region.extent.depth,
+                            image_state.createInfo.extent.width, image_state.createInfo.extent.height,
+                            image_state.createInfo.extent.depth);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, uint32_t i, const IMAGE_STATE &image_state,
+                                            bool is_src) const {
+    bool skip = false;
+    auto aspect_mask = is_src ? region.srcSubresource.aspectMask : region.dstSubresource.aspectMask;
+    if (FormatPlaneCount(image_state.createInfo.format) == 2 &&
+        (aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT && aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+        const char *vuid =
+            is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07981" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07981";
+        const char *image_name = is_src ? "srcImage" : "dstImage";
+        const char *resource_name = is_src ? "srcSubresouce" : "dstSubresource";
+        LogObjectList objlist(device, image_state.image());
+        skip |= LogError(objlist, vuid,
+                         "vkCopyMemoryToImageEXT(): "
+                         "%s has a format with 2 planes (%s) and pRegion[%d].%s.aspectMask (%s) must be "
+                         "VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT",
+                         image_name, string_VkFormat(image_state.createInfo.format), i, resource_name,
+                         string_VkImageAspectFlags(aspect_mask).c_str());
+    }
+    if (FormatPlaneCount(image_state.createInfo.format) == 3 &&
+        (aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT && aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT &&
+         aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+        const char *vuid =
+            is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07982" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07982";
+        const char *image_name = is_src ? "srcImage" : "dstImage";
+        const char *resource_name = is_src ? "srcSubresouce" : "dstSubresource";
+        LogObjectList objlist(device, image_state.image());
+        skip |= LogError(objlist, vuid,
+                         "vkCopyMemoryToImageEXT(): "
+                         "%s has a format with 3 planes (%s) and pRegion[%d].%s.aspectMask (%s) must be "
+                         "VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT",
+                         image_name, string_VkFormat(image_state.createInfo.format), i, resource_name,
+                         string_VkImageAspectFlags(aspect_mask).c_str());
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo) const {
     bool skip = false;
-    auto src_image_state = Get<IMAGE_STATE>(pCopyImageToImageInfo->srcImage);
-    auto dst_image_state = Get<IMAGE_STATE>(pCopyImageToImageInfo->dstImage);
-    auto regionCount = pCopyImageToImageInfo->regionCount;
-    auto pRegions = pCopyImageToImageInfo->pRegions;
+    auto info_ptr = pCopyImageToImageInfo;
+    auto src_image_state = Get<IMAGE_STATE>(info_ptr->srcImage);
+    auto dst_image_state = Get<IMAGE_STATE>(info_ptr->dstImage);
+    // Formats are required to match, but check each image anyway
+    auto src_plane_count = FormatPlaneCount(src_image_state->createInfo.format);
+    auto dst_plane_count = FormatPlaneCount(dst_image_state->createInfo.format);
+    bool check_multiplane = ((src_plane_count == 2 || src_plane_count == 3) || (dst_plane_count == 2 || dst_plane_count == 3));
+    bool check_memcpy = (info_ptr->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
+    auto regionCount = info_ptr->regionCount;
+    auto pRegions = info_ptr->pRegions;
     const char func_name[] = "vkCopyImageToImageEXT";
 
-    skip = ValidateHostCopyImageCreateInfos(device, *src_image_state, *dst_image_state);
-    skip =
-        ValidateImageCopyData(device, pCopyImageToImageInfo->regionCount,
-                              pCopyImageToImageInfo->pRegions, *src_image_state, *dst_image_state, true, CMD_NONE);
-    skip = ValidateCopyImageCommon(device, *src_image_state, *dst_image_state, regionCount, pRegions, func_name, false, true);
+    if (!(enabled_features.host_image_copy_features.hostImageCopy)) {
+        skip |= LogError(device, "VUID-vkCopyImageToImageEXT-hostImageCopy-09068",
+                         "%s() was called when the hostImageCopy feature was not enabled", func_name);
+    }
 
+    skip |= ValidateHostCopyImageCreateInfos(device, *src_image_state, *dst_image_state);
+    skip |= ValidateImageCopyData(device, regionCount, pRegions, *src_image_state, *dst_image_state, true, CMD_NONE);
+    skip |= ValidateCopyImageCommon(device, *src_image_state, *dst_image_state, regionCount, pRegions, func_name, false, true);
+    skip |= ValidateImageBounds(device, *src_image_state, regionCount, pRegions, func_name,
+                                "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970", true);
+    skip |= ValidateImageBounds(device, *dst_image_state, regionCount, pRegions, func_name,
+                                "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970", false);
+    auto *props = &phys_dev_ext_props.host_image_copy_properties;
+    skip |= ValidateHostCopyImageLayout(device, info_ptr->srcImage, props->copySrcLayoutCount, props->pCopySrcLayouts,
+                                        info_ptr->srcImageLayout, func_name, "srcImageLayout", "pCopySrcLayouts",
+                                        "VUID-vkCopyImageToImage-srcImageLayout-XXXXX");
+    skip |= ValidateHostCopyImageLayout(device, info_ptr->dstImage, props->copyDstLayoutCount, props->pCopyDstLayouts,
+                                        info_ptr->dstImageLayout, func_name, "dstImageLayout", "pCopyDstLayouts",
+                                        "VUID-vkCopyImageToImage-dstImageLayout-XXXXX");
+
+    if (!check_memcpy && !check_multiplane) return skip;
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        const auto region = info_ptr->pRegions[i];
+        if (check_memcpy) {
+            skip |= ValidateMemcpyExtents(device, region, i, *src_image_state, true);
+            skip |= ValidateMemcpyExtents(device, region, i, *dst_image_state, false);
+        }
+        if (check_multiplane) {
+            skip |= ValidateHostCopyMultiplane(device, region, 1, *src_image_state, true);
+            skip |= ValidateHostCopyMultiplane(device, region, 1, *dst_image_state, false);
+        }   
+    }
+
+    //Todo If srcImage is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource Memory
+    //Todo If dstImage is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource Memory
+
+    //Todo srcImageLayout must specify the current layout of the image subresources of srcImage specified in pRegions
+    //Todo dstImageLayout must specify the current layout of the image subresources of dstImage specified in pRegions
+
+    //Todo Is an overlap VUID missing?
+    //Todo Does this need to update image layout tracking?
 
     return skip;
 };
