@@ -30,6 +30,19 @@ name: SDK Android Build
 # 2. Push the tag to GitHub.
 #        git push origin sdk-1.2.141.0
 
+# NOTE: Vulkan Layers are effectively `middleware` in Android terminology.
+#
+# https://developer.android.com/ndk/guides/middleware-vendors
+#
+# "If you're writing C++ and using the STL, your choice between libc++_shared and libc++_static
+# affects your users if you distribute a shared library. If you distribute a shared library,
+# you must either use libc++_shared or ensure that libc++'s symbols are not exposed by your library.
+#
+# The most important thing for us is that we can safely link against the static
+# version of the stl. Because we don't expose a C++ interface anywhere.
+# We only export C symbols in our binary. Making our library easier for users to simply
+# drop into their APK.
+
 on:
   push:
     tags:
