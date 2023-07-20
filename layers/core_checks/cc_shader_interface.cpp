@@ -441,7 +441,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 
     for (const auto &interface_slot : producer_entrypoint.output_interface_slots) {
         auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
-        if (interface_slot.second->nested_struct) {
+        if (interface_slot.second->nested_struct || interface_slot.second->physical_storage_buffer) {
             return skip;  // TODO workaround
         }
         slot.output = interface_slot.second;
@@ -450,7 +450,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     }
     for (const auto &interface_slot : consumer_entrypoint.input_interface_slots) {
         auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
-        if (interface_slot.second->nested_struct) {
+        if (interface_slot.second->nested_struct || interface_slot.second->physical_storage_buffer) {
             return skip;  // TODO workaround
         }
         slot.input = interface_slot.second;

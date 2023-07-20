@@ -255,6 +255,7 @@ struct StageInteraceVariable : public VariableBase {
     const Instruction &base_type;
     const bool is_builtin;
     bool nested_struct;
+    bool physical_storage_buffer;
 
     const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
     const std::vector<uint32_t> builtin_block;
