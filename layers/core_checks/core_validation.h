@@ -980,6 +980,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
                                  const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
                                  const char* func_name, const char* field_name, const char* supported_name, const char* vuid) const;
+    bool ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
+                               bool is_src) const;
+    bool ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
+                                    bool is_src) const;
     bool ValidateBufferViewRange(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
     bool ValidateBufferViewBuffer(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
@@ -1230,7 +1234,7 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename HandleT, typename RegionType>
     bool ValidateImageBounds(const HandleT handle, const IMAGE_STATE& image_state, const uint32_t regionCount,
-                             const RegionType* pRegions, const char* func_name, const char* msg_code) const;
+                             const RegionType* pRegions, const char* func_name, const char* msg_code, bool is_src = true) const;
 
     template <typename RegionType>
     bool ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE& image_state, const BUFFER_STATE& buff_state,
