@@ -91,6 +91,7 @@ def main():
     parser.add_argument('--app-stl', dest='android_stl', type=str, choices=["c++_static", "c++_shared"], default="c++_static")
     parser.add_argument('--apk', action='store_true', help='Generate an APK as a post build step.')
     parser.add_argument('--tests', action='store_true', help='Build tests.')
+    parser.add_argument('--clean', action='store_true', help='Cleans CMake build artifacts')
     args = parser.parse_args()
 
     cmake_config = args.config
@@ -98,6 +99,7 @@ def main():
     android_stl = args.android_stl
     create_apk = args.apk
     build_tests = args.tests
+    clean = args.clean
 
     if "ANDROID_NDK_HOME" not in os.environ:
         print("Cannot find ANDROID_NDK_HOME!")
@@ -140,11 +142,14 @@ def main():
         build_dir = common_ci.RepoRelative(f'build-android/obj/{abi}')
         lib_dir = f'lib/{abi}'
 
-        # Delete CMakeCache.txt to ensure clean builds
-        # NOTE: CMake 3.24 has --fresh which would be better to use in the future.
-        cmake_cache = f'{build_dir}/CMakeCache.txt'
-        if os.path.isfile(cmake_cache):
-            os.remove(cmake_cache)
+        if clean:
+            print("Deleting CMakeCache.txt")
+
+            # Delete CMakeCache.txt to ensure clean builds
+            # NOTE: CMake 3.24 has --fresh which would be better to use in the future.
+            cmake_cache = f'{build_dir}/CMakeCache.txt'
+            if os.path.isfile(cmake_cache):
+                os.remove(cmake_cache)
 
         cmake_cmd =  f'cmake -S . -B {build_dir} -G Ninja'
 

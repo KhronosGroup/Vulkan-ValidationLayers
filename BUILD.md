@@ -297,8 +297,8 @@ This script handles wrapping CMake and various Android CLI tools to create the A
 # Build a complete test APK with debug binaries for all ABIS
 python3 scripts/android.py --config Debug --app-abi 'armeabi-v7a arm64-v8a x86 x86_64' --app-stl c++_shared --apk --tests
 
-# Build a test APK with release binaries for arm64-v8a
-python3 scripts/android.py --config Release --app-abi arm64-v8a --app-stl c++_shared --apk --tests
+# Build a clean test APK with release binaries for arm64-v8a
+python3 scripts/android.py --config Release --app-abi arm64-v8a --app-stl c++_shared --apk --tests --clean
 ```
 
 Note: `scripts/android.py` will place the APK in the `build-android/bin` directory.
