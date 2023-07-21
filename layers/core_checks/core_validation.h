@@ -965,6 +965,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBufferMemoryImageCopyData(const VulkanTypedHandle handle, uint32_t regionCount, const RegionType* pRegions,
                                            const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type, bool from_image,
                                            bool is_memory) const;
+    bool UsageHostTransferCheck(VkDevice device, const IMAGE_STATE& image_state, bool has_stencil, bool has_non_stencil,
+                                const char* vuid_09111, const char* vuid_09112, const char* vuid_09113,
+                                const char* func_name) const;
     template <typename InfoPointer>
     bool ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer iPointer, bool from_image) const;
     template <typename RegionType>
