@@ -289,48 +289,48 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-VkBufferImageCopy-imageExtent-06659",
             "VUID-VkBufferImageCopy2-imageExtent-06659",
             "VUID-VkBufferImageCopy2-imageExtent-06659",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-06659",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-06659",
+            "VUID-VkMemoryToImageCopyEXT-imageExtent-06659",
+            "VUID-VkImageToMemoryCopyEXT-imageExtent-06659",
         }},
         {"06660", {
             "VUID-VkBufferImageCopy-imageExtent-06660",
             "VUID-VkBufferImageCopy-imageExtent-06660",
             "VUID-VkBufferImageCopy2-imageExtent-06660",
             "VUID-VkBufferImageCopy2-imageExtent-06660",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-06660",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-06660",
+            "VUID-VkMemoryToImageCopyEXT-imageExtent-06660",
+            "VUID-VkImageToMemoryCopyEXT-imageExtent-06660",
         }},
         {"06661", {
             "VUID-VkBufferImageCopy-imageExtent-06661",
             "VUID-VkBufferImageCopy-imageExtent-06661",
             "VUID-VkBufferImageCopy2-imageExtent-06661",
             "VUID-VkBufferImageCopy2-imageExtent-06661",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-06661",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-06661",
+            "VUID-VkMemoryToImageCopyEXT-imageExtent-06661",
+            "VUID-VkImageToMemoryCopyEXT-imageExtent-06661",
         }},
-        {"00195", {
-            "VUID-VkBufferImageCopy-bufferRowLength-00195",
-            "VUID-VkBufferImageCopy-bufferRowLength-00195",
-            "VUID-VkBufferImageCopy2-bufferRowLength-00195",
-            "VUID-VkBufferImageCopy2-bufferRowLength-00195",
-            "VUID-VkCopyMemoryToImageEXT-memoryRowLength-00195",
-            "VUID-VkCopyImageToMemoryEXT-memoryRowLength-00195",
+        {"09101", {
+            "VUID-VkBufferImageCopy-bufferRowLength-09101",
+            "VUID-VkBufferImageCopy-bufferRowLength-09101",
+            "VUID-VkBufferImageCopy2-bufferRowLength-09101",
+            "VUID-VkBufferImageCopy2-bufferRowLength-09101",
+            "VUID-VkMemoryToImageCopyEXT-memoryRowLength-09101",
+            "VUID-VkImageToMemoryCopyEXT-memoryRowLength-09101",
         }},
         {"00196", {
-            "VUID-VkBufferImageCopy-bufferImageHeight-00196",
-            "VUID-VkBufferImageCopy-bufferImageHeight-00196",
-            "VUID-VkBufferImageCopy2-bufferImageHeight-00196",
-            "VUID-VkBufferImageCopy2-bufferImageHeight-00196",
-            "VUID-VkCopyMemoryToImageEXT-memoryImageHeight-00196",
-            "VUID-VkCopyImageToMemoryEXT-memoryImageHeight-00196",
+            "VUID-VkBufferImageCopy-bufferImageHeight-09102",
+            "VUID-VkBufferImageCopy-bufferImageHeight-09102",
+            "VUID-VkBufferImageCopy2-bufferImageHeight-09102",
+            "VUID-VkBufferImageCopy2-bufferImageHeight-09102",
+            "VUID-VkMemoryToImageCopyEXT-memoryImageHeight-09102",
+            "VUID-VkImageToMemoryCopyEXT-memoryImageHeight-09102",
         }},
-        {"00212", {
-            "VUID-VkBufferImageCopy-aspectMask-00212",
-            "VUID-VkBufferImageCopy-aspectMask-00212",
-            "VUID-VkBufferImageCopy2-aspectMask-00212",
-            "VUID-VkBufferImageCopy2-aspectMask-00212",
-            "VUID-VkCopyMemoryToImageEXT-aspectMask-00212",
-            "VUID-VkCopyImageToMemoryEXT-aspectMask-00212",
+        {"09103", {
+            "VUID-VkBufferImageCopy-aspectMask-09103",
+            "VUID-VkBufferImageCopy-aspectMask-09103",
+            "VUID-VkBufferImageCopy2-aspectMask-09103",
+            "VUID-VkBufferImageCopy2-aspectMask-09103",
+            "VUID-VkMemoryToImageCopyEXT-aspectMask-09103",
+            "VUID-VkImageToMemoryCopyEXT-aspectMask-09103",
         }},
         {"07975", {
             "VUID-vkCmdCopyBufferToImage-dstImage-07975",
@@ -353,24 +353,24 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-vkCmdCopyImageToBuffer-imageSubresource-07971",
             "VUID-VkCopyBufferToImageInfo2-pRegions-06223",
             "VUID-VkCopyImageToBufferInfo2-imageOffset-00197",
-            "VUID-VkCopyMemoryToImageEXT-dstSubresource-07971",
-            "VUID-VkCopyImageToMemoryEXT-srcSubresource-07971",
+            "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07971",
+            "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07971",
         }},
         {"00198", {
             "VUID-vkCmdCopyBufferToImage-imageSubresource-07972",
             "VUID-vkCmdCopyImageToBuffer-imageSubresource-07972",
             "VUID-VkCopyBufferToImageInfo2-pRegions-06224",
             "VUID-VkCopyImageToBufferInfo2-imageOffset-00198",
-            "VUID-VkCopyMemoryToImageEXT-dstSubresource-07972",
-            "VUID-VkCopyImageToMemoryEXT-srcSubresource-07972",
+            "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972",
+            "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972",
         }},
         {"07979", {
             "VUID-vkCmdCopyBufferToImage-dstImage-07979",
             "VUID-vkCmdCopyImageToBuffer-srcImage-07979",
             "VUID-VkCopyBufferToImageInfo2-dstImage-07979",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07979",
-            "VUID-VkCopyMemoryToImageEXT-dstImage-07979",
-            "VUID-VkCopyImageToMemoryEXT-srcImage-07979",
+            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07979",
+            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07979",
         }},
         {"09104", {
             "VUID-vkCmdCopyBufferToImage-imageOffset-09104",
@@ -385,8 +385,8 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-vkCmdCopyImageToBuffer-srcImage-07980",
             "VUID-VkCopyBufferToImageInfo2-dstImage-07980",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07980",
-            "VUID-vkCopyMemoryToImageEXT-dstImage-07980",
-            "VUID-vkCopyImageToMemoryEXT-srcImage-07980",
+            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07980",
+            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07980",
         }},
         {"09106", {
             "VUID-vkCmdCopyBufferToImage-bufferRowLength-09106",
@@ -409,56 +409,56 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-vkCmdCopyImageToBuffer-pRegions-07274",
             "VUID-VkCopyBufferToImageInfo2-pRegions-07274",
             "VUID-VkCopyImageToBufferInfo2-pRegions-07274",
-            "VUID-VkCopyMemoryToImageEXT-pRegions-07274",
-            "VUID-VkCopyImageToMemoryEXT-pRegions-07274",
+            "VUID-VkCopyMemoryToImageInfoEXT-pRegions-07274",
+            "VUID-VkCopyImageToMemoryInfoEXT-pRegions-07274",
         }},
         {"07275", {
             "VUID-vkCmdCopyBufferToImage-pRegions-07275",
             "VUID-vkCmdCopyImageToBuffer-pRegions-07275",
             "VUID-VkCopyBufferToImageInfo2-pRegions-07275",
             "VUID-VkCopyImageToBufferInfo2-pRegions-07275",
-            "VUID-VkCopyMemoryToImageEXT-pRegions-07275",
-            "VUID-VkCopyImageToMemoryEXT-pRegions-07275",
+            "VUID-VkCopyMemoryToImageInfoEXT-pRegions-07275",
+            "VUID-VkCopyImageToMemoryInfoEXT-pRegions-07275",
         }},
         {"07276", {
             "VUID-vkCmdCopyBufferToImage-pRegions-07276",
             "VUID-vkCmdCopyImageToBuffer-pRegions-07276",
             "VUID-VkCopyBufferToImageInfo2-pRegions-07276",
             "VUID-VkCopyImageToBufferInfo2-pRegions-07276",
-            "VUID-VkCopyMemoryToImageEXT-pRegions-07276",
-            "VUID-VkCopyImageToMemoryEXT-pRegions-07276",
+            "VUID-VkCopyMemoryToImageInfoEXT-pRegions-07276",
+            "VUID-VkCopyImageToMemoryInfoEXT-pRegions-07276",
         }},
-        {"07277", {
-            "VUID-vkCmdCopyBufferToImage-pRegions-07277",
-            "VUID-vkCmdCopyImageToBuffer-pRegions-07277",
-            "VUID-VkCopyBufferToImageInfo2-pRegions-07277",
-            "VUID-VkCopyImageToBufferInfo2-pRegions-07277",
-            "VUID-VkCopyMemoryToImageEXT-pRegions-07277",
-            "VUID-VkCopyImageToMemoryEXT-pRegions-07277",
+        {"09108", {
+            "VUID-vkCmdCopyBufferToImage-bufferRowLength-09108",
+            "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09108",
+            "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09108",
+            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09108",
+            "VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09108",
+            "VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09108",
         }},
         {"00207", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00207",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00207",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00207",
             "VUID-VkCopyImageToBufferInfo2-imageExtent-00207",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-00207",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-00207",
+            "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-00207",
+            "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-00207",
         }},
         {"00208", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00208",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00208",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00208",
             "VUID-VkCopyImageToBufferInfo2-imageExtent-00208",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-00208",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-00208",
+            "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-00208",
+            "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-00208",
         }},
         {"00209", {
             "VUID-vkCmdCopyBufferToImage-imageExtent-00209",
             "VUID-vkCmdCopyImageToBuffer-imageExtent-00209",
             "VUID-VkCopyBufferToImageInfo2-imageExtent-00209",
             "VUID-VkCopyImageToBufferInfo2-imageExtent-00209",
-            "VUID-VkCopyMemoryToImageEXT-imageExtent-00209",
-            "VUID-VkCopyImageToMemoryEXT-imageExtent-00209",
+            "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-00209",
+            "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-00209",
         }},
         {"09105", {
             "VUID-vkCmdCopyBufferToImage-imageSubresource-09105",
@@ -473,24 +473,24 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-vkCmdCopyImageToBuffer-srcImage-07981",
             "VUID-VkCopyBufferToImageInfo2-dstImage-07981",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07981",
-            "VUID-VkCopyMemoryToImageEXT-dstImage-07981",
-            "VUID-VkCopyImageToMemoryEXT-srcImage-07981",
+            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981",
+            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981",
         }},
         {"07982", {
             "VUID-vkCmdCopyBufferToImage-dstImage-07982",
             "VUID-vkCmdCopyImageToBuffer-srcImage-07982",
             "VUID-VkCopyBufferToImageInfo2-dstImage-07982",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07982",
-            "VUID-VkCopyMemoryToImageEXT-dstImage-07982",
-            "VUID-VkCopyImageToMemoryEXT-srcImage-07982",
+            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07982",
+            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07982",
         }},
         {"07983", {
             "VUID-vkCmdCopyBufferToImage-dstImage-07983",
             "VUID-vkCmdCopyImageToBuffer-srcImage-07983",
             "VUID-VkCopyBufferToImageInfo2-dstImage-07983",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07983",
-            "VUID-VkCopyMemoryToImageEXT-dstImage-07983",
-            "VUID-VkCopyImageToMemoryEXT-srcImage-07983",
+            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07983",
+            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07983",
         }},
         {"04052", {
             // was split up in 1.3.236 spec (internal MR 5371)
@@ -630,9 +630,8 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         uint32_t row_length = GetRowLength(region);
         if ((row_length != 0) && (row_length < region.imageExtent.width)) {
             const LogObjectList objlist(handle, image_state.image());
-            //vuid = (is_2) ? "VUID-VkBufferImageCopy2-bufferRowLength-00195" : "VUID-VkBufferImageCopy-bufferRowLength-00195";
             skip |=
-                LogError(objlist, GetBufferMemoryImageCopyCommandVUID("00195", from_image, is_2, is_memory),
+                LogError(objlist, GetBufferMemoryImageCopyCommandVUID("09101", from_image, is_2, is_memory),
                          "%s: pRegion[%d] bufferRowLength (%d) must be zero or greater-than-or-equal-to imageExtent.width (%d).",
                          function, i, row_length, region.imageExtent.width);
         }
@@ -641,7 +640,6 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         uint32_t image_height = GetImageHeight(region);
         if ((image_height != 0) && (image_height < region.imageExtent.height)) {
             const LogObjectList objlist(handle, image_state.image());
-            //vuid = (is_2) ? "VUID-VkBufferImageCopy2-bufferImageHeight-00196" : "VUID-VkBufferImageCopy-bufferImageHeight-00196";
             skip |=
                 LogError(objlist, GetBufferMemoryImageCopyCommandVUID("00196", from_image, is_2, is_memory),
                          "%s: pRegion[%d] bufferImageHeight (%d) must be zero or greater-than-or-equal-to imageExtent.height (%d).",
@@ -651,7 +649,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         // subresource aspectMask must have exactly 1 bit set
         if (GetBitSetCount(region_aspect_mask) != 1) {
             const LogObjectList objlist(handle, image_state.image());
-            skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("00212", from_image, is_2, is_memory),
+            skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("09103", from_image, is_2, is_memory),
                              "%s: aspectMasks for imageSubresource in pRegion[%d] must have only a single bit set (currently %s).",
                              function, i, string_VkImageAspectFlags(region_aspect_mask).c_str());
         }
@@ -791,7 +789,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         const uint32_t two_to_31_minus_1 = 0x7fffffff;
         if (test_value > two_to_31_minus_1) {
             const LogObjectList objlist(handle, image_state.image());
-            skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("07277", from_image, is_2, is_memory),
+            skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("09108", from_image, is_2, is_memory),
                              "%s: pRegion[%d] *RowLength (%d) divided by the texel block extent width (%d) then multiplied by the "
                              "texel block size of image (%d) is (%" PRIu64 ") which is greater than 2^31 - 1",
                              function, i, row_length, block_size.width, element_size, test_value);
@@ -1239,42 +1237,42 @@ static const char *GetImageCopyVUID(const std::string &id, bool copy2, bool host
        {"00142", {
             "VUID-vkCmdCopyImage-aspectMask-00142",
             "VUID-VkCopyImageInfo2-aspectMask-00142",
-            "VUID-VkCopyImageToImageInfoEXT-aspectMask-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105",
        }},
        {"00143", {
             "VUID-vkCmdCopyImage-aspectMask-00143",
             "VUID-VkCopyImageInfo2-aspectMask-00143",
-            "VUID-VkCopyImageToImageInfoEXT-aspectMask-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-09105",
        }},
        {"00144", {
             "VUID-vkCmdCopyImage-srcOffset-00144",
             "VUID-VkCopyImageInfo2-srcOffset-00144",
-            "VUID-VkCopyImageToImageInfoEXT-srcOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07971",
        }},
        {"00145", {
             "VUID-vkCmdCopyImage-srcOffset-00145",
             "VUID-VkCopyImageInfo2-srcOffset-00145",
-            "VUID-VkCopyImageToImageInfoEXT-srcOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972",
        }},
        {"00147", {
             "VUID-vkCmdCopyImage-srcOffset-00147",
             "VUID-VkCopyImageInfo2-srcOffset-00147",
-            "VUID-VkCopyImageToImageInfoEXT-srcOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-srcOffset-09104",
        }},
        {"00150", {
             "VUID-vkCmdCopyImage-dstOffset-00150",
             "VUID-VkCopyImageInfo2-dstOffset-00150",
-            "VUID-VkCopyImageToImageInfoEXT-dstOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07971",
        }},
        {"00151", {
             "VUID-vkCmdCopyImage-dstOffset-00151",
             "VUID-VkCopyImageInfo2-dstOffset-00151",
-            "VUID-VkCopyImageToImageInfoEXT-dstOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972",
        }},
        {"00153", {
             "VUID-vkCmdCopyImage-dstOffset-00153",
             "VUID-VkCopyImageInfo2-dstOffset-00153",
-            "VUID-VkCopyImageToImageInfoEXT-dstOffset-XXXXX",
+            "VUID-VkCopyImageToImageInfoEXT-dstOffset-09104",
        }},
        {"07966src", {
             "VUID-vkCmdCopyImage-srcImage-07966",
@@ -2744,7 +2742,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
 
     if (!(enabled_features.host_image_copy_features.hostImageCopy)) {
         const char *vuid =
-            from_image ? "VUID-vkCopyImageToMemoryEXT-hostImageCopy-00000" : "VUID-vkCopyMemoryToImageEXT-hostImageCopy-00000";
+            from_image ? "VUID-vkCopyImageToMemoryEXT-hostImageCopy-09063" : "VUID-vkCopyMemoryToImageEXT-hostImageCopy-09058";
         skip |= LogError(device, vuid, "%s() was called when the hostImageCopy feature was not enabled", func_name);
     }
 
@@ -2752,26 +2750,27 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         ValidateHeterogeneousCopyData(device, regionCount, info_ptr->pRegions, *image_state, func_name, CMD_NONE, from_image, true);
     skip |= ValidateMemoryIsBoundToImage(
         device, *image_state, func_name,
-        from_image ? "VUID-vkCopyImageToMemoryEXT-srcImage-07965" : "VUID-vkCopyMemoryToImageEXT-dstImage-07965");
+        from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07966" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07966");
 
     if (image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-        const char *vuid = from_image ? "VUID-vkCopyImageToMemoryEXT-srcImage-07969" : "VUID-vkCopyMemoryToImageEXT-dstImage-07969";
+        const char *vuid =
+            from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969";
         const LogObjectList objlist(device, image);
         skip |= LogError(objlist, vuid,
                          "%s: %s must not have been created with flags containing "
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
                          func_name, image_name);
     }
-    skip |= ValidateImageBounds(
-        device, *image_state, regionCount, info_ptr->pRegions, func_name,
-        from_image ? "VUID-vkCopyImageToMemoryEXT-imageSubresource-07970" : "VUID-vkCopyMemoryToImageEXT-imageSubresource-07970");
+    skip |= ValidateImageBounds(device, *image_state, regionCount, info_ptr->pRegions, func_name,
+                                from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970"
+                                           : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
 
     std::string location = func_name;
     location.append("() : ");
     location.append(image_name);
     skip |= ValidateImageSampleCount(
         device, *image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(),
-        from_image ? "VUID-vkCopyImageToMemoryEXT-srcImage-07973" : "VUID-vkCopyMemoryToImageEXT-dstImage-07973");
+        from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07973" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07973");
 
     bool check_memcpy = (info_ptr->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
     bool has_stencil = false;
@@ -2779,20 +2778,20 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     for (uint32_t i = 0; i < regionCount; i++) {
         const auto region = info_ptr->pRegions[i];
         skip |= ValidateImageMipLevel(device, *image_state, region.imageSubresource.mipLevel, i, func_name, "imageSubresource",
-                                      from_image ? "VUID-VkCopyImageToMemoryEXT-imageSubresource-07967"
-                                                 : "VUID-VkCopyMemoryToImageEXT-imageSubresource-07967");
+                                      from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07967"
+                                                 : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07967");
         skip |= ValidateImageArrayLayerRange(device, *image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, i, func_name, "imageSubresource",
-                                             from_image ? "VUID-VkCopyImageToMemoryEXT-imageSubresource-07968"
-                                                        : "VUID-VkCopyMemoryToImageEXT-imageSubresource-07968");
+                                             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968"
+                                                        : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
         skip |= ValidateImageSubresourceLayers(device, &region.imageSubresource, func_name, "imageSubresource", i);
         if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) has_stencil = true;
         if (region.imageSubresource.aspectMask & ~VK_IMAGE_ASPECT_STENCIL_BIT) has_non_stencil = true;
 
         if (check_memcpy) {
             if (region.imageOffset.x != 0 || region.imageOffset.y != 0 || region.imageOffset.z != 0) {
-                const char *vuid =
-                    from_image ? "VUID-vkCopyImageToMemoryEXT-pRegions-XXXXX" : "VUID-vkCopyMemoryToImageEXT-pRegions-XXXX";
+                const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09114"
+                                              : "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09114";
                 LogObjectList objlist(device);
                 LogError(objlist, vuid,
                          "%s(): %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
@@ -2800,8 +2799,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                          func_name, info_type, i, region.imageOffset.x, region.imageOffset.y, region.imageOffset.z);
             }
             if (!IsExtentEqual(region.imageExtent, image_state->createInfo.extent)) {
-                const char *vuid =
-                    from_image ? "VUID-vkCopyImageToMemoryEXT-pRegions-XXXXX" : "VUID-vkCopyMemoryToImageEXT-pRegions-XXXXX";
+                const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-09115"
+                                              : "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-09115";
                 LogObjectList objlist(device, image_state->image());
                 skip |=
                     LogError(objlist, vuid,
@@ -2883,7 +2882,7 @@ bool CoreChecks::ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_S
         std::stringstream ss;
         ss << "VkImageToImageCopyEXT(): The creation parameters for srcImage and dstImage differ:\n" << mismatch_stream.str();
         LogObjectList objlist(device, src_image_state.image(), dst_image_state.image());
-        skip |= LogError(objlist, "VUID-VkCopyImageToImageInfoEXT-srcImage-XXXXX", "%s.", ss.str().c_str());
+        skip |= LogError(objlist, "VUID-VkCopyImageToImageInfoEXT-srcImage-09069", "%s.", ss.str().c_str());
     }
     return skip;
 }
@@ -2916,8 +2915,8 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
     skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, false);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
-                                    pCopyMemoryToImageInfo->dstImageLayout, func_name, "dstImageLayout", "pCopyDstLayouts",
-                                    "VUID-vkCopyMemoryToImage-dstImageLayout-XXXXX");
+                                        pCopyMemoryToImageInfo->dstImageLayout, func_name, "dstImageLayout", "pCopyDstLayouts",
+                                        "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
     return skip;
 };
 
@@ -2931,15 +2930,16 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
     skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, true);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, src_image, props->copySrcLayoutCount, props->pCopySrcLayouts,
-                                    pCopyImageToMemoryInfo->srcImageLayout, func_name, "srcImageLayout", "pCopySrcLayouts",
-                                    "VUID-vkCopyImageToMemory-srcImageLayout-XXXXX");
+                                        pCopyImageToMemoryInfo->srcImageLayout, func_name, "srcImageLayout", "pCopySrcLayouts",
+                                        "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
     return skip;
 };
 
 bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, uint32_t i, const IMAGE_STATE &image_state, bool is_src) const{
     bool skip = false;
     if (region.srcOffset.x != 0 || region.srcOffset.y != 0 || region.srcOffset.z != 0) {
-        const char *vuid = is_src ? "VUID-vkCopyImageToImageEXT-pRegions-XXXXX" : "VUID-vkCopyImageToImageEXT-pRegions-XXXXX";
+        const char *vuid =
+            is_src ? "VUID-VkCopyImageToImageInfoEXT-srcOffset-09114" : "VUID-VkCopyImageToImageInfoEXT-dstOffset-09114";
         const char *type_name = is_src ? "srcOffset" : "dstOffset";
         LogObjectList objlist(device);
         skip |= LogError(objlist, vuid,
@@ -2948,8 +2948,7 @@ bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 regio
                  i, type_name, region.srcOffset.x, region.srcOffset.y, region.srcOffset.z);
     }
     if (!IsExtentEqual(region.extent, image_state.createInfo.extent)) {
-        const char *vuid =
-            is_src ? "VUID-vkCopyImageToMemoryEXT-pRegions-XXXXX" : "VUID-vkCopyMemoryToImageEXT-pRegions-XXXXX";
+        const char *vuid = is_src ? "VUID-VkCopyImageToImageInfoEXT-extent-09115" : "VUID-VkCopyImageToImageInfoEXT-extent-09115";
         LogObjectList objlist(device, image_state.image());
         skip |= LogError(objlist, vuid,
                             "vkCopyMemoryToImageEXT(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
@@ -3026,10 +3025,10 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, info_ptr->srcImage, props->copySrcLayoutCount, props->pCopySrcLayouts,
                                         info_ptr->srcImageLayout, func_name, "srcImageLayout", "pCopySrcLayouts",
-                                        "VUID-vkCopyImageToImage-srcImageLayout-XXXXX");
+                                        "VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");
     skip |= ValidateHostCopyImageLayout(device, info_ptr->dstImage, props->copyDstLayoutCount, props->pCopyDstLayouts,
                                         info_ptr->dstImageLayout, func_name, "dstImageLayout", "pCopyDstLayouts",
-                                        "VUID-vkCopyImageToImage-dstImageLayout-XXXXX");
+                                        "VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09073");
 
     bool has_stencil = false;
     bool has_non_stencil = false;
