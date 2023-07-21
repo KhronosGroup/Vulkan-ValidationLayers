@@ -2619,9 +2619,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, create_info);
     }
-    if (enabled_features.cooperative_matrix_features_khr.cooperativeMatrix) {
-        skip |= ValidateCooperativeMatrixKHR(module_state, create_info, local_size_x);
-    }
+    // TODO - Add once glslang support lands
+    // if (enabled_features.cooperative_matrix_features_khr.cooperativeMatrix) {
+    //     skip |= ValidateCooperativeMatrixKHR(module_state, create_info, local_size_x);
+    // }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, stage);
     }
