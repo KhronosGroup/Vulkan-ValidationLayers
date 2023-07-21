@@ -1254,26 +1254,6 @@ static const char *GetImageCopyVUID(const std::string &id, bool copy2, bool host
             "VUID-VkCopyImageInfo2-dstImage-07966",
             "VUID-VkCopyImageToImageInfoEXT-dstImage-07966",
        }},
-       {"06662", {
-            "VUID-VkCmdCopyImage-aspect-06662",
-            "VUID-VkCopyImageInfo2-aspect-06662",
-            "VUID-VkCopyImageToImageInfoEXT-aspect-XXXXX",
-       }},
-       {"06663", {
-            "VUID-VkCmdCopyImage-aspect-06663",
-            "VUID-VkCopyImageInfo2-aspect-06663",
-            "VUID-VkCopyImageToImageInfoEXT-aspect-XXXXX",
-       }},
-       {"06664", {
-            "VUID-VkCmdCopyImage-aspect-06664",
-            "VUID-VkCopyImageInfo2-aspect-06664",
-            "VUID-VkCopyImageToImageInfoEXT-aspect-XXXXX",
-       }},
-       {"06665", {
-            "VUID-VkCmdCopyImage-aspect-06665",
-            "VUID-VkCopyImageInfo2-aspect-06665",
-            "VUID-VkCopyImageToImageInfoEXT-aspect-XXXXX",
-       }},
        {"07969src", {
             "VUID-vkCmdCopyImage-srcImage-07969",
             "VUID-VkCopyImageInfo2-srcImage-07969",
@@ -1593,8 +1573,6 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const IMAGE_STATE &src_
     const bool src_is_3d = (VK_IMAGE_TYPE_3D == src_image_state.createInfo.imageType);
     const bool dst_is_3d = (VK_IMAGE_TYPE_3D == dst_image_state.createInfo.imageType);
 
-    bool has_stencil_aspect = false;
-    bool has_non_stencil_aspect = false;
     const LogObjectList src_objlist(handle, src_image);
     const LogObjectList dst_objlist(handle, dst_image);
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -1696,74 +1674,20 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const IMAGE_STATE &src_
                              "depth [%1d].",
                              func_name, i, region.dstOffset.z, dst_copy_extent.depth, subresource_extent.depth);
         }
-
-        // track aspect mask in loop through regions
-        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
-            has_stencil_aspect = true;
-        }
-        if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            has_non_stencil_aspect = true;
-        }
     }
 
     skip |= ValidateMemoryIsBoundToImage(handle, src_image_state, func_name, GetImageCopyVUID("07966src", is_2, is_host));
     skip |= ValidateMemoryIsBoundToImage(handle, dst_image_state, func_name, GetImageCopyVUID("07966dst", is_2, is_host));
 
-    // Validate that SRC & DST images have correct usage flags set
-    auto required_usage = is_host ? VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT : VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    const char *required_usage_string = is_host ? "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT" : "VK_IMAGE_USAGE_TRANSFER_SRC_BIT";
-    if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
-        if (!is_host || (is_host && has_stencil_aspect)) {
-            skip |=
-                ValidateUsageFlags(src_image_state.createInfo.usage, required_usage, false, src_objlist, src_image_state.Handle(),
-                                   GetImageCopyVUID("06662", is_2, is_host), func_name, required_usage_string);
-            skip |=
-                ValidateUsageFlags(dst_image_state.createInfo.usage, required_usage, false, dst_objlist, dst_image_state.Handle(),
-                                   GetImageCopyVUID("06663", is_2, is_host), func_name, required_usage_string);
-        }
-    } else {
-        auto src_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(src_image_state.createInfo.pNext);
-        if (src_separate_stencil && has_stencil_aspect) {
-            skip |= ValidateUsageFlags(src_separate_stencil->stencilUsage, required_usage, false, src_image_state.image(),
-                                       src_image_state.Handle(), GetImageCopyVUID("06664", is_2, is_host), func_name,
-                                       required_usage_string);
-        }
-        if (is_host && has_non_stencil_aspect) {
-            skip |=
-                ValidateUsageFlags(src_image_state.createInfo.usage, required_usage, false, src_objlist, src_image_state.Handle(),
-                                   "VUID-vkCopyImageToImageEXT-aspect-XXXXX", func_name, required_usage_string);
-        } else if ((!src_separate_stencil || has_non_stencil_aspect) && !is_host) {
-            const char *vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
-            skip |= ValidateUsageFlags(src_image_state.createInfo.usage, required_usage, false, src_objlist,
-                                       src_image_state.Handle(), vuid, func_name, required_usage_string);
-        }
-
-        auto dst_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(dst_image_state.createInfo.pNext);
-        if (dst_separate_stencil && has_stencil_aspect) {
-            skip |= ValidateUsageFlags(dst_separate_stencil->stencilUsage, required_usage, false, dst_image_state.image(),
-                                       dst_image_state.Handle(), GetImageCopyVUID("06665", is_2, is_host), func_name,
-                                       required_usage_string);
-        }
-        if (is_host && has_non_stencil_aspect) {
-            skip |=
-                ValidateUsageFlags(dst_image_state.createInfo.usage, required_usage, false, dst_objlist, dst_image_state.Handle(),
-                                   "VUID-vkCopyImageToImageEXT-aspect-XXXXX", func_name, required_usage_string);
-        } else if ((!dst_separate_stencil || has_non_stencil_aspect) && !is_host) {
-            const char *vuid = is_2 ? "VUID-vkCmdCopyImage-aspect-06663" : "VUID-vkCmdCopyImage-aspect-06663";
-            skip |= ValidateUsageFlags(dst_image_state.createInfo.usage, required_usage, false, dst_objlist,
-                                       dst_image_state.Handle(), vuid, func_name, required_usage_string);
-        }
-
-        if (src_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-            skip |= LogError(src_objlist, GetImageCopyVUID("07969src", is_2, is_host),
-                             "%s: srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
-                             func_name);
-        }
-        if (dst_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-            skip |= LogError(dst_objlist, GetImageCopyVUID("07969dst", is_2, is_host),
-                             "%s: dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
-                             func_name);
-        }
+    if (src_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |=
+            LogError(src_objlist, GetImageCopyVUID("07969src", is_2, is_host),
+                     "%s: srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
+    }
+    if (dst_image_state.createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |=
+            LogError(dst_objlist, GetImageCopyVUID("07969dst", is_2, is_host),
+                     "%s: dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
     }
 
     return skip;
@@ -2058,6 +1982,40 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  func_name, string_VkFormat(src_format), FormatElementSize(src_format), string_VkFormat(dst_format),
                                  FormatElementSize(dst_format));
             }
+        }
+    }
+
+    // Validate that SRC & DST images have correct usage flags set
+    if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
+        skip |= ValidateImageUsageFlags(commandBuffer, *src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, func_name);
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06663" : "VUID-vkCmdCopyImage-aspect-06663";
+        skip |= ValidateImageUsageFlags(commandBuffer, *dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, vuid, func_name);
+    } else {
+        auto src_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(src_image_state->createInfo.pNext);
+        if (src_separate_stencil && has_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06664" : "VUID-vkCmdCopyImage-aspect-06664";
+            skip |= ValidateUsageFlags(src_separate_stencil->stencilUsage, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false,
+                                       src_image_state->image(), src_image_state->Handle(), vuid, func_name,
+                                       "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
+        }
+        if (!src_separate_stencil || has_non_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
+            skip |=
+                ValidateImageUsageFlags(commandBuffer, *src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, func_name);
+        }
+
+        auto dst_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(dst_image_state->createInfo.pNext);
+        if (dst_separate_stencil && has_stencil_aspect) {
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06665" : "VUID-vkCmdCopyImage-aspect-06665";
+            skip |= ValidateUsageFlags(dst_separate_stencil->stencilUsage, VK_IMAGE_USAGE_TRANSFER_DST_BIT, false,
+                                       dst_image_state->image(), dst_image_state->Handle(), vuid, func_name,
+                                       "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+        }
+        if (!dst_separate_stencil || has_non_stencil_aspect) {
+            vuid = is_2 ? "VUID-vkCmdCopyImage-aspect-06663" : "VUID-vkCmdCopyImage-aspect-06663";
+            skip |=
+                ValidateImageUsageFlags(commandBuffer, *dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, vuid, func_name);
         }
     }
 
@@ -2814,7 +2772,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09112" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09112";
     const char *vuid_09113 =
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09113" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09113";
-    UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, func_name);
+    skip |=
+        UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, func_name);
 
     // Todo *ImageLayout must specify the current layout of the image subresources of dstImage specified in pRegions
     // Todo *ImageLayout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopyDstLayouts
@@ -3039,8 +2998,8 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
                                         info_ptr->dstImageLayout, func_name, "dstImageLayout", "pCopyDstLayouts",
                                         "VUID-vkCopyImageToImage-dstImageLayout-XXXXX");
 
-    if (!check_memcpy && !check_multiplane) return skip;
-
+    bool has_stencil = false;
+    bool has_non_stencil = false;
     for (uint32_t i = 0; i < regionCount; i++) {
         const auto region = info_ptr->pRegions[i];
         if (check_memcpy) {
@@ -3050,18 +3009,22 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
         if (check_multiplane) {
             skip |= ValidateHostCopyMultiplane(device, region, 1, *src_image_state, true);
             skip |= ValidateHostCopyMultiplane(device, region, 1, *dst_image_state, false);
-        }   
+        }
+
+        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+            has_stencil = true;
+        }
+        if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            has_non_stencil = true;
+        }
     }
 
-    //Todo If srcImage is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource Memory
-    //Todo If dstImage is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource Memory
-
-    //Todo srcImageLayout must specify the current layout of the image subresources of srcImage specified in pRegions
-    //Todo dstImageLayout must specify the current layout of the image subresources of dstImage specified in pRegions
-
-    //Todo Is an overlap VUID missing?
-    //Todo Does this need to update image layout tracking?
-
+    skip |= UsageHostTransferCheck(device, *src_image_state, has_stencil, has_non_stencil,
+                                   "VUID-VkCopyImageToImageInfoEXT-srcImage-09111", "VUID-VkCopyImageToImageInfoEXT-srcImage-09112",
+                                   "VUID-VkCopyImageToImageInfoEXT-srcImage-09113", func_name);
+    skip |= UsageHostTransferCheck(device, *dst_image_state, has_stencil, has_non_stencil,
+                                   "VUID-VkCopyImageToImageInfoEXT-dstImage-09111", "VUID-VkCopyImageToImageInfoEXT-dstImage-09112",
+                                   "VUID-VkCopyImageToImageInfoEXT-dstImage-09113", func_name);
     return skip;
 };
 
