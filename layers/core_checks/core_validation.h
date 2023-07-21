@@ -1722,6 +1722,8 @@ class CoreChecks : public ValidationStateTracker {
                                               VkQueryResultFlags flags) override;
     bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                          uint32_t offset, uint32_t size, const void* pValues) const override;
+    bool ValidateCmdWriteTimestamp(const CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t query,
+                                   CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t query) const override;
 
@@ -1731,6 +1733,7 @@ class CoreChecks : public ValidationStateTracker {
                                               uint32_t query) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                            uint32_t query) const override;
+    void RecordCmdWriteTimestamp2(CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t query, CMD_TYPE cmd_type) const;
     void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
                                         uint32_t slot) override;
     void PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
