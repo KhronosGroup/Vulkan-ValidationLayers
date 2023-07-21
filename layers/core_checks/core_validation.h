@@ -1195,8 +1195,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE const& image_state, VkFormatFeatureFlags2KHR desired,
                                          char const* func_name, const char* vuid) const;
 
-    bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceLayers* subresource_layers,
-                                        char const* func_name, char const* member, uint32_t i) const;
+    template <typename HandleT>
+    bool ValidateImageSubresourceLayers(HandleT handle, const VkImageSubresourceLayers* subresource_layers, char const* func_name,
+                                        char const* member, uint32_t i) const;
 
     template <typename HandleT>
     bool ValidateBufferUsageFlags(HandleT handle, const BUFFER_STATE& buffer_state, VkFlags desired, bool strict,
