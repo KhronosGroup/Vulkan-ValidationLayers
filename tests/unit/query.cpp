@@ -1133,12 +1133,6 @@ TEST_F(NegativeQuery, Sizes) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
-    const uint32_t timestampValidBits = queue_props[m_device->graphics_queue_node_index_].timestampValidBits;
-
     VkBufferObj buffer;
     buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkMemoryRequirements mem_reqs = {};
@@ -1202,7 +1196,7 @@ TEST_F(NegativeQuery, Sizes) {
     m_errorMonitor->VerifyFound();
 
     // Query is not a timestamp type
-    if (timestampValidBits == 0) {
+    if (HasZeroTimestampValidBits()) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-timestampValidBits-00829");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-queryPool-01416");
@@ -1327,12 +1321,7 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
@@ -1407,12 +1396,7 @@ TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use query pool.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1465,12 +1449,7 @@ TEST_F(NegativeQuery, WriteTimeStamp) {
     InitState(nullptr, &features2);
     sync2 &= (synchronization2.synchronization2 == VK_TRUE);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
@@ -1698,12 +1677,7 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    uint32_t queue_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
-    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+    if (HasZeroTimestampValidBits()) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
     }
 

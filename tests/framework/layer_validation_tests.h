@@ -457,7 +457,10 @@ class ProtectedMemoryTest : public VkLayerTest {};
 class NegativeProtectedMemory : public ProtectedMemoryTest {};
 class PositiveProtectedMemory : public ProtectedMemoryTest {};
 
-class QueryTest : public VkLayerTest {};
+class QueryTest : public VkLayerTest {
+  public:
+    bool HasZeroTimestampValidBits();
+};
 class NegativeQuery : public QueryTest {};
 class PositiveQuery : public QueryTest {};
 
