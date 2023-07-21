@@ -1004,39 +1004,54 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
     });
 }
 
+bool CoreChecks::ValidateCmdWriteTimestamp(const CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t slot,
+                                           CMD_TYPE cmd_type) const {
+    bool skip = false;
+    skip |= ValidateCmd(cb_state, cmd_type);
+    const bool is_khr2 = cmd_type != CMD_WRITETIMESTAMP;
+
+    const uint32_t timestamp_valid_bits =
+        physical_device_state->queue_family_properties[cb_state.command_pool->queueFamilyIndex].timestampValidBits;
+    if (timestamp_valid_bits == 0) {
+        const char *vuid =
+            is_khr2 ? "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863" : "VUID-vkCmdWriteTimestamp-timestampValidBits-00829";
+        const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
+        skip |= LogError(objlist, vuid, "%s(): Query Pool %s has a timestampValidBits value of zero for queueFamilyIndex %u.",
+                         CommandTypeString(cmd_type), report_data->FormatHandle(queryPool).c_str(),
+                         cb_state.command_pool->queueFamilyIndex);
+    }
+
+    if (auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool)) {
+        if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP) {
+            const char *vuid = is_khr2 ? "VUID-vkCmdWriteTimestamp2-queryPool-03861" : "VUID-vkCmdWriteTimestamp-queryPool-01416";
+            const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
+            skip |= LogError(objlist, vuid, "%s Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.",
+                             CommandTypeString(cmd_type), report_data->FormatHandle(queryPool).c_str());
+        }
+
+        if (slot >= query_pool_state->createInfo.queryCount) {
+            const char *vuid = is_khr2 ? "VUID-vkCmdWriteTimestamp2-query-04903" : "VUID-vkCmdWriteTimestamp-query-04904";
+            const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
+            skip |= LogError(objlist, vuid,
+                             "%s(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.",
+                             CommandTypeString(cmd_type), slot, query_pool_state->createInfo.queryCount,
+                             report_data->FormatHandle(queryPool).c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) const {
     if (disabled[query_validation]) return false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, CMD_WRITETIMESTAMP);
+    skip |= ValidateCmdWriteTimestamp(*cb_state, queryPool, slot, CMD_WRITETIMESTAMP);
 
     const Location loc(Func::vkCmdWriteTimestamp, Field::pipelineStage);
     skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, cb_state->GetQueueFlags(), pipelineStage);
-
-    auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
-    if ((query_pool_state != nullptr) && (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp-queryPool-01416",
-                         "vkCmdWriteTimestamp(): Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.",
-                         report_data->FormatHandle(queryPool).c_str());
-    }
-
-    const uint32_t timestamp_valid_bits =
-        physical_device_state->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
-    if (timestamp_valid_bits == 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp-timestampValidBits-00829",
-                         "vkCmdWriteTimestamp(): Query Pool %s has a timestampValidBits value of zero.",
-                         report_data->FormatHandle(queryPool).c_str());
-    }
-
-    if ((query_pool_state != nullptr) && (slot >= query_pool_state->createInfo.queryCount)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp-query-04904",
-                         "vkCmdWriteTimestamp(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32
-                         ") in Query pool %s.",
-                         slot, query_pool_state->createInfo.queryCount, report_data->FormatHandle(queryPool).c_str());
-    }
-
     return skip;
 }
 
@@ -1046,13 +1061,13 @@ bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPip
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
+    skip |= ValidateCmdWriteTimestamp(*cb_state, queryPool, slot, cmd_type);
 
     const char *func_name = CommandTypeString(cmd_type);
     if (!enabled_features.core13.synchronization2) {
         skip |= LogError(commandBuffer, "VUID-vkCmdWriteTimestamp2-synchronization2-03858",
                          "%s(): Synchronization2 feature is not enabled", func_name);
     }
-    skip |= ValidateCmd(*cb_state, cmd_type);
 
     Location loc(Func::vkCmdWriteTimestamp2, Field::stage);
     if ((stage & (stage - 1)) != 0) {
@@ -1060,33 +1075,6 @@ bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPip
                          "%s (%s) must only set a single pipeline stage.", func_name, string_VkPipelineStageFlags2(stage).c_str());
     }
     skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, cb_state->GetQueueFlags(), stage);
-
-    loc.field = Field::queryPool;
-    auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
-
-    if (query_pool_state) {
-        if (query_pool_state->createInfo.queryType != VK_QUERY_TYPE_TIMESTAMP) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-queryPool-03861",
-                             "%s Query Pool %s was not created with VK_QUERY_TYPE_TIMESTAMP.", func_name,
-                             report_data->FormatHandle(queryPool).c_str());
-        }
-
-        if (slot >= query_pool_state->createInfo.queryCount) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-query-04903",
-                             "vkCmdWriteTimestamp2KHR(): query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32
-                             ") in Query pool %s.",
-                             slot, query_pool_state->createInfo.queryCount, report_data->FormatHandle(queryPool).c_str());
-        }
-    }
-
-    const uint32_t timestampValidBits =
-        physical_device_state->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
-    if (timestampValidBits == 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863",
-                         "%s Query Pool %s has a timestampValidBits value of zero.", func_name,
-                         report_data->FormatHandle(queryPool).c_str());
-    }
-
     return skip;
 }
 
@@ -1100,49 +1088,35 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer
     return ValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, CMD_WRITETIMESTAMP2);
 }
 
+void CoreChecks::RecordCmdWriteTimestamp2(CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t slot,
+                                          CMD_TYPE cmd_type) const {
+    if (disabled[query_validation]) return;
+    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    QueryObject query_obj = {queryPool, slot};
+    cb_state.queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                             QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+    });
+}
+
 void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                 VkQueryPool queryPool, uint32_t slot) {
-    if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query_obj = {queryPool, slot};
-    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP;
-    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                              QueryMap *localQueryToStateMap) {
-        if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
-    });
+    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, CMD_WRITETIMESTAMP);
 }
 
-void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
+void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                     VkQueryPool queryPool, uint32_t slot) {
-    if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query_obj = {queryPool, slot};
-    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2KHR;
-    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                              QueryMap *localQueryToStateMap) {
-        if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
-    });
+    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, CMD_WRITETIMESTAMP2KHR);
 }
 
-void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
+void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                  VkQueryPool queryPool, uint32_t slot) {
-    if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query_obj = {queryPool, slot};
-    CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2;
-    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                              QueryMap *localQueryToStateMap) {
-        if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
-    });
+    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, CMD_WRITETIMESTAMP2);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
