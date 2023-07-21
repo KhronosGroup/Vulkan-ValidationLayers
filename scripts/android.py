@@ -162,7 +162,6 @@ def main():
         cmake_cmd += f' -D CMAKE_ANDROID_STL_TYPE={android_stl}'
 
         cmake_cmd += ' -D ANDROID_PLATFORM=26'
-        cmake_cmd += ' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
 
         common_ci.RunShellCmd(cmake_cmd)
 

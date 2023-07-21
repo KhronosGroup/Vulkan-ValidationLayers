@@ -162,10 +162,13 @@ jobs:
           abi: [ arm64-v8a ]
           build_tests: [ "ON" ]
           stl_type: ["c++_shared"]
+          # Ensure we can build with the legacy/new toolchain
+          legacy_toolchain: ["ON"]
           include:
           - abi: armeabi-v7a
             build_tests: "OFF"
             stl_type: c++_static
+            legacy_toolchain: ["OFF"]
 
       steps:
         - uses: actions/checkout@v3
@@ -180,7 +183,7 @@ jobs:
             -D ANDROID_PLATFORM=26 \
             -D CMAKE_ANDROID_ARCH_ABI=${{ matrix.abi }} \
             -D CMAKE_ANDROID_STL_TYPE=${{ matrix.stl_type }} \
-            -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
+            -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=${{ matrix.legacy_toolchain }} \
             -D CMAKE_BUILD_TYPE=Debug \
             -D BUILD_TESTS=${{ matrix.build_tests }} \
             -D UPDATE_DEPS=ON \

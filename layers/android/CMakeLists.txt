@@ -30,8 +30,6 @@ if (ANDROID_NDK_REVISION VERSION_LESS "25")
     message(FATAL_ERROR "Android build requires at least NDK r25!")
 endif()
 
-message(STATUS "Targeting Android API Level ${CMAKE_SYSTEM_VERSION}")
-
 message(STATUS "Building with Android NDK Version ${ANDROID_NDK_REVISION}")
 
 # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
