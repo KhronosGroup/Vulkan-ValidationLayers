@@ -2422,6 +2422,50 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffe
     }
 }
 
+bool CoreChecks::UsageHostTransferCheck(VkDevice device, const IMAGE_STATE &image_state, bool has_stencil,
+                                        bool has_non_stencil, const char *vuid_09111, const char *vuid_09112,
+                                        const char *vuid_09113, const char *func_name) const {
+    bool skip = false;
+    if (has_stencil) {
+        const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
+        if (image_stencil_struct != nullptr) {
+            if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+                LogObjectList objlist(device, image_state.image());
+                skip |= LogError(
+                    objlist, vuid_09112,
+                    "%s(): An element of pRegions has an aspectMask that includes "
+                    "VK_IMAGE_ASPECT_STENCIL_BIT "
+                    "and the image was created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not "
+                    "included in VkImageStencilUsageCreateInfo::stencilUsage used to create image",
+                    func_name);
+            }
+        } else {
+            if ((image_state.createInfo.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+                LogObjectList objlist(device, image_state.image());
+                skip |= LogError(
+                    objlist, vuid_09111,
+                    "%s(): An element of pRegions has an aspectMask that includes "
+                    "VK_IMAGE_ASPECT_STENCIL_BIT and the "
+                    "image was not created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
+                    "in VkImageCreateInfo::usage used to create image",
+                    func_name);
+            }
+        }
+    }
+    if (has_non_stencil) {
+        if ((image_state.createInfo.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+            LogObjectList objlist(device, image_state.image());
+            skip |= LogError(
+                objlist, vuid_09113,
+                "%s(): An element of pRegions has an aspectMask that includes "
+                "aspects other than VK_IMAGE_ASPECT_STENCIL_BIT, but  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
+                "in VkImageCreateInfo::usage used to create image",
+                func_name);
+        }
+    }
+    return skip;
+}
+
 template <typename T>
 VkImage GetImage(T data) {
     return VK_NULL_HANDLE;
@@ -2520,49 +2564,14 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
             }
         }
     }
-    if (has_stencil) {
-        const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
-        if (image_stencil_struct != nullptr) {
-            if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                const char *vuid =
-                    from_image ? "VUID-vkCopyImageToMemoryEXT-pRegions-02658" : "VUID-vkCopyMemoryToImageEXT-pRegions-02658";
-                LogObjectList objlist(device, image_state->image());
-                skip |=
-                    LogError(objlist, vuid,
-                             "%s(): an element of pRegions.imageSubresource.aspectMask includes "
-                             "VK_IMAGE_ASPECT_STENCIL_BIT "
-                             "and if image was created with separate stencil usage, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT must be "
-                             "included in VkImageStencilUsageCreateInfo::stencilUsage used to create image",
-                             func_name);
-            }
-        } else {
-            if ((image_state->createInfo.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                const char *vuid =
-                    from_image ? "VUID-vkCopyImageToMemoryEXT-pRegions-02659" : "VUID-vkCopyMemoryToImageEXT-pRegions-02659";
-                LogObjectList objlist(device, image_state->image());
-                skip |= LogError(
-                    objlist, vuid,
-                    "%s(): an element of pRegions.imageSubresource.aspectMask includes "
-                    "VK_IMAGE_ASPECT_STENCIL_BIT and if "
-                    "image was not created with separate stencil usage, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT must be included "
-                    "in VkImageCreateInfo::usage used to create image",
-                    func_name);
-            }
-        }
-    }
-    if (has_non_stencil) {
-        if ((image_state->createInfo.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-            const char *vuid =
-                from_image ? "VUID-vkCopyImageToMemoryEXT-pRegions-XXXXX" : "VUID-vkCopyMemoryToImageEXT-pRegions-XXXXX";
-            LogObjectList objlist(device, image_state->image());
-            skip |=
-                LogError(objlist, vuid,
-                         "%s(): an element of pRegions.imageSubresource.aspectMask includes "
-                         "aspects other than VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
-                         "in VkImageCreateInfo::usage used to create image",
-                         func_name);
-        }
-    }
+
+    const char *vuid_09111 =
+        from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09111" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09111";
+    const char *vuid_09112 =
+        from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09112" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09112";
+    const char *vuid_09113 =
+        from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09113" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09113";
+    UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, func_name);
 
     // Todo *ImageLayout must specify the current layout of the image subresources of dstImage specified in pRegions
     // Todo *ImageLayout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopyDstLayouts
