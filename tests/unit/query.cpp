@@ -2371,3 +2371,127 @@ TEST_F(NegativeQuery, MeshShaderQueries) {
     vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeQuery, WriteTimestampWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkCmdWriteTimestamp(2) with queryPool being invalid.");
+
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    GetPhysicalDeviceFeatures2(synchronization2);
+    if (synchronization2.synchronization2 == VK_FALSE) {
+        GTEST_SKIP() << "synchronization2 feature is not available";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &synchronization2));
+
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
+    }
+
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-queryPool-parameter");
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, bad_query_pool, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-queryPool-parameter");
+    vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, bad_query_pool, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeQuery, DestroyWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkDestryQueryPool with queryPool being invalid.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-parameter");
+    vk::DestroyQueryPool(device(), bad_query_pool, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeQuery, GetQueryPoolResultsWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkGetQueryPoolResults with queryPool being invalid.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    const size_t out_data_size = 16;
+    uint8_t data[out_data_size];
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryPool-parameter");
+    vk::GetQueryPoolResults(device(), bad_query_pool, 0, 1, out_data_size, &data, 4, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeQuery, CmdEndQueryWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkCmdEndQuery with queryPool being invalid.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    auto query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 1;
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-queryPool-parameter");
+    vk::CmdEndQuery(m_commandBuffer->handle(), bad_query_pool, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkCmdCopyQueryPoolResults with queryPool being invalid.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    auto query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 1;
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 1024;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryPool-parameter");
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), bad_query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkCmdResetQueryPool with queryPool being invalid.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-queryPool-parameter");
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), bad_query_pool, 0, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeQuery, ResetQueryPoolWithoutQueryPool) {
+    TEST_DESCRIPTION("call vkResetQueryPool with queryPool being invalid.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parameter");
+    vk::ResetQueryPool(device(), bad_query_pool, 0, 1);
+    m_errorMonitor->VerifyFound();
+}
