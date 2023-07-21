@@ -440,11 +440,10 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     //    8         Printf Format String Id
     //    9         Printf Values Word 0 (optional)
     //    10         Printf Values Word 1 (optional)
-    uint32_t expect = debug_output_buffer[1];
+    uint32_t expect = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
     // Total size of all messages are written by AtomicAdd. Atomics in uncached memory seems to be working in caches anyway
     // and are not flushed to uncached memory at the end. In that case, expect will contain zero.
     // As a WA just parse messages using individual sizes (written correctly).
-    // Can the messages be overridden because of those atomics?
     if (!expect && !use_uncached_buffer) return;
 
     uint32_t index = spvtools::kDebugOutputDataOffset;
@@ -554,7 +553,14 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         LogWarning(device, "UNASSIGNED-DEBUG-PRINTF",
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
-    memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));
+
+    if (use_uncached_buffer) {
+        // WA for atomics.
+        memset(debug_output_buffer, 0, output_buffer_size);
+    } else {
+        // Clear only written memory.
+        memset(debug_output_buffer, 0, sizeof(uint32_t) * (expect + spvtools::kDebugOutputDataOffset));
+    }
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
