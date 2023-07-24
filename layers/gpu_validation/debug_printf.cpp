@@ -242,7 +242,7 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string &form
 
 std::string DebugPrintf::FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
-    SHADER_MODULE_STATE module_state(pgm);
+    SPIRV_MODULE_STATE module_state(pgm);
     if (module_state.words_.empty()) {
         return {};
     }

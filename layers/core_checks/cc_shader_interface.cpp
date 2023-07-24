@@ -27,7 +27,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "utils/shader_utils.h"
 
-bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
                                               const EntryPoint &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
@@ -157,7 +157,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
                                                  const EntryPoint &entrypoint) const {
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
@@ -174,7 +174,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline,
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                        const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -201,7 +201,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                       const PIPELINE_STATE &pipeline, const EntryPoint &entrypoint) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
@@ -415,8 +415,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer, const EntryPoint &producer_entrypoint,
-                                                const SHADER_MODULE_STATE &consumer, const EntryPoint &consumer_entrypoint,
+bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &producer, const EntryPoint &producer_entrypoint,
+                                                const SPIRV_MODULE_STATE &consumer, const EntryPoint &consumer_entrypoint,
                                                 uint32_t pipe_index) const {
     bool skip = false;
 

@@ -2272,7 +2272,7 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
 
 void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                               const VkAllocationCallbacks *pAllocator) {
-    Destroy<SHADER_MODULE_STATE>(shaderModule);
+    Destroy<SPIRV_MODULE_STATE>(shaderModule);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
@@ -5021,14 +5021,14 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(
     cb_state->UpdateTraceRayCmd(CMD_TRACERAYSINDIRECTKHR);
 }
 
-std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
+std::shared_ptr<SPIRV_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
                                                                                      uint32_t unique_shader_id,
                                                                                      VkShaderModule handle) const {
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
     if ((create_info.pCode[0] != spv::MagicNumber)) {
-        return std::make_shared<SHADER_MODULE_STATE>();  // not valid SPIR-V
+        return std::make_shared<SPIRV_MODULE_STATE>();  // not valid SPIR-V
     }
-    const auto module_state = std::make_shared<SHADER_MODULE_STATE>(create_info, handle, unique_shader_id);
+    const auto module_state = std::make_shared<SPIRV_MODULE_STATE>(create_info, handle, unique_shader_id);
     if (module_state->static_data_.has_group_decoration) {
         spvtools::Optimizer optimizer(spirv_environment);
         optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
@@ -5044,7 +5044,7 @@ std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleS
             VkShaderModuleCreateInfo new_create_info = create_info;
             new_create_info.pCode = optimized_binary.data();
             new_create_info.codeSize = optimized_binary.size() * sizeof(uint32_t);
-            return std::make_shared<SHADER_MODULE_STATE>(new_create_info, handle, unique_shader_id);
+            return std::make_shared<SPIRV_MODULE_STATE>(new_create_info, handle, unique_shader_id);
         }
     }
     return module_state;
@@ -5752,7 +5752,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
 
 void ValidationStateTracker::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,
                                                                         VkShaderModuleIdentifierEXT *pIdentifier) {
-    if (const auto shader_state = Get<SHADER_MODULE_STATE>(shaderModule); shader_state) {
+    if (const auto shader_state = Get<SPIRV_MODULE_STATE>(shaderModule); shader_state) {
         WriteLockGuard guard(shader_identifier_map_lock_);
         shader_identifier_map_.emplace(*pIdentifier, std::move(shader_state));
     }
