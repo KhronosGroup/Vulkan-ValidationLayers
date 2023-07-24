@@ -30,7 +30,7 @@
 #include "utils/shader_utils.h"
 
 // Validate use of input attachments against subpass structure
-bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline,
+bool CoreChecks::ValidateShaderInputAttachment(const SPIRV_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline,
                                                const ResourceInterfaceVariable &variable) const {
     bool skip = false;
     assert(variable.is_input_attachment);
@@ -81,7 +81,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     return skip;
 }
 
-bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateConservativeRasterization(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                    const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -107,7 +107,7 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     return skip;
 }
 
-bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
                                            const EntryPoint &entrypoint) const {
     bool skip = false;
 
@@ -174,7 +174,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
+bool CoreChecks::ValidateSpecializations(const SPIRV_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                                          const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     if (spec) {
@@ -214,7 +214,7 @@ bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state
 }
 
 // TODO (jbolz): Can this return a const reference?
-static std::set<uint32_t> TypeToDescriptorTypeSet(const SHADER_MODULE_STATE &module_state, uint32_t type_id,
+static std::set<uint32_t> TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &module_state, uint32_t type_id,
                                                   uint32_t &descriptor_count, bool is_khr) {
     const Instruction *type = module_state.FindDef(type_id);
     bool is_storage_buffer = false;
@@ -329,7 +329,7 @@ static std::string string_descriptorTypeSet(const std::set<uint32_t> &descriptor
     return ss.str();
 }
 
-bool CoreChecks::RequirePropertyFlag(const SHADER_MODULE_STATE &module_state, VkBool32 check, char const *flag,
+bool CoreChecks::RequirePropertyFlag(const SPIRV_MODULE_STATE &module_state, VkBool32 check, char const *flag,
                                      char const *structure, const char *vuid) const {
     if (!check) {
         if (LogError(module_state.vk_shader_module(), vuid, "Shader requires flag %s set in %s but it is not set on the device",
@@ -341,7 +341,7 @@ bool CoreChecks::RequirePropertyFlag(const SHADER_MODULE_STATE &module_state, Vk
     return false;
 }
 
-bool CoreChecks::RequireFeature(const SHADER_MODULE_STATE &module_state, VkBool32 feature, char const *feature_name,
+bool CoreChecks::RequireFeature(const SPIRV_MODULE_STATE &module_state, VkBool32 feature, char const *feature_name,
                                 const char *vuid) const {
     if (!feature) {
         if (LogError(module_state.vk_shader_module(), vuid, "Shader requires %s but is not enabled on the device", feature_name)) {
@@ -352,7 +352,7 @@ bool CoreChecks::RequireFeature(const SHADER_MODULE_STATE &module_state, VkBool3
     return false;
 }
 
-bool CoreChecks::ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage) const {
+bool CoreChecks::ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
@@ -409,7 +409,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE &m
     return skip;
 }
 
-bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, const Instruction &insn) const {
+bool CoreChecks::ValidateMemoryScope(const SPIRV_MODULE_STATE &module_state, const Instruction &insn) const {
     bool skip = false;
 
     const auto &entry = OpcodeMemoryScopePosition(insn.Opcode());
@@ -437,7 +437,7 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_STATE &module_state,
                                                             const Instruction *insn) const {
     bool skip = false;
     // Go through all variables for images and check decorations
@@ -487,7 +487,7 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateShaderStageMaxResources(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                  const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     uint32_t total_resources = 0;
@@ -570,7 +570,7 @@ void GetSpecConstantValue(const safe_VkSpecializationInfo *spec, uint32_t spec_i
 
 // Fill in value with the constant or specialization constant value, if available.
 // Returns true if the value has been accurately filled out.
-static bool GetIntConstantValue(const Instruction *insn, const SHADER_MODULE_STATE &module_state,
+static bool GetIntConstantValue(const Instruction *insn, const SPIRV_MODULE_STATE &module_state,
                                 const safe_VkSpecializationInfo *spec, const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id,
                                 uint32_t *value) {
     const Instruction *type_id = module_state.FindDef(insn->Word(1));
@@ -624,7 +624,7 @@ VkComponentTypeNV GetComponentType(const Instruction *insn) {
 
 // Validate SPV_NV_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
-bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_state,
                                            safe_VkPipelineShaderStageCreateInfo const *create_info) const {
     bool skip = false;
 
@@ -641,7 +641,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
 
         CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_KHR), all_constant(false) {}
 
-        void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
+        void Init(uint32_t id, const SPIRV_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                   const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
             const Instruction *insn = module_state.FindDef(id);
             uint32_t component_type_id = insn->Word(2);
@@ -818,7 +818,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
 
 // Validate SPV_KHR_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
-bool CoreChecks::ValidateCooperativeMatrixKHR(const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_state,
                                               safe_VkPipelineShaderStageCreateInfo const *create_info,
                                               const uint32_t local_size_x) const {
     bool skip = false;
@@ -836,7 +836,7 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SHADER_MODULE_STATE &module_
 
         CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_KHR), all_constant(false) {}
 
-        void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
+        void Init(uint32_t id, const SPIRV_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                   const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
             const Instruction *insn = module_state.FindDef(id);
             uint32_t component_type_id = insn->Word(2);
@@ -1105,7 +1105,7 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SHADER_MODULE_STATE &module_
     return skip;
 }
 
-bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                            const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -1127,7 +1127,7 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateShaderSubgroupSizeControl(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                    VkPipelineShaderStageCreateFlags flags) const {
     bool skip = false;
 
@@ -1156,7 +1156,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &mo
     return skip;
 }
 
-bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) const {
+bool CoreChecks::ValidateAtomicsTypes(const SPIRV_MODULE_STATE &module_state) const {
     bool skip = false;
 
     // "If sparseImageInt64Atomics is enabled, shaderImageInt64Atomics must be enabled"
@@ -1413,7 +1413,7 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
     return skip;
 }
 
-bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateExecutionModes(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                         VkShaderStageFlagBits stage, const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -1573,7 +1573,7 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     return pipelineLayout->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
 }
 
-bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
                                               const EntryPoint &entrypoint, VkShaderStageFlagBits stage) const {
     bool skip = false;
     // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
@@ -1639,7 +1639,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
     return skip;
 }
 
-bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
                                                   const EntryPoint &entrypoint, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
@@ -1680,7 +1680,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
     return skip;
 }
 
-bool CoreChecks::ValidateTransformFeedbackDecorations(const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateTransformFeedbackDecorations(const SPIRV_MODULE_STATE &module_state,
                                                       const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -1790,7 +1790,7 @@ bool CoreChecks::ValidateTransformFeedbackDecorations(const SHADER_MODULE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateWorkgroupSharedMemory(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                uint32_t total_workgroup_shared_memory) const {
     bool skip = false;
 
@@ -1927,7 +1927,7 @@ struct VariableInstInfo {
 };
 
 // easier to use recursion to traverse the OpTypeStruct
-static void GetVariableInfo(const SHADER_MODULE_STATE &module_state, const Instruction *insn, VariableInstInfo &info) {
+static void GetVariableInfo(const SPIRV_MODULE_STATE &module_state, const Instruction *insn, VariableInstInfo &info) {
     if (!insn) {
         return;
     } else if (insn->Opcode() == spv::OpTypeFloat || insn->Opcode() == spv::OpTypeInt) {
@@ -1942,7 +1942,7 @@ static void GetVariableInfo(const SHADER_MODULE_STATE &module_state, const Instr
     }
 }
 
-bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) const {
+bool CoreChecks::ValidateVariables(const SPIRV_MODULE_STATE &module_state) const {
     bool skip = false;
 
     for (const Instruction *insn : module_state.static_data_.variable_inst) {
@@ -2036,7 +2036,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
     return skip;
 }
 
-bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+bool CoreChecks::ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                   const PIPELINE_STATE &pipeline, const EntryPoint &entrypoint) const {
     bool skip = false;
 
@@ -2139,7 +2139,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
     return skip;
 }
 
-bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateTransformFeedback(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                            const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -2189,7 +2189,7 @@ bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_sta
 }
 
 // Checks for both TexelOffset and TexelGatherOffset limits
-bool CoreChecks::ValidateTexelOffsetLimits(const SHADER_MODULE_STATE &module_state, const Instruction &insn) const {
+bool CoreChecks::ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE &module_state, const Instruction &insn) const {
     bool skip = false;
 
     const uint32_t opcode = insn.Opcode();
@@ -2274,7 +2274,7 @@ bool CoreChecks::ValidateTexelOffsetLimits(const SHADER_MODULE_STATE &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state) const {
+bool CoreChecks::ValidateShaderClock(const SPIRV_MODULE_STATE &module_state) const {
     bool skip = false;
 
     for (const Instruction *group_inst : module_state.static_data_.read_clock_inst) {
@@ -2295,7 +2295,7 @@ bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state) co
     return skip;
 }
 
-bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state) const {
+bool CoreChecks::ValidateImageWrite(const SPIRV_MODULE_STATE &module_state) const {
     bool skip = false;
     for (const auto &image_write : module_state.static_data_.image_write_load_id_map) {
         const Instruction &insn = *image_write.first;
@@ -2323,7 +2323,7 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state) con
     return skip;
 }
 
-static const std::string GetShaderTileImageCapabilitiesString(const SHADER_MODULE_STATE &module_state) {
+static const std::string GetShaderTileImageCapabilitiesString(const SPIRV_MODULE_STATE &module_state) {
     struct SpvCapabilityWithString {
         const spv::Capability cap;
         const std::string cap_string;
@@ -2346,7 +2346,7 @@ static const std::string GetShaderTileImageCapabilitiesString(const SHADER_MODUL
     return ss_capabilities.str();
 }
 
-bool CoreChecks::ValidateShaderTileImage(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateShaderTileImage(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                          const PIPELINE_STATE &pipeline, const VkShaderStageFlagBits stage) const {
     bool skip = false;
 
@@ -2424,7 +2424,7 @@ bool CoreChecks::ValidateShaderTileImage(const SHADER_MODULE_STATE &module_state
 bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, const PipelineStageState &stage_state) const {
     bool skip = false;
     const auto *create_info = stage_state.create_info;
-    const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
+    const SPIRV_MODULE_STATE &module_state = *stage_state.module_state.get();
     const VkShaderStageFlagBits stage = create_info->stage;
 
     if (pipeline.uses_shader_module_id || !module_state.has_valid_spirv) {
@@ -2559,10 +2559,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                                  string_VkShaderStageFlagBits(stage));
             }
 
-            // The new optimized SPIR-V will NOT match the original SHADER_MODULE_STATE object parsing, so a new SHADER_MODULE_STATE
+            // The new optimized SPIR-V will NOT match the original SPIRV_MODULE_STATE object parsing, so a new SPIRV_MODULE_STATE
             // object is needed. This an issue due to each pipeline being able to reuse the same shader module but with different
             // spec constant values.
-            SHADER_MODULE_STATE spec_mod(vvl::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
+            SPIRV_MODULE_STATE spec_mod(vvl::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
 
             // According to https://github.com/KhronosGroup/Vulkan-Docs/issues/1671 anything labeled as "static use" (such as if an
             // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not
@@ -2801,7 +2801,7 @@ bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice 
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                uint32_t local_size_z) const {
     bool skip = false;
@@ -2937,7 +2937,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
     return skip;
 }
 
-bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                 const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                 uint32_t local_size_z) const {
     bool skip = false;

@@ -72,7 +72,7 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         // TODO might need to filter out more than just fragment shaders here
         if (create_info.pStages[i].stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = dev_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
+            auto module_state = dev_data.Get<SPIRV_MODULE_STATE>(create_info.pStages[i].module);
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
@@ -168,7 +168,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                                   const CreateInfo &create_info) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = state_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
+            auto module_state = state_data.Get<SPIRV_MODULE_STATE>(create_info.pStages[i].module);
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created

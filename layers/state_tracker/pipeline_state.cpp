@@ -22,7 +22,7 @@
 #include "generated/enum_flag_bits.h"
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
+                                       std::shared_ptr<const SPIRV_MODULE_STATE> &module_state,
                                        std::shared_ptr<const EntryPoint> &entrypoint)
     : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {}
 
@@ -38,7 +38,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
         // shader stages need to be recorded in pipeline order
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
             if (stage_ci.stage == stage) {
-                auto module = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
+                auto module = state_data.Get<SPIRV_MODULE_STATE>(stage_ci.module);
                 if (!module) {
                     // See if the module is referenced in a library sub state
                     module = pipe_state.GetSubStateShader(stage_ci.stage);
@@ -66,7 +66,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
         }
         if (!stage_found) {
             // Check if stage has been supplied by a library
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = nullptr;
+            std::shared_ptr<const SPIRV_MODULE_STATE> module_state = nullptr;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = nullptr;
             switch (stage) {
                 case VK_SHADER_STAGE_VERTEX_BIT:
@@ -653,7 +653,7 @@ VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCrea
 }
 
 // TODO (ncesario) this needs to be automated. As a first step, need to leverage SubState::ValidShaderStages()
-std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
+std::shared_ptr<const SPIRV_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
     switch (state) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             const auto sub_state =

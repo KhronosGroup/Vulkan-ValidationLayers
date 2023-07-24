@@ -99,7 +99,7 @@ uint32_t Instruction::GetBitWidth() const {
     return bit_width;
 }
 
-AtomicInstructionInfo Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const {
+AtomicInstructionInfo Instruction::GetAtomicInfo(const SPIRV_MODULE_STATE& module_state) const {
     AtomicInstructionInfo info;
 
     // All atomics have a pointer referenced

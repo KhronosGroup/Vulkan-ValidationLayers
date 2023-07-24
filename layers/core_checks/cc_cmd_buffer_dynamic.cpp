@@ -399,7 +399,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_sta
         const bool dyn_stencil_write_mask = pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
         if ((dyn_depth_write_enable || dyn_stencil_write_mask) &&
             (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader)) {
-            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
+            std::shared_ptr<const SPIRV_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
             auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
             const bool mode_early_fragment_test =

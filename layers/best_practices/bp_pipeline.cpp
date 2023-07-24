@@ -294,7 +294,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         }
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-            auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+            auto module_state = Get<SPIRV_MODULE_STATE>(createInfo.stage.module);
             if (module_state &&
                 module_state->static_data_.has_builtin_workgroup_size) {  // No module if creating from module identifier
                 skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
@@ -311,7 +311,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
-    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    auto module_state = Get<SPIRV_MODULE_STATE>(createInfo.stage.module);
     if (!module_state) {  // No module if creating from module identifier
         return false;
     }
@@ -380,7 +380,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
 
 bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
-    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    auto module_state = Get<SPIRV_MODULE_STATE>(createInfo.stage.module);
     if (!module_state) {
         return false;
     }
@@ -654,7 +654,7 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool BestPractices::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+bool BestPractices::ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                                        const PIPELINE_STATE& pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
@@ -741,7 +741,7 @@ bool BestPractices::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE
     return skip;
 }
 
-bool BestPractices::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state,
+bool BestPractices::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE& module_state,
                                                                        const EntryPoint& entrypoint,
                                                                        const PIPELINE_STATE& pipeline) const {
     bool skip = false;

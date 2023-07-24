@@ -890,9 +890,9 @@ class BestPractices : public ValidationStateTracker {
         VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const override;
 
-    bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateFsOutputsAgainstRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                             const PIPELINE_STATE& pipeline, uint32_t subpass_index) const;
-    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                                             const PIPELINE_STATE& pipeline) const;
 // Include code-generated functions
 #include "generated/best_practices.h"

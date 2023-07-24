@@ -905,7 +905,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
             // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
             if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
                 for (const auto &stage_state : pipe->stage_states) {
-                    auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage_state.module_state);
+                    auto module_state = std::const_pointer_cast<SPIRV_MODULE_STATE>(stage_state.module_state);
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
                         // case above. Otherwise, it is being defined during CGPL time
@@ -1101,7 +1101,7 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-void ReadOpSource(const SHADER_MODULE_STATE &module_state, const uint32_t reported_file_id,
+void ReadOpSource(const SPIRV_MODULE_STATE &module_state, const uint32_t reported_file_id,
                   std::vector<std::string> &opsource_lines) {
     const std::vector<Instruction> &instructions = module_state.GetInstructions();
     for (size_t i = 0; i < instructions.size(); i++) {
@@ -1181,7 +1181,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    SHADER_MODULE_STATE module_state(pgm);
+    SPIRV_MODULE_STATE module_state(pgm);
     if (module_state.words_.empty()) {
         return;
     }

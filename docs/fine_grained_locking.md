@@ -191,7 +191,7 @@ The following objects have already been updated to meet the above construction r
 * VkPipelineLayout / PIPELINE_LAYOUT_STATE
 * VkDescriptorSetLayout / cvdescriptorset::DescriptorSetLayout
 * VkQueryPool / QUERY_POOL_STATE
-* VkShaderModule / SHADER_MODULE_STATE
+* VkShaderModule / SPIRV_MODULE_STATE
 * VkPipeline / Pipeline state
 
 Other state objects SHOULD make member data fields `const` if possible.

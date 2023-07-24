@@ -23,7 +23,7 @@
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
 //
 class RENDER_PASS_STATE;
-struct SHADER_MODULE_STATE;
+struct SPIRV_MODULE_STATE;
 
 template <typename CreateInfoType>
 static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateInfoType &create_info) {
@@ -81,11 +81,11 @@ struct PreRasterState : public PipelineSubState {
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> tessc_shader, tesse_shader;
+    std::shared_ptr<const SPIRV_MODULE_STATE> tessc_shader, tesse_shader;
     const safe_VkPipelineShaderStageCreateInfo *tessc_shader_ci = nullptr, *tesse_shader_ci = nullptr;
     const safe_VkPipelineTessellationStateCreateInfo *tess_create_info = nullptr;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> vertex_shader, geometry_shader, task_shader, mesh_shader;
+    std::shared_ptr<const SPIRV_MODULE_STATE> vertex_shader, geometry_shader, task_shader, mesh_shader;
     const safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr,
                                                *task_shader_ci = nullptr, *mesh_shader_ci = nullptr;
 };
@@ -131,7 +131,7 @@ struct FragmentShaderState : public PipelineSubState {
     std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ms_state;
     std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ds_state;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> fragment_shader;
+    std::shared_ptr<const SPIRV_MODULE_STATE> fragment_shader;
     std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
 
   private:
