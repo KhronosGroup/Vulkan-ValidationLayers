@@ -4213,7 +4213,7 @@ TEST_F(NegativeDynamicState, Viewport) {
         helper.gp_ci_.pViewportState = nullptr;
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp_state, kErrorBit,
-                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00750");
+                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024");
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[] = {viewport, viewport};

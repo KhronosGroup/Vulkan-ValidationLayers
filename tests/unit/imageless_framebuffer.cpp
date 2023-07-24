@@ -291,7 +291,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         ASSERT_TRUE(framebuffer.initialized());
         renderPassBeginInfo.framebuffer = framebuffer.handle();
         TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &renderPassBeginInfo, rp2Supported,
-                            "VUID-VkRenderPassBeginInfo-framebuffer-03217", "VUID-VkRenderPassBeginInfo-framebuffer-03217");
+                            "VUID-VkRenderPassBeginInfo-framebuffer-09047", "VUID-VkRenderPassBeginInfo-framebuffer-09047");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
         imageViewCreateInfo.image = imageObject.image();
         imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;

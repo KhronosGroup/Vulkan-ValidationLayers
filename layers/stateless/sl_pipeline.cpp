@@ -1912,13 +1912,6 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                              "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV.",
                              i, flags);
         }
-        if ((flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) != 0) {
-            skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-flags-02874",
-                             "vkCreateComputePipelines(): pCreateInfos[%" PRIu32
-                             "]->flags (0x%x) must not include "
-                             "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.",
-                             i, flags);
-        }
         if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
                 if (pCreateInfos[i].basePipelineIndex != -1) {
