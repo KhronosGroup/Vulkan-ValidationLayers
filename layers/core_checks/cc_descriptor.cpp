@@ -3392,6 +3392,12 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
 
     bool skip = false;
 
+    static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
+        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067")};
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, "vkCmdSetDescriptorBufferOffsetsEXT()", bindpoint_errors);
+
     if (!enabled_features.descriptor_buffer_features.descriptorBuffer) {
         skip |= LogError(device, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-None-08060",
                          "vkCmdSetDescriptorBufferOffsetsEXT(): The descriptorBuffer feature "
@@ -3414,6 +3420,15 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
         bool valid_buffer = false;
         bool valid_binding = false;
 
+        const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
+        if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
+            const LogObjectList objlist(cb_state->commandBuffer(), set_layout->GetDescriptorSetLayout(), pipeline_layout->layout());
+            skip |= LogError(objlist, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006",
+                             "vkCmdSetDescriptorBufferOffsetsEXT(): Descriptor set layout (%s) for set %" PRIu32
+                             " was created without VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT flag set",
+                             report_data->FormatHandle(set_layout->GetDescriptorSetLayout()).c_str(), firstSet + i);
+        }
+
         if (bufferIndex < cb_state->descriptor_buffer_binding_info.size()) {
             const VkDeviceAddress start = cb_state->descriptor_buffer_binding_info[bufferIndex].address;
             const auto buffer_states = GetBuffersByAddress(start);
@@ -3422,7 +3437,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                 const auto buffer_state_starts = GetBuffersByAddress(start + offset);
 
                 if (!buffer_state_starts.empty()) {
-                    const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
                     const auto bindings = set_layout->GetBindings();
                     const auto pSetLayoutSize = set_layout->GetLayoutSizeInBytes();
                     VkDeviceSize setLayoutSize = 0;
@@ -3508,12 +3522,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                              i, pOffsets[i], phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment);
         }
     }
-
-    static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
-        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067"),
-        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067"),
-        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067")};
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, "vkCmdSetDescriptorBufferOffsetsEXT()", bindpoint_errors);
 
     return skip;
 }
