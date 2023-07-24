@@ -11455,6 +11455,204 @@ void safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV(const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    deviceGeneratedCompute(in_struct->deviceGeneratedCompute),
+    deviceGeneratedComputePipelines(in_struct->deviceGeneratedComputePipelines),
+    deviceGeneratedComputeCaptureReplay(in_struct->deviceGeneratedComputeCaptureReplay)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV),
+    pNext(nullptr),
+    deviceGeneratedCompute(),
+    deviceGeneratedComputePipelines(),
+    deviceGeneratedComputeCaptureReplay()
+{}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV(const safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    deviceGeneratedCompute = copy_src.deviceGeneratedCompute;
+    deviceGeneratedComputePipelines = copy_src.deviceGeneratedComputePipelines;
+    deviceGeneratedComputeCaptureReplay = copy_src.deviceGeneratedComputeCaptureReplay;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::operator=(const safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceGeneratedCompute = copy_src.deviceGeneratedCompute;
+    deviceGeneratedComputePipelines = copy_src.deviceGeneratedComputePipelines;
+    deviceGeneratedComputeCaptureReplay = copy_src.deviceGeneratedComputeCaptureReplay;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::~safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::initialize(const VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    deviceGeneratedCompute = in_struct->deviceGeneratedCompute;
+    deviceGeneratedComputePipelines = in_struct->deviceGeneratedComputePipelines;
+    deviceGeneratedComputeCaptureReplay = in_struct->deviceGeneratedComputeCaptureReplay;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::initialize(const safe_VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    deviceGeneratedCompute = copy_src->deviceGeneratedCompute;
+    deviceGeneratedComputePipelines = copy_src->deviceGeneratedComputePipelines;
+    deviceGeneratedComputeCaptureReplay = copy_src->deviceGeneratedComputeCaptureReplay;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkComputePipelineIndirectBufferInfoNV::safe_VkComputePipelineIndirectBufferInfoNV(const VkComputePipelineIndirectBufferInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    deviceAddress(in_struct->deviceAddress),
+    size(in_struct->size),
+    pipelineDeviceAddressCaptureReplay(in_struct->pipelineDeviceAddressCaptureReplay)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkComputePipelineIndirectBufferInfoNV::safe_VkComputePipelineIndirectBufferInfoNV() :
+    sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV),
+    pNext(nullptr),
+    deviceAddress(),
+    size(),
+    pipelineDeviceAddressCaptureReplay()
+{}
+
+safe_VkComputePipelineIndirectBufferInfoNV::safe_VkComputePipelineIndirectBufferInfoNV(const safe_VkComputePipelineIndirectBufferInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pipelineDeviceAddressCaptureReplay = copy_src.pipelineDeviceAddressCaptureReplay;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkComputePipelineIndirectBufferInfoNV& safe_VkComputePipelineIndirectBufferInfoNV::operator=(const safe_VkComputePipelineIndirectBufferInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pipelineDeviceAddressCaptureReplay = copy_src.pipelineDeviceAddressCaptureReplay;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkComputePipelineIndirectBufferInfoNV::~safe_VkComputePipelineIndirectBufferInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkComputePipelineIndirectBufferInfoNV::initialize(const VkComputePipelineIndirectBufferInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    deviceAddress = in_struct->deviceAddress;
+    size = in_struct->size;
+    pipelineDeviceAddressCaptureReplay = in_struct->pipelineDeviceAddressCaptureReplay;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkComputePipelineIndirectBufferInfoNV::initialize(const safe_VkComputePipelineIndirectBufferInfoNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    deviceAddress = copy_src->deviceAddress;
+    size = copy_src->size;
+    pipelineDeviceAddressCaptureReplay = copy_src->pipelineDeviceAddressCaptureReplay;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineIndirectDeviceAddressInfoNV::safe_VkPipelineIndirectDeviceAddressInfoNV(const VkPipelineIndirectDeviceAddressInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    pipelineBindPoint(in_struct->pipelineBindPoint),
+    pipeline(in_struct->pipeline)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPipelineIndirectDeviceAddressInfoNV::safe_VkPipelineIndirectDeviceAddressInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_INDIRECT_DEVICE_ADDRESS_INFO_NV),
+    pNext(nullptr),
+    pipelineBindPoint(),
+    pipeline()
+{}
+
+safe_VkPipelineIndirectDeviceAddressInfoNV::safe_VkPipelineIndirectDeviceAddressInfoNV(const safe_VkPipelineIndirectDeviceAddressInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineIndirectDeviceAddressInfoNV& safe_VkPipelineIndirectDeviceAddressInfoNV::operator=(const safe_VkPipelineIndirectDeviceAddressInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineIndirectDeviceAddressInfoNV::~safe_VkPipelineIndirectDeviceAddressInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineIndirectDeviceAddressInfoNV::initialize(const VkPipelineIndirectDeviceAddressInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pipelineBindPoint = in_struct->pipelineBindPoint;
+    pipeline = in_struct->pipeline;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPipelineIndirectDeviceAddressInfoNV::initialize(const safe_VkPipelineIndirectDeviceAddressInfoNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    pipelineBindPoint = copy_src->pipelineBindPoint;
+    pipeline = copy_src->pipeline;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     linearColorAttachment(in_struct->linearColorAttachment)

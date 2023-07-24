@@ -605,6 +605,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_host_query_reset{kNotEnabled};
     ExtEnabled vk_ext_index_type_uint8{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state{kNotEnabled};
+    ExtEnabled vk_ext_host_image_copy{kNotEnabled};
     ExtEnabled vk_ext_shader_atomic_float2{kNotEnabled};
     ExtEnabled vk_ext_swapchain_maintenance1{kNotEnabled};
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
@@ -676,6 +677,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_nv_copy_memory_indirect{kNotEnabled};
     ExtEnabled vk_nv_memory_decompression{kNotEnabled};
+    ExtEnabled vk_nv_device_generated_commands_compute{kNotEnabled};
     ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
     ExtEnabled vk_ext_image_compression_control_swapchain{kNotEnabled};
     ExtEnabled vk_qcom_image_processing{kNotEnabled};
@@ -1118,6 +1120,10 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_host_image_copy, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
             {VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_atomic_float2, {{
                            {&DeviceExtensions::vk_ext_shader_atomic_float, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME}}})},
             {VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_swapchain_maintenance1, {{
@@ -1293,6 +1299,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_memory_decompression, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
+            {VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_device_generated_commands_compute, {{
+                           {&DeviceExtensions::vk_nv_device_generated_commands, VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME}}})},
             {VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_image_compression_control_swapchain, {{
@@ -1744,6 +1752,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+    VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME,
     VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME,
     VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
     VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
@@ -1827,6 +1836,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME,
     VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME,
     VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME,
+    VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME,
     VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME,
     VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_EXTENSION_NAME,
     VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME,
