@@ -1991,6 +1991,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
+            if (variable.decorations.set >= per_sets->size()) {
+                // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
+                continue;
+            }
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
@@ -2129,6 +2133,10 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
+            if (variable.decorations.set >= per_sets->size()) {
+                // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
+                continue;
+            }
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
