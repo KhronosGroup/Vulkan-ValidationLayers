@@ -1289,6 +1289,26 @@ static inline const char* string_VkStructureType(VkStructureType input_value) {
             return "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_STATISTIC_KHR";
         case VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR:
             return "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT:
+            return "VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT";
+        case VK_STRUCTURE_TYPE_IMAGE_TO_MEMORY_COPY_EXT:
+            return "VK_STRUCTURE_TYPE_IMAGE_TO_MEMORY_COPY_EXT";
+        case VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO_EXT";
+        case VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT";
+        case VK_STRUCTURE_TYPE_COPY_IMAGE_TO_IMAGE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_COPY_IMAGE_TO_IMAGE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SUBRESOURCE_HOST_MEMCPY_SIZE_EXT:
+            return "VK_STRUCTURE_TYPE_SUBRESOURCE_HOST_MEMCPY_SIZE_EXT";
+        case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY_EXT:
+            return "VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY_EXT";
         case VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR:
             return "VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR";
         case VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR:
@@ -1709,6 +1729,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value) {
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV:
+            return "VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV";
+        case VK_STRUCTURE_TYPE_PIPELINE_INDIRECT_DEVICE_ADDRESS_INFO_NV:
+            return "VK_STRUCTURE_TYPE_PIPELINE_INDIRECT_DEVICE_ADDRESS_INFO_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT:
@@ -4231,6 +4257,10 @@ static inline const char* string_VkIndirectCommandsTokenTypeNV(VkIndirectCommand
             return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV";
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV:
             return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV";
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PIPELINE_NV:
+            return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_PIPELINE_NV";
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_NV:
+            return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_NV";
         default:
             return "Unhandled VkIndirectCommandsTokenTypeNV";
     }
@@ -4907,6 +4937,8 @@ static inline const char* string_VkImageUsageFlagBits(VkImageUsageFlagBits input
             return "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT";
         case VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
             return "VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
+        case VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT:
+            return "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT";
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR:
             return "VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR";
@@ -5865,6 +5897,8 @@ static inline const char* string_VkDescriptorSetLayoutCreateFlagBits(VkDescripto
             return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT";
         case VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT:
             return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT";
+        case VK_DESCRIPTOR_SET_LAYOUT_CREATE_INDIRECT_BINDABLE_BIT_NV:
+            return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_INDIRECT_BINDABLE_BIT_NV";
         case VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT:
             return "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT";
         default:
@@ -6980,6 +7014,8 @@ static inline const char* string_VkFormatFeatureFlagBits2(uint64_t input_value) 
             return "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT";
         case VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
             return "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT:
+            return "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT";
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR:
             return "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR";
@@ -8233,6 +8269,29 @@ static inline std::string string_VkBuildAccelerationStructureFlagsKHR(VkBuildAcc
         input_value >>= 1;
     }
     if (ret.empty()) ret.append("VkBuildAccelerationStructureFlagsKHR(0)");
+    return ret;
+}
+static inline const char* string_VkHostImageCopyFlagBitsEXT(VkHostImageCopyFlagBitsEXT input_value) {
+    switch (input_value) {
+        case VK_HOST_IMAGE_COPY_MEMCPY_EXT:
+            return "VK_HOST_IMAGE_COPY_MEMCPY_EXT";
+        default:
+            return "Unhandled VkHostImageCopyFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkHostImageCopyFlagsEXT(VkHostImageCopyFlagsEXT input_value) {
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkHostImageCopyFlagBitsEXT(static_cast<VkHostImageCopyFlagBitsEXT>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if (ret.empty()) ret.append("VkHostImageCopyFlagsEXT(0)");
     return ret;
 }
 static inline const char* string_VkPresentScalingFlagBitsEXT(VkPresentScalingFlagBitsEXT input_value) {
