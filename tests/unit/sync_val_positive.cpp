@@ -352,3 +352,52 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     }
     signaling_thread.join();
 }
+
+TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
+    TEST_DESCRIPTION("Shader references a descriptor set that was not bound. SyncVal should not crash if core checks are disabled");
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vs_source[] = R"glsl(
+        #version 460
+        layout(set=1) layout(binding=0) uniform foo { float x; } bar;
+        void main() {
+           gl_Position = vec4(bar.x);
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+    const VkDescriptorSetLayoutObj set_layout(m_device, {binding});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&set_layout, &set_layout});
+    OneOffDescriptorSet set(m_device, {binding});
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
+    pipe.SetViewport(m_viewports);
+    VkRect2D rect = {{0, 0}, {64, 64}};
+    m_scissors.push_back(rect);
+    pipe.SetScissor(m_scissors);
+    pipe.CreateVKPipeline(pipeline_layout, m_renderPass);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Bind set 0.
+    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    // Core checks prevent SyncVal from running when error is found. This test has core checks disabled and also invalid
+    // setup where a shader uses not bound set 1.
+    // Check that syncval does not cause out of bounds access (PerSet has single element (index 0), shader set index is 1).
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+
+    vk::CmdEndRenderPass(*m_commandBuffer);
+    m_commandBuffer->end();
+}
