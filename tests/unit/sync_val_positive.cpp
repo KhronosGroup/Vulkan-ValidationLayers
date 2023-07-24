@@ -342,7 +342,17 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
 
     // In the regression case we expect crashes or deadlocks.
     // Timeout helper will unstack CI machines in case of a deadlock.
+#ifdef NDEBUG
     constexpr int wait_time = 100;
+#else
+    // Use large timeout value in case of bad CI performance.
+    // On Windows debug build on development machine (4 cores) takes less than 10 seconds.
+    // Some CI runs of debug build on Linux machine took around 60 seconds and there were
+    // few timeouts with 100 seconds. Use larger values to test if it's stable enough.
+    // Another option is to reduce thread count or iteration count for debug build.
+    constexpr int wait_time = 300;
+#endif
+
     if (!timeout_helper.WaitForThreads(wait_time)) {
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
         return;
