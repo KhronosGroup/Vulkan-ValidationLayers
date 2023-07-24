@@ -130,7 +130,8 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline) const 
         }
 
         if (!pipeline.InputAssemblyState()) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
+            // TODO 6184 - Add tests and fix logic for all combinations
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Missing pInputAssemblyState.",
                              pipeline.create_index);
         }
@@ -1211,7 +1212,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     const auto ds_state = pipeline.DepthStencilState();
                     if (!ds_state) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06043",
+                        // TODO 6184 - Add tests and fix logic for all combinations
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] State: pDepthStencilState is NULL when rasterization is enabled "
                                          "and subpass uses a depth/stencil attachment.",
@@ -1268,7 +1270,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
 
                 if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
                     !pipeline.fragment_output_state->color_blend_state) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044",
+                    // TODO 6184 - Add tests and fix logic for all combinations
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09030",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                      "] State: pColorBlendState is NULL when rasterization is enabled and "
                                      "subpass uses color attachments.",
@@ -1738,7 +1741,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
     }
 
     if (!multisample_state && pipeline.fragment_output_state) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751",
+        // TODO 6184 - Add tests and fix logic for all combinations
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                          "] is being created without multisample state (VkGraphicsPipelineCreateInfo::pMultisampleState == null).",
                          pipeline.create_index);
@@ -1769,8 +1773,9 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE 
         }
     } else {
         if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+            // TODO 6184 - Add tests and fix logic for all combinations
             skip |=
-                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590",
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                          "] does contains fragment shader state and no fragment output state, pDepthStencilState does not point to "
                          "a valid VkPipelineDepthStencilStateCreateInfo struct.",
@@ -2330,7 +2335,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                 ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
                  (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
                 !pipeline.DepthStencilState()) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
+                // TODO 6184 - Add tests and fix logic for all combinations
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "]: has fragment state and a depth format (%s) or stencil format (%s) and an invalid "
                                  "pDepthStencilState structure",
@@ -2340,7 +2346,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
 
             if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
                 pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
+                // TODO 6184 - Add tests and fix logic for all combinations
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
                                  ") and an invalid pColorBlendState structure",

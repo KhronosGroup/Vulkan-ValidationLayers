@@ -785,7 +785,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             if (has_pre_raster_state && (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
                 (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
                 if (create_info.pTessellationState == nullptr) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
+                    // TODO 6184 - Add tests and fix logic for all combinations
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022",
                                      "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
                                      "].pStages includes a tessellation control "
                                      "shader stage and a tessellation evaluation shader stage, "
@@ -943,7 +944,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
                 // Everything in here has a pre-rasterization shader state
                 if (create_info.pViewportState == nullptr) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00750",
+                    // TODO 6184 - Add tests and fix logic for all combinations
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024",
                                      "vkCreateGraphicsPipelines: Rasterization is enabled (pCreateInfos[%" PRIu32
                                      "].pRasterizationState->rasterizerDiscardEnable is VK_FALSE), but pCreateInfos[%" PRIu32
                                      "].pViewportState (=NULL) is not a valid pointer.",
