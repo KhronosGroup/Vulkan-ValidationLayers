@@ -276,7 +276,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSState) {
 
     frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035");
     frag_shader_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -326,7 +326,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
     }
 
     // Create a fragment output pipeline first. It's because we can't create a valid fragment shader pipeline
-    // without pDepthStencilState since it hits by "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590"
+    // without pDepthStencilState since it hits by "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035"
     CreatePipelineHelper frag_output_lib(*this);
     {
         frag_output_lib.InitFragmentOutputLibInfo();
@@ -368,7 +368,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
         frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033");
         frag_shader_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -427,7 +427,7 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
         frag_output_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         frag_output_lib.gp_ci_.pColorBlendState = nullptr;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037");
         frag_output_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1338,7 +1338,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
         pre_raster_lib.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }

@@ -1030,8 +1030,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          string_VkFormat(render_pass_create_info->pAttachments[i].format));
                     }
 
-                    if (render_pass_create_info->pAttachments[i].samples != image_create_info->samples) {
-                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03217",
+                    const VkSampleCountFlagBits attachment_samples = render_pass_create_info->pAttachments[i].samples;
+                    const auto ms_render_to_single_sample =
+                        LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderPassBeginInfo->pNext);
+                    const bool single_sample_enabled = ms_render_to_single_sample &&
+                                                       ms_render_to_single_sample->multisampledRenderToSingleSampledEnable &&
+                                                       (attachment_samples == VK_SAMPLE_COUNT_1_BIT);
+                    if (attachment_samples != image_create_info->samples && !single_sample_enabled) {
+                        skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-09047",
                                          "%s: Image view #%u created with an image with %s samples, "
                                          "but render pass attachment description #%u created with %s samples",
                                          func_name, i, string_VkSampleCountFlagBits(image_create_info->samples), i,

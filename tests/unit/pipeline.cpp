@@ -245,8 +245,7 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
         helper.cb_attachments_[0] = att_state1;
         helper.gp_ci_.pColorBlendState = nullptr;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09030");
 }
 
 TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
@@ -2424,8 +2423,6 @@ TEST_F(NegativePipeline, CreateFlagsCompute) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-03576");
     flags = VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV;
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-04945");
-    flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-02874");
 }
 
 TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {

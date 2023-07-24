@@ -1253,11 +1253,24 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
             std::vector<uint32_t> families = {submit_family, other_family};
             BarrierQueueFamilyTestHelper conc_test(&test_context);
             conc_test.Init(&families);
-            static const char *img_vuid = "VUID-VkImageMemoryBarrier-synchronization2-03856";
-            static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-synchronization2-03852";
-            conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
-            conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
-            conc_test(img_vuid, buf_vuid, submit_family, submit_family);
+            {
+                // src
+                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+                conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
+            }
+            {
+                // dst
+                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
+                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
+                conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
+            }
+            {
+                // neither
+                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+                conc_test(img_vuid, buf_vuid, submit_family, submit_family);
+            }
             conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
         }
 
@@ -1358,16 +1371,16 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
         BarrierQueueFamilyTestHelper conc_test(&test_context);
 
         conc_test.Init(&families);
-        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09052";
-        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09049";
+        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
         conc_test(img_vuid, buf_vuid, submit_family, submit_family);
         conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
         conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
         conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
 
-        conc_test("VUID-VkImageMemoryBarrier-image-09118", "VUID-VkBufferMemoryBarrier-buffer-09096", submit_family,
+        conc_test("VUID-VkImageMemoryBarrier-None-09053", "VUID-VkBufferMemoryBarrier-None-09050", submit_family,
                   VK_QUEUE_FAMILY_IGNORED);
-        conc_test("VUID-VkImageMemoryBarrier-image-09117", "VUID-VkBufferMemoryBarrier-buffer-09095", VK_QUEUE_FAMILY_IGNORED,
+        conc_test("VUID-VkImageMemoryBarrier-None-09054", "VUID-VkBufferMemoryBarrier-None-09051", VK_QUEUE_FAMILY_IGNORED,
                   submit_family);
         // This is to flag the errors that would be considered only "unexpected" in the parallel case above
         conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
@@ -1602,33 +1615,6 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     }
     BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
     Barrier2QueueFamilyTestHelper::Context test_context2(this, qf_indices);
-
-    if (only_one_family) {
-        printf("Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
-    } else {
-        std::vector<uint32_t> families = {submit_family, other_family};
-        BarrierQueueFamilyTestHelper conc_test(&test_context);
-
-        conc_test.Init(&families);
-        conc_test(submit_family, submit_family);
-        conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
-        conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
-        conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
-
-        Barrier2QueueFamilyTestHelper conc_test2(&test_context2);
-        conc_test2.Init(&families);
-        conc_test2(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
-        conc_test2(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
-        conc_test2(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
-
-        conc_test("VUID-VkImageMemoryBarrier2-image-09118", "VUID-VkBufferMemoryBarrier2-buffer-09096", submit_family,
-                  VK_QUEUE_FAMILY_IGNORED);
-        conc_test("VUID-VkImageMemoryBarrier2-image-09117", "VUID-VkBufferMemoryBarrier2-buffer-09095", VK_QUEUE_FAMILY_IGNORED,
-                  submit_family);
-        // This is to flag the errors that would be considered only "unexpected" in the parallel case above
-        conc_test2(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
-        conc_test2(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
-    }
 
     Barrier2QueueFamilyTestHelper excl_test(&test_context2);
     excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.

@@ -907,7 +907,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
 
     shader_stages = {tcs.GetStageCreateInfo(), tes.GetStageCreateInfo()};
     // Pass a NULL pTessellationState (with active tessellation shader stages)
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-09022");
 
     // Pass an invalid pTessellationState (bad sType)
     tsci_bad.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
