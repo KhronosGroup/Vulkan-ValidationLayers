@@ -681,6 +681,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         m_errorMonitor->VerifyFound();
     }
 
+    // VUID-vkCmdSetDescriptorBufferOffsetsEXT VUs
     {
         buffCI = LvlInitStruct<VkBufferCreateInfo>();
         buffCI.size = 4096;
@@ -743,6 +744,24 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
                 m_errorMonitor->VerifyFound();
                 command_buffer.end();
             }
+        }
+
+        {
+            const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,
+                                                          nullptr};
+            const VkDescriptorSetLayoutObj set_layout_no_flag(m_device, {binding});
+            const VkPipelineLayoutObj pipeline_layout_2(m_device, {&set_layout_no_flag, &set_layout_no_flag});
+
+            const uint32_t indices_2[2] = {0, 0};
+            const VkDeviceSize offsets_2[2] = {0, 0};
+            vk::CmdBindDescriptorBuffersEXT(*m_commandBuffer, 1, &dbbi2);
+            // complain about set layout for set 0
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006");
+            // complain about set layout for set 1
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006");
+            vk::CmdSetDescriptorBufferOffsetsEXT(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2, 0, 2,
+                                                 indices_2, offsets_2);
+            m_errorMonitor->VerifyFound();
         }
     }
 
