@@ -724,49 +724,75 @@ const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlag
 }
 
 static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
-    {QueueError::kSrcOrDstMustBeIgnore,
+    {QueueError::kSrcNoExternalExt,
      {
-         // this isn't an error for synchronization2, so we don't need the 2KHR versions
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-synchronization2-03853"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-synchronization2-03857"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-None-09097"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-None-09097"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-None-09119"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-None-09119"},
      }},
-
-    {QueueError::kSpecialOrIgnoreOnly,
+    {QueueError::kDstNoExternalExt,
      {
-         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-buffer-04088"},
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-buffer-04088"},
-         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-04071"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-04071"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-None-09098"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-None-09098"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-None-09120"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-None-09120"},
      }},
-    {QueueError::kSrcAndDstValidOrSpecial,
+    {QueueError::kSrcNoForeignExt,
      {
-         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-buffer-04089"},
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-buffer-04089"},
-         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-04072"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-04072"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-09099"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-09099"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09121"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09121"},
      }},
-
-    {QueueError::kSrcAndDestMustBeIgnore,
+    {QueueError::kDstNoForeignExt,
      {
-         // this isn't an error for synchronization2, so we don't need the 2KHR versions
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-synchronization2-03852"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-synchronization2-03856"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-09100"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-09100"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09122"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09122"},
      }},
-    {QueueError::kSrcAndDstBothValid,
+    {QueueError::kSync1ConcurrentNoIgnored,
      {
-         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-buffer-04089"},
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-buffer-04089"},
-         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-04072"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-04072"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-None-09049"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-None-09052"},
+     }},
+    {QueueError::kSync1ConcurrentSrc,
+     {
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-None-09050"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-None-09053"},
+     }},
+    {QueueError::kSync1ConcurrentDst,
+     {
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-None-09051"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-None-09054"},
+     }},
+    {QueueError::kExclusiveSrc,
+     {
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-buffer-09095"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-buffer-09095"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-09117"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-09117"},
+     }},
+    {QueueError::kExclusiveDst,
+     {
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-buffer-09096"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-buffer-09096"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-09118"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-09118"},
      }},
 };
 
 const std::map<QueueError, std::string> kQueueErrorSummary{
-    {QueueError::kSrcOrDstMustBeIgnore, "Source or destination queue family must be ignored."},
-    {QueueError::kSpecialOrIgnoreOnly, "Source or destination queue family must be special or ignored."},
-    {QueueError::kSrcAndDstValidOrSpecial, "Source and destination queue family must be valid, ignored, or special."},
-    {QueueError::kSrcAndDestMustBeIgnore, "Source and destination queue family must both be ignored."},
-    {QueueError::kSrcAndDstBothValid, "Source and destination queue family must both be valid."},
+    {QueueError::kSrcNoExternalExt, "Source queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
+    {QueueError::kDstNoExternalExt, "Destination queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
+    {QueueError::kSrcNoForeignExt, "Source queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
+    {QueueError::kDstNoForeignExt, "Destination queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
+    {QueueError::kSync1ConcurrentNoIgnored, "Source or destination queue family must be VK_QUEUE_FAMILY_IGNORED."},
+    {QueueError::kSync1ConcurrentSrc, "Source queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
+    {QueueError::kSync1ConcurrentDst, "Destination queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
+    {QueueError::kExclusiveSrc, "Source queue family must be valid when using VK_SHARING_MODE_EXCLUSIVE."},
+    {QueueError::kExclusiveDst, "Destination queue family must be valid when using VK_SHARING_MODE_EXCLUSIVE."},
 };
 
 const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {

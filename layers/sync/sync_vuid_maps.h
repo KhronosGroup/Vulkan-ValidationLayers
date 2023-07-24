@@ -40,11 +40,15 @@ const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR 
 const std::string &GetStageQueueCapVUID(const Location &loc, VkPipelineStageFlags2KHR bit);
 
 enum class QueueError {
-    kSrcOrDstMustBeIgnore = 0,
-    kSpecialOrIgnoreOnly,
-    kSrcAndDstValidOrSpecial,
-    kSrcAndDestMustBeIgnore,
-    kSrcAndDstBothValid,
+    kSrcNoExternalExt = 0,
+    kDstNoExternalExt,
+    kSrcNoForeignExt,
+    kDstNoForeignExt,
+    kSync1ConcurrentNoIgnored,
+    kSync1ConcurrentSrc,
+    kSync1ConcurrentDst,
+    kExclusiveSrc,
+    kExclusiveDst,
 };
 
 extern const std::map<QueueError, std::string> kQueueErrorSummary;

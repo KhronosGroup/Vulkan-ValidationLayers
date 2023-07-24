@@ -2072,8 +2072,7 @@ class ValidatorState {
           loc_(location),
           barrier_handle_(barrier_handle),
           sharing_mode_(sharing_mode),
-          limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())),
-          mem_ext_(IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {}
+          limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())) {}
 
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter
@@ -2119,11 +2118,9 @@ class ValidatorState {
         return false;
     }
     // Logical helpers for semantic clarity
-    inline bool KhrExternalMem() const { return mem_ext_; }
     inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
     inline bool IsValidOrSpecial(uint32_t queue_family) const {
-        return IsValid(queue_family) || (mem_ext_ && QueueFamilyIsExternal(queue_family)) ||
-               (queue_family == VK_QUEUE_FAMILY_IGNORED);
+        return IsValid(queue_family) || QueueFamilyIsExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
     }
 
     // Helpers for LogMsg
@@ -2160,53 +2157,56 @@ class ValidatorState {
     const VulkanTypedHandle barrier_handle_;
     const VkSharingMode sharing_mode_;
     const uint32_t limit_;
-    const bool mem_ext_;
 };
 
 bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
               const uint32_t src_queue_family, const uint32_t dst_queue_family) {
     bool skip = false;
 
-    const bool mode_concurrent = val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT;
-    const bool src_ignored = QueueFamilyIsIgnored(src_queue_family);
-    const bool dst_ignored = QueueFamilyIsIgnored(dst_queue_family);
-    if (val.KhrExternalMem()) {
-        if (mode_concurrent) {
-            const bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
-            // this requirement is removed by VK_KHR_synchronization2
-            if (!(src_ignored || dst_ignored) && !sync2) {
-                skip |= val.LogMsg(QueueError::kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
+    if (!IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {
+        if (src_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
+            skip |= val.LogMsg(QueueError::kSrcNoExternalExt, src_queue_family, "srcQueueFamilyIndex");
+        } else if (dst_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
+            skip |= val.LogMsg(QueueError::kDstNoExternalExt, dst_queue_family, "dstQueueFamilyIndex");
+        }
+
+        if (val.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
+            if (!val.IsValid(src_queue_family)) {
+                skip |= val.LogMsg(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if ((src_ignored && !(dst_ignored || QueueFamilyIsExternal(dst_queue_family))) ||
-                (dst_ignored && !(src_ignored || QueueFamilyIsExternal(src_queue_family)))) {
-                skip |= val.LogMsg(QueueError::kSpecialOrIgnoreOnly, src_queue_family, dst_queue_family);
-            }
-        } else {
-            // VK_SHARING_MODE_EXCLUSIVE
-            if (src_queue_family != dst_queue_family) {
-                if (!val.IsValidOrSpecial(dst_queue_family)) {
-                    skip |= val.LogMsg(QueueError::kSrcAndDstValidOrSpecial, dst_queue_family, "dstQueueFamilyIndex");
-                }
-                if (!val.IsValidOrSpecial(src_queue_family)) {
-                    skip |= val.LogMsg(QueueError::kSrcAndDstValidOrSpecial, src_queue_family, "srcQueueFamilyIndex");
-                }
+            if (!val.IsValid(dst_queue_family)) {
+                skip |= val.LogMsg(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
     } else {
-        // No memory extension
-        if (mode_concurrent) {
-            const bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
-            // this requirement is removed by VK_KHR_synchronization2
-            if ((!src_ignored || !dst_ignored) && !sync2) {
-                skip |= val.LogMsg(QueueError::kSrcAndDestMustBeIgnore, src_queue_family, dst_queue_family);
+        if (val.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
+            if (!val.IsValidOrSpecial(src_queue_family)) {
+                skip |= val.LogMsg(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-        } else {
-            // VK_SHARING_MODE_EXCLUSIVE
-            if ((src_queue_family != dst_queue_family) && !(val.IsValid(src_queue_family) && val.IsValid(dst_queue_family))) {
-                skip |= val.LogMsg(QueueError::kSrcAndDstBothValid, src_queue_family, dst_queue_family);
+            if (!val.IsValidOrSpecial(dst_queue_family)) {
+                skip |= val.LogMsg(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
     }
+
+    if (!IsExtEnabled(device_data->device_extensions.vk_ext_queue_family_foreign)) {
+        if (src_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
+            skip |= val.LogMsg(QueueError::kSrcNoForeignExt, src_queue_family, "srcQueueFamilyIndex");
+        } else if (dst_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
+            skip |= val.LogMsg(QueueError::kDstNoForeignExt, dst_queue_family, "dstQueueFamilyIndex");
+        }
+    }
+
+    if (!device_data->enabled_features.core13.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
+        if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && src_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
+            skip |= val.LogMsg(QueueError::kSync1ConcurrentSrc, src_queue_family, "srcQueueFamilyIndex");
+        } else if (dst_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
+            skip |= val.LogMsg(QueueError::kSync1ConcurrentDst, dst_queue_family, "dstQueueFamilyIndex");
+        } else if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_IGNORED) {
+            skip |= val.LogMsg(QueueError::kSync1ConcurrentNoIgnored, src_queue_family, dst_queue_family);
+        }
+    }
+
     return skip;
 }
 }  // namespace barrier_queue_families
@@ -2298,11 +2298,15 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
         }
     }
 
-    if (mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL &&
-        mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL) {
+    if ((mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
+         mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT) &&
+        (mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
+         mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT)) {
         auto size_loc = loc.dot(Field::srcQueueFamilyIndex);
         const auto &vuid = GetBufferBarrierVUID(size_loc, BufferError::kQueueFamilyExternal);
-        skip |= LogError(objects, vuid, "Both srcQueueFamilyIndex and dstQueueFamilyIndex are VK_QUEUE_FAMILY_EXTERNAL.");
+        skip |=
+            LogError(objects, vuid,
+                     "Both srcQueueFamilyIndex and dstQueueFamilyIndex are VK_QUEUE_FAMILY_EXTERNAL/VK_QUEUE_FAMILY_FOREIGN_EXT.");
     }
     return skip;
 }
