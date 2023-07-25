@@ -1183,3 +1183,35 @@ TEST_F(VkPositiveLayerTest, FreeDescriptorSetsNull) {
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[0]);
     vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, descriptor_sets);
 }
+
+TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
+    TEST_DESCRIPTION("Test using vkCmdSetExclusiveScissorEnableNV.");
+
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    uint32_t propertyCount = 0u;
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, nullptr);
+    std::vector<VkExtensionProperties> properties(propertyCount);
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, properties.data());
+    bool exclusiveScissor2 = false;
+    for (const auto &prop : properties) {
+        if (strcmp(prop.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
+            if (prop.specVersion >= 2) {
+                exclusiveScissor2 = true;
+            }
+            break;
+        }
+    }
+    if (!exclusiveScissor2) {
+        GTEST_SKIP() << VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME << " version 2 not supported";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_commandBuffer->begin();
+    VkBool32 exclusiveScissorEnable = VK_TRUE;
+    vk::CmdSetExclusiveScissorEnableNV(m_commandBuffer->handle(), 0u, 1u, &exclusiveScissorEnable);
+    m_commandBuffer->end();
+}
