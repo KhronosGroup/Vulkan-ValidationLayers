@@ -46,7 +46,13 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
 [[maybe_unused]] static const char *kVUID_Threading_MultipleThreads = "UNASSIGNED-Threading-MultipleThreads";
 [[maybe_unused]] static const char *kVUID_Threading_SingleThreadReuse = "UNASSIGNED-Threading-SingleThreadReuse";
 
-class alignas(get_hardware_destructive_interference_size()) ObjectUseData {
+// Modern CPUs have 64 or 128-byte cache line sizes (Apple M1 has 128-byte cache line size).
+// Use alignment of 64 bytes (instead of 128) to prioritize using less memory and decrease
+// cache pressure.
+inline constexpr size_t kObjectUserDataAlignment = 64;
+static_assert(get_hardware_destructive_interference_size() % kObjectUserDataAlignment == 0);  // sanity check on the build machine
+
+class alignas(kObjectUserDataAlignment) ObjectUseData {
   public:
     class WriteReadCount {
       public:
