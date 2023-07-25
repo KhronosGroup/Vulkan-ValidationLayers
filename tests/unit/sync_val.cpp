@@ -4647,6 +4647,9 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
     test.BeginB();
     test.TransferBarrierWAR(test.buffer_a);
     test.Copy(test.buffer_b, test.buffer_a);
+    test.TransferBarrierRAW(test.buffer_c);
+    test.TransferBarrierWAR(test.buffer_b);
+    test.Copy(test.buffer_c, test.buffer_b);
     test.End();
     test.Submit0(test.cbb);
 
