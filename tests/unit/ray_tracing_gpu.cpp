@@ -12,15 +12,17 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/ray_tracing_objects.h"
+#include "../framework/ray_tracing_nv.h"
 
-TEST_F(VkGpuAssistedLayerTest, RayTracingGpuValidationArrayOOBRayTracingShaders) {
+TEST_F(NegativeGpuAssistedRayTracing, ArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders using gpu assited validation.");
     OOBRayTracingShadersTestBody(true);
 }
 
-TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidationInvalidHandle) {
+TEST_F(NegativeGpuAssistedRayTracing, BuildAccelerationStructureValidationInvalidHandleNV) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
@@ -38,7 +40,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometry;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
+    nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
     VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
@@ -103,7 +105,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidationBottomLevelNotYetBuilt) {
+TEST_F(NegativeGpuAssistedRayTracing, BuildAccelerationStructureValidationBottomLevelNotYetBuiltNV) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
@@ -121,7 +123,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometry;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
+    nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
     VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
@@ -195,7 +197,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidationBottomLevelDestroyed) {
+TEST_F(NegativeGpuAssistedRayTracing, BuildAccelerationStructureValidationBottomLevelDestroyedNV) {
     TEST_DESCRIPTION(
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
@@ -213,7 +215,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometry;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
+    nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
     VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
@@ -308,7 +310,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidationRestoresState) {
+TEST_F(NegativeGpuAssistedRayTracing, BuildAccelerationStructureValidationRestoresStateNV) {
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -325,7 +327,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometry;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
+    nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
     VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();

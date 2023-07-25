@@ -186,7 +186,6 @@ class VkLayerTest : public VkLayerTestBase {
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
     void AddSurfaceExtension();
     VkCommandBufferObj *CommandBuffer();
-    void OOBRayTracingShadersTestBody(bool gpu_assisted);
 
     template <typename Features>
     VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
@@ -283,7 +282,7 @@ class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
 };
 class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
-class VkGpuAssistedLayerTest : public VkLayerTest {
+class VkGpuAssistedLayerTest : public virtual VkLayerTest {
   public:
     VkValidationFeaturesEXT GetValidationFeatures();
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
@@ -461,13 +460,23 @@ class QueryTest : public VkLayerTest {};
 class NegativeQuery : public QueryTest {};
 class PositiveQuery : public QueryTest {};
 
-class RayTracingTest : public VkLayerTest {};
+class RayTracingTest : public virtual VkLayerTest {
+  public:
+    bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
+                                        VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
+                                        VkValidationFeaturesEXT *enabled_features = nullptr);
+
+    void OOBRayTracingShadersTestBody(bool gpu_assisted);
+};
 class NegativeRayTracing : public RayTracingTest {};
 class PositiveRayTracing : public RayTracingTest {};
 
-class RayTracingPipelineTest : public VkLayerTest {};
+class RayTracingPipelineTest : public RayTracingTest {};
 class NegativeRayTracingPipeline : public RayTracingPipelineTest {};
 class PositiveRayTracingPipeline : public RayTracingPipelineTest {};
+
+class GpuAssistedRayTracingTest : public VkGpuAssistedLayerTest, public RayTracingTest {};
+class NegativeGpuAssistedRayTracing : public GpuAssistedRayTracingTest {};
 
 class RenderPassTest : public VkLayerTest {};
 class NegativeRenderPass : public RenderPassTest {};
@@ -821,80 +830,6 @@ struct CreateComputePipelineHelper {
     }
 };
 
-// Helper class for tersely creating create ray tracing pipeline tests
-//
-// Designed with minimal error checking to ensure easy error state creation
-// See OneshotTest for typical usage
-struct CreateNVRayTracingPipelineHelper {
-  public:
-    std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
-    std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
-    VkPipelineLayoutObj pipeline_layout_;
-    VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
-    VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
-    VkPipelineCacheCreateInfo pc_ci_ = {};
-    VkPipeline pipeline_ = VK_NULL_HANDLE;
-    VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
-    std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
-    std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups_KHR_;
-    std::unique_ptr<VkShaderObj> rgs_;
-    std::unique_ptr<VkShaderObj> chs_;
-    std::unique_ptr<VkShaderObj> mis_;
-    VkLayerTest &layer_test_;
-    CreateNVRayTracingPipelineHelper(VkLayerTest &test);
-    ~CreateNVRayTracingPipelineHelper();
-
-    void InitShaderGroups();
-    void InitShaderGroupsKHR();
-    void InitDescriptorSetInfo();
-    void InitDescriptorSetInfoKHR();
-    void InitPipelineLayoutInfo();
-    void InitShaderInfo();
-    void InitShaderInfoKHR();
-    void InitNVRayTracingPipelineInfo();
-    void InitKHRRayTracingPipelineInfo();
-    void InitPipelineCacheInfo();
-    void InitInfo(bool isKHR = false);
-    void InitState();
-    void InitPipelineCache();
-    void LateBindPipelineInfo(bool isKHR = false);
-    VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
-    VkResult CreateKHRRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
-    // Helper function to create a simple test case (positive or negative)
-    //
-    // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &
-    // flags, error can be any args accepted by "SetDesiredFailure".
-    template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const std::vector<Error> &errors,
-                            const VkFlags flags = kErrorBit) {
-        CreateNVRayTracingPipelineHelper helper(test);
-        helper.InitInfo();
-        info_override(helper);
-        helper.InitState();
-
-        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
-        helper.CreateNVRayTracingPipeline();
-        test.Monitor().VerifyFound();
-    }
-
-    template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, Error error, const VkFlags flags = kErrorBit) {
-        OneshotTest(test, info_override, std::vector<Error>(1, error), flags);
-    }
-
-    template <typename Test, typename OverrideFunc>
-    static void OneshotPositiveTest(Test &test, const OverrideFunc &info_override, const VkFlags message_flag_mask = kErrorBit) {
-        CreateNVRayTracingPipelineHelper helper(test);
-        helper.InitInfo();
-        info_override(helper);
-        helper.InitState();
-
-        ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
-    }
-};
-
 class BarrierQueueFamilyBase {
   public:
     struct QueueFamilyObjs {
@@ -1096,14 +1031,5 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, co
 void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes);
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
-
-bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
-                                    VkValidationFeaturesEXT *enabled_features = nullptr);
-
-void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
-                                                    VkGeometryNV *geometry, VkDeviceSize offset = 0, bool buffer_device_address = false);
-
-std::pair<VkBufferObj &&, VkAccelerationStructureGeometryKHR> GetSimpleAABB(const VkDeviceObj &device,
-                                                                            APIVersion vk_api_version = VK_API_VERSION_1_2);
 
 void print_android(const char *c);
