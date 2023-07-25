@@ -35,6 +35,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/test_framework.cpp
     framework/ray_tracing_objects.h
     framework/ray_tracing_objects.cpp
+    framework/ray_tracing_nv.h
+    framework/ray_tracing_nv.cpp
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
