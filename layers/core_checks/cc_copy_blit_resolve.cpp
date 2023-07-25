@@ -2896,6 +2896,7 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImag
             return false;
         }
     }
+
     LogObjectList objlist(device, image);
     bool skip = LogError(objlist, vuid,
                          "%s(): %s is %s which is not one of the layouts returned in "
