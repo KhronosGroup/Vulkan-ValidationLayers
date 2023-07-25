@@ -44,8 +44,8 @@ class StatelessValidation : public ValidationObject {
 
     // This was a special case where it was decided to use the extension version for validation
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
-    uint32_t discard_rectangles_extension_version = 0;
-    uint32_t scissor_exclusive_extension_version = 0;
+    inline static uint32_t discard_rectangles_extension_version = 0;
+    inline static uint32_t scissor_exclusive_extension_version = 0;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
