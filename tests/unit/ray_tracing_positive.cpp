@@ -15,6 +15,40 @@
 #include "../framework/ray_tracing_objects.h"
 #include "generated/vk_extension_helper.h"
 
+bool RayTracingTest::InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
+                                                    VkPhysicalDeviceFeatures2KHR *features2,
+                                                    VkValidationFeaturesEXT *enabled_features) {
+    framework->AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    framework->AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    if (is_khr) {
+        framework->AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    } else {
+        framework->AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
+    }
+
+    framework->InitFramework(&framework->Monitor(), enabled_features);
+    if (!framework->AreRequiredExtensionsEnabled()) {
+        printf("%s device extension not supported, skipping test\n", framework->RequiredExtensionsNotSupported().c_str());
+        return false;
+    }
+
+    if (features2) {
+        // extension enabled as dependency of RT extension
+        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+        assert(vkGetPhysicalDeviceFeatures2KHR);
+        vkGetPhysicalDeviceFeatures2KHR(framework->gpu(), features2);
+    }
+    return true;
+}
+
 TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 

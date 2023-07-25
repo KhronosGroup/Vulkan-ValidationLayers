@@ -273,6 +273,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
+                   $(SRC_DIR)/tests/framework/ray_tracing_nv.cpp \
                    $(SRC_DIR)/layers/utils/convert_utils.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_utils.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_core.cpp \

@@ -13,8 +13,9 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/ray_tracing_nv.h"
 
-TEST_F(NegativeRayTracing, BasicUsage) {
+TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -174,7 +175,7 @@ TEST_F(NegativeRayTracing, BasicUsage) {
     }
 }
 
-TEST_F(NegativeRayTracing, ShaderGroupsKHR) {
+TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -668,7 +669,7 @@ TEST_F(NegativeRayTracing, ShaderGroupsKHR) {
     }
 }
 
-TEST_F(NegativeRayTracing, LibraryFlags) {
+TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -801,7 +802,7 @@ TEST_F(NegativeRayTracing, LibraryFlags) {
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
 
-TEST_F(NegativeRayTracing, GetCaptureReplayShaderGroupHandlesKHR) {
+TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -821,7 +822,7 @@ TEST_F(NegativeRayTracing, GetCaptureReplayShaderGroupHandlesKHR) {
     if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
     }
-    CreateNVRayTracingPipelineHelper rt_pipe(*this);
+    nv::rt::RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.InitInfo(true /*isKHR*/);
     rt_pipe.rp_ci_KHR_.flags = VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
     rt_pipe.InitState();
@@ -858,20 +859,20 @@ TEST_F(NegativeRayTracing, GetCaptureReplayShaderGroupHandlesKHR) {
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
-    // In CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
+    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 2, rt_pipe.groups_KHR_.size(),
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051");
-    // In CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
+    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
     uint32_t invalid_firstgroup = rt_pipe.groups_KHR_.size() + 1;
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, invalid_firstgroup, 0,
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, DeferredOp) {
+TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -975,7 +976,7 @@ TEST_F(NegativeRayTracing, DeferredOp) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
 }
 
-TEST_F(NegativeRayTracing, BindPoint) {
+TEST_F(NegativeRayTracingPipeline, BindPoint) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the ray-tracing bind point");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1002,7 +1003,7 @@ TEST_F(NegativeRayTracing, BindPoint) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, MaxResources) {
+TEST_F(NegativeRayTracingPipeline, MaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1117,7 +1118,7 @@ TEST_F(NegativeRayTracing, PipelineFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, PipelineType) {
+TEST_F(NegativeRayTracingPipeline, PipelineType) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupStackSizeKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1142,7 +1143,7 @@ TEST_F(NegativeRayTracing, PipelineType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, LibraryGroupHandlesEXT) {
+TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     TEST_DESCRIPTION("Validate VK_EXT_pipeline_library_group_handles");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
@@ -1186,7 +1187,7 @@ TEST_F(NegativeRayTracing, LibraryGroupHandlesEXT) {
 
     const auto vkGetRayTracingShaderGroupHandlesKHR =
         GetInstanceProcAddr<PFN_vkGetRayTracingShaderGroupHandlesKHR>("vkGetRayTracingShaderGroupHandlesKHR");
-    CreateNVRayTracingPipelineHelper rt_pipe(*this);
+    nv::rt::RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.rp_ci_KHR_ = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     rt_pipe.rp_ci_KHR_.flags =
         VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
@@ -1214,7 +1215,7 @@ TEST_F(NegativeRayTracing, LibraryGroupHandlesEXT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, BasicUsageNV) {
+TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1347,7 +1348,7 @@ TEST_F(NegativeRayTracing, BasicUsageNV) {
     }
 }
 
-TEST_F(NegativeRayTracing, ShaderGroupsNV) {
+TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1819,7 +1820,7 @@ TEST_F(NegativeRayTracing, ShaderGroupsNV) {
     }
 }
 
-TEST_F(NegativeRayTracing, StageCreationFeedbackCountNV) {
+TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -1843,17 +1844,17 @@ TEST_F(NegativeRayTracing, StageCreationFeedbackCountNV) {
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
 
-    auto set_feedback = [&feedback_info](CreateNVRayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
+    auto set_feedback = [&feedback_info](nv::rt::RayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
 
     feedback_info.pipelineStageCreationFeedbackCount = 3;
-    CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
+    nv::rt::RayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
-    CreateNVRayTracingPipelineHelper::OneshotTest(*this, set_feedback,
+    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_feedback,
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
 
-TEST_F(NegativeRayTracing, MissingEntrypointNV) {
+TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline with missing entrypoint.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1876,9 +1877,9 @@ TEST_F(NegativeRayTracing, MissingEntrypointNV) {
     VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
                             "foo");
 
-    auto set_info = [&](CreateNVRayTracingPipelineHelper &helper) {
+    auto set_info = [&](nv::rt::RayTracingPipelineHelper &helper) {
         helper.shader_stages_ = {helper.rgs_->GetStageCreateInfo(), helper.chs_->GetStageCreateInfo(),
                                  miss_shader.GetStageCreateInfo()};
     };
-    CreateNVRayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
 }
