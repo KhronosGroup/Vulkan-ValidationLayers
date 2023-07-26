@@ -195,6 +195,8 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/unit/query.cpp \
                    $(SRC_DIR)/tests/unit/atomics.cpp \
                    $(SRC_DIR)/tests/unit/descriptor_buffer.cpp \
+                   $(SRC_DIR)/tests/unit/descriptor_indexing.cpp \
+                   $(SRC_DIR)/tests/unit/descriptor_indexing_positive.cpp \
                    $(SRC_DIR)/tests/unit/descriptors.cpp \
                    $(SRC_DIR)/tests/unit/device_queue.cpp \
                    $(SRC_DIR)/tests/unit/renderpass.cpp \

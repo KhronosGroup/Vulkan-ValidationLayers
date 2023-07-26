@@ -339,6 +339,14 @@ class DescriptorBufferTest : public VkLayerTest {
 class NegativeDescriptorBuffer : public DescriptorBufferTest {};
 class PositiveDescriptorBuffer : public DescriptorBufferTest {};
 
+class DescriptorIndexingTest : public VkLayerTest {
+  public:
+    void InitBasicDescriptorIndexing(void *pNextFeatures = nullptr);
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features;
+};
+class NegativeDescriptorIndexing : public DescriptorIndexingTest {};
+class PositiveDescriptorIndexing : public DescriptorIndexingTest {};
+
 class NegativeDeviceQueue : public VkLayerTest {};
 
 class DynamicRenderingTest : public VkLayerTest {
