@@ -39,7 +39,7 @@ class Descriptor;
 class ValidationStateTracker;
 class CMD_BUFFER_STATE;
 class RENDER_PASS_STATE;
-struct SPIRV_MODULE_STATE;
+struct SHADER_MODULE_STATE;
 class PIPELINE_STATE;
 
 enum DescriptorReqBits {
@@ -84,12 +84,14 @@ inline bool operator<(const DescriptorRequirement &a, const DescriptorRequiremen
 typedef std::map<uint32_t, DescriptorRequirement> BindingVariableMap;
 
 struct PipelineStageState {
-    std::shared_ptr<const SPIRV_MODULE_STATE> module_state;
+    // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
+    std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
+    // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const EntryPoint> entrypoint;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                       std::shared_ptr<const SPIRV_MODULE_STATE> &module_state, std::shared_ptr<const EntryPoint> &entrypoint);
+                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
 
 class PIPELINE_CACHE_STATE : public BASE_NODE {
@@ -296,7 +298,7 @@ class PIPELINE_STATE : public BASE_NODE {
         return {};
     }
 
-    std::shared_ptr<const SPIRV_MODULE_STATE> GetSubStateShader(VkShaderStageFlagBits state) const;
+    std::shared_ptr<const SHADER_MODULE_STATE> GetSubStateShader(VkShaderStageFlagBits state) const;
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,

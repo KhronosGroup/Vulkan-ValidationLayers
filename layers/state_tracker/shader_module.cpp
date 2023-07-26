@@ -350,9 +350,6 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
 
 vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const SPIRV_MODULE_STATE& module_state, EntryPoint& entrypoint) {
     vvl::unordered_set<uint32_t> result_ids;
-    if (!module_state.has_valid_spirv) {
-        return result_ids;
-    }
 
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
     // This is important for identifying the set of shader resources actually used by an entrypoint.
@@ -402,9 +399,6 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const SPIRV_MODULE_STA
 std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const SPIRV_MODULE_STATE& module_state,
                                                                           const EntryPoint& entrypoint) {
     std::vector<StageInteraceVariable> variables;
-    if (!module_state.has_valid_spirv) {
-        return variables;
-    }
 
     // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
     uint32_t word = 3;  // operand Name operand starts
@@ -437,9 +431,6 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
                                                                                  EntryPoint& entrypoint,
                                                                                  const ImageAccessMap& image_access_map) {
     std::vector<ResourceInterfaceVariable> variables;
-    if (!module_state.has_valid_spirv) {
-        return variables;
-    }
 
     // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
     for (const auto& accessible_id : entrypoint.accessible_ids) {
@@ -660,67 +651,64 @@ EntryPoint::EntryPoint(const SPIRV_MODULE_STATE& module_state, const Instruction
       accessible_ids(GetAccessibleIds(module_state, *this)),
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, image_access_map)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this)) {
-    if (module_state.has_valid_spirv) {
-        // After all variables are made, can get references from them
-        // Also can set per-Entrypoint values now
-        for (const auto& variable : stage_interface_variables) {
-            if (variable.is_per_task_nv) {
-                continue;  // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
+    // After all variables are made, can get references from them
+    // Also can set per-Entrypoint values now
+    for (const auto& variable : stage_interface_variables) {
+        if (variable.is_per_task_nv) {
+            continue;  // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
+        }
+        has_passthrough |= variable.decorations.Has(DecorationSet::passthrough_bit);
+
+        if (variable.is_builtin) {
+            built_in_variables.push_back(&variable);
+
+            if (variable.storage_class == spv::StorageClassInput) {
+                builtin_input_components += variable.total_builtin_components;
+            } else if (variable.storage_class == spv::StorageClassOutput) {
+                builtin_output_components += variable.total_builtin_components;
             }
-            has_passthrough |= variable.decorations.Has(DecorationSet::passthrough_bit);
+        } else {
+            user_defined_interface_variables.push_back(&variable);
 
-            if (variable.is_builtin) {
-                built_in_variables.push_back(&variable);
-
+            // After creating, make lookup table
+            if (variable.interface_slots.empty()) {
+                continue;
+            }
+            for (const auto& slot : variable.interface_slots) {
                 if (variable.storage_class == spv::StorageClassInput) {
-                    builtin_input_components += variable.total_builtin_components;
+                    input_interface_slots[slot] = &variable;
+                    if (!max_input_slot || slot.slot > max_input_slot->slot) {
+                        max_input_slot = &slot;
+                        max_input_slot_variable = &variable;
+                    }
                 } else if (variable.storage_class == spv::StorageClassOutput) {
-                    builtin_output_components += variable.total_builtin_components;
-                }
-            } else {
-                user_defined_interface_variables.push_back(&variable);
-
-                // After creating, make lookup table
-                if (variable.interface_slots.empty()) {
-                    continue;
-                }
-                for (const auto& slot : variable.interface_slots) {
-                    if (variable.storage_class == spv::StorageClassInput) {
-                        input_interface_slots[slot] = &variable;
-                        if (!max_input_slot || slot.slot > max_input_slot->slot) {
-                            max_input_slot = &slot;
-                            max_input_slot_variable = &variable;
-                        }
-                    } else if (variable.storage_class == spv::StorageClassOutput) {
-                        output_interface_slots[slot] = &variable;
-                        if (!max_output_slot || slot.slot > max_output_slot->slot) {
-                            max_output_slot = &slot;
-                            max_output_slot_variable = &variable;
-                        }
-                        if (slot.Location() == 0 && slot.Component() == 3) {
-                            has_alpha_to_coverage_variable = true;
-                        }
+                    output_interface_slots[slot] = &variable;
+                    if (!max_output_slot || slot.slot > max_output_slot->slot) {
+                        max_output_slot = &slot;
+                        max_output_slot_variable = &variable;
+                    }
+                    if (slot.Location() == 0 && slot.Component() == 3) {
+                        has_alpha_to_coverage_variable = true;
                     }
                 }
             }
         }
+    }
 
-        for (const Instruction* decoration_inst : module_state.static_data_.builtin_decoration_inst) {
-            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
-                written_builtin_point_size = true;
-            }
-            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
-                module_state.IsBuiltInWritten(decoration_inst, *this)) {
-                written_builtin_primitive_shading_rate_khr = true;
-            }
-            if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportIndex) &&
-                module_state.IsBuiltInWritten(decoration_inst, *this)) {
-                written_builtin_viewport_index = true;
-            }
-            if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportMaskNV) &&
-                module_state.IsBuiltInWritten(decoration_inst, *this)) {
-                written_builtin_viewport_mask_nv = true;
-            }
+    for (const Instruction* decoration_inst : module_state.static_data_.builtin_decoration_inst) {
+        if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
+            written_builtin_point_size = true;
+        }
+        if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
+            module_state.IsBuiltInWritten(decoration_inst, *this)) {
+            written_builtin_primitive_shading_rate_khr = true;
+        }
+        if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportIndex) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
+            written_builtin_viewport_index = true;
+        }
+        if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportMaskNV) &&
+            module_state.IsBuiltInWritten(decoration_inst, *this)) {
+            written_builtin_viewport_mask_nv = true;
         }
     }
 }

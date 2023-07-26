@@ -56,14 +56,14 @@ VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphic
     }
 }
 
-PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
+PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state_data,
                                const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp)
     : PipelineSubState(p), rp_state(rp), subpass(create_info.subpass) {
-    pipeline_layout = dev_data.Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
+    pipeline_layout = state_data.Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
 
     viewport_state = create_info.pViewportState;
 
-    rp_state = dev_data.Get<RENDER_PASS_STATE>(create_info.renderPass);
+    rp_state = state_data.Get<RENDER_PASS_STATE>(create_info.renderPass);
 
     raster_state = create_info.pRasterizationState;
 
@@ -72,14 +72,13 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         // TODO might need to filter out more than just fragment shaders here
         if (create_info.pStages[i].stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = dev_data.Get<SPIRV_MODULE_STATE>(create_info.pStages[i].module);
+            auto module_state = state_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
                 const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
                 if (shader_ci) {
-                    const uint32_t unique_shader_id = 0;  // TODO GPU-AV rework required to get this value properly
-                    module_state = dev_data.CreateShaderModuleState(*shader_ci, unique_shader_id);
+                    module_state = state_data.CreateShaderModuleState(*shader_ci, VK_NULL_HANDLE, 0);
                 }
             }
 
@@ -88,7 +87,7 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
                 if (const auto shader_stage_id =
                         LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
                     shader_stage_id) {
-                    module_state = dev_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
+                    module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }
             }
 
@@ -168,14 +167,13 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                                   const CreateInfo &create_info) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = state_data.Get<SPIRV_MODULE_STATE>(create_info.pStages[i].module);
+            auto module_state = state_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
                 const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
                 if (shader_ci) {
-                    const uint32_t unique_shader_id = 0;  // TODO GPU-AV rework required to get this value properly
-                    module_state = state_data.CreateShaderModuleState(*shader_ci, unique_shader_id);
+                    module_state = state_data.CreateShaderModuleState(*shader_ci, VK_NULL_HANDLE, 0);
                 }
             }
 
