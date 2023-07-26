@@ -16,11 +16,25 @@
 
 import subprocess
 import sys
-
+import platform
 import common_ci
+import os
 
 #
-# Module Entrypoint
+# Set MACOSX_DEPLOYMENT_TARGET
+def SetupDarwin(osx):
+    if platform.system() != "Darwin":
+        return
+
+    # By default it will use the latest MacOS SDK available on the system.
+    if osx == 'latest':
+        return
+
+    # Currently the Vulkan SDK targets 10.15 as the minimum for MacOS support.
+    # If we need to we can raise the minimim like we did for C++17 support.
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.15"
+    print(f"Targeting {os.environ['MACOSX_DEPLOYMENT_TARGET']} MacOS Deployment Target", flush=True)
+
 def main():
     parser = common_ci.GetArgParser()
     args = parser.parse_args()
@@ -28,12 +42,10 @@ def main():
     config = args.configuration
     osx = args.osx
 
-    common_ci.SetupDarwin(osx)
+    SetupDarwin(osx)
 
     try:
         common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF")
-        common_ci.CheckVVL(config = config)
-
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)

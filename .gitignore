@@ -1,3 +1,10 @@
+# By default we install dependencies to the external directory
+/external/*
+
+# Instead of using the existing build directory
+# CI scripts will use build-ci to not conflict with existing builds
+build-ci/
+
 CMakeCache.txt
 CMakeLists.txt.user
 CMakeFiles/
@@ -6,9 +13,6 @@ CMakeUserPresets.json
 Makefile
 __pycache__
 .cache/
-# Ignore everything in external except the CMake file
-/external/*
-!/external/CMakeLists.txt
 *.so
 *.so.*
 _out64

@@ -83,13 +83,12 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}-${{matrix.robin_hood}}
-      - name: Install build dependencies
-        run: |
-          python3 -m pip install jsonschema pyparsing
-          sudo apt-get -qq update
-          sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+      - name: Install python dependencies
+        run: python3 -m pip install jsonschema pyparsing
+      - name: Install WSI dependencies
+        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Build
+        run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
@@ -98,31 +97,30 @@ jobs:
           LDFLAGS: ${{ matrix.flags.ld }}
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
-      - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test
+      - name: Test Pixel 6 Adreno profile
+        run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
-      - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test
+      - name: Test Pixel 6 Mali profile
+        run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_mali.json
-      - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test
+      - name: Test NVIDIA Tegra X1 profile
+        run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/nvidia_tegra_x1.json
-      - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test
+      - name: Test Max Profile
+        run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
   windows:
-    runs-on: ${{matrix.os}}
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
-        arch: [ amd64, amd64_x86 ] # 64 bit compiler, 64 bit compiler targeting 32 bit
+        arch: [ amd64, amd64_x86 ]
         config: [ debug, release ]
-        os: [ windows-latest ]
 
     steps:
       - uses: actions/checkout@v3
@@ -133,27 +131,25 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
       - name: Install build dependencies
-        run: |
-          python3 -m pip install jsonschema pyparsing
+        run: python3 -m pip install jsonschema pyparsing
       - name: Cache dependent components
         id: cache-deps
         uses: actions/cache@v3
         with:
           path: |
-            external/${{ matrix.config }}/glslang/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Tools/build/install
-            external/${{ matrix.config }}/robin-hood-hashing/build/install
-            external/${{ matrix.config }}/googletest/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/registry
-            external/${{ matrix.config }}/SPIRV-Headers/include
-            external/${{ matrix.config }}/mimalloc/build/install
-          key: ${{ matrix.os }}-build-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+            build-ci/external/glslang/build/install
+            build-ci/external/googltest/build/install
+            build-ci/external/mimalloc/build/install
+            build-ci/external/robin-hood-hashing/build/install
+            build-ci/external/SPIRV-Headers/build/install
+            build-ci/external/SPIRV-Reflect/build/install
+            build-ci/external/SPIRV-Tools/build/install
+            build-ci/external/Vulkan-Headers/build/install
+          key: windows-dependencies-${{ matrix.arch }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
-        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
-      - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python scripts/github_ci_win_linux.py --test
+        run: python3 scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+      - name: Test Max Profile
+        run: python scripts/tests.py --test
 
   android_cmake:
       runs-on: ubuntu-22.04
@@ -211,10 +207,8 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: macos-${{ matrix.macos_version }}
-      - name: Install python dependencies
-        run: python3 -m pip install jsonschema pyparsing
       - name: Build
-        run: python3 scripts/github_ci_build_desktop.py --config release --osx ${{ matrix.macos_version }}
+        run: python3 scripts/macos.py --config release --osx ${{ matrix.macos_version }}
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
@@ -264,9 +258,7 @@ jobs:
         with:
           key: integration_test_ccache
       - name: Install WSI dependencies
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y libwayland-dev xorg-dev
+        run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Configure SDK Integration Test
         run: cmake -S tests/integration -B tests/integration/build
         env:
@@ -276,4 +268,4 @@ jobs:
       - name: Build SDK Integration Test
         run: cmake --build tests/integration/build
       - name: Test chromium build
-        run: python scripts/github_ci_gn.py
+        run: python scripts/gn.py
