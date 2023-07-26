@@ -402,3 +402,154 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     vk::CmdEndRenderPass(*m_commandBuffer);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
+    TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.3";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    sync2_features.synchronization2 = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const vk_testing::Semaphore acquire_semaphore(*m_device);
+    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+
+    uint32_t image_index = 0;
+    ASSERT_VK_SUCCESS(
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+
+    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier2>();
+    // this creates execution dependency with submit's wait semaphore, so layout
+    // transition does not start before image is acquired.
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition.srcAccessMask = 0;
+
+    // this creates execution dependency with submit's signal operation, so layout
+    // transition finishes before presentation starts.
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    // dstAccessMask makes accesses visible only to the device.
+    // Also, any writes to swapchain images that are made available, are
+    // automatically made visible to the presentation engine reads.
+    // This test checks that presentation engine accesses are not reported as hazards.
+    layout_transition.dstAccessMask = 0;
+
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    layout_transition.subresourceRange.baseMipLevel = 0;
+    layout_transition.subresourceRange.levelCount = 1;
+    layout_transition.subresourceRange.baseArrayLayer = 0;
+    layout_transition.subresourceRange.layerCount = 1;
+
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &layout_transition;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
+    m_commandBuffer->end();
+
+    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    wait_info.semaphore = acquire_semaphore;
+    wait_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    auto command_buffer_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    command_buffer_info.commandBuffer = *m_commandBuffer;
+
+    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    signal_info.semaphore = submit_semaphore;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    auto submit = LvlInitStruct<VkSubmitInfo2>();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = 1;
+    submit.pCommandBufferInfos = &command_buffer_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+}
+
+TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
+    TEST_DESCRIPTION("Waiting on the semaphore makes available image accesses visible to the presentation engine.");
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const vk_testing::Semaphore acquire_semaphore(*m_device);
+    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+
+    uint32_t image_index = 0;
+    ASSERT_VK_SUCCESS(
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+
+    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier>();
+    layout_transition.srcAccessMask = 0;
+
+    // dstAccessMask makes accesses visible only to the device.
+    // Also, any writes to swapchain images that are made available, are
+    // automatically made visible to the presentation engine reads.
+    // This test checks that presentation engine accesses are not reported as hazards.
+    layout_transition.dstAccessMask = 0;
+
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    layout_transition.subresourceRange.baseMipLevel = 0;
+    layout_transition.subresourceRange.levelCount = 1;
+    layout_transition.subresourceRange.baseArrayLayer = 0;
+    layout_transition.subresourceRange.layerCount = 1;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &layout_transition);
+    m_commandBuffer->end();
+
+    constexpr VkPipelineStageFlags semaphore_wait_stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    auto submit = LvlInitStruct<VkSubmitInfo>();
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &acquire_semaphore.handle();
+    submit.pWaitDstStageMask = &semaphore_wait_stage;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &m_commandBuffer->handle();
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &submit_semaphore.handle();
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
+
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    ASSERT_VK_SUCCESS(vk::QueuePresentKHR(m_device->m_queue, &present));
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+}
