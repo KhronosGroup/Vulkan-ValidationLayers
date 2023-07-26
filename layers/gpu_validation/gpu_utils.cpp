@@ -889,8 +889,8 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
 
                 VkShaderModule shader_module;
                 auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-                create_info.pCode = module_state->words_.data();
-                create_info.codeSize = module_state->words_.size() * sizeof(uint32_t);
+                create_info.pCode = module_state->spirv->words_.data();
+                create_info.codeSize = module_state->spirv->words_.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
                     SetShaderModule(new_pipeline_ci, *stage.create_info, shader_module, i);
@@ -905,7 +905,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
             // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
             if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
                 for (const auto &stage_state : pipe->stage_states) {
-                    auto module_state = std::const_pointer_cast<SPIRV_MODULE_STATE>(stage_state.module_state);
+                    auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage_state.module_state);
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
                         // case above. Otherwise, it is being defined during CGPL time
@@ -915,7 +915,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         const VkShaderStageFlagBits stage = stage_state.create_info->stage;
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         const auto pass =
-                            InstrumentShader(module_state->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
+                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
                         if (pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
@@ -976,7 +976,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
                 // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
                 // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
                 // the pipeline is used, so we have to keep another copy.
-                if (module_state && module_state->has_valid_spirv) code = module_state->words_;
+                if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
                 shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->pipeline(),
                                             shader_module.Cast<VkShaderModule>(), std::move(code));

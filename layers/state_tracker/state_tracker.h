@@ -66,6 +66,8 @@ class EVENT_STATE;
 class SWAPCHAIN_NODE;
 class SURFACE_STATE;
 class UPDATE_TEMPLATE_STATE;
+struct SHADER_MODULE_STATE;
+struct SHADER_OBJECT_STATE;
 
 // These versions allow functions that are the same to share the same logic but can use different VUs
 // The common case are functions that were missing the pNext in Vulkan 1.0 and added via extension
@@ -257,8 +259,6 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
     return buffer_size;
 }
 
-struct SPIRV_MODULE_STATE;
-
 VALSTATETRACK_STATE_OBJECT(VkQueue, QUEUE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, RENDER_PASS_STATE)
@@ -272,7 +272,8 @@ VALSTATETRACK_STATE_OBJECT(VkPipelineCache, PIPELINE_CACHE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, PIPELINE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, DEVICE_MEMORY_STATE)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, FRAMEBUFFER_STATE)
-VALSTATETRACK_STATE_OBJECT(VkShaderModule, SPIRV_MODULE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkShaderModule, SHADER_MODULE_STATE)
+VALSTATETRACK_STATE_OBJECT(VkShaderEXT, SHADER_OBJECT_STATE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE)
 VALSTATETRACK_STATE_OBJECT(VkSwapchainKHR, SWAPCHAIN_NODE)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorPool, DESCRIPTOR_POOL_STATE)
@@ -846,14 +847,16 @@ class ValidationStateTracker : public ValidationObject {
                                        const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore, VkResult result) override;
     void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) override;
 
-    std::shared_ptr<SPIRV_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info,
-                                                                 uint32_t unique_shader_id,
-                                                                 VkShaderModule handle = VK_NULL_HANDLE) const;
+    std::shared_ptr<SHADER_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info, VkShaderModule handle,
+                                                                 uint32_t unique_shader_id) const;
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state) override;
     void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                           const VkAllocationCallbacks* pAllocator) override;
+    void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders, VkResult result) override;
+    void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                         const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -1487,7 +1490,7 @@ class ValidationStateTracker : public ValidationObject {
         }
     }
 
-    inline std::shared_ptr<SPIRV_MODULE_STATE> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
+    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
         if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
             return itr->second;
@@ -1495,7 +1498,7 @@ class ValidationStateTracker : public ValidationObject {
         return {};
     }
 
-    inline std::shared_ptr<SPIRV_MODULE_STATE> GetShaderModuleStateFromIdentifier(
+    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(
         const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
         if (shader_stage_id.pIdentifier) {
             auto shader_id = LvlInitStruct<VkShaderModuleIdentifierEXT>();
@@ -1639,7 +1642,7 @@ class ValidationStateTracker : public ValidationObject {
     std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};
 
     // Keep track of identifier -> state
-    vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<SPIRV_MODULE_STATE>> shader_identifier_map_;
+    vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<SHADER_MODULE_STATE>> shader_identifier_map_;
     mutable std::shared_mutex shader_identifier_map_lock_;
 
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
@@ -1674,7 +1677,8 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipeline_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, mem_obj_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frame_buffer_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SPIRV_MODULE_STATE, shader_module_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shader_module_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, SHADER_OBJECT_STATE, shader_object_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplate, UPDATE_TEMPLATE_STATE, desc_template_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchain_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, DESCRIPTOR_POOL_STATE, descriptor_pool_map_)

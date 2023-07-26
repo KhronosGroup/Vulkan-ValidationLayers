@@ -399,14 +399,15 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_sta
         const bool dyn_stencil_write_mask = pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
         if ((dyn_depth_write_enable || dyn_stencil_write_mask) &&
             (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader)) {
-            std::shared_ptr<const SPIRV_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
+            // TODO - Find better way to get SPIR-V static data
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
-            auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
             const bool mode_early_fragment_test =
                 entrypoint && entrypoint->execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
 
-            if (module_state->static_data_.has_shader_tile_image_depth_read && dyn_depth_write_enable && mode_early_fragment_test &&
-                cb_state.dynamic_state_value.depth_write_enable) {
+            if (module_state->spirv->static_data_.has_shader_tile_image_depth_read && dyn_depth_write_enable &&
+                mode_early_fragment_test && cb_state.dynamic_state_value.depth_write_enable) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |=
                     LogError(objlist, vuid.dynamic_depth_enable_08715,
@@ -415,7 +416,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_sta
                              CommandTypeString(cmd_type));
             }
 
-            if (module_state->static_data_.has_shader_tile_image_stencil_read && dyn_stencil_write_mask &&
+            if (module_state->spirv->static_data_.has_shader_tile_image_stencil_read && dyn_stencil_write_mask &&
                 mode_early_fragment_test &&
                 ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());

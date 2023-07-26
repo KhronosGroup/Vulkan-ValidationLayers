@@ -2380,7 +2380,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
 
             if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
                 for (const auto &stage : pipeline.stage_states) {
-                    if (stage.module_state->static_data_.has_builtin_layer) {
+                    if (stage.module_state->spirv->static_data_.has_builtin_layer) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but "
@@ -2514,12 +2514,12 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
                 if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
-                    skip |= LogError(
-                        stage_state.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
-                        "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
-                        "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
-                        "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                        caller, string_VkShaderStageFlagBits(stage));
+                    skip |=
+                        LogError(stage_state.module_state->Handle(), vuid.viewport_count_primitive_shading_rate_04552,
+                                 "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
+                                 "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                 caller, string_VkShaderStageFlagBits(stage));
                 }
             }
         }
@@ -2816,9 +2816,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
         if (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader) {
-            std::shared_ptr<const SPIRV_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
+            // TODO - Find better way to get SPIR-V static data
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
-            auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+            auto entrypoint = module_state->spirv->FindEntrypoint(stage_ci->pName, stage_ci->stage);
 
             // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
             // Currently lack support to test each index.

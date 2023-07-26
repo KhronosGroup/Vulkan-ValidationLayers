@@ -22,9 +22,10 @@
 #include "generated/enum_flag_bits.h"
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                                       std::shared_ptr<const SPIRV_MODULE_STATE> &module_state,
-                                       std::shared_ptr<const EntryPoint> &entrypoint)
-    : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {}
+                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
+    : module_state(module_state),
+      create_info(create_info),
+      entrypoint(module_state->spirv ? module_state->spirv->FindEntrypoint(create_info->pName, create_info->stage) : nullptr) {}
 
 // static
 PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
@@ -38,35 +39,34 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
         // shader stages need to be recorded in pipeline order
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
             if (stage_ci.stage == stage) {
-                auto module = state_data.Get<SPIRV_MODULE_STATE>(stage_ci.module);
-                if (!module) {
+                auto module_state = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
+                if (!module_state) {
                     // See if the module is referenced in a library sub state
-                    module = pipe_state.GetSubStateShader(stage_ci.stage);
+                    module_state = pipe_state.GetSubStateShader(stage_ci.stage);
                 }
 
-                if (!module) {
+                if (!module_state || !module_state->spirv) {
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
                     const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
                     const uint32_t unique_shader_id = (csm_states) ? (*csm_states)[stage].unique_shader_id : 0;
                     if (shader_ci) {
-                        module = state_data.CreateShaderModuleState(*shader_ci, unique_shader_id);
+                        module_state = state_data.CreateShaderModuleState(*shader_ci, VK_NULL_HANDLE, unique_shader_id);
                     } else {
                         // shader_module_identifier could legally provide a null module handle
                         VkShaderModuleCreateInfo dummy_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
                         dummy_module_ci.pCode = &unique_shader_id;  // Ensure tripping invalid spirv
-                        module = state_data.CreateShaderModuleState(dummy_module_ci, unique_shader_id);
+                        module_state = state_data.CreateShaderModuleState(dummy_module_ci, VK_NULL_HANDLE, unique_shader_id);
                     }
                 }
 
-                auto entrypoint = module->FindEntrypoint(stage_ci.pName, stage_ci.stage);
-                stage_states.emplace_back(&stage_ci, module, entrypoint);
+                stage_states.emplace_back(&stage_ci, module_state);
                 stage_found = true;
             }
         }
         if (!stage_found) {
             // Check if stage has been supplied by a library
-            std::shared_ptr<const SPIRV_MODULE_STATE> module_state = nullptr;
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = nullptr;
             const safe_VkPipelineShaderStageCreateInfo *stage_ci = nullptr;
             switch (stage) {
                 case VK_SHADER_STAGE_VERTEX_BIT:
@@ -118,8 +118,8 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
             if (!stage_ci) {
                 continue;
             }
-            auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
-            stage_states.emplace_back(stage_ci, module_state, entrypoint);
+
+            stage_states.emplace_back(stage_ci, module_state);
         }
     }
     return stage_states;
@@ -456,7 +456,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE &pipelin
         if (!stage.entrypoint) {
             continue;
         }
-        auto stage_topo = stage.module_state->GetTopology(*stage.entrypoint);
+        auto stage_topo = stage.module_state->spirv->GetTopology(*stage.entrypoint);
         if (stage_topo) {
             result = *stage_topo;
         }
@@ -653,7 +653,8 @@ VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCrea
 }
 
 // TODO (ncesario) this needs to be automated. As a first step, need to leverage SubState::ValidShaderStages()
-std::shared_ptr<const SPIRV_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
+// Currently will return SHADER_MODULE_STATE with no SPIR-V
+std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
     switch (state) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             const auto sub_state =
