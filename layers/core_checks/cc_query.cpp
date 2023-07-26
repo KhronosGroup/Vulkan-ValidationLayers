@@ -634,7 +634,11 @@ bool CoreChecks::VerifyQueryIsReset(const CMD_BUFFER_STATE &cb_state, const Quer
 
     if (state != QUERYSTATE_RESET) {
         const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
-        skip |= state_data->LogError(objlist, kVUID_Core_DrawState_QueryNotReset,
+        const char *vuid = (cmd_type == CMD_BEGINQUERY)             ? "VUID-vkCmdBeginQuery-None-00807"
+                           : (cmd_type == CMD_BEGINQUERYINDEXEDEXT) ? "VUID-vkCmdBeginQueryIndexedEXT-None-00807"
+                           : (cmd_type == CMD_WRITETIMESTAMP)       ? "VUID-vkCmdWriteTimestamp-None-00830"
+                                                                    : "VUID-vkCmdWriteTimestamp2-None-03864";
+        skip |= state_data->LogError(objlist, vuid,
                                      "%s: %s and query %" PRIu32
                                      ": query not reset. "
                                      "After query pool creation, each query must be reset before it is used. "
@@ -886,25 +890,6 @@ static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags f
     return QUERYRESULT_UNKNOWN;
 }
 
-bool CoreChecks::ValidateCopyQueryPoolResults(const CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t firstQuery,
-                                              uint32_t queryCount, uint32_t perfPass, VkQueryResultFlags flags,
-                                              QueryMap *localQueryToStateMap) {
-    const auto state_data = cb_state.dev_data;
-    bool skip = false;
-    for (uint32_t i = 0; i < queryCount; i++) {
-        QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
-        QueryResultType result_type = GetQueryResultType(state, flags);
-        if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
-            const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
-            skip |= state_data->LogError(
-                objlist, kVUID_Core_DrawState_InvalidQuery,
-                "vkCmdCopyQueryPoolResults(): Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
-                state_data->report_data->FormatHandle(queryPool).c_str(), firstQuery + i, string_QueryResultType(result_type));
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags) const {
@@ -994,7 +979,20 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                             CMD_BUFFER_STATE &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return ValidateCopyQueryPoolResults(cb_state_arg, queryPool, firstQuery, queryCount, perfPass, flags, localQueryToStateMap);
+        const auto state_data = cb_state_arg.dev_data;
+        bool skip = false;
+        for (uint32_t i = 0; i < queryCount; i++) {
+            QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
+            QueryResultType result_type = GetQueryResultType(state, flags);
+            if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
+                const LogObjectList objlist(cb_state_arg.commandBuffer(), queryPool);
+                skip |= state_data->LogError(
+                    objlist, "VUID-vkCmdCopyQueryPoolResults-None-08752",
+                    "vkCmdCopyQueryPoolResults(): Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
+                    state_data->report_data->FormatHandle(queryPool).c_str(), firstQuery + i, string_QueryResultType(result_type));
+            }
+        }
+        return skip;
     });
 }
 
