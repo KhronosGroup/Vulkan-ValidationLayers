@@ -1432,6 +1432,148 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
+    TEST_DESCRIPTION(
+        "Test that transitioning the layout of a mip level of a 3D image using a view of one of its slice applies to the entire 3D "
+        "image: all views referencing different slices of the same mip level should also see their layout transitioned");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required extensions not supported.";
+    }
+
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        auto portability_subset_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+        GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.imageView2DOn3DImage) {
+            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
+        }
+    }
+
+    constexpr unsigned image_depth = 2u;
+
+    // 3D image
+    auto image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_info.imageType = VK_IMAGE_TYPE_3D;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.extent = {64, 64, image_depth};
+    image_info.mipLevels = 1u;
+    image_info.arrayLayers = 1u;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image_3d{m_device};
+    image_3d.init(&image_info);
+    image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // 2D image views for each slice of the 3D image
+    auto view_info = LvlInitStruct<VkImageViewCreateInfo>();
+    view_info.image = image_3d.handle();
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = image_info.format;
+    view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+    view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+    view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+    view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+    view_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView image_views[image_depth];
+    VkImageView views[image_depth] = {VK_NULL_HANDLE};
+    for (unsigned i = 0; i < image_depth; ++i) {
+        view_info.subresourceRange.baseArrayLayer = i;
+        image_views[i].init(*m_device, view_info);
+        views[i] = image_views[i].handle();
+    }
+
+    // Render pass 1, referencing first slice
+    VkAttachmentReference attachment_ref_1{};
+    attachment_ref_1.attachment = 0;
+    attachment_ref_1.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkSubpassDescription subpass_1{};
+    subpass_1.pInputAttachments = &attachment_ref_1;
+    subpass_1.inputAttachmentCount = 1;
+
+    VkAttachmentDescription attach_desc_1{};
+    attach_desc_1.format = image_info.format;
+    attach_desc_1.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc_1.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    attach_desc_1.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &subpass_1;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attach_desc_1;
+    vk_testing::RenderPass renderpass_1(*m_device, rp_info);
+
+    auto fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = renderpass_1.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &views[0];
+    fb_info.width = image_info.extent.width;
+    fb_info.height = image_info.extent.height;
+    fb_info.layers = 1;
+    vk_testing::Framebuffer framebuffer_1(*m_device, fb_info);
+
+    auto rp_begin_info_1 = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin_info_1.renderPass = renderpass_1.handle();
+    rp_begin_info_1.framebuffer = framebuffer_1.handle();
+    rp_begin_info_1.renderArea = {{0, 0}, {image_info.extent.width, image_info.extent.height}};
+
+    // Render pass 2, referencing second slice
+    VkAttachmentReference attachment_ref_2 = {};
+    attachment_ref_2.attachment = 0;
+    attachment_ref_2.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass_2 = {};
+    subpass_2.pColorAttachments = &attachment_ref_2;
+    subpass_2.colorAttachmentCount = 1;
+
+    VkAttachmentDescription attach_desc_2{};
+    attach_desc_2.format = image_info.format;
+    attach_desc_2.samples = VK_SAMPLE_COUNT_1_BIT;
+    // Since the previous render pass' framebuffer was using a 2D view of the first slice of the 3D image,
+    // the layout transition should have applied to all the slices of the 3D image,
+    // thus the 2nd image view created on the second slice of the 3D image should found its image layout to be
+    // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    attach_desc_2.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attach_desc_2.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto rp_info_2 = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info_2.subpassCount = 1;
+    rp_info_2.pSubpasses = &subpass_2;
+    rp_info_2.attachmentCount = 1;
+    rp_info_2.pAttachments = &attach_desc_2;
+
+    vk_testing::RenderPass renderpass_2(*m_device, rp_info_2);
+    auto fb_info_2 = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info_2.renderPass = renderpass_2;
+    fb_info_2.attachmentCount = 1;
+    fb_info_2.pAttachments = &views[1];
+    fb_info_2.width = image_info.extent.width;
+    fb_info_2.height = image_info.extent.height;
+    fb_info_2.layers = 1;
+    vk_testing::Framebuffer framebuffer_2(*m_device, fb_info_2);
+
+    auto rp_begin_info_2 = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin_info_2.renderPass = renderpass_2;
+    rp_begin_info_2.framebuffer = framebuffer_2;
+    rp_begin_info_2.renderArea = rp_begin_info_1.renderArea;
+
+    m_commandBuffer->begin();
+
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info_1, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info_2, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
     TEST_DESCRIPTION("When both subpasses' attachments are the same and layouts are read-only, they don't need dependency.");
     ASSERT_NO_FATAL_FAILURE(Init());
