@@ -53,6 +53,8 @@ const char *SETTING_CUSTOM_STYPE_LIST = "custom_stype_list";
 const char *SETTING_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
+const char *SETTING_DEBUG_PRINTF_UNCACHED_BUFFER = "printf_uncached_buffer";
+
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
@@ -373,6 +375,11 @@ static std::string GetConfigValue(const char *setting) {
     return getLayerOption(key.c_str());
 }
 
+static void SetConfigValue(const char *setting, const char* value) {
+    const std::string key(GetSettingKey(setting));
+    return setLayerOption(key.c_str(), value);
+}
+
 static std::string GetEnvVarValue(const char *setting) {
     std::string env_var = setting;
     vvl::ToUpper(env_var);
@@ -438,6 +445,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                 CreateFilterMessageIdList(data, ",", settings_data->message_filter_list);
             } else if (name == SETTING_DUPLICATE_MESSAGE_LIMIT) {
                 *settings_data->duplicate_message_limit = cur_setting.data.value32;
+            } else if ((name == SETTING_DEBUG_PRINTF_UNCACHED_BUFFER) && cur_setting.data.valueBool) {
+                SetConfigValue(SETTING_DEBUG_PRINTF_UNCACHED_BUFFER, "true");
             } else if (name == SETTING_CUSTOM_STYPE_LIST) {
                 if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT) {
                     std::string data(cur_setting.data.arrayString.pCharArray);

@@ -23,6 +23,7 @@ class DebugPrintf;
 struct DPFDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    uint32_t* data; // only valid if using uncached buffer, because mapping may fail after device is lost.
 };
 
 struct DPFBufferInfo {
@@ -86,12 +87,16 @@ class DebugPrintf : public GpuAssistedBase {
         desired_features.fragmentStoresAndAtomics = true;
     }
 
+    void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void* modified_ci) override;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
                           uint32_t* unique_shader_id) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
+                                                    VkFence fence, VkResult result) override;
     std::vector<DPFSubstring> ParseFormatString(const std::string& format_string);
     std::string FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo& buffer_info,
@@ -172,6 +177,7 @@ class DebugPrintf : public GpuAssistedBase {
     void DestroyBuffer(DPFBufferInfo& buffer_info);
 
   private:
+    bool use_uncached_buffer = false;
     bool verbose = false;
     bool use_stdout = false;
 };
