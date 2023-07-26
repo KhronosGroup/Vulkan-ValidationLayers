@@ -364,11 +364,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     bind_info.memoryOffset = 0;
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     m_commandBuffer->begin();
 
@@ -699,11 +695,7 @@ TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
-    uint32_t image_count;
-    std::vector<VkImage> images;
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
-    images.resize(image_count, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
+    const auto images = GetSwapchainImages(m_swapchain);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyImage-image-04882");
     vk::DestroyImage(device(), images.at(0), nullptr);
@@ -1255,11 +1247,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-    uint32_t image_count;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
-    std::vector<VkImage> images(image_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
-
+    const auto images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
 
     // Try to Present without Acquire...
@@ -1430,7 +1418,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     vk::AcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
     m_errorMonitor->VerifyFound();
 
-    //NOTE: We cannot wait on fence in this test because all of the acquire calls fail.
+    // NOTE: We cannot wait on fence in this test because all of the acquire calls fail.
 
     acquire_next_image_info.semaphore = semaphore2.handle();
     acquire_next_image_info.deviceMask = 0;
@@ -1920,10 +1908,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
 
-    uint32_t image_count;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
-    std::vector<VkImage> images(image_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+    const auto images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index;
     VkFenceObj fence;
@@ -2419,24 +2404,18 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     present_modes_ci.pPresentModes = &good_present_mode;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
-
-    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const vk_testing::Semaphore acquire_semaphore(*m_device);
 
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    uint32_t release_index = swapchain_images_count + 2;
+    uint32_t release_index = static_cast<uint32_t>(swapchain_images.size()) + 2;
     auto release_info = LvlInitStruct<VkReleaseSwapchainImagesInfoEXT>();
     release_info.swapchain = m_swapchain;
-    release_info.imageIndexCount = swapchain_images_count;
+    release_info.imageIndexCount = static_cast<uint32_t>(swapchain_images.size());
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
     vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
@@ -2506,11 +2485,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -2649,12 +2624,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
     vk_testing::Semaphore submit_semaphore(*m_device, semaphore_create_info);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
-
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
@@ -2746,7 +2716,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     uint32_t release_index = 0;
     VkReleaseSwapchainImagesInfoEXT release_info = LvlInitStruct<VkReleaseSwapchainImagesInfoEXT>();
     release_info.swapchain = m_swapchain;
-    release_info.imageIndexCount = swapchain_images_count;
+    release_info.imageIndexCount = static_cast<uint32_t>(swapchain_images.size());
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
@@ -2938,7 +2908,7 @@ TEST_F(NegativeWsi, CreatingWin32Surface) {
 
     auto surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = GetModuleHandle(0);
-    surface_create_info.hwnd = NULL; // Invalid
+    surface_create_info.hwnd = NULL;  // Invalid
 
     VkSurfaceKHR surface;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308");
@@ -3171,17 +3141,12 @@ TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
 
     vk_testing::Semaphore acquire_semaphore(*m_device);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
-
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     auto present = LvlInitStruct<VkPresentInfoKHR>();
-    present.waitSemaphoreCount = 0; // Invalid, acquire_semaphore should be waited on
+    present.waitSemaphoreCount = 0;  // Invalid, acquire_semaphore should be waited on
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
@@ -3320,10 +3285,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     }
 
     uint32_t image_index{0};
-    uint32_t image_count{0};
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
-    std::vector<VkImage> images(image_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+    const auto images = GetSwapchainImages(m_swapchain);
 
     vk_testing::Fence fence(*m_device);
     vk_testing::Semaphore semaphore(*m_device);
@@ -3377,10 +3339,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
     }
     uint32_t image_index{0};
-    uint32_t image_count{0};
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
-    std::vector<VkImage> images(image_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+    const auto images = GetSwapchainImages(m_swapchain);
 
     vk_testing::Fence fence(*m_device);
     vk_testing::Semaphore semaphore(*m_device);
