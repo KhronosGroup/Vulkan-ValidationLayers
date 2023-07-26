@@ -848,6 +848,20 @@ bool CoreChecks::ValidateQueryPoolIndex(const QUERY_POOL_STATE &query_pool_state
     return skip;
 }
 
+bool CoreChecks::ValidateQueryPoolNotActive(const CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t firstQuery,
+                                            uint32_t queryCount, const char *func_name, const char *vuid) const {
+    bool skip = false;
+    for (uint32_t i = 0; i < queryCount; i++) {
+        const uint32_t slot = firstQuery + i;
+        QueryObject query_obj = {queryPool, slot};
+        if (cb_state.activeQueries.count(query_obj)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
+            skip |= LogError(objlist, vuid, "%s: Query index %" PRIu32 " is still active.", func_name, slot);
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) const {
     if (disabled[query_validation]) return false;
@@ -859,7 +873,8 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
     const auto &query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
     skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, "VkCmdResetQueryPool()",
                                    "VUID-vkCmdResetQueryPool-firstQuery-00796", "VUID-vkCmdResetQueryPool-firstQuery-00797");
-
+    skip |= ValidateQueryPoolNotActive(*cb_state, queryPool, firstQuery, queryCount, "vkCmdResetQueryPool()",
+                                       "VUID-vkCmdResetQueryPool-None-02841");
     return skip;
 }
 
@@ -932,6 +947,8 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, "vkCmdCopyQueryPoolResults()",
                                    "VUID-vkCmdCopyQueryPoolResults-firstQuery-00820",
                                    "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
+    skip |= ValidateQueryPoolNotActive(*cb_state, queryPool, firstQuery, queryCount, "vkCmdCopyQueryPoolResults()",
+                                       "VUID-vkCmdCopyQueryPoolResults-None-07429");
 
     if (query_pool_state.createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         skip |= ValidatePerformanceQueryResults("vkCmdCopyQueryPoolResults", query_pool_state, firstQuery, queryCount, flags);
