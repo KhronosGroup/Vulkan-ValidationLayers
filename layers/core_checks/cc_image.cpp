@@ -628,9 +628,9 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
     bool skip = false;
     if (image_state) {
         if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain) {
-            skip |= LogError(device, "VUID-vkDestroyImage-image-04882",
-                             "vkDestroyImage(): %s is a presentable image and it is controlled by the implementation and is "
-                             "destroyed with vkDestroySwapchainKHR.",
+            skip |= LogError(image, "VUID-vkDestroyImage-image-04882",
+                             "vkDestroyImage(): %s is a presentable image controlled by the implementation and must be destroyed "
+                             "with vkDestroySwapchainKHR.",
                              report_data->FormatHandle(image_state->image()).c_str());
         }
         skip |= ValidateObjectNotInUse(image_state.get(), "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
@@ -1908,7 +1908,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         !phys_dev_ext_props.fragment_shading_rate_props.layeredShadingRateAttachments &&
         image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR && normalized_subresource_range.layerCount != 1) {
         skip |=
-            LogError(device, "VUID-VkImageViewCreateInfo-usage-04551",
+            LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-usage-04551",
                      "vkCreateImageView(): subresourceRange.layerCount is %" PRIu32 " for a shading rate attachment image view.",
                      normalized_subresource_range.layerCount);
     }
@@ -1916,13 +1916,13 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
         const uint32_t remaining_layers = image_state.createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer;
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE && remaining_layers != 6) {
-            skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02962",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-viewType-02962",
                              "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be 6",
                              remaining_layers);
         }
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && ((remaining_layers) % 6) != 0) {
             skip |=
-                LogError(device, "VUID-VkImageViewCreateInfo-viewType-02963",
+                LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-viewType-02963",
                          "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be a multiple of 6",
                          remaining_layers);
         }
@@ -2076,7 +2076,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion->conversion);
         if (pCreateInfo->format != ycbcr_state->format) {
             skip |=
-                LogError(device, "VUID-VkImageViewCreateInfo-pNext-06658",
+                LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06658",
                          "vkCreateImageView(): Format %s does not match the format %s VkSamplerYcbcrConversion was created with.",
                          string_VkFormat(view_format), string_VkFormat(ycbcr_state->format));
         }
@@ -2353,7 +2353,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo *
     const uint32_t layer_count = pCreateInfo->subresourceRange.layerCount;
 
     if ((enabled_features.image_processing_features.textureSampleWeighted == VK_FALSE)) {
-        skip |= LogError(device, "VUID-VkImageViewCreateInfo-pNext-06944",
+        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06944",
                          "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
                          "but textureSampleWeighted feature is not enabled.");
     }

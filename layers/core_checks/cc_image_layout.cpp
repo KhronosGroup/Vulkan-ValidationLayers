@@ -155,7 +155,8 @@ bool CoreChecks::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const 
             if (!layout_check.Check(state)) {
                 *error = true;
                 auto subres = subresource_map->Decode(range.begin);
-                subres_skip |= LogError(cb_state.commandBuffer(), layout_mismatch_msg_code,
+                const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+                subres_skip |= LogError(objlist, layout_mismatch_msg_code,
                                         "%s: Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
                                         ") with specific layout %s that doesn't match the "
                                         "%s layout %s.",
@@ -186,7 +187,8 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
         if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
             if (image_state.createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
                 // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
-                skip |= LogPerformanceWarning(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidImageLayout,
+                const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
+                skip |= LogPerformanceWarning(objlist, kVUID_Core_DrawState_InvalidImageLayout,
                                               "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
                                               report_data->FormatHandle(image_state.Handle()).c_str(),
                                               string_VkImageLayout(optimal_layout));
@@ -194,18 +196,20 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
         } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state.shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
                     skip |=
-                        LogError(device, layout_invalid_msg_code,
+                        LogError(objlist, layout_invalid_msg_code,
                                  "%s: Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
                                  caller, string_VkImageLayout(optimal_layout));
                 }
             }
         } else {
             *error = true;
-            skip |= LogError(cb_state.commandBuffer(), layout_invalid_msg_code,
-                             "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
-                             report_data->FormatHandle(image_state.Handle()).c_str(), string_VkImageLayout(explicit_layout),
-                             string_VkImageLayout(optimal_layout));
+            const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
+            skip |=
+                LogError(objlist, layout_invalid_msg_code, "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.",
+                         caller, report_data->FormatHandle(image_state.Handle()).c_str(), string_VkImageLayout(explicit_layout),
+                         string_VkImageLayout(optimal_layout));
         }
     }
     return skip;
@@ -343,7 +347,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
-                        skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidImageLayout,
+                        const LogObjectList objlist(cb_state.commandBuffer(), image_state->Handle());
+                        skip |= LogError(objlist, kVUID_Core_DrawState_InvalidImageLayout,
                                          "%s command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", mip level %" PRIu32
                                          ") "
@@ -453,7 +458,8 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassC
         } else {
             msg << "attachment " << attachment_index;
         }
-        skip |= LogError(device, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
+        const LogObjectList objlist(renderpass, framebuffer, image_state->Handle());
+        skip |= LogError(objlist, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
                          "%s(): Renderpass subpass %" PRIu32
                          " enables "
                          "multisampled-render-to-single-sampled and %s"
@@ -673,6 +679,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
     auto framebuffer = framebuffer_state.framebuffer();
 
     if (render_pass_info->attachmentCount != framebuffer_info.attachmentCount) {
+        const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer());
         skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidRenderpass,
                          "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
@@ -756,10 +763,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
 
             skip |= subresource_map->AnyInRange(
-                normalized_range, [this, &layout_check, i](const LayoutRange &range, const LayoutEntry &state) {
+                normalized_range,
+                [this, &layout_check, i, cb = cb_state.commandBuffer(), render_pass = pRenderPassBegin->renderPass,
+                 framebuffer = framebuffer_state.framebuffer(), image = view_state->image_state->image(),
+                 image_view = view_state->image_view()](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
-                        subres_skip = LogError(device, kVUID_Core_DrawState_InvalidRenderpass,
+                        const LogObjectList objlist(cb, render_pass, framebuffer, image, image_view);
+                        subres_skip = LogError(objlist, kVUID_Core_DrawState_InvalidRenderpass,
                                                "You cannot start a render pass using attachment %" PRIu32
                                                " where the render pass initial "
                                                "layout is %s "
@@ -958,8 +969,9 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
-        skip |= subresource_map->AnyInRange(
-            normalized_isr, [this, &cb_state, &layout_check, func_name](const LayoutRange &range, const LayoutEntry &state) {
+        skip |=
+            subresource_map->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, func_name, image = image_state.image()](
+                                                            const LayoutRange &range, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
                     const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
@@ -968,7 +980,8 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
                     } else {
                         assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
                     }
-                    subres_skip |= LogError(cb_state.commandBuffer(), error_code,
+                    LogObjectList objlist(cb_state.commandBuffer(), image);
+                    subres_skip |= LogError(objlist, error_code,
                                             "%s: Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
                                             func_name, string_VkImageLayout(layout_check.expected_layout), layout_check.message,
                                             string_VkImageLayout(layout_check.layout));
@@ -1014,8 +1027,9 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_st
                 if (!layout_check.Check(state)) {
                     const auto &vuid = GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
+                    const LogObjectList objlist(cb_state->commandBuffer(), img_barrier.image);
                     subres_skip =
-                        LogError(cb_state->commandBuffer(), vuid,
+                        LogError(objlist, vuid,
                                  "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
                                  "%s layout is %s.",
                                  loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(), subres.aspectMask,
