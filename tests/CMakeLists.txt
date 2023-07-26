@@ -50,6 +50,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/debug_printf.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp
+    unit/descriptor_indexing.cpp
+    unit/descriptor_indexing_positive.cpp
     unit/descriptors.cpp
     unit/descriptors_positive.cpp
     unit/device_queue.cpp
