@@ -480,19 +480,30 @@ class ValidationObject {
 
         // Should be used instead of WriteLock() if the Record phase wants to release
         // its lock during the blocking operation.
-        void GetWriteLockForBlockingOperation(WriteLockGuard& write_lock) {
+        struct BlockingOperationGuard {
+            WriteLockGuard lock;
+            ValidationObject* validation_object = nullptr;
 
-            // This assert detects recursive calls. It is here mostly for documentation purposes
-            // because WriteLock() also triggers errors during recursion.
-            // Recursion is not allowed since record_guard is a thread-local variable and it can
-            // reference only one frame of the callstack.
-            assert(record_guard == nullptr);
+            BlockingOperationGuard(ValidationObject* validation_object)
+                : validation_object(validation_object)
+            {
+                // This assert detects recursive calls. It is here mostly for documentation purposes
+                // because WriteLock() also triggers errors during recursion.
+                // Recursion is not allowed since record_guard is a thread-local variable and it can
+                // reference only one frame of the callstack.
+                assert(validation_object->record_guard == nullptr);
 
-            write_lock = WriteLock();
-            // Initialize record_guard only when Record is actually protected by the
-            // mutex. It's not the case when fine grained locking is enabled.
-            record_guard = write_lock.owns_lock() ? &write_lock : nullptr;
-        }
+                lock = validation_object->WriteLock();
+
+                // Initialize record_guard only when Record is actually protected by the
+                // mutex. It's not the case when fine grained locking is enabled.
+                record_guard = lock.owns_lock() ? &lock : nullptr;
+            }
+
+            ~BlockingOperationGuard() {
+                validation_object->record_guard = nullptr;
+            }
+        };
 
         // The following Begin/End methods should be called during the Record phase
         // around blocking operation that causes mutual waiting (deadlock).
@@ -504,7 +515,6 @@ class ValidationObject {
         void EndBlockingOperation() {
             if (record_guard) {
                 record_guard->lock();
-                record_guard = nullptr;
             }
         }
 
@@ -1741,8 +1751,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
             if command.name not in commands_with_blocking_operations:
                 out.append('        auto lock = intercept->WriteLock();\n')
             else:
-                out.append('        WriteLockGuard lock;\n')
-                out.append('        intercept->GetWriteLockForBlockingOperation(lock);\n')
+                out.append('        ValidationObject::BlockingOperationGuard lock(intercept);\n')
             out.append(f'        intercept->PostCallRecord{command.name[2:]}({paramsList}{returnParam});\n')
             out.append('    }\n')
             # Return result variable, if any.
