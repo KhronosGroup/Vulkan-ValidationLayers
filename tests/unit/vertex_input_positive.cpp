@@ -576,3 +576,42 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
+    TEST_DESCRIPTION("Shader uses f64vec2, but provides too many component with R64G64B64A64, which is valid");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!m_device->phy().features().shaderFloat64) {
+        GTEST_SKIP() << "Device does not support 64bit vertex attributes";
+    }
+
+    const VkFormat format = VK_FORMAT_R64G64B64A64_SFLOAT;
+    VkFormatProperties format_props = m_device->format_properties(format);
+    if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+        GTEST_SKIP() << "Format not supported for Vertex Buffer";
+    }
+
+    char const *vsSource = R"glsl(
+        #version 450 core
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location = 0) in f64vec2 pos;
+        void main() {}
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+}
