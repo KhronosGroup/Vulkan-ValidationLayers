@@ -1487,3 +1487,54 @@ TEST_F(PositiveDescriptors, PushDescriptorTemplateBasic) {
 
     vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
 }
+
+TEST_F(PositiveDescriptors, PushDescriptorWriteDescriptorSetNotAllocated) {
+    TEST_DESCRIPTION("Try to update a descriptor that has yet to be allocated and make sure its ignored");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    auto dsl_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    dsl_ci.bindingCount = 1;
+    dsl_ci.pBindings = &ds_binding;
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
+
+    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    // Valid, from spec:
+    // "Each element of pDescriptorWrites is interpreted as in VkWriteDescriptorSet, except the dstSet member is ignored"
+    VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
+
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = bad_set;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    m_commandBuffer->begin();
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                &descriptor_write);
+
+    VkDescriptorSet null_set = CastFromUint64<VkDescriptorSet>(0);
+    descriptor_write.dstSet = null_set;
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                &descriptor_write);
+    m_commandBuffer->end();
+}
