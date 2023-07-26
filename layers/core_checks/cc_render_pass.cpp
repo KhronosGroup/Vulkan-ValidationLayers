@@ -392,88 +392,86 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const char *function_name = CommandTypeString(cmd_type);
     assert(cb_state);
-    if (pRenderPassBegin) {
-        auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
-        auto fb_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
+    auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
+    auto fb_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
 
-        if (rp_state) {
-            uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
+    if (rp_state) {
+        uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
 
-            // Handle extension struct from EXT_sample_locations
-            const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
-                LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
-            if (sample_locations_begin_info) {
-                for (uint32_t i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
-                    const VkAttachmentSampleLocationsEXT &sample_location =
-                        sample_locations_begin_info->pAttachmentInitialSampleLocations[i];
-                    skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
-                    if (sample_location.attachmentIndex >= rp_state->createInfo.attachmentCount) {
-                        skip |= LogError(device, "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531",
-                                         "%s: Attachment index %u specified by attachment sample locations %u is greater than the "
-                                         "attachment count of %u for the render pass being begun.",
-                                         function_name, sample_location.attachmentIndex, i, rp_state->createInfo.attachmentCount);
-                    }
-                }
-
-                for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
-                    const VkSubpassSampleLocationsEXT &sample_location =
-                        sample_locations_begin_info->pPostSubpassSampleLocations[i];
-                    skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
-                    if (sample_location.subpassIndex >= rp_state->createInfo.subpassCount) {
-                        skip |= LogError(
-                            device, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532",
-                            "%s: Subpass index %u specified by subpass sample locations %u is greater than the subpass count "
-                            "of %u for the render pass being begun.",
-                            function_name, sample_location.subpassIndex, i, rp_state->createInfo.subpassCount);
-                    }
+        // Handle extension struct from EXT_sample_locations
+        const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
+            LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
+        if (sample_locations_begin_info) {
+            for (uint32_t i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
+                const VkAttachmentSampleLocationsEXT &sample_location =
+                    sample_locations_begin_info->pAttachmentInitialSampleLocations[i];
+                skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
+                if (sample_location.attachmentIndex >= rp_state->createInfo.attachmentCount) {
+                    const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+                    skip |= LogError(objlist, "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531",
+                                     "%s: Attachment index %u specified by attachment sample locations %u is greater than the "
+                                     "attachment count of %u for the render pass being begun.",
+                                     function_name, sample_location.attachmentIndex, i, rp_state->createInfo.attachmentCount);
                 }
             }
 
-            for (uint32_t i = 0; i < rp_state->createInfo.attachmentCount; ++i) {
-                auto attachment = &rp_state->createInfo.pAttachments[i];
-                if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
-                                                         VK_ATTACHMENT_LOAD_OP_CLEAR)) {
-                    clear_op_size = static_cast<uint32_t>(i) + 1;
-
-                    if (FormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
-                        skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
-                                                               function_name);
-                    }
+            for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
+                const VkSubpassSampleLocationsEXT &sample_location = sample_locations_begin_info->pPostSubpassSampleLocations[i];
+                skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
+                if (sample_location.subpassIndex >= rp_state->createInfo.subpassCount) {
+                    const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+                    skip |=
+                        LogError(objlist, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532",
+                                 "%s: Subpass index %u specified by subpass sample locations %u is greater than the subpass count "
+                                 "of %u for the render pass being begun.",
+                                 function_name, sample_location.subpassIndex, i, rp_state->createInfo.subpassCount);
                 }
             }
+        }
 
-            if (clear_op_size > pRenderPassBegin->clearValueCount) {
-                skip |=
-                    LogError(rp_state->renderPass(), "VUID-VkRenderPassBeginInfo-clearValueCount-00902",
+        for (uint32_t i = 0; i < rp_state->createInfo.attachmentCount; ++i) {
+            auto attachment = &rp_state->createInfo.pAttachments[i];
+            if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
+                                                     VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+                clear_op_size = static_cast<uint32_t>(i) + 1;
+
+                if (FormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
+                    skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
+                                                           function_name);
+                }
+            }
+        }
+
+        if (clear_op_size > pRenderPassBegin->clearValueCount) {
+            const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
+            skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-clearValueCount-00902",
                              "In %s the VkRenderPassBeginInfo struct has a clearValueCount of %u but there "
                              "must be at least %u entries in pClearValues array to account for the highest index attachment in "
                              "%s that uses VK_ATTACHMENT_LOAD_OP_CLEAR is %u. Note that the pClearValues array is indexed by "
                              "attachment number so even if some pClearValues entries between 0 and %u correspond to attachments "
                              "that aren't cleared they will be ignored.",
                              function_name, pRenderPassBegin->clearValueCount, clear_op_size,
-                             FormatHandle(rp_state->renderPass()).c_str(), clear_op_size, clear_op_size - 1);
-            }
-            skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
-            skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
-
-            if (fb_state) {
-                skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, *cb_state, pRenderPassBegin, *fb_state);
-                if (fb_state->rp_state->renderPass() != rp_state->renderPass()) {
-                    skip |=
-                        ValidateRenderPassCompatibility("render pass", *rp_state.get(), "framebuffer", *fb_state->rp_state.get(),
-                                                        function_name, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-                }
-
-                skip |= ValidateDependencies(*fb_state, *rp_state);
-            }
-
-            skip |= ValidateCmd(*cb_state, cmd_type);
+                            FormatHandle(rp_state->renderPass()).c_str(), clear_op_size, clear_op_size - 1);
         }
+        skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
+        skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
+
+        if (fb_state) {
+            skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, *cb_state, pRenderPassBegin, *fb_state);
+            if (fb_state->rp_state->renderPass() != rp_state->renderPass()) {
+                skip |= ValidateRenderPassCompatibility("render pass", *rp_state.get(), "framebuffer", *fb_state->rp_state.get(),
+                                                        function_name, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+            }
+
+            skip |= ValidateDependencies(*fb_state, *rp_state);
+        }
+
+        skip |= ValidateCmd(*cb_state, cmd_type);
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
     if (chained_device_group_struct) {
-        const LogObjectList objlist(pRenderPassBegin->renderPass);
+        const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->deviceMask, objlist,
                                                         "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
         skip |= ValidateDeviceMaskToZero(chained_device_group_struct->deviceMask, objlist,
@@ -488,6 +486,17 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                              function_name, chained_device_group_struct->deviceRenderAreaCount, physical_device_count);
         }
     }
+
+    if (!chained_device_group_struct || chained_device_group_struct->deviceRenderAreaCount == 0) {
+        if (pRenderPassBegin->renderArea.extent.width == 0) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderPassBeginInfo-None-08996", "%s: renderArea.extent.width is zero.",
+                             function_name);
+        } else if (pRenderPassBegin->renderArea.extent.height == 0) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderPassBeginInfo-None-08997", "%s: renderArea.extent.height is zero.",
+                             function_name);
+        }
+    }
+
     return skip;
 }
 
