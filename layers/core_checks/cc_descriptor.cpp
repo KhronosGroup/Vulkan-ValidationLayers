@@ -2351,19 +2351,13 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
     for (uint32_t i = 0; i < write_count; i++) {
         auto dest_set = p_wds[i].dstSet;
         auto set_node = Get<cvdescriptorset::DescriptorSet>(dest_set);
-        if (!set_node) {
-            skip |= LogError(dest_set, kVUID_Core_DrawState_InvalidDescriptorSet,
-                             "Cannot call %s on %s that has not been allocated in pDescriptorWrites[%u].", func_name,
-                             report_data->FormatHandle(dest_set).c_str(), i);
-        } else {
-            std::string error_code;
-            std::string error_str;
-            if (!ValidateWriteUpdate(set_node.get(), &p_wds[i], func_name, &error_code, &error_str, false)) {
-                skip |=
-                    LogError(dest_set, error_code, "%s pDescriptorWrites[%u] failed write update validation for %s with error: %s.",
+        std::string error_code;
+        std::string error_str;
+        if (!ValidateWriteUpdate(set_node.get(), &p_wds[i], func_name, &error_code, &error_str, false)) {
+            skip |= LogError(dest_set, error_code, "%s pDescriptorWrites[%u] failed write update validation for %s with error: %s.",
                              func_name, i, report_data->FormatHandle(dest_set).c_str(), error_str.c_str());
-            }
         }
+
         if (p_wds[i].pNext) {
             const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
             if (pnext_struct) {
@@ -2976,6 +2970,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     const auto *dest_layout = dest_set->GetLayout().get();
 
     // Verify dst layout still valid
+    // ObjectLifetimes only checks if null, we check if valid dstSet here
     if (dest_layout->Destroyed()) {
         *error_code = "VUID-VkWriteDescriptorSet-dstSet-00320";
         std::ostringstream str;

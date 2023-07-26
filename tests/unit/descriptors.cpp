@@ -2563,6 +2563,34 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
+    TEST_DESCRIPTION("Try to update a descriptor that has yet to be allocated");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, sizeof(uint32_t)};
+
+    VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = bad_set;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstSet-00320");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkDescriptorSet null_set = CastFromUint64<VkDescriptorSet>(0);
+    descriptor_write.dstSet = null_set;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Delete the DescriptorSetLayout and then call vkCmdPushDescriptorSetKHR");
 
@@ -2573,11 +2601,8 @@ TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
-    buffer_ci.size = 32;
-    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     VkBufferObj buffer;
-    buffer.init(*m_device, buffer_ci);
+    buffer.init(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -2591,8 +2616,7 @@ TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     pipeline_layout_ci.pushConstantRangeCount = 0;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
     auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
@@ -2607,12 +2631,11 @@ TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
 
     vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstSet-00320");
-    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, nullptr);
 }
 
 TEST_F(NegativeDescriptors, PushDescriptorTemplateDestroyDescriptorSetLayout) {
