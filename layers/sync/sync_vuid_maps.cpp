@@ -747,10 +747,10 @@ static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
      }},
     {QueueError::kDstNoForeignExt,
      {
-         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-09100"},
-         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-09100"},
-         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09122"},
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09122"},
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-dstQueueFamilyIndex-09100"},
+         {Key(Struct::VkBufferMemoryBarrier), "VUID-VkBufferMemoryBarrier-dstQueueFamilyIndex-09100"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-dstQueueFamilyIndex-09122"},
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-dstQueueFamilyIndex-09122"},
      }},
     {QueueError::kSync1ConcurrentNoIgnored,
      {
