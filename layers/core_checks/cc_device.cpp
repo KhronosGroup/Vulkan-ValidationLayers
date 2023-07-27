@@ -601,11 +601,28 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
     return skip;
 }
 
+bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                 VkImageFormatProperties2 *pImageFormatProperties) const {
+    bool skip = false;
+    const auto *copy_perf_query = LvlFindInChain<VkHostImageCopyDevicePerformanceQueryEXT>(pImageFormatProperties->pNext);
+    if (copy_perf_query) {
+        if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+            skip |= LogError(physical_device, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004",
+                             "vkGetPhysicalDeviceImageFormatProperties2(): pImageFormatProperties includes a chained "
+                             "VkHostImageCopyDevicePerformanceQueryEXT struct, but pImageFormatInfo->usage (%s) does not contain "
+                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT",
+                             string_VkBufferUsageFlags(pImageFormatInfo->usage).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                         VkImageFormatProperties2 *pImageFormatProperties) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties);
+    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 
@@ -614,6 +631,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
                                                                            VkImageFormatProperties2 *pImageFormatProperties) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties);
+    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 
