@@ -784,15 +784,16 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         // less than or equal to 2^31-1
         const uint32_t element_size =
             FormatIsDepthOrStencil(image_format) ? 0 : FormatElementSize(image_format, region_aspect_mask);
-        uint64_t test_value = row_length / block_size.width;
+        double test_value = row_length / block_size.width;
         test_value = test_value * element_size;
-        const uint32_t two_to_31_minus_1 = 0x7fffffff;
+        const auto two_to_31_minus_1 = static_cast<double>((1u << 31) - 1);
         if (test_value > two_to_31_minus_1) {
             const LogObjectList objlist(handle, image_state.image());
             skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("09108", from_image, is_2, is_memory),
-                             "%s: pRegion[%d] *RowLength (%d) divided by the texel block extent width (%d) then multiplied by the "
+                             "%s: pRegion[%d] *RowLength (%" PRIu32
+                             ") divided by the texel block extent width (%d) then multiplied by the "
                              "texel block size of image (%d) is (%" PRIu64 ") which is greater than 2^31 - 1",
-                             function, i, row_length, block_size.width, element_size, test_value);
+                             function, i, row_length, block_size.width, element_size, static_cast<uint64_t>(test_value));
         }
 
         // Checks that apply only to multi-planar format images
