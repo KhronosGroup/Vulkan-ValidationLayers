@@ -1109,7 +1109,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     if (same_view) {
                         auto set = context.descriptor_set.GetSet();
                         const LogObjectList objlist(set, image_view, context.framebuffer);
-                        return LogError(objlist, context.vuids.image_subresources_subpass_read_08753,
+                        return LogError(objlist, context.vuids.image_subresources_subpass_read_09003,
                                         "%s: Descriptor set %s Image View %s is being read from in Descriptor in binding #%" PRIu32
                                         " index %" PRIu32 " and will be written to as %s attachment # %" PRIu32 ".",
                                         context.caller, report_data->FormatHandle(set).c_str(),
@@ -1119,7 +1119,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         auto set = context.descriptor_set.GetSet();
                         const LogObjectList objlist(set, image_view, context.framebuffer, view_state->image_view());
                         return LogError(
-                            objlist, context.vuids.image_subresources_subpass_read_08753,
+                            objlist, context.vuids.image_subresources_subpass_read_09003,
                             "%s: Descriptor set %s Image subresources of %s is being read from in Descriptor in binding #%" PRIu32
                             " index %" PRIu32 " and will be written to as %s in %s attachment # %" PRIu32 " overlap.",
                             context.caller, report_data->FormatHandle(set).c_str(), report_data->FormatHandle(image_view).c_str(),

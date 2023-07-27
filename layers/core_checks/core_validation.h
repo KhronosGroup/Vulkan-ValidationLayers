@@ -58,7 +58,7 @@ struct DrawDispatchVuid {
     const char* bufferview_atomic_07888 = kVUIDUndefined;
     const char* push_constants_set_08602 = kVUIDUndefined;
     const char* image_subresources_render_pass_write_06537 = kVUIDUndefined;
-    const char* image_subresources_subpass_read_08753 = kVUIDUndefined;
+    const char* image_subresources_subpass_read_09003 = kVUIDUndefined;
     const char* image_subresources_subpass_write_06539 = kVUIDUndefined;
     const char* sampler_imageview_type_08609 = kVUIDUndefined;
     const char* sampler_implicitLod_dref_proj_08610 = kVUIDUndefined;

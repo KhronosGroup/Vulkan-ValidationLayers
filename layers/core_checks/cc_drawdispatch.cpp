@@ -42,7 +42,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDraw-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDraw-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDraw-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDraw-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDraw-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDraw-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDraw-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDraw-None-08610";
@@ -198,7 +198,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMultiEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMultiEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMultiEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMultiEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMultiEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMultiEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMultiEXT-None-08610";
@@ -355,7 +355,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexed-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndexed-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndexed-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndexed-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndexed-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndexed-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndexed-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndexed-None-08610";
@@ -512,7 +512,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiIndexedEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMultiIndexedEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMultiIndexedEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMultiIndexedEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMultiIndexedEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMultiIndexedEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMultiIndexedEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMultiIndexedEXT-None-08610";
@@ -671,7 +671,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirect-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndirect-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndirect-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndirect-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndirect-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndirect-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndirect-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndirect-None-08610";
@@ -830,7 +830,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirect-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndexedIndirect-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndexedIndirect-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndexedIndirect-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndexedIndirect-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndexedIndirect-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndexedIndirect-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndexedIndirect-None-08610";
@@ -1073,7 +1073,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectCount-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndirectCount-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndirectCount-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndirectCount-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndirectCount-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndirectCount-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndirectCount-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndirectCount-None-08610";
@@ -1235,7 +1235,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirectCount-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndexedIndirectCount-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndexedIndirectCount-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndexedIndirectCount-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndexedIndirectCount-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndexedIndirectCount-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndexedIndirectCount-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndexedIndirectCount-None-08610";
@@ -1551,7 +1551,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksNV-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksNV-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksNV-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksNV-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksNV-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksNV-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksNV-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksNV-None-08610";
@@ -1701,7 +1701,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksIndirectNV-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08610";
@@ -1854,7 +1854,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08610";
@@ -2001,7 +2001,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksEXT-None-08610";
@@ -2151,7 +2151,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08610";
@@ -2304,7 +2304,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08610";
@@ -2457,7 +2457,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07888";
         push_constants_set_08602                 = "VUID-vkCmdDrawIndirectByteCountEXT-maintenance4-08602";
         image_subresources_render_pass_write_06537 = "VUID-vkCmdDrawIndirectByteCountEXT-None-06537";
-        image_subresources_subpass_read_08753    = "VUID-vkCmdDrawIndirectByteCountEXT-None-08753";
+        image_subresources_subpass_read_09003    = "VUID-vkCmdDrawIndirectByteCountEXT-None-09003";
         image_subresources_subpass_write_06539   = "VUID-vkCmdDrawIndirectByteCountEXT-None-06539";
         sampler_imageview_type_08609             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08609";
         sampler_implicitLod_dref_proj_08610      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08610";
