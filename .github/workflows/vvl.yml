@@ -151,46 +151,51 @@ jobs:
       - name: Test Max Profile
         run: python scripts/tests.py --test
 
-  android_cmake:
+  android:
       runs-on: ubuntu-22.04
-      strategy:
-        matrix:
-          abi: [ arm64-v8a ]
-          build_tests: [ "ON" ]
-          stl_type: ["c++_shared"]
-          include:
-          - abi: armeabi-v7a
-            build_tests: "OFF"
-            stl_type: c++_static
-
       steps:
         - uses: actions/checkout@v3
         - uses: lukka/get-cmake@latest
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
-            key: android-${{ matrix.abi }}-${{ matrix.build_tests }}-${{ matrix.stl_type }}
+            key: android
         - name: Configure
           run: |
             cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
             -D ANDROID_PLATFORM=26 \
-            -D CMAKE_ANDROID_ARCH_ABI=${{ matrix.abi }} \
-            -D CMAKE_ANDROID_STL_TYPE=${{ matrix.stl_type }} \
+            -D CMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+            -D CMAKE_ANDROID_STL_TYPE=c++_static \
             -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
             -D CMAKE_BUILD_TYPE=Debug \
-            -D BUILD_TESTS=${{ matrix.build_tests }} \
+            -D BUILD_TESTS=ON \
             -D UPDATE_DEPS=ON \
-            -D BUILD_WERROR=ON \
-            -G "Ninja"
+            -D BUILD_WERROR=ON
           env:
             CMAKE_C_COMPILER_LAUNCHER: ccache
             CMAKE_CXX_COMPILER_LAUNCHER: ccache
+            CMAKE_GENERATOR: Ninja
         - name: Build
           run: cmake --build build/
         - name: Test
-          if: matrix.build_tests == 'ON'
-          working-directory: ./build
-          run: ctest --output-on-failure -C Debug
+          run: ctest --test-dir build/ --output-on-failure -C Debug
+
+  android_apk:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: lukka/get-cmake@latest
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: android_apk
+      - name: Add build-tools to the PATH
+        run: echo "$ANDROID_HOME/build-tools/34.0.0/" >> $GITHUB_PATH
+      - name: Generate Android Test APK
+        run: python scripts/android.py --apk --tests
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
   macos:
     runs-on: macos-latest
