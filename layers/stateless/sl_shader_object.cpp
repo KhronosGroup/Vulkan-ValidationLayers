@@ -61,21 +61,20 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                 "].flags (%s) contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT bit, but pCreateInfos[%" PRIu32 "].stage is %s.",
                 i, string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
         }
-        if (createInfo.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
-            if ((createInfo.flags &
-                 (VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT)) != 0) {
-                skip |= LogError(
-                    device, "VUID-VkShaderCreateInfoEXT-flags-08413",
-                    "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].flags are %s, but pCreateInfos[%" PRIu32 "].stage is %s.", i,
-                    string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
-            }
-            if ((createInfo.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) != 0) {
-                skip |=
-                    LogError(device, "VUID-VkShaderCreateInfoEXT-flags-08485",
+        if (((createInfo.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) &&
+            ((createInfo.stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) ==
+             0)) {
+            skip |= LogError(
+                device, "VUID-VkShaderCreateInfoEXT-flags-08992",
+                "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].flags (%s), but pCreateInfos[%" PRIu32 "].stage is %s.", i,
+                string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
+        }
+        if ((createInfo.stage != VK_SHADER_STAGE_COMPUTE_BIT) &&
+            ((createInfo.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) != 0)) {
+            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-flags-08485",
                              "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
                              "].flags include VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT, but pCreateInfos[%" PRIu32 "].stage is %s.",
                              i, i, string_VkShaderStageFlagBits(createInfo.stage));
-            }
         }
         if (createInfo.stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
             if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0) {
@@ -154,20 +153,6 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                 skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08436",
                                  "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
                                  "].stage is VK_SHADER_STAGE_MESH_BIT_EXT, but pCreateInfos[%" PRIu32 "].nextStage is %s.",
-                                 i, i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
-            }
-        } else if (createInfo.stage == VK_SHADER_STAGE_TASK_BIT_NV) {
-            if ((createInfo.nextStage & ~VK_SHADER_STAGE_MESH_BIT_NV) != 0) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08437",
-                                 "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
-                                 "].stage is VK_SHADER_STAGE_TASK_BIT_NV, but pCreateInfos[%" PRIu32 "].nextStage is %s.",
-                                 i, i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
-            }
-        } else if (createInfo.stage == VK_SHADER_STAGE_MESH_BIT_NV) {
-            if ((createInfo.nextStage & ~VK_SHADER_STAGE_FRAGMENT_BIT) != 0) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08438",
-                                 "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
-                                 "].stage is VK_SHADER_STAGE_MESH_BIT_NV, but pCreateInfos[%" PRIu32 "].nextStage is %s.",
                                  i, i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_ALL_GRAPHICS || createInfo.stage == VK_SHADER_STAGE_ALL) {

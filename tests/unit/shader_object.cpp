@@ -61,7 +61,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 TEST_F(NegativeShaderObject, InvalidFlags) {
     TEST_DESCRIPTION("Create shader with invalid flags.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08413");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08992");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
@@ -69,7 +69,7 @@ TEST_F(NegativeShaderObject, InvalidFlags) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
-    createInfo.flags = VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+    createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
