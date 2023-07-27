@@ -193,7 +193,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
                              "] The BuiltIns SampleMask array sizes is %u which exceeds "
                              "maxSampleMaskWords of %u in %s.",
                              pipeline.create_index, variable->array_size, phys_dev_props.limits.maxSampleMaskWords,
-                             report_data->FormatHandle(module_state.handle()).c_str());
+                             FormatHandle(module_state.handle()).c_str());
             break;
         }
     }

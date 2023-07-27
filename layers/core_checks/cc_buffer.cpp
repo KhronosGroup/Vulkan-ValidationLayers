@@ -446,14 +446,14 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
         skip |= LogError(dstBuffer, "VUID-vkCmdFillBuffer-dstOffset-00024",
                          "vkCmdFillBuffer(): dstOffset (0x%" PRIxLEAST64
                          ") is not less than destination buffer (%s) size (0x%" PRIxLEAST64 ").",
-                         dstOffset, report_data->FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
+                         dstOffset, FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
     }
 
     if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
         skip |= LogError(dstBuffer, "VUID-vkCmdFillBuffer-size-00027",
                          "vkCmdFillBuffer(): size (0x%" PRIxLEAST64 ") is greater than dstBuffer (%s) size (0x%" PRIxLEAST64
                          ") minus dstOffset (0x%" PRIxLEAST64 ").",
-                         size, report_data->FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
+                         size, FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
@@ -473,8 +473,7 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
-                         report_data->FormatHandle(cb_state.Handle()).c_str(),
-                         report_data->FormatHandle(buffer_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(buffer_state.Handle()).c_str(), more_message);
     }
     return skip;
 }
@@ -488,8 +487,7 @@ bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, con
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,
-                         report_data->FormatHandle(cb_state.Handle()).c_str(),
-                         report_data->FormatHandle(buffer_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(buffer_state.Handle()).c_str(), more_message);
     }
     return skip;
 }

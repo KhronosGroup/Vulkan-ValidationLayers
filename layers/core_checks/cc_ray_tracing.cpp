@@ -255,16 +255,14 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         skip |= ValidateAccelerationBuffers(info_i, pInfos[info_i], "vkCmdBuildAccelerationStructuresKHR");
     }
 
-    auto no_as_buffer_memory_overlap_msg = [report_data = report_data](const char *variable_name_a, VkBuffer buffer_handle_a,
-                                                                       const char *variable_name_b, VkBuffer buffer_handle_b,
-                                                                       VkDeviceMemory memory_handle,
-                                                                       const range<VkDeviceSize> &overlap_range) -> std::string {
+    auto no_as_buffer_memory_overlap_msg =
+        [this](const char *variable_name_a, VkBuffer buffer_handle_a, const char *variable_name_b, VkBuffer buffer_handle_b,
+               VkDeviceMemory memory_handle, const range<VkDeviceSize> &overlap_range) -> std::string {
         std::stringstream error_msg_ss;
-        error_msg_ss << "vkCmdBuildAccelerationStructuresKHR(): memory backing buffer ("
-                     << report_data->FormatHandle(buffer_handle_a) << ") used as storage for " << variable_name_a
-                     << " overlaps memory backing buffer (" << report_data->FormatHandle(buffer_handle_b)
-                     << ") used as storage for " << variable_name_b << ". Overlapped memory is "
-                     << report_data->FormatHandle(memory_handle) << " on range " << string_range(overlap_range) << '.';
+        error_msg_ss << "vkCmdBuildAccelerationStructuresKHR(): memory backing buffer (" << FormatHandle(buffer_handle_a)
+                     << ") used as storage for " << variable_name_a << " overlaps memory backing buffer ("
+                     << FormatHandle(buffer_handle_b) << ") used as storage for " << variable_name_b << ". Overlapped memory is "
+                     << FormatHandle(memory_handle) << " on range " << string_range(overlap_range) << '.';
 
         return error_msg_ss.str();
     };
@@ -489,8 +487,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                                 memory != VK_NULL_HANDLE) {
                                                 if (parent_out_error_msg) {
                                                     std::stringstream scratch_error_msg_ss;
-                                                    scratch_error_msg_ss << " {" << report_data->FormatHandle(scratch->buffer())
-                                                                         << ", backed by " << report_data->FormatHandle(memory)
+                                                    scratch_error_msg_ss << " {" << FormatHandle(scratch->buffer())
+                                                                         << ", backed by " << FormatHandle(memory)
                                                                          << " - overlap on VkDeviceMemory space range "
                                                                          << string_range(overlap_range) << "}";
                                                     *parent_out_error_msg += scratch_error_msg_ss.str();
@@ -551,10 +549,10 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     if (pInfos[other_info_j].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
                         std::stringstream dst_as_ss;
                         dst_as_ss << "pInfos[" << info_i << "].dstAccelerationStructure ("
-                                  << report_data->FormatHandle(pInfos[info_i].dstAccelerationStructure) << ')';
+                                  << FormatHandle(pInfos[info_i].dstAccelerationStructure) << ')';
                         std::stringstream other_src_as_ss;
                         other_src_as_ss << "pInfos[" << other_info_j << "].srcAccelerationStructure ("
-                                        << report_data->FormatHandle(pInfos[other_info_j].srcAccelerationStructure) << ')';
+                                        << FormatHandle(pInfos[other_info_j].srcAccelerationStructure) << ')';
 
                         const BUFFER_STATE &buffer_a = *dst_as_state->buffer_state;
                         const range<VkDeviceSize> range_a(dst_as_state->create_infoKHR.offset,
@@ -576,10 +574,10 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 if (dst_as_state && dst_as_state->buffer_state && other_dst_as_state && other_dst_as_state->buffer_state) {
                     std::stringstream dst_as_ss;
                     dst_as_ss << "pInfos[" << info_i << "].dstAccelerationStructure ("
-                              << report_data->FormatHandle(pInfos[info_i].dstAccelerationStructure) << ')';
+                              << FormatHandle(pInfos[info_i].dstAccelerationStructure) << ')';
                     std::stringstream other_dst_as_ss;
                     other_dst_as_ss << "pInfos[" << other_info_j << "].dstAccelerationStructure ("
-                                    << report_data->FormatHandle(pInfos[other_info_j].dstAccelerationStructure) << ')';
+                                    << FormatHandle(pInfos[other_info_j].dstAccelerationStructure) << ')';
 
                     const BUFFER_STATE &buffer_a = *dst_as_state->buffer_state;
                     const range<VkDeviceSize> range_a(dst_as_state->create_infoKHR.offset,
@@ -872,7 +870,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                 LogWarning(dst, kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery,
                            "vkCmdBuildAccelerationStructureNV(): Updating %s but vkGetAccelerationStructureMemoryRequirementsNV() "
                            "has not been called for update scratch memory.",
-                           report_data->FormatHandle(dst_as_state->acceleration_structure()).c_str());
+                           FormatHandle(dst_as_state->acceleration_structure()).c_str());
             // Use requirements fetched at create time
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
@@ -891,7 +889,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             skip |= LogWarning(dst, kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery,
                                "vkCmdBuildAccelerationStructureNV(): Assigning scratch buffer to %s but "
                                "vkGetAccelerationStructureMemoryRequirementsNV() has not been called for scratch memory.",
-                               report_data->FormatHandle(dst_as_state->acceleration_structure()).c_str());
+                               FormatHandle(dst_as_state->acceleration_structure()).c_str());
             // Use requirements fetched at create time
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&

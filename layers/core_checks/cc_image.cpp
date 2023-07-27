@@ -631,7 +631,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
             skip |= LogError(image, "VUID-vkDestroyImage-image-04882",
                              "vkDestroyImage(): %s is a presentable image controlled by the implementation and must be destroyed "
                              "with vkDestroySwapchainKHR.",
-                             report_data->FormatHandle(image_state->image()).c_str());
+                             FormatHandle(image_state->image()).c_str());
         }
         skip |= ValidateObjectNotInUse(image_state.get(), "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
@@ -662,12 +662,12 @@ bool CoreChecks::ValidateClearImageAttributes(const CMD_BUFFER_STATE &cb_state, 
         LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |= LogError(objlist, "VUID-vkCmdClearColorImage-image-00007",
                          "vkCmdClearColorImage(): %s called with image %s which has a depth/stencil format (%s).", param_name,
-                         report_data->FormatHandle(image).c_str(), string_VkFormat(format));
+                         FormatHandle(image).c_str(), string_VkFormat(format));
     } else if (FormatIsCompressed(format)) {
         LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |= LogError(objlist, "VUID-vkCmdClearColorImage-image-00007",
                          "vkCmdClearColorImage(): %s called with image %s which has a compressed format (%s).", param_name,
-                         report_data->FormatHandle(image).c_str(), string_VkFormat(format));
+                         FormatHandle(image).c_str(), string_VkFormat(format));
     }
 
     if (!(image_state.createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
@@ -675,7 +675,7 @@ bool CoreChecks::ValidateClearImageAttributes(const CMD_BUFFER_STATE &cb_state, 
         skip |=
             LogError(objlist, "VUID-vkCmdClearColorImage-image-00002",
                      "vkCmdClearColorImage() %s called with image %s which was created without VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
-                     param_name, report_data->FormatHandle(image).c_str());
+                     param_name, FormatHandle(image).c_str());
     }
     return skip;
 }
@@ -850,14 +850,14 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-image-00014",
                          "vkCmdClearDepthStencilImage(): called with image %s which doesn't have a depth/stencil format (%s).",
-                         report_data->FormatHandle(image).c_str(), string_VkFormat(image_format));
+                         FormatHandle(image).c_str(), string_VkFormat(image_format));
     }
     if (VK_IMAGE_USAGE_TRANSFER_DST_BIT != (VK_IMAGE_USAGE_TRANSFER_DST_BIT & image_state.createInfo.usage)) {
         LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-pRanges-02659",
                          "vkCmdClearDepthStencilImage(): called with image %s which was not created with the "
                          "VK_IMAGE_USAGE_TRANSFER_DST_BIT set.",
-                         report_data->FormatHandle(image).c_str());
+                         FormatHandle(image).c_str());
     }
     return skip;
 }
@@ -1192,7 +1192,7 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
         assert(msgCode != kVUIDUndefined);
         skip =
             LogError(objlist, msgCode, "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
-                     report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
+                     FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
     }
     return skip;
 }
@@ -1219,7 +1219,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                              ") does not support required feature %s for the external format "
                              "found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures used by %s.",
                              func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(),
-                             report_data->FormatHandle(image_state.image()).c_str());
+                             FormatHandle(image_state.image()).c_str());
         } else {
             skip |= LogError(
                 objlist, vuid,
@@ -1227,7 +1227,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                 " used by %s "
                 "with tiling %s.",
                 func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(), image_state.createInfo.format,
-                report_data->FormatHandle(image_state.image()).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
+                FormatHandle(image_state.image()).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
         }
     }
     return skip;
@@ -1733,7 +1733,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
                 std::stringstream ss;
                 ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                   << " is not in the same format compatibility class as " << report_data->FormatHandle(pCreateInfo->image).c_str()
+                   << " is not in the same format compatibility class as " << FormatHandle(pCreateInfo->image).c_str()
                    << "  format " << string_VkFormat(image_format)
                    << ".  Images created with the VK_IMAGE_CREATE_MUTABLE_FORMAT BIT "
                    << "can support ImageViews with differing formats but they must be in the same compatibility class.";
@@ -1746,7 +1746,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         if ((image_format != view_format) && (!multiplane_image || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
             std::stringstream ss;
             ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from "
-               << report_data->FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
+               << FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
                << ".  Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.";
             skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01762", "%s", ss.str().c_str());
         }
@@ -2317,8 +2317,7 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const 
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image.%s", cmd_name,
-                         report_data->FormatHandle(cb_state.Handle()).c_str(),
-                         report_data->FormatHandle(image_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(image_state.Handle()).c_str(), more_message);
     }
     return skip;
 }
@@ -2332,8 +2331,7 @@ bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, cons
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image.%s", cmd_name,
-                         report_data->FormatHandle(cb_state.Handle()).c_str(),
-                         report_data->FormatHandle(image_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(image_state.Handle()).c_str(), more_message);
     }
     return skip;
 }

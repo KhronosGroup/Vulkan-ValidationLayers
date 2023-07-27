@@ -183,7 +183,7 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
                 "subject to the window resize behavior, but the swapchain is no longer configured optimally for the surface it "
                 "targets. Applications should query updated surface information and recreate their swapchain at the next "
                 "convenient opportunity.",
-                report_data->FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+                FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
         }
     }
 

@@ -238,7 +238,7 @@ bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE &cb_state, const I
         const LogObjectList objlist(cb_state.Handle(), img.Handle());
         skip |= LogError(objlist, vuid,
                          "In %s, pRegions[%" PRIu32 "].%s.mipLevel is %" PRIu32 ", but provided %s has %" PRIu32 " mip levels.",
-                         function, i, member, mip_level, report_data->FormatHandle(img.image()).c_str(), img.createInfo.mipLevels);
+                         function, i, member, mip_level, FormatHandle(img.image()).c_str(), img.createInfo.mipLevels);
     }
     return skip;
 }
@@ -262,7 +262,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE &cb_state, 
                              "In %s, pRegions[%" PRIu32 "].%s.baseArrayLayer is %" PRIu32
                              " and .layerCount is "
                              "%" PRIu32 ", but provided %s has %" PRIu32 " array layers.",
-                             function, i, member, base_layer, layer_count, report_data->FormatHandle(img.image()).c_str(),
+                             function, i, member, base_layer, layer_count, FormatHandle(img.image()).c_str(),
                              img.createInfo.arrayLayers);
         }
     }
@@ -719,8 +719,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
                              "which was created with queueFamilyIndex %" PRIu32
                              ", which doesn't contain the VK_QUEUE_GRAPHICS_BIT or "
                              "VK_QUEUE_COMPUTE_BIT flag.",
-                             function, i, bufferOffset, report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
-                             report_data->FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
+                             function, i, bufferOffset, FormatHandle(cb_state.commandBuffer()).c_str(),
+                             FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
         }
     }
 
@@ -1879,8 +1879,8 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &ima
                 skip |= LogError(objlist, msg_code,
                                  "%s: pRegion[%" PRIu32 "] is trying to copy  %" PRIu64 " bytes plus %" PRIu64
                                  " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
-                                 func_name, i, buffer_copy_size, region.bufferOffset,
-                                 report_data->FormatHandle(buff_state.Handle()).c_str(), buffer_size);
+                                 func_name, i, buffer_copy_size, region.bufferOffset, FormatHandle(buff_state.Handle()).c_str(),
+                                 buffer_size);
             }
         }
     }
@@ -1895,8 +1895,8 @@ bool CoreChecks::ValidateImageSampleCount(VkCommandBuffer cb, const IMAGE_STATE 
     if (image_state.createInfo.samples != sample_count) {
         const LogObjectList objlist(cb, image_state.Handle());
         skip = LogError(objlist, msgCode, "%s for %s was created with a sample count of %s but must be %s.", location,
-                        report_data->FormatHandle(image_state.Handle()).c_str(),
-                        string_VkSampleCountFlagBits(image_state.createInfo.samples), string_VkSampleCountFlagBits(sample_count));
+                        FormatHandle(image_state.Handle()).c_str(), string_VkSampleCountFlagBits(image_state.createInfo.samples),
+                        string_VkSampleCountFlagBits(sample_count));
     }
     return skip;
 }
@@ -2165,8 +2165,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                              "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
                              "which was created with queueFamilyIndex %" PRIu32
                              ", which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
-                             func_name, i, region_aspect_mask, report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
-                             report_data->FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
+                             func_name, i, region_aspect_mask, FormatHandle(cb_state.commandBuffer()).c_str(),
+                             FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
         }
     }
     return skip;
@@ -2780,7 +2780,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: srcImage (%s) is 1D but pRegions[%" PRIu32
                                      "] srcOffset.y (%d) is not 0 or "
                                      "extent.height (%" PRIu32 ") is not 1.",
-                                     func_name, report_data->FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.y,
+                                     func_name, FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.y,
                                      region.extent.height);
                 }
             }
@@ -2792,7 +2792,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: srcImage (%s) is 2D but pRegions[%" PRIu32
                                      "] srcOffset.z (%d) is not 0 or "
                                      "extent.depth (%" PRIu32 ") is not 1.",
-                                     func_name, report_data->FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.z,
+                                     func_name, FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.z,
                                      region.extent.depth);
                 }
             }
@@ -2805,7 +2805,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: dstImage (%s) is 1D but pRegions[%" PRIu32
                                      "] dstOffset.y (%d) is not 0 or "
                                      "extent.height (%" PRIu32 ") is not 1.",
-                                     func_name, report_data->FormatHandle(dst_image_state->image()).c_str(), i, region.dstOffset.y,
+                                     func_name, FormatHandle(dst_image_state->image()).c_str(), i, region.dstOffset.y,
                                      region.extent.height);
                 }
             }
@@ -2817,7 +2817,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: dstImage (%s) is 2D but pRegions[%" PRIu32
                                      "] dstOffset.z (%d) is not 0 or "
                                      "extent.depth (%" PRIu32 ") is not 1.",
-                                     func_name, report_data->FormatHandle(dst_image_state->image()).c_str(), i, region.dstOffset.z,
+                                     func_name, FormatHandle(dst_image_state->image()).c_str(), i, region.dstOffset.z,
                                      region.extent.depth);
                 }
             }
@@ -2835,7 +2835,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] x-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource width [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.x,
+                                     func_name, FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.x,
                                      region.extent.width, subresource_extent.width);
                 }
 
@@ -2846,7 +2846,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] y-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource height [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.y,
+                                     func_name, FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.y,
                                      region.extent.height, subresource_extent.height);
                 }
 
@@ -2857,7 +2857,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] z-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource depth [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.z,
+                                     func_name, FormatHandle(src_image_state->image()).c_str(), i, region.srcOffset.z,
                                      region.extent.depth, subresource_extent.depth);
                 }
             }
@@ -2875,7 +2875,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] x-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource width [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.x,
+                                     func_name, FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.x,
                                      region.extent.width, subresource_extent.width);
                 }
 
@@ -2886,7 +2886,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] y-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource height [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.y,
+                                     func_name, FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.y,
                                      region.extent.height, subresource_extent.height);
                 }
 
@@ -2897,7 +2897,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] z-dimension offset [%1d] + extent [%" PRIu32
                                      "] "
                                      "exceeds subResource depth [%" PRIu32 "].",
-                                     func_name, report_data->FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.z,
+                                     func_name, FormatHandle(dst_image_state->image()).c_str(), i, region.srcOffset.z,
                                      region.extent.depth, subresource_extent.depth);
                 }
             }

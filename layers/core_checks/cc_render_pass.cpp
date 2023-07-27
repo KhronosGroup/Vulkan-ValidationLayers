@@ -35,8 +35,8 @@ bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const REN
     return LogError(objlist, error_code,
                     "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
                     "compatible with %u: %s.",
-                    caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
-                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), primary_attach, secondary_attach, msg);
+                    caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
+                    FormatHandle(rp2_state.renderPass()).c_str(), primary_attach, secondary_attach, msg);
 }
 
 bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
@@ -266,8 +266,7 @@ bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_P
                                         const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
-                    report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
-                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), msg);
+                    FormatHandle(rp1_state.renderPass()).c_str(), type2_string, FormatHandle(rp2_state.renderPass()).c_str(), msg);
 }
 
 bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
@@ -275,8 +274,7 @@ bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const REN
                                              const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
-                    report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
-                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), msg);
+                    FormatHandle(rp1_state.renderPass()).c_str(), type2_string, FormatHandle(rp2_state.renderPass()).c_str(), msg);
 }
 
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
@@ -290,12 +288,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     // createInfo flags must be identical for the renderpasses to be compatible.
     if (rp1_state.createInfo.flags != rp2_state.createInfo.flags) {
         const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
-        skip |=
-            LogError(objlist, error_code,
-                     "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
-                     "%s with a flags of %u.",
-                     caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.flags,
-                     type2_string, report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.flags);
+        skip |= LogError(objlist, error_code,
+                         "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
+                         "%s with a flags of %u.",
+                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.flags,
+                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.flags);
     }
 
     if (rp1_state.createInfo.subpassCount != rp2_state.createInfo.subpassCount) {
@@ -303,9 +300,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a subpassCount of %u and %s w/ "
                          "%s with a subpassCount of %u.",
-                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
-                         rp1_state.createInfo.subpassCount, type2_string, report_data->FormatHandle(rp2_state.renderPass()).c_str(),
-                         rp2_state.createInfo.subpassCount);
+                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.subpassCount,
+                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.subpassCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.subpassCount; ++i) {
             skip |= ValidateSubpassCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
@@ -317,9 +313,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a dependencyCount of %" PRIu32
                          " and %s w/ %s with a dependencyCount of %" PRIu32 ".",
-                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
-                         rp1_state.createInfo.dependencyCount, type2_string,
-                         report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.dependencyCount);
+                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.dependencyCount,
+                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.dependencyCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.dependencyCount; ++i) {
             skip |= ValidateDependencyCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
@@ -330,9 +325,9 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a correlatedViewMaskCount of %" PRIu32
                          " and %s w/ %s with a correlatedViewMaskCount of %" PRIu32 ".",
-                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
-                         rp1_state.createInfo.correlatedViewMaskCount, type2_string,
-                         report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.correlatedViewMaskCount);
+                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(),
+                         rp1_state.createInfo.correlatedViewMaskCount, type2_string, FormatHandle(rp2_state.renderPass()).c_str(),
+                         rp2_state.createInfo.correlatedViewMaskCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.correlatedViewMaskCount; ++i) {
             if (rp1_state.createInfo.pCorrelatedViewMasks[i] != rp2_state.createInfo.pCorrelatedViewMasks[i]) {
@@ -340,10 +335,9 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
                 skip |= LogError(objlist, error_code,
                                  "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32
                                  "] of %" PRIu32 " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
-                                 caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), i,
+                                 caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), i,
                                  rp1_state.createInfo.pCorrelatedViewMasks[i], type2_string,
-                                 report_data->FormatHandle(rp2_state.renderPass()).c_str(), i,
-                                 rp1_state.createInfo.pCorrelatedViewMasks[i]);
+                                 FormatHandle(rp2_state.renderPass()).c_str(), i, rp1_state.createInfo.pCorrelatedViewMasks[i]);
             }
         }
     }
@@ -458,7 +452,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                              "attachment number so even if some pClearValues entries between 0 and %u correspond to attachments "
                              "that aren't cleared they will be ignored.",
                              function_name, pRenderPassBegin->clearValueCount, clear_op_size,
-                             report_data->FormatHandle(rp_state->renderPass()).c_str(), clear_op_size, clear_op_size - 1);
+                             FormatHandle(rp_state->renderPass()).c_str(), clear_op_size, clear_op_size - 1);
             }
             skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
             skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
@@ -3000,7 +2994,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
             if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06861",
                                  "%s(): imageView %s must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s", func_name,
-                                 report_data->FormatHandle(pAttachment->imageView).c_str(),
+                                 FormatHandle(pAttachment->imageView).c_str(),
                                  string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
             }
             if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
@@ -3010,7 +3004,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                                  "includes a VkMultisampledRenderToSingleSampledInfoEXT structure with the "
                                  "multisampledRenderToSingleSampledEnable field equal to VK_TRUE, and imageView has a sample "
                                  "count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE, but it is %s",
-                                 func_name, report_data->FormatHandle(pAttachment->resolveImageView).c_str());
+                                 func_name, FormatHandle(pAttachment->resolveImageView).c_str());
             }
         }
 
@@ -3698,7 +3692,7 @@ bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char *
     bool inside = false;
     if (cb_state.activeRenderPass) {
         inside = LogError(cb_state.commandBuffer(), msgCode, "%s: It is invalid to issue this call inside an active %s.", apiName,
-                          report_data->FormatHandle(cb_state.activeRenderPass->renderPass()).c_str());
+                          FormatHandle(cb_state.activeRenderPass->renderPass()).c_str());
     }
     return inside;
 }
@@ -3758,17 +3752,17 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                          "rasterizationSamples set to %s, but %s attachment's "
                          "imageView (%s) was created with %s, which is not VK_SAMPLE_COUNT_1_BIT",
                          func_name, string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), attachment_type,
-                         report_data->FormatHandle(image_view).c_str(), string_VkSampleCountFlagBits(image_view_state->samples));
+                         FormatHandle(image_view).c_str(), string_VkSampleCountFlagBits(image_view_state->samples));
         }
         IMAGE_STATE *image_state = image_view_state->image_state.get();
         if ((image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) &&
             !(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06859",
-                             "%s(): %s attachment %s was created with VK_SAMPLE_COUNT_1_BIT but "
-                             "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT was not set in "
-                             "pImageCreateInfo.flags when the image used to create the imageView (%s) was created",
-                             func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
-                             report_data->FormatHandle(image_state->image()).c_str());
+            skip |=
+                LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06859",
+                         "%s(): %s attachment %s was created with VK_SAMPLE_COUNT_1_BIT but "
+                         "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT was not set in "
+                         "pImageCreateInfo.flags when the image used to create the imageView (%s) was created",
+                         func_name, attachment_type, FormatHandle(image_view).c_str(), FormatHandle(image_state->image()).c_str());
         }
         if (!image_state->image_format_properties.sampleCounts) {
             if (GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880"))
@@ -3782,9 +3776,8 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                 "count %s from an image with imageType: %s, "
                 "tiling: %s, usage: %s, "
                 "flags: %s.",
-                func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
-                string_VkFormat(image_view_state->create_info.format), report_data->FormatHandle(image_state->Handle()).c_str(),
-                string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
+                func_name, attachment_type, FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
+                FormatHandle(image_state->Handle()).c_str(), string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
                 string_VkFormat(image_view_state->create_info.format),
                 string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
                 string_VkImageType(image_state->createInfo.imageType), string_VkImageTiling(image_state->createInfo.tiling),
@@ -3950,8 +3943,7 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                          ", is specified from with "
                                          "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) was created without "
                                          "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT in its createInfo.flags.",
-                                         subpass, attachments[attach].attachment,
-                                         report_data->FormatHandle(image_state->Handle()).c_str());
+                                         subpass, attachments[attach].attachment, FormatHandle(image_state->Handle()).c_str());
                     }
                     const VkImageCreateInfo image_create_info = image_state->createInfo;
                     if (!image_state->image_format_properties.sampleCounts) {
@@ -3959,20 +3951,20 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                                                        "VUID-VkFramebufferCreateInfo-samples-07009");
                     }
                     if (!(image_state->image_format_properties.sampleCounts & sample_count)) {
-                        skip |= LogError(
-                            device, "VUID-VkFramebufferCreateInfo-samples-07009",
-                            "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
-                            " enables "
-                            "multisampled-render-to-single-sampled and attachment %" PRIu32
-                            ", is specified from with "
-                            "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
-                            "tiling: %s, usage: %s, "
-                            "flags: %s does not support a rasterizationSamples count of %s",
-                            subpass, attachments[attach].attachment, report_data->FormatHandle(image_state->Handle()).c_str(),
-                            string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                            string_VkImageTiling(image_create_info.tiling),
-                            string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                            string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(sample_count));
+                        skip |= LogError(device, "VUID-VkFramebufferCreateInfo-samples-07009",
+                                         "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
+                                         " enables "
+                                         "multisampled-render-to-single-sampled and attachment %" PRIu32
+                                         ", is specified from with "
+                                         "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
+                                         "tiling: %s, usage: %s, "
+                                         "flags: %s does not support a rasterizationSamples count of %s",
+                                         subpass, attachments[attach].attachment, FormatHandle(image_state->Handle()).c_str(),
+                                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                                         string_VkImageTiling(image_create_info.tiling),
+                                         string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                                         string_VkImageCreateFlags(image_create_info.flags).c_str(),
+                                         string_VkSampleCountFlagBits(sample_count));
                     }
                 }
             }
@@ -4034,8 +4026,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
             skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-attachmentCount-00876",
                              "vkCreateFramebuffer(): VkFramebufferCreateInfo attachmentCount of %u does not match attachmentCount "
                              "of %u of %s being used to create Framebuffer.",
-                             pCreateInfo->attachmentCount, rpci->attachmentCount,
-                             report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                             pCreateInfo->attachmentCount, rpci->attachmentCount, FormatHandle(pCreateInfo->renderPass).c_str());
         } else {
             // attachmentCounts match, so make sure corresponding attachment details line up
             if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
@@ -4050,7 +4041,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                      "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has format of %s that does not "
                                      "match the format of %s used by the corresponding attachment for %s.",
                                      i, string_VkFormat(ivci.format), string_VkFormat(rpci->pAttachments[i].format),
-                                     report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                     FormatHandle(pCreateInfo->renderPass).c_str());
                     }
                     const auto &ici = view_state->image_state->createInfo;
                     if (ici.samples != rpci->pAttachments[i].samples) {
@@ -4060,7 +4051,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                          "samples used by the corresponding attachment for %s.",
                                          i, string_VkSampleCountFlagBits(ici.samples),
                                          string_VkSampleCountFlagBits(rpci->pAttachments[i].samples),
-                                         report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                         FormatHandle(pCreateInfo->renderPass).c_str());
                     }
 
                     // Verify that image memory is valid
@@ -4167,13 +4158,13 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
                                 int32_t layer_count = view_state->normalized_subresource_range.layerCount;
                                 if (b_has_non_zero_view_masks && layer_count != 1 && layer_count <= highest_view_bit) {
-                                    skip |= LogError(device, "VUID-VkFramebufferCreateInfo-renderPass-02746",
-                                                     "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
-                                                     " has a layer count (%" PRIi32
-                                                     ") different than 1 or lower than the most significant bit in viewMask (%i"
-                                                     ") but renderPass (%s) was specified with non-zero view masks\n",
-                                                     i, layer_count, highest_view_bit,
-                                                     report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                    skip |=
+                                        LogError(device, "VUID-VkFramebufferCreateInfo-renderPass-02746",
+                                                 "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
+                                                 " has a layer count (%" PRIi32
+                                                 ") different than 1 or lower than the most significant bit in viewMask (%i"
+                                                 ") but renderPass (%s) was specified with non-zero view masks\n",
+                                                 i, layer_count, highest_view_bit, FormatHandle(pCreateInfo->renderPass).c_str());
                                 }
 
                                 if (!b_has_non_zero_view_masks && layer_count != 1) {
@@ -4182,7 +4173,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                         "vkCreateFrameBuffer(): VkFramebufferCreateInfo attachment #%" PRIu32
                                         " had a layer count (%" PRIu32
                                         ") not equal to 1 but renderPass (%s) was not specified with non-zero view masks\n",
-                                        i, layer_count, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                        i, layer_count, FormatHandle(pCreateInfo->renderPass).c_str());
                                 }
                             }
                         }
@@ -4287,7 +4278,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                     "%s "
                                     "which was taken from image %s of type VK_IMAGE_TYPE_3D, but the image view format is a "
                                     "depth/stencil format %s",
-                                    i, string_VkImageViewType(ivci.viewType), report_data->FormatHandle(ivci.image).c_str(),
+                                    i, string_VkImageViewType(ivci.viewType), FormatHandle(ivci.image).c_str(),
                                     string_VkFormat(ivci.format));
                             }
                         }
@@ -4316,7 +4307,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                          "format %s used "
                                          "by the corresponding attachment for renderPass (%s).",
                                          i, string_VkFormat(rpci->pAttachments[i].format),
-                                         report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                         FormatHandle(pCreateInfo->renderPass).c_str());
                     }
 
                     bool used_as_input_color_resolve_depth_stencil_attachment = false;
@@ -4467,14 +4458,13 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                 int32_t layer_count =
                                     framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                 if (layer_count <= highest_view_bit) {
-                                    skip |=
-                                        LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                 "only specifies %" PRIi32
-                                                 " layers, but the view mask for subpass %u in renderPass (%s) "
-                                                 "includes layer %i, with that attachment specified as a color attachment %u.",
-                                                 attachment_index, layer_count, i,
-                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                    skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                     "only specifies %" PRIi32
+                                                     " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                     "includes layer %i, with that attachment specified as a color attachment %u.",
+                                                     attachment_index, layer_count, i,
+                                                     FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                 }
                             }
                             if (rpci->pSubpasses[i].pResolveAttachments) {
@@ -4489,8 +4479,8 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                             "only specifies %" PRIi32
                                             " layers, but the view mask for subpass %u in renderPass (%s) "
                                             "includes layer %i, with that attachment specified as a resolve attachment %u.",
-                                            attachment_index, layer_count, i,
-                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                            attachment_index, layer_count, i, FormatHandle(pCreateInfo->renderPass).c_str(),
+                                            highest_view_bit, j);
                                     }
                                 }
                             }
@@ -4502,14 +4492,13 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                 int32_t layer_count =
                                     framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                 if (layer_count <= highest_view_bit) {
-                                    skip |=
-                                        LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                 "only specifies %" PRIi32
-                                                 " layers, but the view mask for subpass %u in renderPass (%s) "
-                                                 "includes layer %i, with that attachment specified as an input attachment %u.",
-                                                 attachment_index, layer_count, i,
-                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                    skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                     "only specifies %" PRIi32
+                                                     " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                     "includes layer %i, with that attachment specified as an input attachment %u.",
+                                                     attachment_index, layer_count, i,
+                                                     FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                 }
                             }
                         }
@@ -4526,8 +4515,8 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                                  "only specifies %" PRIi32
                                                  " layers, but the view mask for subpass %u in renderPass (%s) "
                                                  "includes layer %i, with that attachment specified as a depth/stencil attachment.",
-                                                 attachment_index, layer_count, i,
-                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
+                                                 attachment_index, layer_count, i, FormatHandle(pCreateInfo->renderPass).c_str(),
+                                                 highest_view_bit);
                                 }
                             }
 
@@ -4546,7 +4535,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                                      "includes layer %i, with that attachment specified as a depth/stencil resolve "
                                                      "attachment.",
                                                      attachment_index, layer_count, i,
-                                                     report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
+                                                     FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
                                     }
                                 }
                             }
@@ -4610,7 +4599,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                 skip |= LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-02531",
                                  "vkCreateFramebuffer(): VkFramebufferCreateInfo has #%u layers but "
                                  "renderPass (%s) was specified with non-zero view masks\n",
-                                 pCreateInfo->layers, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                 pCreateInfo->layers, FormatHandle(pCreateInfo->renderPass).c_str());
             }
         }
     }
@@ -4677,15 +4666,15 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffe
             skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099",
                              "vkCmdExecuteCommands() called w/ invalid secondary %s which has a %s"
                              " that is not the same as the primary command buffer's current active %s.",
-                             report_data->FormatHandle(secondaryBuffer).c_str(), report_data->FormatHandle(secondary_fb).c_str(),
-                             report_data->FormatHandle(primary_fb).c_str());
+                             FormatHandle(secondaryBuffer).c_str(), FormatHandle(secondary_fb).c_str(),
+                             FormatHandle(primary_fb).c_str());
         }
         auto fb = Get<FRAMEBUFFER_STATE>(secondary_fb);
         if (!fb) {
             const LogObjectList objlist(primaryBuffer, secondaryBuffer, secondary_fb);
             skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                              "vkCmdExecuteCommands() called w/ invalid %s which has invalid %s.",
-                             report_data->FormatHandle(secondaryBuffer).c_str(), report_data->FormatHandle(secondary_fb).c_str());
+                             FormatHandle(secondaryBuffer).c_str(), FormatHandle(secondary_fb).c_str());
             return skip;
         }
     }

@@ -686,16 +686,16 @@ void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginI
                         if (!dev_state.IsSlotActive(slot.index)) {
                             skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239",
                                                        "DPB slot index %d is not active in %s", slot.index,
-                                                       dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                                                       dev_data->FormatHandle(vs_state->Handle()).c_str());
                         } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
-                            skip |= dev_data->LogError(
-                                vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265",
-                                "DPB slot index %d of %s is not currently associated with the specified "
-                                "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
-                                slot.index, dev_data->report_data->FormatHandle(vs_state->Handle()).c_str(),
-                                dev_data->report_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
-                                slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x, slot.resource.coded_offset.y,
-                                slot.resource.coded_extent.width, slot.resource.coded_extent.height);
+                            skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265",
+                                                       "DPB slot index %d of %s is not currently associated with the specified "
+                                                       "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
+                                                       slot.index, dev_data->FormatHandle(vs_state->Handle()).c_str(),
+                                                       dev_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                                                       slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x,
+                                                       slot.resource.coded_offset.y, slot.resource.coded_extent.width,
+                                                       slot.resource.coded_extent.height);
                         }
                     }
                 }
@@ -741,7 +741,7 @@ void CMD_BUFFER_STATE::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pCo
                     if (!reset_session && !dev_state.IsInitialized()) {
                         skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdControlVideoCodingKHR-flags-07017",
                                                    "Bound video session %s is uninitialized",
-                                                   dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                                                   dev_data->FormatHandle(vs_state->Handle()).c_str());
                     }
                 }
 
@@ -786,19 +786,19 @@ void CMD_BUFFER_STATE::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
                 if (do_validate) {
                     if (!dev_state.IsInitialized()) {
                         skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdDecodeVideoKHR-None-07011", "%s is uninitialized",
-                                                   dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                                                   dev_data->FormatHandle(vs_state->Handle()).c_str());
                     }
 
                     const auto log_picture_kind_error = [&](const VideoReferenceSlot &slot, const char *vuid,
                                                             const char *picture_kind) -> bool {
-                        return dev_data->LogError(
-                            vs_state->Handle(), vuid,
-                            "DPB slot index %d of %s does not currently contain a %s with the specified "
-                            "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
-                            slot.index, dev_data->report_data->FormatHandle(vs_state->Handle()).c_str(), picture_kind,
-                            dev_data->report_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
-                            slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x, slot.resource.coded_offset.y,
-                            slot.resource.coded_extent.width, slot.resource.coded_extent.height);
+                        return dev_data->LogError(vs_state->Handle(), vuid,
+                                                  "DPB slot index %d of %s does not currently contain a %s with the specified "
+                                                  "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
+                                                  slot.index, dev_data->FormatHandle(vs_state->Handle()).c_str(), picture_kind,
+                                                  dev_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                                                  slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x,
+                                                  slot.resource.coded_offset.y, slot.resource.coded_extent.width,
+                                                  slot.resource.coded_extent.height);
                     };
 
                     for (const auto &slot : reference_slots) {

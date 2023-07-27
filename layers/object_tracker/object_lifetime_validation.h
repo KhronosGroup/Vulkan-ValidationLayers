@@ -149,8 +149,8 @@ class ObjectLifetimes : public ValidationObject {
                                             objlist, wrong_device_code,
                                             "%s(): Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
                                             ") was created, allocated or retrieved from %s.",
-                                            api_name, report_data->FormatHandle(device).c_str(), object_string[object_type],
-                                            object_handle, report_data->FormatHandle(layer_object_data->device).c_str());
+                                            api_name, FormatHandle(device).c_str(), object_string[object_type], object_handle,
+                                            FormatHandle(layer_object_data->device).c_str());
 
                                     } else {
                                         return false;

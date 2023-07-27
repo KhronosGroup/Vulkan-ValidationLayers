@@ -138,7 +138,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
         const auto& obj = item.first;
         const LogObjectList objlist(device, obj, mem_info->mem());
         skip |= LogWarning(objlist, layer_name.c_str(), "VK Object %s still has a reference to mem obj %s.",
-                           report_data->FormatHandle(obj).c_str(), report_data->FormatHandle(mem_info->mem()).c_str());
+                           FormatHandle(obj).c_str(), FormatHandle(mem_info->mem()).c_str());
     }
 
     return skip;
@@ -156,7 +156,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller buffers like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      api_name, report_data->FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize,
+                                      api_name, FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -213,7 +213,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller images like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      api_name, report_data->FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize,
+                                      api_name, FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 

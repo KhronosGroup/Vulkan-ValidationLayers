@@ -73,7 +73,7 @@ bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(
                 device, kVUID_BestPractices_BindAccelNV_NoMemReqQuery,
                 "vkBindAccelerationStructureMemoryNV(): "
                 "Binding memory to %s but vkGetAccelerationStructureMemoryRequirementsNV() has not been called on that structure.",
-                report_data->FormatHandle(pBindInfos[i].accelerationStructure).c_str());
+                FormatHandle(pBindInfos[i].accelerationStructure).c_str());
         }
     }
 

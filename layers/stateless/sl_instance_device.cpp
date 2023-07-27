@@ -415,7 +415,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     if (portability_supported && !portability_requested) {
         skip |= LogError(physicalDevice, "VUID-VkDeviceCreateInfo-pProperties-04451",
                          "vkCreateDevice: VK_KHR_portability_subset must be enabled because physical device %s supports it",
-                         report_data->FormatHandle(physicalDevice).c_str());
+                         FormatHandle(physicalDevice).c_str());
     }
 
     {

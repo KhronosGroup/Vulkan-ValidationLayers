@@ -446,7 +446,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                     skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                        "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
-                                       report_data->FormatHandle(image_state->image()).c_str());
+                                       FormatHandle(image_state->image()).c_str());
                 }
             }
             if (!image_state->memory_requirements_checked[0]) {
@@ -454,7 +454,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                 skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
-                                   report_data->FormatHandle(image_state->image()).c_str());
+                                   FormatHandle(image_state->image()).c_str());
             }
         }
         for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
@@ -470,7 +470,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                     skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                        "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
-                                       report_data->FormatHandle(image_state->image()).c_str());
+                                       FormatHandle(image_state->image()).c_str());
                 }
             }
             if (!image_state->memory_requirements_checked[0]) {
@@ -478,7 +478,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                 skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
-                                   report_data->FormatHandle(image_state->image()).c_str());
+                                   FormatHandle(image_state->image()).c_str());
             }
             for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
@@ -493,7 +493,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                 skip |= LogWarning(sparse_image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to %s which requires a metadata aspect but no "
                                    "binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
-                                   report_data->FormatHandle(sparse_image_state->image()).c_str());
+                                   FormatHandle(sparse_image_state->image()).c_str());
             }
         }
     }
@@ -504,7 +504,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             skip |= LogPerformanceWarning(queue, kVUID_BestPractices_QueueBindSparse_NotAsync,
                                           "vkQueueBindSparse() issued on queue %s. All binds should happen on an asynchronous copy "
                                           "queue to hide the OS scheduling and submit costs.",
-                                          report_data->FormatHandle(queue).c_str());
+                                          FormatHandle(queue).c_str());
         }
     }
 
