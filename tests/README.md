@@ -65,7 +65,7 @@ cd build-android
 # Optional
 adb uninstall com.example.VulkanLayerValidationTests
 
-adb install  -r -g --no-incremental bin/VulkanLayerValidationTests.apk
+adb install -r -g --no-incremental bin/VulkanLayerValidationTests.apk
 
 # Runs all test (And print the VUIDs)
 adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.VulkanLayerValidationTests/android.app.NativeActivity --es args --print-vu
