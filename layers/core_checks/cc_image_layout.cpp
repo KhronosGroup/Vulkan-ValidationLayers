@@ -1114,3 +1114,50 @@ template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uin
                                                  const VkImageMemoryBarrier *barrier);
 template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                  const VkImageMemoryBarrier2KHR *barrier);
+
+bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLayout expected_layout,
+                                               const VkImageSubresourceLayers &subres_layers, uint32_t region_index,
+                                               const IMAGE_STATE &image_state, const char *func_name, const char *image_label,
+                                               const char *field_name, const char *vuid) const {
+    using Map = GlobalImageLayoutRangeMap;
+    bool skip = false;
+    const VkImageSubresourceRange subres_range = image_state.NormalizeSubresourceRange(RangeFromLayers(subres_layers));
+
+    Map::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
+
+    struct CheckState {
+        const VkImageLayout expected_layout;
+        VkImageAspectFlags aspect_mask;
+        Map::key_type found_range;
+        VkImageLayout found_layout;
+        CheckState(VkImageLayout expected_layout_, VkImageAspectFlags aspect_mask_)
+            : expected_layout(expected_layout_),
+              aspect_mask(aspect_mask_),
+              found_range({0, 0}),
+              found_layout(VK_IMAGE_LAYOUT_MAX_ENUM) {}
+    };
+
+    CheckState check_state(expected_layout, subres_range.aspectMask);
+    image_state.layout_range_map->AnyInRange(range_gen, [&check_state](const Map::key_type &range, const VkImageLayout &layout) {
+        bool mismatch = false;
+        if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
+            check_state.found_range = range;
+            check_state.found_layout = layout;
+            mismatch = true;
+        }
+        return mismatch;
+    });
+
+    if (check_state.found_range.non_empty()) {
+        const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
+        LogObjectList objlist(device, image_state.image());
+        skip |=
+            LogError(objlist, vuid,
+                     "%s: Incorrect image layout for %s %s. Expected %s=%s. Current layout is %s for subresource in region %" PRIu32
+                     " (aspectMask=%s, mipLevel=%" PRIu32 ", arrayLayer=%" PRIu32 ")",
+                     func_name, image_label, report_data->FormatHandle(image_state.Handle()).c_str(), field_name,
+                     string_VkImageLayout(expected_layout), string_VkImageLayout(check_state.found_layout), region_index,
+                     string_VkImageAspectFlags(subres.aspectMask).c_str(), subres.mipLevel, subres.arrayLayer);
+    }
+    return skip;
+}

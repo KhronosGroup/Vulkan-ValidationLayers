@@ -3035,7 +3035,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     bool has_stencil = false;
     bool has_non_stencil = false;
     for (uint32_t i = 0; i < regionCount; i++) {
-        const auto region = info_ptr->pRegions[i];
+        const auto &region = info_ptr->pRegions[i];
         if (check_memcpy) {
             skip |= ValidateMemcpyExtents(device, region, i, *src_image_state, true);
             skip |= ValidateMemcpyExtents(device, region, i, *dst_image_state, false);
@@ -3051,6 +3051,13 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
         if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             has_non_stencil = true;
         }
+
+        skip |=
+            ValidateHostCopyCurrentLayout(device, info_ptr->srcImageLayout, region.srcSubresource, i, *src_image_state, func_name,
+                                          "source", "srcImageLayout", "VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09070");
+        skip |=
+            ValidateHostCopyCurrentLayout(device, info_ptr->dstImageLayout, region.dstSubresource, i, *dst_image_state, func_name,
+                                          "destination", "dstImageLayout", "VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09071");
     }
 
     skip |= UsageHostTransferCheck(device, *src_image_state, has_stencil, has_non_stencil,
