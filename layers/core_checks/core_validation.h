@@ -982,6 +982,9 @@ class CoreChecks : public ValidationStateTracker {
                                  const char* func_name, const char* field_name, const char* supported_name, const char* vuid) const;
     bool ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
                                bool is_src) const;
+    bool ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLayout layout, const VkImageSubresourceLayers& subres_layers,
+                                       uint32_t i, const IMAGE_STATE& image_state, const char* func_name, const char* image_label,
+                                       const char* field_name, const char* vuid) const;
     bool ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
                                     bool is_src) const;
     bool ValidateBufferViewRange(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
