@@ -7,9 +7,6 @@ The main difference is instead of the loader, it's Java.
 - https://github.com/android/ndk-samples/blob/main/camera/basic/src/main/cpp/CMakeLists.txt <- In this example the symbol exported is `ANativeActivity_onCreate`
 - https://github.com/android/ndk-samples/blob/main/hello-vulkan/app/src/main/cpp/CMakeLists.txt <- In this example the symbol exported is `Java_com_google_androidgamesdk_GameActivity_initializeNativeCode`
 
-NOTE: In the NDK examples they use `add_library(foobar SHARED)`. They should be `MODULE`s however. EX: `add_library(foobar MODULE)`. Since the libraries aren't intended to be linked against.
-They are intended to be loaded as plugins by the java runtime.
-
 ## (WSI) ANativeActivity_onCreate
 
 As was mentioned before, exporting a symbol in your shared library that gets loaded by Java is the idiom for running native code on Android.
@@ -17,9 +14,6 @@ As was mentioned before, exporting a symbol in your shared library that gets loa
 In our case `ANativeActivity_onCreate` is the symbol we export for our tests.
 
 `ANativeActivity_onCreate` is defined by `android_native_app_glue.c`
-
-Note: At one point it was neccessary to force export this symbol due to an NDK bug.
-https://github.com/android-ndk/ndk/issues/381
 
 For WSI, we need to call `vkCreateAndroidSurfaceKHR` which takes a `ANativeWindow` handle
 
@@ -39,20 +33,16 @@ https://github.com/sjfricke/Vulkan-NDK-Template/blob/master/app/src/main/cpp/And
 
 3. For `APP_CMD_INIT_WINDOW` we can go `android_app->window` to get the `ANativeWindow` handle
 
-Android can have many apps running, but only the ones in the foreground on the device get access to the `ANativeWindow` as that is what decides what is being displayed by SurfaceFlinger (in the AOSP).
+## Why can't we just run an executable?
 
-When doing a command line executable, we have no proper way to get that handle, and therefore can't create a `VkSurface`.
-
-## Running executables on Android
-
-You can run executables on Android: https://github.com/android/ndk/discussions/1726
+You can run technically run executables on Android: https://github.com/android/ndk/discussions/1726
 
 Here is an example of using adb with the android emulator: https://github.com/microsoft/GSL/blob/main/.github/workflows/android.yml
 
-Furthermore it seems possible to run ctest on Android as well:
-- https://github.com/openxla/iree/pull/9372/files
-- https://gitlab.xiph.org/xiph/opus/-/merge_requests/28/diffs
+However, WSI functionality for Android requires running the tests as an APK. So we need to build our tests as a library instead of an executable.
 
-However, WSI functionality for Android requires running the tests as an APK. So we need to build our tests as a `MODULE` library.
+Android can have many apps running, but only the ones in the foreground on the device get access to the `ANativeWindow` as that is what decides what is being displayed by SurfaceFlinger (in the AOSP).
+
+When doing a command line executable, we have no proper way to get that handle, and therefore can't create a `VkSurface`.
 
 We could potentially build both a regular executable / APK in the future if there is enough benefit.
