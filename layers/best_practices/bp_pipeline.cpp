@@ -638,7 +638,7 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
                 device, kVUID_BestPractices_Pipeline_SortAndBind,
                 "%s %s Performance warning: Pipeline %s was bound twice in the frame. "
                 "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
-                VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), report_data->FormatHandle(pipeline).c_str());
+                VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(pipeline).c_str());
         }
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {

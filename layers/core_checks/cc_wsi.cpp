@@ -805,7 +805,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
                              "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY", i,
-                             report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
+                             FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
             continue;
         }
         skip |=
@@ -1090,7 +1090,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
     if (semaphore_state) {
         if (semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(semaphore, semaphore_type_vuid, "%s: %s is not a VK_SEMAPHORE_TYPE_BINARY", func_name,
-                             report_data->FormatHandle(semaphore).c_str());
+                             FormatHandle(semaphore).c_str());
         } else if (semaphore_state->Scope() == kSyncScopeInternal) {
             // TODO: VUIDs 01779 and 01781 cover the case where there are pending wait or signal operations on the
             // semaphore. But we don't currently have a good enough way to track when acquire & present operations
@@ -1375,8 +1375,7 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
     if (swapchain_state) {
         if (swapchain_state->retired) {
             skip |= LogError(device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674",
-                             "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s is retired.",
-                             report_data->FormatHandle(swapchain).c_str());
+                             "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s is retired.", FormatHandle(swapchain).c_str());
         }
         const auto *surface_full_screen_exclusive_info =
             LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
@@ -1386,12 +1385,12 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
                 device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675",
                 "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s was not created with VkSurfaceFullScreenExclusiveInfoEXT in "
                 "the pNext chain with fullScreenExclusive equal to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT.",
-                report_data->FormatHandle(swapchain).c_str());
+                FormatHandle(swapchain).c_str());
         }
         if (swapchain_state->exclusive_full_screen_access) {
             skip |= LogError(device, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676",
                              "vkAcquireFullScreenExclusiveModeEXT(): swapchain %s already has exclusive full-screen access.",
-                             report_data->FormatHandle(swapchain).c_str());
+                             FormatHandle(swapchain).c_str());
         }
     }
 
@@ -1405,8 +1404,7 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
     if (swapchain_state) {
         if (swapchain_state->retired) {
             skip |= LogError(device, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677",
-                             "vkReleaseFullScreenExclusiveModeEXT(): swapchain %s is retired.",
-                             report_data->FormatHandle(swapchain).c_str());
+                             "vkReleaseFullScreenExclusiveModeEXT(): swapchain %s is retired.", FormatHandle(swapchain).c_str());
         }
         const auto *surface_full_screen_exclusive_info =
             LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
@@ -1416,7 +1414,7 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
                 device, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678",
                 "vkReleaseFullScreenExclusiveModeEXT(): swapchain %s was not created with VkSurfaceFullScreenExclusiveInfoEXT in "
                 "the pNext chain with fullScreenExclusive equal to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT.",
-                report_data->FormatHandle(swapchain).c_str());
+                FormatHandle(swapchain).c_str());
         }
     }
 

@@ -121,7 +121,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                                  "vkCmdBindShadersEXT(): pStages[%" PRIu32
                                  "] is VK_SHADER_STAGE_COMPUTE_BIT, but the command pool the command buffer %s was allocated from "
                                  "does not support compute operations (%s).",
-                                 i, report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                 i, FormatHandle(cb_state->commandBuffer()).c_str(),
                                  string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
             }
         }
@@ -129,24 +129,22 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) >
             0) {
             if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-                skip |=
-                    LogError(device, "VUID-vkCmdBindShadersEXT-pShaders-08477",
-                             "vkCmdBindShadersEXT(): pStages[%" PRIu32
-                             "] is %s, but the command pool the command buffer %s was allocated from "
-                             "does not support graphics operations (%s).",
-                             i, string_VkShaderStageFlagBits(stage), report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                             string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                skip |= LogError(device, "VUID-vkCmdBindShadersEXT-pShaders-08477",
+                                 "vkCmdBindShadersEXT(): pStages[%" PRIu32
+                                 "] is %s, but the command pool the command buffer %s was allocated from "
+                                 "does not support graphics operations (%s).",
+                                 i, string_VkShaderStageFlagBits(stage), FormatHandle(cb_state->commandBuffer()).c_str(),
+                                 string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
             }
         }
         if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) > 0) {
             if ((cb_state->command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
                 skip |= LogError(device, "VUID-vkCmdBindShadersEXT-pShaders-08478",
-                                    "vkCmdBindShadersEXT(): pStages[%" PRIu32
-                                    "] is %s, but the command pool the command buffer %s was allocated from "
-                                    "does not support graphics operations (%s).",
-                                    i, string_VkShaderStageFlagBits(stage),
-                                    report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                                    string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+                                 "vkCmdBindShadersEXT(): pStages[%" PRIu32
+                                 "] is %s, but the command pool the command buffer %s was allocated from "
+                                 "does not support graphics operations (%s).",
+                                 i, string_VkShaderStageFlagBits(stage), FormatHandle(cb_state->commandBuffer()).c_str(),
+                                 string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
             }
         }
         if (stage == VK_SHADER_STAGE_TASK_BIT_EXT && enabled_features.mesh_shader_features.taskShader == VK_FALSE &&

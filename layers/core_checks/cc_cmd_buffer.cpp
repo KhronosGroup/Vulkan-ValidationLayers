@@ -44,8 +44,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, co
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.commandBuffer());
         skip |= LogError(objlist, vuid, "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
-                         report_data->FormatHandle(cb_state.commandBuffer()).c_str(), report_data->FormatHandle(obj).c_str(),
-                         cause_str);
+                         FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(obj).c_str(), cause_str);
     }
     return skip;
 }
@@ -58,7 +57,7 @@ bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_state, co
     bool skip = false;
     if (cb_state->InUse()) {
         skip |= LogError(cb_state->commandBuffer(), error_code, "Attempt to %s %s which is in use.", action,
-                         report_data->FormatHandle(cb_state->commandBuffer()).c_str());
+                         FormatHandle(cb_state->commandBuffer()).c_str());
     }
     return skip;
 }
@@ -95,7 +94,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                          "vkBeginCommandBuffer() on active %s before it has completed. You must check "
                          "command buffer fence before this call.",
-                         report_data->FormatHandle(commandBuffer).c_str());
+                         FormatHandle(commandBuffer).c_str());
     }
     if (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         // Primary Command Buffer
@@ -105,15 +104,15 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-02840",
                              "vkBeginCommandBuffer(): Primary %s can't have both VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT and "
                              "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                             report_data->FormatHandle(commandBuffer).c_str());
+                             FormatHandle(commandBuffer).c_str());
         }
     } else {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
         if (!info) {
-            skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00051",
-                             "vkBeginCommandBuffer(): Secondary %s must have inheritance info.",
-                             report_data->FormatHandle(commandBuffer).c_str());
+            skip |=
+                LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00051",
+                         "vkBeginCommandBuffer(): Secondary %s must have inheritance info.", FormatHandle(commandBuffer).c_str());
         } else {
             auto p_inherited_rendering_info = LvlFindInChain<VkCommandBufferInheritanceRenderingInfoKHR>(info->pNext);
 
@@ -259,7 +258,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00052",
                                  "vkBeginCommandBuffer(): Secondary %s must not have VK_QUERY_CONTROL_PRECISE_BIT if "
                                  "occulusionQuery is disabled or the device does not support precise occlusion queries.",
-                                 report_data->FormatHandle(commandBuffer).c_str());
+                                 FormatHandle(commandBuffer).c_str());
             }
             auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
@@ -271,7 +270,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04786",
                                      "vkBeginCommandBuffer(): Secondary %s must be recorded with the"
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT if viewportScissor2D is VK_TRUE.",
-                                     report_data->FormatHandle(commandBuffer).c_str());
+                                     FormatHandle(commandBuffer).c_str());
                 }
                 if (p_inherited_viewport_scissor_info->viewportDepthCount == 0) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784",
@@ -292,7 +291,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                                  "vkBeginCommandBuffer(): Secondary %s has a subpass index (%" PRIu32
                                                  ") that is "
                                                  "superior or equal to the number of subpasses (%" PRIu32 ").",
-                                                 report_data->FormatHandle(commandBuffer).c_str(), info->subpass,
+                                                 FormatHandle(commandBuffer).c_str(), info->subpass,
                                                  render_pass->createInfo.subpassCount);
                             }
                         }
@@ -309,7 +308,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                          "vkBeginCommandBuffer(): Cannot call Begin on %s in the RECORDING state. Must first call "
                          "vkEndCommandBuffer().",
-                         report_data->FormatHandle(commandBuffer).c_str());
+                         FormatHandle(commandBuffer).c_str());
     } else if (CbState::Recorded == cb_state->state || CbState::InvalidComplete == cb_state->state) {
         VkCommandPool cmd_pool = cb_state->createInfo.commandPool;
         const auto *pool = cb_state->command_pool;
@@ -318,7 +317,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             skip |= LogError(objlist, "VUID-vkBeginCommandBuffer-commandBuffer-00050",
                              "Call to vkBeginCommandBuffer() on %s attempts to implicitly reset cmdBuffer created from "
                              "%s that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
-                             report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmd_pool).c_str());
+                             FormatHandle(commandBuffer).c_str(), FormatHandle(cmd_pool).c_str());
         }
     }
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
@@ -352,13 +351,13 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
         skip |= LogError(
             commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00059",
             "vkEndCommandBuffer(): Cannot call End on %s when not in the RECORDING state. Must first call vkBeginCommandBuffer().",
-            report_data->FormatHandle(commandBuffer).c_str());
+            FormatHandle(commandBuffer).c_str());
     }
 
     for (const auto &query_obj : cb_state.activeQueries) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00061",
                          "vkEndCommandBuffer(): Ending command buffer with in progress query: %s, query %d.",
-                         report_data->FormatHandle(query_obj.pool).c_str(), query_obj.slot);
+                         FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
     if (cb_state.conditional_rendering_active) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-None-01978",
@@ -382,7 +381,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
         skip |= LogError(objlist, "VUID-vkResetCommandBuffer-commandBuffer-00046",
                          "vkResetCommandBuffer(): Attempt to reset %s created from %s that does NOT have the "
                          "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
-                         report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmd_pool).c_str());
+                         FormatHandle(commandBuffer).c_str(), FormatHandle(cmd_pool).c_str());
     }
     skip |= CheckCommandBufferInFlight(cb_state.get(), "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
 
@@ -508,8 +507,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                             objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                             ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
-                            report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
-                            report_data->FormatHandle(query_object.pool).c_str());
+                            FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(query_object.pool).c_str());
                     }
                 }
                 active_types.insert(query_pool_state->createInfo.queryType);
@@ -522,9 +520,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                 skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                                  "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                                  " of type %d but a query of that type has been started on secondary %s.",
-                                 report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
-                                 report_data->FormatHandle(query_object.pool).c_str(), query_pool_state->createInfo.queryType,
-                                 report_data->FormatHandle(sub_cb_state.commandBuffer()).c_str());
+                                 FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(query_object.pool).c_str(),
+                                 query_pool_state->createInfo.queryType, FormatHandle(sub_cb_state.commandBuffer()).c_str());
             }
         }
     }
@@ -535,8 +532,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
         skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094",
                          "vkCmdExecuteCommands(): Primary %s created in queue family %d has secondary "
                          "%s created in queue family %d.",
-                         report_data->FormatHandle(cb_state.commandBuffer()).c_str(), primary_pool->queueFamilyIndex,
-                         report_data->FormatHandle(sub_cb_state.commandBuffer()).c_str(), secondary_pool->queueFamilyIndex);
+                         FormatHandle(cb_state.commandBuffer()).c_str(), primary_pool->queueFamilyIndex,
+                         FormatHandle(sub_cb_state.commandBuffer()).c_str(), secondary_pool->queueFamilyIndex);
     }
 
     return skip;
@@ -657,17 +654,17 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 assert(inherited_viewport != nullptr && expected_viewport_depth != nullptr);
                 if (inherited_viewport->minDepth != expected_viewport_depth->minDepth ||
                     inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
-                    return validation_.LogError(
-                        primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
-                        "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%" PRIu32
-                        "] (%s) consume inherited viewport %" PRIu32
-                        " %s"
-                        "but this state was not inherited as its depth range [%f, %f] does not match "
-                        "pViewportDepths[%" PRIu32 "] = [%f, %f]",
-                        unsigned(cmd_buffer_idx), validation_.report_data->FormatHandle(secondary_state->commandBuffer()).c_str(),
-                        unsigned(index), index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
-                        inherited_viewport->maxDepth, unsigned(cmd_buffer_idx), expected_viewport_depth->minDepth,
-                        expected_viewport_depth->maxDepth);
+                    return validation_.LogError(primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
+                                                "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%" PRIu32
+                                                "] (%s) consume inherited viewport %" PRIu32
+                                                " %s"
+                                                "but this state was not inherited as its depth range [%f, %f] does not match "
+                                                "pViewportDepths[%" PRIu32 "] = [%f, %f]",
+                                                unsigned(cmd_buffer_idx),
+                                                validation_.FormatHandle(secondary_state->commandBuffer()).c_str(), unsigned(index),
+                                                index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
+                                                inherited_viewport->maxDepth, unsigned(cmd_buffer_idx),
+                                                expected_viewport_depth->minDepth, expected_viewport_depth->maxDepth);
                     // akeley98 note: This VUID is not ideal; however, there isn't a more relevant VUID as
                     // it isn't illegal in itself to have mismatched inherited viewport depths.
                     // The error only occurs upon attempting to consume the viewport.
@@ -702,8 +699,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
 
             std::stringstream ss;
             ss << "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[" << cmd_buffer_idx << "] ("
-               << validation_.report_data->FormatHandle(secondary_state->commandBuffer()).c_str() << ") consume inherited "
-               << state_name << " ";
+               << validation_.FormatHandle(secondary_state->commandBuffer()).c_str() << ") consume inherited " << state_name << " ";
             if (format_index) {
                 if (index >= static_use_count) {
                     ss << "(with count) ";
@@ -755,7 +751,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 "Draw commands in pCommandBuffers[%" PRIu32
                 "] (%s) consume inherited dynamic viewport with count state "
                 "but the dynamic viewport count (%" PRIu32 ") exceeds the inheritance limit (viewportDepthCount=%" PRIu32 ").",
-                unsigned(cmd_buffer_idx), validation_.report_data->FormatHandle(secondary_state->commandBuffer()).c_str(),
+                unsigned(cmd_buffer_idx), validation_.FormatHandle(secondary_state->commandBuffer()).c_str(),
                 unsigned(viewport_count_to_inherit_), unsigned(secondary_state->inheritedViewportDepths.size()));
         }
 
@@ -841,7 +837,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "instance scope, but the Secondary Command Buffer does have the "
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
                                      "the vkBeginCommandBuffer() was called.",
-                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                     i, FormatHandle(pCommandBuffers[i]).c_str());
                 }
             } else if (sub_cb_state->beginInfo.pInheritanceInfo != nullptr) {
                 const uint32_t inheritance_subpass = sub_cb_state->beginInfo.pInheritanceInfo->subpass;
@@ -855,8 +851,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "instance scope, but the Secondary Command Buffer does not have the "
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
                                      "the vkBeginCommandBuffer() was called.",
-                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                     report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                     i, FormatHandle(pCommandBuffers[i]).c_str(),
+                                     FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
                 } else if (sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
                         // Make sure render pass is compatible with parent command buffer pass if secondary command buffer has
@@ -886,9 +882,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "VkCommandBufferInheritanceInfo::subpass (%" PRIu32
                                      ") does not "
                                      "match the current subpass (%" PRIu32 ").",
-                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                     report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                     inheritance_subpass, cb_state->GetActiveSubpass());
+                                     i, FormatHandle(pCommandBuffers[i]).c_str(),
+                                     FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), inheritance_subpass,
+                                     cb_state->GetActiveSubpass());
                 } else if (cb_state->activeRenderPass->UsesDynamicRendering()) {
                     if (inheritance_render_pass != VK_NULL_HANDLE) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state->activeRenderPass->renderPass());
@@ -897,7 +893,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                          "] %s is executed within a dynamic renderpass instance scope begun "
                                          "by vkCmdBeginRendering(), but "
                                          "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
-                                         i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                         i, FormatHandle(pCommandBuffers[i]).c_str());
                     }
 
                     if (sub_cb_state->activeRenderPass->use_dynamic_rendering_inherited) {
@@ -916,7 +912,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                          "not match VkRenderingInfo::flags (%" PRIu32
                                          "), excluding "
                                          "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
-                                         i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), inheritance_rendering_info.flags,
+                                         i, FormatHandle(pCommandBuffers[i]).c_str(), inheritance_rendering_info.flags,
                                          rendering_info.flags);
                         }
 
@@ -930,7 +926,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
                                              ") does "
                                              "not match VkRenderingInfo::colorAttachmentCount (%" PRIu32 ").",
-                                             i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                             i, FormatHandle(pCommandBuffers[i]).c_str(),
                                              inheritance_rendering_info.colorAttachmentCount, rendering_info.colorAttachmentCount);
                         }
 
@@ -949,7 +945,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "].imageView is VK_NULL_HANDLE but "
                                                      "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
                                                      "] is %s.",
-                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), color_i, color_i,
+                                                     i, FormatHandle(pCommandBuffers[i]).c_str(), color_i, color_i,
                                                      string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
                                 }
                             } else {
@@ -967,7 +963,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "].imageView format is %s but "
                                                      "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
                                                      "] is %s.",
-                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), color_i,
+                                                     i, FormatHandle(pCommandBuffers[i]).c_str(), color_i,
                                                      string_VkFormat(image_view_state->create_info.format), color_i,
                                                      string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
                                 }
@@ -988,7 +984,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                  "by vkCmdBeginRendering(), but "
                                                  "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat does "
                                                  "not match the format of the imageView in VkRenderingInfo::pDepthAttachment.",
-                                                 i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                                 i, FormatHandle(pCommandBuffers[i]).c_str());
                             }
                         }
 
@@ -1006,7 +1002,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                  "by vkCmdBeginRendering(), but "
                                                  "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat does "
                                                  "not match the format of the imageView in VkRenderingInfo::pStencilAttachment.",
-                                                 i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                                 i, FormatHandle(pCommandBuffers[i]).c_str());
                             }
                         }
 
@@ -1023,7 +1019,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                  "VkRenderingInfo::pDepthAttachment does not define an "
                                                  "image view but VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat "
                                                  "is %s instead of VK_FORMAT_UNDEFINED.",
-                                                 i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), string_VkFormat(format));
+                                                 i, FormatHandle(pCommandBuffers[i]).c_str(), string_VkFormat(format));
                             }
                         }
 
@@ -1040,7 +1036,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                  "VkRenderingInfo::pStencilAttachment does not define an "
                                                  "image view but VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat "
                                                  "is %s instead of VK_FORMAT_UNDEFINED.",
-                                                 i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), string_VkFormat(format));
+                                                 i, FormatHandle(pCommandBuffers[i]).c_str(), string_VkFormat(format));
                             }
                         }
 
@@ -1054,8 +1050,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              "VkCommandBufferInheritanceRenderingInfo::viewMask (%" PRIu32
                                              ") does "
                                              "not match VkRenderingInfo::viewMask (%" PRIu32 ").",
-                                             i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             inheritance_rendering_info.viewMask, rendering_info.viewMask);
+                                             i, FormatHandle(pCommandBuffers[i]).c_str(), inheritance_rendering_info.viewMask,
+                                             rendering_info.viewMask);
                         }
 
                         // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
@@ -1082,7 +1078,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         ") "
                                         "does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
-                                        i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
+                                        i, FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
                             }
 
@@ -1101,7 +1097,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pDepthAttachment.",
-                                        i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                        i, FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
 
@@ -1120,7 +1116,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pStencilAttachment.",
-                                        i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                        i, FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
                         } else {
@@ -1142,7 +1138,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         ") of "
                                         "VkRenderingInfoKHR::pColorAttachments does not match "
                                         "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                        i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
+                                        i, FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
                             }
 
@@ -1160,7 +1156,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
                                                      "VkRenderingInfoKHR::pDepthAttachment does not match "
                                                      "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                                     i, FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
 
@@ -1178,7 +1174,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
                                                      "VkRenderingInfoKHR::pStencilAttachment does not match "
                                                      "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                                                     i, FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
                         }
@@ -1197,7 +1193,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00091",
                                  "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                  "] Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                                 i, report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+                                 i, FormatHandle(sub_cb_state->commandBuffer()).c_str());
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state->linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(sub_cb_state.get()))) {
@@ -1206,8 +1202,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                  "] Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT "
                                  "set if previously executed in %s",
-                                 i, report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str(),
-                                 report_data->FormatHandle(cb_state->commandBuffer()).c_str());
+                                 i, FormatHandle(sub_cb_state->commandBuffer()).c_str(),
+                                 FormatHandle(cb_state->commandBuffer()).c_str());
             }
 
             const auto insert_pair = linked_command_buffers.insert(sub_cb_state.get());
@@ -1217,7 +1213,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                  "] Cannot duplicate %s in pCommandBuffers without "
                                  "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                                 i, report_data->FormatHandle(cb_state->commandBuffer()).c_str());
+                                 i, FormatHandle(cb_state->commandBuffer()).c_str());
             }
 
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -1229,8 +1225,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                    "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
                                    "%s to be treated as if it does not have "
                                    "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even though it does.",
-                                   i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                   report_data->FormatHandle(cb_state->commandBuffer()).c_str());
+                                   i, FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(cb_state->commandBuffer()).c_str());
             }
         }
         if (!cb_state->activeQueries.empty() && !enabled_features.core.inheritedQueries) {
@@ -1239,7 +1234,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                              "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                              "] %s cannot be submitted with a query in flight and "
                              "inherited queries not supported on this device.",
-                             i, report_data->FormatHandle(pCommandBuffers[i]).c_str());
+                             i, FormatHandle(pCommandBuffers[i]).c_str());
         }
         // Validate initial layout uses vs. the primary cmd buffer state
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
@@ -1287,9 +1282,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%x array layer %" PRIu32
                             ", "
                             "mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
-                            "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
-                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
-                            string_VkImageLayout(cb_layout));
+                            "vkCmdExecuteCommands():", FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
+                            subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type, string_VkImageLayout(cb_layout));
                     }
                 }
             }
@@ -1301,24 +1295,22 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             skip |= LogError(
                 objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01820",
                 "vkCmdExecuteCommands(): command buffer %s is protected while secondary command buffer %s is a unprotected",
-                report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+                FormatHandle(cb_state->commandBuffer()).c_str(), FormatHandle(sub_cb_state->commandBuffer()).c_str());
         } else if ((cb_state->unprotected == true) && (sub_cb_state->unprotected == false)) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
             skip |= LogError(
                 objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01821",
                 "vkCmdExecuteCommands(): command buffer %s is unprotected while secondary command buffer %s is a protected",
-                report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
+                FormatHandle(cb_state->commandBuffer()).c_str(), FormatHandle(sub_cb_state->commandBuffer()).c_str());
         }
         if (active_occlusion_query && sub_cb_state->inheritanceInfo.occlusionQueryEnable != VK_TRUE) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00102",
-                             "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
-                             "buffer %s (pCommandBuffers[%" PRIu32
-                             "]) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
-                             report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                             report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str(), i);
+            skip |=
+                LogError(objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00102",
+                         "vkCmdExecuteCommands(): command buffer %s has an active occlusion query, but secondary command "
+                         "buffer %s (pCommandBuffers[%" PRIu32
+                         "]) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
+                         FormatHandle(cb_state->commandBuffer()).c_str(), FormatHandle(sub_cb_state->commandBuffer()).c_str(), i);
         }
     }
 
@@ -1462,7 +1454,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         if (rp_ci.pSubpasses[i].viewMask > 0) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02373",
                              "%s: active render pass (%s) has multiview enabled.", cmd_name,
-                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                             FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
             break;
         }
     }
@@ -1624,7 +1616,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                 skip |= LogError(commandBuffer, "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982",
                                  "vkCmdBeginConditionalRenderingEXT(): pConditionalRenderingBegin->buffer (%s) was not create with "
                                  "VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT bit.",
-                                 report_data->FormatHandle(pConditionalRenderingBegin->buffer).c_str());
+                                 FormatHandle(pConditionalRenderingBegin->buffer).c_str());
             }
             if (pConditionalRenderingBegin->offset + 4 > buffer_state->createInfo.size) {
                 const LogObjectList objlist(commandBuffer, buffer_state->buffer());

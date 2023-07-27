@@ -32,7 +32,7 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
                                "vkGetVideoSessionMemoryRequirementsKHR(): querying list of memory requirements of %s "
                                "but the number of memory requirements has not been queried before by calling this "
                                "command with pMemoryRequirements set to NULL.",
-                               report_data->FormatHandle(videoSession).c_str());
+                               FormatHandle(videoSession).c_str());
         }
     }
 
@@ -51,13 +51,13 @@ bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, Vk
                                "vkBindVideoSessionMemoryKHR(): binding memory to %s but "
                                "vkGetVideoSessionMemoryRequirementsKHR() has not been called to retrieve the "
                                "number of memory requirements for the video session.",
-                               report_data->FormatHandle(videoSession).c_str());
+                               FormatHandle(videoSession).c_str());
         } else if (vs_state->memory_bindings_queried < vs_state->GetMemoryBindingCount()) {
             skip |= LogWarning(videoSession, kVUID_BestPractices_BindVideoSessionMemReqNotAllBindingsRetrieved,
                                "vkBindVideoSessionMemoryKHR(): binding memory to %s but "
                                "not all memory requirements for the video session have been queried using "
                                "vkGetVideoSessionMemoryRequirementsKHR().",
-                               report_data->FormatHandle(videoSession).c_str());
+                               FormatHandle(videoSession).c_str());
         }
     }
 

@@ -309,17 +309,17 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         skip |= LogError(objlist, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
                                          "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
+                                         FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
                                          string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode),
-                                         report_data->FormatHandle(pipeline).c_str());
+                                         FormatHandle(pipeline).c_str());
                     } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
                         const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
                         skip |= LogError(objlist, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
                                          " %s's provokingVertexMode is %s, but previous %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         report_data->FormatHandle(pipeline).c_str(),
+                                         FormatHandle(pipeline).c_str(),
                                          string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                         report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str());
+                                         FormatHandle(last_bound.pipeline_state->pipeline()).c_str());
                     } else if (last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci &&
                                last_bound_provoking_vertex_state_ci->provokingVertexMode !=
                                    current_provoking_vertex_state_ci->provokingVertexMode) {
@@ -327,9 +327,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         skip |=
                             LogError(objlist, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
                                      "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
-                                     report_data->FormatHandle(pipeline).c_str(),
+                                     FormatHandle(pipeline).c_str(),
                                      string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                     report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
+                                     FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
                                      string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
                     }
                 }
@@ -455,9 +455,8 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
             const std::string &error = bind_errors.at(bind_point);
             const LogObjectList objlist(cb_state->commandBuffer(), cb_state->createInfo.commandPool);
             skip |= LogError(objlist, error, "%s: %s was allocated from %s that does not support bindpoint %s.", func_name,
-                             report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                             report_data->FormatHandle(cb_state->createInfo.commandPool).c_str(),
-                             string_VkPipelineBindPoint(bind_point));
+                             FormatHandle(cb_state->commandBuffer()).c_str(),
+                             FormatHandle(cb_state->createInfo.commandPool).c_str(), string_VkPipelineBindPoint(bind_point));
         }
     }
     return skip;

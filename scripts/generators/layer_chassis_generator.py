@@ -434,6 +434,9 @@ class ValidationObject {
     public:
         APIVersion api_version;
         debug_report_data* report_data = nullptr;
+        template <typename T>
+        std::string FormatHandle(T&& h) const { return report_data->FormatHandle(std::forward<T>(h)); }
+
         std::vector<std::vector<ValidationObject*>> intercept_vectors;
 
         VkLayerInstanceDispatchTable instance_dispatch_table;

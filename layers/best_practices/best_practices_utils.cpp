@@ -346,8 +346,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
             "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
             "using VK_ATTACHMENT_LOAD_OP_DONT_CARE, or using VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-            VendorSpecificTag(kBPVendorNVIDIA), report_data->FormatHandle(cmd_state.nv.zcull_scope.image).c_str(), good_mode,
-            bad_mode);
+            VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(cmd_state.nv.zcull_scope.image).c_str(), good_mode, bad_mode);
     }
 
     return skip;

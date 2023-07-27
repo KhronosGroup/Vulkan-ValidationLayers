@@ -142,7 +142,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
                          "vkGetMemoryAndroidHardwareBufferANDROID: %s was not allocated for export, or the "
                          "export handleTypes (0x%" PRIx32
                          ") did not contain VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
-                         report_data->FormatHandle(pInfo->memory).c_str(), mem_info->export_handle_types);
+                         FormatHandle(pInfo->memory).c_str(), mem_info->export_handle_types);
     }
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
@@ -154,8 +154,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
             skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
-                             report_data->FormatHandle(pInfo->memory).c_str(),
-                             report_data->FormatHandle(mem_info->dedicated->handle).c_str());
+                             FormatHandle(pInfo->memory).c_str(), FormatHandle(mem_info->dedicated->handle).c_str());
         }
     }
 
@@ -447,7 +446,7 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkEx
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
                          "VkExternalMemoryBufferCreateInfo::handleTypes (%s)",
-                         func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(buffer).c_str(),
+                         func_name, FormatHandle(memory).c_str(), FormatHandle(buffer).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
@@ -464,7 +463,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
                          "VkExternalMemoryImageCreateInfo::handleTypes (%s)",
-                         func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(image).c_str(),
+                         func_name, FormatHandle(memory).c_str(), FormatHandle(image).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
