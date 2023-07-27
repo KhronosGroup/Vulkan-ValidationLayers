@@ -90,6 +90,15 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
                          string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
+    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT) == 0) &&
+        (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
+        skip |=
+            LogError(device, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048",
+                     "vkCreateImage(): usage cannot contain VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT because %s doesn't support "
+                     "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT based on imageCreateFormatFeatures (supported features: %s).",
+                     string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
+    }
+
     return skip;
 }
 
