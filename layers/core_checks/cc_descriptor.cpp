@@ -3969,18 +3969,37 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     return skip;
 }
 
-bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescriptorAddressInfoEXT *address_info) const {
+bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescriptorAddressInfoEXT *address_info,
+                                                  const char *structure) const {
     bool skip = false;
 
-    if ((address_info->address == 0) && !enabled_features.robustness2_features.nullDescriptor) {
-        skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-address-08043",
-                         "VkDescriptorAddressInfoEXT: address is 0, but the nullDescriptor feature is not enabled.");
+    if (address_info->range == 0) {
+        skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-range-08940",
+                         "vkGetDescriptorEXT: pDescriptorInfo->data.%s->range is zero.", structure);
+    }
+
+    if (address_info->address == 0) {
+        if (!enabled_features.robustness2_features.nullDescriptor) {
+            skip |= LogError(
+                device, "VUID-VkDescriptorAddressInfoEXT-address-08043",
+                "vkGetDescriptorEXT: pDescriptorInfo->data.%s->address is 0, but the nullDescriptor feature is not enabled.",
+                structure);
+        } else if (address_info->range != VK_WHOLE_SIZE) {
+            skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08938",
+                             "vkGetDescriptorEXT: pDescriptorInfo->data.%s->range is not VK_WHOLE_SIZE when address is zero.",
+                             structure);
+        }
+    } else {
+        if (address_info->range == VK_WHOLE_SIZE) {
+            skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08939",
+                             "vkGetDescriptorEXT: pDescriptorInfo->data.%s->range is VK_WHOLE_SIZE.", structure);
+        }
     }
 
     const auto buffer_states = GetBuffersByAddress(address_info->address);
     if ((address_info->address != 0) && buffer_states.empty()) {
         skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-None-08044",
-                         "VkDescriptorAddressInfoEXT: address not 0 or a valid buffer address.");
+                         "vkGetDescriptorEXT: pDescriptorInfo->data.%s->address is not a valid buffer address.", structure);
     } else {
         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<1> buffer_address_validator = {
@@ -3998,11 +4017,6 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescr
 
         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT", "address",
                                                                   address_info->address);
-    }
-
-    if (address_info->range == VK_WHOLE_SIZE) {
-        skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-range-08046",
-                         "VkDescriptorAddressInfoEXT: range must not be VK_WHOLE_SIZE.");
     }
 
     return skip;
@@ -4237,22 +4251,22 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pUniformTexelBuffer);
+                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pUniformTexelBuffer, "pUniformTexelBuffer");
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pStorageTexelBuffer);
+                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pStorageTexelBuffer, "pStorageTexelBuffer");
             }
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pUniformBuffer);
+                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pUniformBuffer, "pUniformBuffer");
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer) {
-                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pStorageBuffer);
+                skip |= ValidateDescriptorAddressInfoEXT(device, pDescriptorInfo->data.pStorageBuffer, "pStorageBuffer");
             }
             break;
         default:
