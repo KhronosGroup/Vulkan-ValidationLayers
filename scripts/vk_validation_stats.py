@@ -273,6 +273,8 @@ class ValidationTests:
                 for line in tf:
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
                         continue
+                    elif True in [x in line for x in ['TEST_DESCRIPTION', 'vvl_vuid_hash']]:
+                        continue # Tests have extra place it might not want to report VUIDs
 
                     # if line ends in a broken VUID string, fix that before proceeding
                     if prepend is not None:

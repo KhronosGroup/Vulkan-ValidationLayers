@@ -315,17 +315,17 @@ static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool ima
             "VUID-VkCopyBufferToImageInfo2-dstImage-07980",
             "VUID-VkCopyImageToBufferInfo2-srcImage-07980",
         }},
-        {"00203", {
-            "VUID-vkCmdCopyBufferToImage-bufferRowLength-00203",
-            "VUID-vkCmdCopyImageToBuffer-bufferRowLength-00203",
-            "VUID-VkCopyBufferToImageInfo2-bufferRowLength-00203",
-            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-00203",
+        {"09106", {
+            "VUID-vkCmdCopyBufferToImage-bufferRowLength-09106",
+            "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09106",
+            "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09106",
+            "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09106",
         }},
-        {"00204", {
-            "VUID-vkCmdCopyBufferToImage-bufferImageHeight-00204",
-            "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-00204",
-            "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-00204",
-            "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-00204",
+        {"09107", {
+            "VUID-vkCmdCopyBufferToImage-bufferImageHeight-09107",
+            "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-09107",
+            "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-09107",
+            "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-09107",
         }},
         {"07274", {
             "VUID-vkCmdCopyBufferToImage-pRegions-07274",
@@ -597,7 +597,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         //  BufferRowLength must be a multiple of block width
         if (SafeModulo(region.bufferRowLength, block_size.width) != 0) {
             const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("00203", image_to_buffer, is_2),
+            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("09106", image_to_buffer, is_2),
                              "%s: pRegion[%d] bufferRowLength (%d) must be a multiple of the blocked image's texel width (%d).",
                              function, i, region.bufferRowLength, block_size.width);
         }
@@ -605,7 +605,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         //  BufferRowHeight must be a multiple of block height
         if (SafeModulo(region.bufferImageHeight, block_size.height) != 0) {
             const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("00204", image_to_buffer, is_2),
+            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("09107", image_to_buffer, is_2),
                              "%s: pRegion[%d] bufferImageHeight (%d) must be a multiple of the blocked image's texel height (%d).",
                              function, i, region.bufferImageHeight, block_size.height);
         }

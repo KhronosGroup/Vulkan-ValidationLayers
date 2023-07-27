@@ -2034,27 +2034,13 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
     if (iv_state->IsDepthSliced() && image_node->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+        // VK_EXT_image_2d_view_of_3d allows use of VIEW_TYPE_2D in descriptor
         if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
             *error_code = "VUID-VkDescriptorImageInfo-imageView-06712";
             *error_msg = "ImageView must not be a 2DArray view of a 3D image";
             return false;
-        }
-
-        // vk_ext_image_2d_view_of_3d allows use of VIEW_TYPE_2D in descriptor
-        if (IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)) {
-            if ((type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) && (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
-                (type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
-                *error_code = "VUID-VkDescriptorImageInfo-imageView-07795";
-                std::stringstream error_str;
-                error_str << "ImageView (" << report_data->FormatHandle(image_view)
-                          << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
-                          << ") , written to a descriptor of type " << string_VkDescriptorType(type)
-                          << " but needs to be a descriptor type of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, "
-                             "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, or VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
-                *error_msg = error_str.str();
-                return false;
-            }
-
+        } else if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D) {
+            // Check 06713/06714 first to alert apps without VK_EXT_image_2d_view_of_3d that the features are needed
             if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE && !enabled_features.image_2d_view_of_3d_features.image2DViewOf3D) {
                 *error_code = "VUID-VkDescriptorImageInfo-descriptorType-06713";
                 std::stringstream error_str;
@@ -2078,6 +2064,19 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 return false;
             }
 
+            if ((type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) && (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
+                (type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
+                *error_code = "VUID-VkDescriptorImageInfo-imageView-07795";
+                std::stringstream error_str;
+                error_str << "ImageView (" << report_data->FormatHandle(image_view)
+                          << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
+                          << ") , written to a descriptor of type " << string_VkDescriptorType(type)
+                          << " but needs to be a descriptor type of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, "
+                             "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, or VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER";
+                *error_msg = error_str.str();
+                return false;
+            }
+
             if (!(image_node->createInfo.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
                 *error_code = "VUID-VkDescriptorImageInfo-imageView-07796";
                 std::stringstream error_str;
@@ -2089,10 +2088,6 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 *error_msg = error_str.str();
                 return false;
             }
-        } else if (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D) {
-            *error_code = "VUID-VkDescriptorImageInfo-imageView-06711";
-            *error_msg = "ImageView must not be a 2D view of a 3D image";
-            return false;
         }
     }
 
