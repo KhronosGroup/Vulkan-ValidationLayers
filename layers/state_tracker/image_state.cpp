@@ -922,3 +922,15 @@ VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapab
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return scaling_caps;
 }
+
+bool GlobalImageLayoutRangeMap::AnyInRange(RangeGenerator &gen,
+                                           std::function<bool(const key_type &range, const mapped_type &state)> &&func) const {
+    for (; gen->non_empty(); ++gen) {
+        for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
+            if (func(pos->first, pos->second)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

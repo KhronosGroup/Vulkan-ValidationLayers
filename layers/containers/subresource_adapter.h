@@ -162,6 +162,7 @@ class RangeEncoder {
                                         subres.arrayLayer};
         return vk_subres;
     }
+    inline VkImageSubresource IndexToVkSubresource(const IndexType& index) const { return MakeVkSubresource(Decode(index)); }
 
   protected:
     RangeEncoder(const VkImageSubresourceRange& full_range, const AspectParameters* param);
