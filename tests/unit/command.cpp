@@ -3424,11 +3424,15 @@ TEST_F(NegativeCommand, CopyImageSampleCountMismatch) {
 TEST_F(NegativeCommand, CopyImageAspectMismatch) {
     TEST_DESCRIPTION("Image copies with aspect mask errors");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     auto ds_format = FindSupportedDepthStencilFormat(gpu());
