@@ -29,7 +29,7 @@ import common_ci
 
 # Manifest file describing out test application
 def get_android_manifest() -> str:
-    manifest = common_ci.RepoRelative('build-android/AndroidManifest.xml')
+    manifest = common_ci.RepoRelative('tests/android/AndroidManifest.xml')
     if not os.path.isfile(manifest):
         print(f"Unable to find manifest for APK! {manifest}")
         sys.exit(-1)
@@ -37,7 +37,7 @@ def get_android_manifest() -> str:
 
 # Resources for our test application.
 def get_android_resources() -> str:
-    res = common_ci.RepoRelative('build-android/res')
+    res = common_ci.RepoRelative('tests/android/res')
     if not os.path.isdir(res):
         print(f"Unable to find android resources for APK! {res}")
         sys.exit(-1)
@@ -47,7 +47,11 @@ def get_android_resources() -> str:
 def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
     apk_dir = common_ci.RepoRelative(f'build-android/bin')
 
-    common_ci.RunShellCmd(f'cmake -E copy_directory {CMAKE_INSTALL_DIR} {apk_dir}')
+    # Delete APK directory since it could contain files from old runs
+    if os.path.isdir(apk_dir):
+        shutil.rmtree(apk_dir)
+
+    shutil.copytree(CMAKE_INSTALL_DIR, apk_dir)
 
     android_manifest = get_android_manifest()
     android_resources = get_android_resources()
@@ -137,6 +141,11 @@ def main():
         print(f"Using {tool} : {path}")
 
     cmake_install_dir = common_ci.RepoRelative(f'build-android/libs')
+
+    # Delete install directory since it could contain files from old runs
+    if os.path.isdir(cmake_install_dir):
+        print("Cleaning CMake install")
+        shutil.rmtree(cmake_install_dir)
 
     for abi in android_abis:
         build_dir = common_ci.RepoRelative(f'build-android/obj/{abi}')
