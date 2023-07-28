@@ -246,15 +246,11 @@ std::string DebugPrintf::FindFormatString(vvl::span<const uint32_t> pgm, uint32_
     if (module_state.words_.empty()) {
         return {};
     }
-    for (const Instruction &insn : module_state.GetInstructions()) {
-        if (insn.Opcode() == spv::OpFunction) {
-            break;  // Debug Info is always before first function
-        }
-        if (insn.Opcode() == spv::OpString) {
-            if (insn.Word(1) == string_id) {
-                format_string = insn.GetAsString(2);
-                break;
-            }
+
+    for (const Instruction *insn : module_state.static_data_.debug_string_inst) {
+        if (insn->Word(1) == string_id) {
+            format_string = insn->GetAsString(2);
+            break;
         }
     }
 

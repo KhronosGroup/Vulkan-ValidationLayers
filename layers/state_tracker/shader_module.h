@@ -448,6 +448,8 @@ struct SPIRV_MODULE_STATE {
         std::vector<const Instruction *> builtin_decoration_inst;
         // OpEmitStreamVertex/OpEndStreamPrimitive - only allowed in Geometry shader
         std::vector<const Instruction *> transform_feedback_stream_inst;
+        // OpString - used to find debug information
+        std::vector<const Instruction *> debug_string_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT
         bool has_shader_tile_image_depth_read{false};
         bool has_shader_tile_image_stencil_read{false};
