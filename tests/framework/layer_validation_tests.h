@@ -415,6 +415,12 @@ class GraphicsLibraryTest : public VkLayerTest {
 class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
 class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
 
+class NegativeHostImageCopy : public virtual VkLayerTest {
+  protected:
+    void InitHostImageCopyTest(VkFormat &compressed_format);
+};
+;
+
 class ImageTest : public VkLayerTest {
   public:
     VkImageCreateInfo DefaultImageInfo();
