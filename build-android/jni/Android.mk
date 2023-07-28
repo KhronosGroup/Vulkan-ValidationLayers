@@ -87,6 +87,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/command_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/dynamic_state_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_error_message.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gv_descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/debug_printf.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices/best_practices_utils.cpp

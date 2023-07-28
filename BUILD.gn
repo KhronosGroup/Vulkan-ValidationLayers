@@ -163,6 +163,8 @@ core_validation_sources = [
   "layers/gpu_shaders/gpu_shaders_constants.h",
   "layers/gpu_validation/gpu_utils.cpp",
   "layers/gpu_validation/gpu_utils.h",
+  "layers/gpu_validation/gpu_error_message.cpp",
+  "layers/gpu_validation/gpu_error_message.h",
   "layers/gpu_validation/gpu_validation.cpp",
   "layers/gpu_validation/gpu_validation.h",
   "layers/gpu_validation/gpu_vuids.h",

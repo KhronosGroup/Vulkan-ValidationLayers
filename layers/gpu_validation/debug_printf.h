@@ -18,6 +18,7 @@
 #pragma once
 
 #include "gpu_validation/gpu_utils.h"
+#include "gpu_validation/gpu_error_message.h"
 class DebugPrintf;
 
 struct DPFDeviceMemoryBlock {
