@@ -271,6 +271,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/vk_safe_struct.h
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
+    gpu_validation/gpu_error_message.cpp
+    gpu_validation/gpu_error_message.h
     gpu_validation/gpu_utils.cpp
     gpu_validation/gpu_utils.h
     gpu_validation/gpu_validation.cpp

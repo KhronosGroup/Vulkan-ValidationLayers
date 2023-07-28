@@ -17,9 +17,7 @@
 #pragma once
 #include "generated/chassis.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/state_tracker.h"
 #include "vma/vma.h"
-#include "state_tracker/queue_state.h"
 
 class GpuAssistedBase;
 
@@ -79,14 +77,6 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_utils_state::CommandBuff
 
 VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
                            VmaAllocator *pAllocator);
-
-void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
-void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
-                               const uint32_t *debug_record, const VkShaderModule shader_module_handle,
-                               const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
-                               const uint32_t operation_index, std::string &msg);
-void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *debug_record, bool from_printf,
-                                std::string &filename_msg, std::string &source_msg);
 
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
