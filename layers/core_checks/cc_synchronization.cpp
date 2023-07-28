@@ -992,7 +992,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
         const auto illegal_pipeline_stages = allVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
-            const char *vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(loc, device_extensions);
+            const auto &vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(loc, device_extensions);
             const auto stages_string = sync_utils::StringPipelineStageFlags(stage_mask);
             std::stringstream msg;
             msg << loc.Message() << " contains pipeline stages " << stages_string << '.';

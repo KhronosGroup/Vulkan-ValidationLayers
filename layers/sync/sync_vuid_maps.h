@@ -118,6 +118,6 @@ enum class ShaderTileImageError { kShaderTileImageFeatureError, kShaderTileImage
 
 const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error);
 
-const char *GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions);
+const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions);
 
 }  // namespace sync_vuid_maps

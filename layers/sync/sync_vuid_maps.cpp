@@ -668,7 +668,7 @@ const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR 
 
 // commonvalidity/access_mask_2_common.adoc
 static const auto &GetLocation2VUIDMap() {
-    static const std::map<Key, const char *> Location2VUID{
+    static const std::map<Key, std::string> Location2VUID{
         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06256"},
         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06256"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06256"},
@@ -680,13 +680,13 @@ static const auto &GetLocation2VUIDMap() {
     return Location2VUID;
 }
 
-const char *GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions) {
+const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions) {
     const Key key(loc.structure, loc.field);
-    auto it = GetLocation2VUIDMap().find(key);
-    if (it != GetLocation2VUIDMap().end()) {
+    if (auto it = GetLocation2VUIDMap().find(key); it != GetLocation2VUIDMap().end()) {
         return it->second;
     }
-    return nullptr;
+    static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-bad-access-flags");
+    return unhandled;
 }
 
 static const std::vector<Entry> kQueueCapErrors{
