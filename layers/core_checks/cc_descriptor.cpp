@@ -143,9 +143,8 @@ bool CoreChecks::VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorS
     auto num_sets = pipeline_layout.set_layouts.size();
     if (layoutIndex >= num_sets) {
         std::stringstream error_str;
-        error_str << FormatHandle(pipeline_layout.layout()) << ") only contains " << num_sets
-                  << " setLayouts corresponding to sets 0-" << num_sets - 1 << ", but you're attempting to bind set to index "
-                  << layoutIndex;
+        error_str << FormatHandle(pipeline_layout) << ") only contains " << num_sets << " setLayouts corresponding to sets 0-"
+                  << num_sets - 1 << ", but you're attempting to bind set to index " << layoutIndex;
         errorMsg = error_str.str();
         return false;
     }
@@ -1655,7 +1654,7 @@ static bool VerifyUpdateConsistency(debug_report_data *report_data, const Descri
         if (set.IsPushDescriptor()) {
             error_str << " push descriptors";
         } else {
-            error_str << " descriptor set " << report_data->FormatHandle(set.Handle());
+            error_str << " descriptor set " << report_data->FormatHandle(set);
         }
         error_str << " binding #" << orig_binding.binding << " with #" << update_count
                   << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
@@ -2873,8 +2872,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
             skip |= LogError(pool_state->Handle(), "VUID-VkDescriptorSetAllocateInfo-apiVersion-07895",
                              "vkAllocateDescriptorSets(): Unable to allocate %u descriptorSets from %s"
                              ". This pool only has %d descriptorSets remaining.",
-                             p_alloc_info->descriptorSetCount, FormatHandle(pool_state->Handle()).c_str(),
-                             pool_state->GetAvailableSets());
+                             p_alloc_info->descriptorSetCount, FormatHandle(*pool_state).c_str(), pool_state->GetAvailableSets());
         }
         // Determine whether descriptor counts are satisfiable
         for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
@@ -2885,7 +2883,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                                  "vkAllocateDescriptorSets(): Unable to allocate %u descriptors of type %s from %s"
                                  ". This pool only has %d descriptors of this type remaining.",
                                  ds_data->required_descriptors_by_type.at(it->first),
-                                 string_VkDescriptorType(VkDescriptorType(it->first)), FormatHandle(pool_state->Handle()).c_str(),
+                                 string_VkDescriptorType(VkDescriptorType(it->first)), FormatHandle(*pool_state).c_str(),
                                  available_count);
             }
         }

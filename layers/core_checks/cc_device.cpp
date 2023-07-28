@@ -145,7 +145,7 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE &cb_st
     bool skip = false;
     if ((deviceMask & cb_state.initial_device_mask) != deviceMask) {
         skip |= LogError(objlist, VUID, "deviceMask(0x%" PRIx32 ") is not a subset of %s initial device mask(0x%" PRIx32 ").",
-                         deviceMask, FormatHandle(cb_state.commandBuffer()).c_str(), cb_state.initial_device_mask);
+                         deviceMask, FormatHandle(cb_state).c_str(), cb_state.initial_device_mask);
     }
     return skip;
 }

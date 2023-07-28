@@ -1416,10 +1416,9 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
     if (where) {
         Location loc(Func::vkSignalSemaphore, Struct::VkSemaphoreSignalInfo, Field::value);
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, sync_vuid_maps::SubmitError::kTimelineSemMaxDiff);
-        skip |=
-            LogError(semaphore_state->Handle(), vuid,
-                     "%s value (%" PRIu64 ") exceeds limit regarding %s semaphore %s payload (%" PRIu64 ").", loc.Message().c_str(),
-                     pSignalInfo->value, FormatHandle(semaphore_state->Handle()).c_str(), where, bad_value);
+        skip |= LogError(semaphore_state->Handle(), vuid,
+                         "%s value (%" PRIu64 ") exceeds limit regarding %s semaphore %s payload (%" PRIu64 ").",
+                         loc.Message().c_str(), pSignalInfo->value, FormatHandle(*semaphore_state).c_str(), where, bad_value);
     }
     return skip;
 }

@@ -59,18 +59,16 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE 
                 objlist, location.Vuid(),
                 "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
                 "includes VkBindImageMemorySwapchainInfoKHR.",
-                location.FuncName(), FormatHandle(image_state.image()).c_str(),
-                FormatHandle(image_state.create_from_swapchain).c_str());
+                location.FuncName(), FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str());
         } else if (image_state.create_from_swapchain != image_state.bind_swapchain->swapchain()) {
             const LogObjectList objlist(handle, image_state.Handle(), image_state.create_from_swapchain,
                                         image_state.bind_swapchain->Handle());
-            result |=
-                LogError(objlist, location.Vuid(),
-                         "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
-                         "swapchain",
-                         location.FuncName(), FormatHandle(image_state.image()).c_str(),
-                         FormatHandle(image_state.create_from_swapchain).c_str(),
-                         FormatHandle(image_state.bind_swapchain->Handle()).c_str());
+            result |= LogError(
+                objlist, location.Vuid(),
+                "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
+                "swapchain",
+                location.FuncName(), FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str(),
+                FormatHandle(image_state.bind_swapchain->Handle()).c_str());
         }
     } else if (image_state.IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
@@ -81,7 +79,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE 
         if (memory_states.empty()) {
             result |= LogError(objlist, location.Vuid(),
                                "%s: %s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
-                               location.FuncName(), FormatHandle(image_state.Handle()).c_str());
+                               location.FuncName(), FormatHandle(image_state).c_str());
         } else {
             for (const auto &state : memory_states) {
                 result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), location);
@@ -111,7 +109,7 @@ bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE &bu
             if ((phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
                 result |= LogError(buffer_state.Handle(), error_code, "%s: %s used with memory that is not host visible.", api_name,
-                                   FormatHandle(buffer_state.Handle()).c_str());
+                                   FormatHandle(buffer_state).c_str());
             }
         }
     }

@@ -44,7 +44,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
                                    "vkAllocateDescriptorSets(): Unable to allocate %" PRIu32
                                    " descriptorSets from %s"
                                    ". This pool only has %" PRIu32 " descriptorSets remaining.",
-                                   pAllocateInfo->descriptorSetCount, FormatHandle(pool_state->Handle()).c_str(),
+                                   pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(),
                                    pool_state->GetAvailableSets());
             }
 

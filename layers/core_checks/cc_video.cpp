@@ -107,7 +107,7 @@ bool CoreChecks::ValidateVideoPictureResource(const VideoPictureResource &pictur
                          picture_resource.coded_extent.width, picture_resource.coded_extent.height,
                          profile_caps.base.minCodedExtent.width, profile_caps.base.minCodedExtent.height,
                          vs_state.create_info.maxCodedExtent.width, vs_state.create_info.maxCodedExtent.height,
-                         FormatHandle(vs_state.videoSession()).c_str(), where);
+                         FormatHandle(vs_state).c_str(), where);
     }
 
     if (picture_resource.base_array_layer >= picture_resource.image_view_state->create_info.subresourceRange.layerCount) {
@@ -431,7 +431,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
             skip |= LogError(objlist, "VUID-vkCmdDecodeVideoKHR-None-07258",
                              "vkCmdDecodeVideoKHR(): decode output picture is a field but the bound video session "
                              "%s was not created with interlaced frame support",
-                             FormatHandle(vs_state.videoSession()).c_str());
+                             FormatHandle(vs_state).c_str());
         }
 
         for (uint32_t i = 0; i < picture_info->sliceCount; ++i) {
@@ -449,7 +449,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
             skip |= LogError(objlist, "VUID-vkCmdDecodeVideoKHR-StdVideoH264SequenceParameterSet-07154",
                              "vkCmdDecodeVideoKHR(): no H.264 SPS with seq_parameter_set_id = %u "
                              "exists in the bound video session parameters object %s",
-                             std_picture_info->seq_parameter_set_id, FormatHandle(vsp_state.videoSessionParameters()).c_str());
+                             std_picture_info->seq_parameter_set_id, FormatHandle(vsp_state).c_str());
         }
 
         if (session_params.GetH264PPS(std_picture_info->seq_parameter_set_id, std_picture_info->pic_parameter_set_id) == nullptr) {
@@ -459,7 +459,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
                              "vkCmdDecodeVideoKHR(): no H.264 PPS with seq_parameter_set_id = %u "
                              "and pic_parameter_set_id = %u exists in the bound video session parameters object %s",
                              std_picture_info->seq_parameter_set_id, std_picture_info->pic_parameter_set_id,
-                             FormatHandle(vsp_state.videoSessionParameters()).c_str());
+                             FormatHandle(vsp_state).c_str());
         }
     } else {
         skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDecodeVideoKHR-pNext-07152", pnext_msg, "vkCmdDecodeVideoKHR()",
@@ -476,7 +476,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
                 skip |= LogError(objlist, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07259",
                                  "vkCmdDecodeVideoKHR(): reconstructed picture is a field but the bound "
                                  "video session %s was not created with interlaced frame support",
-                                 FormatHandle(vs_state.videoSession()).c_str());
+                                 FormatHandle(vs_state).c_str());
             }
 
             if (picture_info) {
@@ -518,7 +518,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
                                  "vkCmdDecodeVideoKHR(): reference picture specified in "
                                  "pDecodeInfo->pReferneceSlots[%u] is a field but the bound "
                                  "video session %s was not created with interlaced frame support",
-                                 i, FormatHandle(vs_state.videoSession()).c_str());
+                                 i, FormatHandle(vs_state).c_str());
             }
         } else {
             skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDecodeVideoKHR-pNext-07157",
@@ -555,11 +555,10 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
         if (session_params.GetH265VPS(std_picture_info->sps_video_parameter_set_id) == nullptr) {
             LogObjectList objlist(cb_state.commandBuffer());
             objlist.add(vsp_state.videoSessionParameters());
-            skip |=
-                LogError(objlist, "VUID-vkCmdDecodeVideoKHR-StdVideoH265VideoParameterSet-07160",
-                         "vkCmdDecodeVideoKHR(): no H.265 VPS with sps_video_parameter_set_id = %u "
-                         "exists in the bound video session parameters object %s",
-                         std_picture_info->sps_video_parameter_set_id, FormatHandle(vsp_state.videoSessionParameters()).c_str());
+            skip |= LogError(objlist, "VUID-vkCmdDecodeVideoKHR-StdVideoH265VideoParameterSet-07160",
+                             "vkCmdDecodeVideoKHR(): no H.265 VPS with sps_video_parameter_set_id = %u "
+                             "exists in the bound video session parameters object %s",
+                             std_picture_info->sps_video_parameter_set_id, FormatHandle(vsp_state).c_str());
         }
 
         if (session_params.GetH265SPS(std_picture_info->sps_video_parameter_set_id, std_picture_info->pps_seq_parameter_set_id) ==
@@ -571,7 +570,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
                              "and pps_seq_parameter_set_id = %u exists in the bound video session "
                              "parameters object %s",
                              std_picture_info->sps_video_parameter_set_id, std_picture_info->pps_seq_parameter_set_id,
-                             FormatHandle(vsp_state.videoSessionParameters()).c_str());
+                             FormatHandle(vsp_state).c_str());
         }
 
         if (session_params.GetH265PPS(std_picture_info->sps_video_parameter_set_id, std_picture_info->pps_seq_parameter_set_id,
@@ -583,7 +582,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
                              "pps_seq_parameter_set_id = %u, and pps_pic_parameter_set_id = %u exists in "
                              "the bound video session parameters object %s",
                              std_picture_info->sps_video_parameter_set_id, std_picture_info->pps_seq_parameter_set_id,
-                             std_picture_info->pps_pic_parameter_set_id, FormatHandle(vsp_state.videoSessionParameters()).c_str());
+                             std_picture_info->pps_pic_parameter_set_id, FormatHandle(vsp_state).c_str());
         }
     } else {
         skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDecodeVideoKHR-pNext-07158", pnext_msg, "vkCmdDecodeVideoKHR()",
@@ -640,7 +639,7 @@ bool CoreChecks::ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE &cb_
                          "vkCmdDecodeVideoKHR(): more active reference pictures (%u) were specified than "
                          "the maxActiveReferencePictures (%u) the bound video session %s was created with",
                          active_reference_picture_count, vs_state.create_info.maxActiveReferencePictures,
-                         FormatHandle(vs_state.videoSession()).c_str());
+                         FormatHandle(vs_state).c_str());
     }
 
     return skip;
@@ -932,7 +931,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                                          "%s specified in pBindSessionMemoryInfos[%u].memory",
                                          mem_binding_info->requirements.memoryTypeBits, bind_info.memoryBindIndex,
                                          FormatHandle(videoSession).c_str(), mem_state->alloc_info.memoryTypeIndex,
-                                         FormatHandle(mem_state->Handle()).c_str(), i);
+                                         FormatHandle(*mem_state).c_str(), i);
                     }
 
                     if (bind_info.memoryOffset >= mem_state->alloc_info.allocationSize) {
@@ -942,7 +941,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                                          "vkBindVideoSessionMemoryKHR(): pBindSessionMemoryInfos[%u].memoryOffset (%" PRIuLEAST64
                                          ") must be less than the size (%" PRIuLEAST64 ") of %s",
                                          i, bind_info.memoryOffset, mem_state->alloc_info.allocationSize,
-                                         FormatHandle(mem_state->Handle()).c_str());
+                                         FormatHandle(*mem_state).c_str());
                     } else if (bind_info.memoryOffset + bind_info.memorySize > mem_state->alloc_info.allocationSize) {
                         LogObjectList objlist(videoSession);
                         objlist.add(mem_state->Handle());
@@ -952,7 +951,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                             ") specified in pBindSessionMemoryInfos[%u] must be less than or equal to the size (%" PRIuLEAST64
                             ") of %s",
                             bind_info.memoryOffset, bind_info.memorySize, i, mem_state->alloc_info.allocationSize,
-                            FormatHandle(mem_state->Handle()).c_str());
+                            FormatHandle(*mem_state).c_str());
                     }
                 }
 

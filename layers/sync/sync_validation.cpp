@@ -225,7 +225,7 @@ std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) 
         out << formatter.label << ": ";
     }
     if (formatter.node) {
-        out << formatter.report_data->FormatHandle(formatter.node->Handle()).c_str();
+        out << formatter.report_data->FormatHandle(*formatter.node).c_str();
         if (formatter.node->Destroyed()) {
             out << " (destroyed)";
         }
@@ -2575,8 +2575,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                     sync_state.LogError(view_handle, string_SyncHazardVUID(hazard.hazard),
                                         "%s: Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.",
                                         caller_name, string_SyncHazard(hazard.hazard), sync_state.FormatHandle(view_handle).c_str(),
-                                        sync_state.FormatHandle(cmd_buffer.commandBuffer()).c_str(), cmd_buffer.GetActiveSubpass(),
-                                        location, exec_context.FormatHazard(hazard).c_str());
+                                        sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(), location,
+                                        exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2617,8 +2617,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                 skip |= sync_state.LogError(
                     view_state.image_view(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment. Access info %s.",
-                    caller_name, string_SyncHazard(hazard.hazard), sync_state.FormatHandle(view_state.image_view()).c_str(),
-                    sync_state.FormatHandle(cmd_buffer.commandBuffer()).c_str(), cmd_buffer.GetActiveSubpass(),
+                    caller_name, string_SyncHazard(hazard.hazard), sync_state.FormatHandle(view_state).c_str(),
+                    sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
                     exec_context.FormatHazard(hazard).c_str());
             }
         }
@@ -2630,8 +2630,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                 skip |= sync_state.LogError(
                     view_state.image_view(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment. Access info %s.",
-                    caller_name, string_SyncHazard(hazard.hazard), sync_state.FormatHandle(view_state.image_view()).c_str(),
-                    sync_state.FormatHandle(cmd_buffer.commandBuffer()).c_str(), cmd_buffer.GetActiveSubpass(),
+                    caller_name, string_SyncHazard(hazard.hazard), sync_state.FormatHandle(view_state).c_str(),
+                    sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
                     exec_context.FormatHazard(hazard).c_str());
             }
         }
@@ -8430,7 +8430,6 @@ bool QueueBatchContext::DoQueuePresentValidate(const char *func_name, const Pres
             const auto queue_handle = queue_state_->Handle();
             const auto swap_handle = BASE_NODE::Handle(presented.swapchain_state.lock());
             const auto image_handle = BASE_NODE::Handle(presented.image);
-            const auto *report_data = sync_state_->report_data;
             skip = sync_state_->LogError(queue_handle, string_SyncHazardVUID(hazard.hazard),
                                          "%s: Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32
                                          " %s, Access info %s.",

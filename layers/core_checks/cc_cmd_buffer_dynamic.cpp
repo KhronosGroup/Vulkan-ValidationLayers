@@ -46,7 +46,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE &last_boun
     if (unset_status_pipeline.any()) {
         skip |= LogError(objlist, vuid.dynamic_state_setting_commands_08608,
                          "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands.",
-                         CommandTypeString(cmd_type), FormatHandle(pipeline.pipeline()).c_str(),
+                         CommandTypeString(cmd_type), FormatHandle(pipeline).c_str(),
                          DynamicStatesToString(unset_status_pipeline).c_str());
     }
 

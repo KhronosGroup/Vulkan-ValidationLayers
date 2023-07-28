@@ -473,7 +473,7 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
-                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(buffer_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state).c_str(), FormatHandle(buffer_state).c_str(), more_message);
     }
     return skip;
 }
@@ -487,7 +487,7 @@ bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, con
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,
-                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(buffer_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state).c_str(), FormatHandle(buffer_state).c_str(), more_message);
     }
     return skip;
 }

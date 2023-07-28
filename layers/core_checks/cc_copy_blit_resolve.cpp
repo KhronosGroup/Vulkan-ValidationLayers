@@ -238,7 +238,7 @@ bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE &cb_state, const I
         const LogObjectList objlist(cb_state.Handle(), img.Handle());
         skip |= LogError(objlist, vuid,
                          "In %s, pRegions[%" PRIu32 "].%s.mipLevel is %" PRIu32 ", but provided %s has %" PRIu32 " mip levels.",
-                         function, i, member, mip_level, FormatHandle(img.image()).c_str(), img.createInfo.mipLevels);
+                         function, i, member, mip_level, FormatHandle(img).c_str(), img.createInfo.mipLevels);
     }
     return skip;
 }
@@ -262,8 +262,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE &cb_state, 
                              "In %s, pRegions[%" PRIu32 "].%s.baseArrayLayer is %" PRIu32
                              " and .layerCount is "
                              "%" PRIu32 ", but provided %s has %" PRIu32 " array layers.",
-                             function, i, member, base_layer, layer_count, FormatHandle(img.image()).c_str(),
-                             img.createInfo.arrayLayers);
+                             function, i, member, base_layer, layer_count, FormatHandle(img).c_str(), img.createInfo.arrayLayers);
         }
     }
     return skip;
@@ -719,7 +718,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
                              "which was created with queueFamilyIndex %" PRIu32
                              ", which doesn't contain the VK_QUEUE_GRAPHICS_BIT or "
                              "VK_QUEUE_COMPUTE_BIT flag.",
-                             function, i, bufferOffset, FormatHandle(cb_state.commandBuffer()).c_str(),
+                             function, i, bufferOffset, FormatHandle(cb_state).c_str(),
                              FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
         }
     }
@@ -1876,11 +1875,11 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &ima
             const VkDeviceSize max_buffer_copy = buffer_copy_size + region.bufferOffset;
             if (buffer_size < max_buffer_copy) {
                 const LogObjectList objlist(cb, buff_state.Handle());
-                skip |= LogError(objlist, msg_code,
-                                 "%s: pRegion[%" PRIu32 "] is trying to copy  %" PRIu64 " bytes plus %" PRIu64
-                                 " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
-                                 func_name, i, buffer_copy_size, region.bufferOffset, FormatHandle(buff_state.Handle()).c_str(),
-                                 buffer_size);
+                skip |=
+                    LogError(objlist, msg_code,
+                             "%s: pRegion[%" PRIu32 "] is trying to copy  %" PRIu64 " bytes plus %" PRIu64
+                             " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
+                             func_name, i, buffer_copy_size, region.bufferOffset, FormatHandle(buff_state).c_str(), buffer_size);
             }
         }
     }
@@ -1895,7 +1894,7 @@ bool CoreChecks::ValidateImageSampleCount(VkCommandBuffer cb, const IMAGE_STATE 
     if (image_state.createInfo.samples != sample_count) {
         const LogObjectList objlist(cb, image_state.Handle());
         skip = LogError(objlist, msgCode, "%s for %s was created with a sample count of %s but must be %s.", location,
-                        FormatHandle(image_state.Handle()).c_str(), string_VkSampleCountFlagBits(image_state.createInfo.samples),
+                        FormatHandle(image_state).c_str(), string_VkSampleCountFlagBits(image_state.createInfo.samples),
                         string_VkSampleCountFlagBits(sample_count));
     }
     return skip;
@@ -2165,7 +2164,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                              "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
                              "which was created with queueFamilyIndex %" PRIu32
                              ", which doesn't contain the VK_QUEUE_GRAPHICS_BIT flag.",
-                             func_name, i, region_aspect_mask, FormatHandle(cb_state.commandBuffer()).c_str(),
+                             func_name, i, region_aspect_mask, FormatHandle(cb_state).c_str(),
                              FormatHandle(command_pool->commandPool()).c_str(), queue_family_index);
         }
     }

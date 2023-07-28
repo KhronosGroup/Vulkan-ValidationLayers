@@ -35,8 +35,8 @@ bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const REN
     return LogError(objlist, error_code,
                     "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
                     "compatible with %u: %s.",
-                    caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
-                    FormatHandle(rp2_state.renderPass()).c_str(), primary_attach, secondary_attach, msg);
+                    caller, type1_string, FormatHandle(rp1_state).c_str(), type2_string, FormatHandle(rp2_state).c_str(),
+                    primary_attach, secondary_attach, msg);
 }
 
 bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
@@ -266,7 +266,7 @@ bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_P
                                         const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
-                    FormatHandle(rp1_state.renderPass()).c_str(), type2_string, FormatHandle(rp2_state.renderPass()).c_str(), msg);
+                    FormatHandle(rp1_state).c_str(), type2_string, FormatHandle(rp2_state).c_str(), msg);
 }
 
 bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
@@ -274,7 +274,7 @@ bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const REN
                                              const char *error_code) const {
     const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
-                    FormatHandle(rp1_state.renderPass()).c_str(), type2_string, FormatHandle(rp2_state.renderPass()).c_str(), msg);
+                    FormatHandle(rp1_state).c_str(), type2_string, FormatHandle(rp2_state).c_str(), msg);
 }
 
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
@@ -291,8 +291,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
                          "%s with a flags of %u.",
-                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.flags,
-                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.flags);
+                         caller, type1_string, FormatHandle(rp1_state).c_str(), rp1_state.createInfo.flags, type2_string,
+                         FormatHandle(rp2_state).c_str(), rp2_state.createInfo.flags);
     }
 
     if (rp1_state.createInfo.subpassCount != rp2_state.createInfo.subpassCount) {
@@ -300,8 +300,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a subpassCount of %u and %s w/ "
                          "%s with a subpassCount of %u.",
-                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.subpassCount,
-                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.subpassCount);
+                         caller, type1_string, FormatHandle(rp1_state).c_str(), rp1_state.createInfo.subpassCount, type2_string,
+                         FormatHandle(rp2_state).c_str(), rp2_state.createInfo.subpassCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.subpassCount; ++i) {
             skip |= ValidateSubpassCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
@@ -313,8 +313,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a dependencyCount of %" PRIu32
                          " and %s w/ %s with a dependencyCount of %" PRIu32 ".",
-                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.dependencyCount,
-                         type2_string, FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.dependencyCount);
+                         caller, type1_string, FormatHandle(rp1_state).c_str(), rp1_state.createInfo.dependencyCount, type2_string,
+                         FormatHandle(rp2_state).c_str(), rp2_state.createInfo.dependencyCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.dependencyCount; ++i) {
             skip |= ValidateDependencyCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
@@ -325,19 +325,18 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a correlatedViewMaskCount of %" PRIu32
                          " and %s w/ %s with a correlatedViewMaskCount of %" PRIu32 ".",
-                         caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(),
-                         rp1_state.createInfo.correlatedViewMaskCount, type2_string, FormatHandle(rp2_state.renderPass()).c_str(),
-                         rp2_state.createInfo.correlatedViewMaskCount);
+                         caller, type1_string, FormatHandle(rp1_state).c_str(), rp1_state.createInfo.correlatedViewMaskCount,
+                         type2_string, FormatHandle(rp2_state).c_str(), rp2_state.createInfo.correlatedViewMaskCount);
     } else {
         for (uint32_t i = 0; i < rp1_state.createInfo.correlatedViewMaskCount; ++i) {
             if (rp1_state.createInfo.pCorrelatedViewMasks[i] != rp2_state.createInfo.pCorrelatedViewMasks[i]) {
                 const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
-                skip |= LogError(objlist, error_code,
-                                 "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32
-                                 "] of %" PRIu32 " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
-                                 caller, type1_string, FormatHandle(rp1_state.renderPass()).c_str(), i,
-                                 rp1_state.createInfo.pCorrelatedViewMasks[i], type2_string,
-                                 FormatHandle(rp2_state.renderPass()).c_str(), i, rp1_state.createInfo.pCorrelatedViewMasks[i]);
+                skip |=
+                    LogError(objlist, error_code,
+                             "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32
+                             " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
+                             caller, type1_string, FormatHandle(rp1_state).c_str(), i, rp1_state.createInfo.pCorrelatedViewMasks[i],
+                             type2_string, FormatHandle(rp2_state).c_str(), i, rp1_state.createInfo.pCorrelatedViewMasks[i]);
             }
         }
     }
@@ -3777,7 +3776,7 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                 "tiling: %s, usage: %s, "
                 "flags: %s.",
                 func_name, attachment_type, FormatHandle(image_view).c_str(), string_VkFormat(image_view_state->create_info.format),
-                FormatHandle(image_state->Handle()).c_str(), string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
+                FormatHandle(*image_state).c_str(), string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
                 string_VkFormat(image_view_state->create_info.format),
                 string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
                 string_VkImageType(image_state->createInfo.imageType), string_VkImageTiling(image_state->createInfo.tiling),
@@ -3943,7 +3942,7 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                          ", is specified from with "
                                          "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) was created without "
                                          "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT in its createInfo.flags.",
-                                         subpass, attachments[attach].attachment, FormatHandle(image_state->Handle()).c_str());
+                                         subpass, attachments[attach].attachment, FormatHandle(*image_state).c_str());
                     }
                     const VkImageCreateInfo image_create_info = image_state->createInfo;
                     if (!image_state->image_format_properties.sampleCounts) {
@@ -3959,7 +3958,7 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                          "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
                                          "tiling: %s, usage: %s, "
                                          "flags: %s does not support a rasterizationSamples count of %s",
-                                         subpass, attachments[attach].attachment, FormatHandle(image_state->Handle()).c_str(),
+                                         subpass, attachments[attach].attachment, FormatHandle(*image_state).c_str(),
                                          string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
                                          string_VkImageTiling(image_create_info.tiling),
                                          string_VkImageUsageFlags(image_create_info.usage).c_str(),
