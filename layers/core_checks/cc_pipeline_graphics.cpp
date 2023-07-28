@@ -2628,16 +2628,15 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                 skip |= LogError(objlist, vuid.vertex_binding_04007,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                                 caller, FormatHandle(pipeline.pipeline()).c_str(), vertex_binding, i, vertex_binding);
+                                 caller, FormatHandle(pipeline).c_str(), vertex_binding, i, vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-                skip |=
-                    LogError(objlist, vuid.vertex_binding_null_04008,
-                             "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
-                             "binding Index %u should be set via "
-                             "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                             caller, vertex_binding, FormatHandle(pipeline.pipeline()).c_str(), vertex_binding, i, vertex_binding);
+                skip |= LogError(objlist, vuid.vertex_binding_null_04008,
+                                 "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
+                                 "binding Index %u should be set via "
+                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
+                                 caller, vertex_binding, FormatHandle(pipeline).c_str(), vertex_binding, i, vertex_binding);
             }
         }
 
@@ -2746,12 +2745,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                   enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
                 ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-                skip |=
-                    LogError(objlist, vuid.msrtss_rasterization_samples_07284,
-                             "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.", caller,
-                             FormatHandle(pipeline.pipeline()).c_str(), string_VkSampleCountFlagBits(rasterization_samples),
-                             FormatHandle(cb_state.activeRenderPass->renderPass()).c_str(),
-                             string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
+                skip |= LogError(objlist, vuid.msrtss_rasterization_samples_07284,
+                                 "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
+                                 caller, FormatHandle(pipeline).c_str(), string_VkSampleCountFlagBits(rasterization_samples),
+                                 FormatHandle(*cb_state.activeRenderPass).c_str(),
+                                 string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
             }
 
             const bool dynamic_line_raster_mode = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
@@ -2951,17 +2949,17 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             skip |= LogError(objlist, vuid.dynamic_rendering_06198,
                              "%s: Currently bound pipeline %s must have been created with a "
                              "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
-                             caller, FormatHandle(pipeline.pipeline()).c_str());
+                             caller, FormatHandle(pipeline).c_str());
         }
 
         const auto pipeline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
 
         if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-            skip |= LogError(
-                objlist, vuid.dynamic_rendering_view_mask_06178,
-                "%s: Currently bound pipeline %s viewMask ([%" PRIu32 ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
-                caller, FormatHandle(pipeline.pipeline()).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
+            skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
+                             "%s: Currently bound pipeline %s viewMask ([%" PRIu32
+                             ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
+                             caller, FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
 
         const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
@@ -2971,7 +2969,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
                              "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
                              ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
-                             caller, FormatHandle(pipeline.pipeline()).c_str(), pipeline_rendering_ci.colorAttachmentCount,
+                             caller, FormatHandle(pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
                              rendering_color_attachment_count);
         }
 
@@ -3119,7 +3117,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
                                  "%s: Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                 caller, FormatHandle(pipeline.pipeline()).c_str());
+                                 caller, FormatHandle(pipeline).c_str());
             }
         }
 
@@ -3132,7 +3130,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
                                  "%s: Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                 caller, FormatHandle(pipeline.pipeline()).c_str());
+                                 caller, FormatHandle(pipeline).c_str());
             }
         }
     }

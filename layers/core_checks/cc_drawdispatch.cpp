@@ -3506,18 +3506,18 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                 pipe_layouts_log << "a union of layouts [ ";
                 for (const auto &layout : layouts) {
                     objlist.add(layout->layout());
-                    pipe_layouts_log << FormatHandle(layout->layout()) << " ";
+                    pipe_layouts_log << FormatHandle(*layout) << " ";
                 }
                 pipe_layouts_log << "]";
             } else {
-                pipe_layouts_log << FormatHandle(layouts.front()->layout());
+                pipe_layouts_log << FormatHandle(*layouts.front());
             }
             objlist.add(last_bound_state.pipeline_layout);
             skip |= LogError(objlist, vuid.compatible_pipeline_08600,
                              "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                              ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
-                             function, FormatHandle(pipeline.pipeline()).c_str(), pipe_layouts_log.str().c_str(),
-                             pipeline.max_active_slot, FormatHandle(last_bound_state.pipeline_layout).c_str());
+                             function, FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot,
+                             FormatHandle(last_bound_state.pipeline_layout).c_str());
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
             for (const auto &set_binding_pair : pipeline.active_slots) {
@@ -3526,7 +3526,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                 if (!set_info.bound_descriptor_set) {
                     skip |= LogError(cb_state.commandBuffer(), vuid.compatible_pipeline_08600,
                                      "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
-                                     FormatHandle(pipeline.pipeline()).c_str(), set_index);
+                                     FormatHandle(pipeline).c_str(), set_index);
                 } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index,
                                                          error_string)) {
                     // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
@@ -3534,7 +3534,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                     const LogObjectList objlist(set_handle, pipeline_layout->layout());
                     skip |= LogError(objlist, vuid.compatible_pipeline_08600,
                                      "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
-                                     FormatHandle(set_handle).c_str(), set_index, FormatHandle(pipeline_layout->layout()).c_str(),
+                                     FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
                                      error_string.c_str());
                 } else {  // Valid set is bound and layout compatible, validate that it's updated
                     // Pull the set node

@@ -65,7 +65,7 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
                                                                         : "VUID-vkCmdCopyQueryPoolResults-queryType-03233",
                          "%s: QueryPool %s was created with a queryType of"
                          "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but flags contains %s.",
-                         cmd_name, FormatHandle(query_pool_state.pool()).c_str(), invalid_flags_string.c_str());
+                         cmd_name, FormatHandle(query_pool_state).c_str(), invalid_flags_string.c_str());
     }
 
     for (uint32_t query_index = firstQuery; query_index < queryCount; query_index++) {
@@ -77,11 +77,10 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
             }
         }
         if (submitted < query_pool_state.n_performance_passes) {
-            skip |=
-                LogError(query_pool_state.pool(), "VUID-vkGetQueryPoolResults-queryType-03231",
-                         "%s: QueryPool %s has %u performance query passes, but the query has only been "
-                         "submitted for %u of the passes.",
-                         cmd_name, FormatHandle(query_pool_state.pool()).c_str(), query_pool_state.n_performance_passes, submitted);
+            skip |= LogError(query_pool_state.pool(), "VUID-vkGetQueryPoolResults-queryType-03231",
+                             "%s: QueryPool %s has %u performance query passes, but the query has only been "
+                             "submitted for %u of the passes.",
+                             cmd_name, FormatHandle(query_pool_state).c_str(), query_pool_state.n_performance_passes, submitted);
         }
     }
 
@@ -297,7 +296,7 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const c
             return LogError(cb_state.commandBuffer(), error_code,
                             "%s(): Called in command buffer %s which was allocated from the command pool %s which was created with "
                             "queueFamilyIndex %u which doesn't contain the required %s capability flags.",
-                            caller_name, FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(pool->commandPool()).c_str(),
+                            caller_name, FormatHandle(cb_state).c_str(), FormatHandle(pool->commandPool()).c_str(),
                             queue_family_index, required_flags_string.c_str());
         }
     }
@@ -406,8 +405,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
                         "but "
                         "the command pool the command buffer %s was allocated from does not support graphics operations (%s).",
                         cmd_name, string_VkQueryPipelineStatisticFlags(query_pool_ci.pipelineStatistics).c_str(),
-                        FormatHandle(cb_state.commandBuffer()).c_str(),
-                        string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
+                        FormatHandle(cb_state).c_str(), string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
                 }
             }
             if ((cb_state.command_pool->queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
@@ -419,8 +417,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
                         "but "
                         "the command pool the command buffer %s was allocated from does not support compute operations (%s).",
                         cmd_name, string_VkQueryPipelineStatisticFlags(query_pool_ci.pipelineStatistics).c_str(),
-                        FormatHandle(cb_state.commandBuffer()).c_str(),
-                        string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
+                        FormatHandle(cb_state).c_str(), string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
                 }
             }
             break;
@@ -428,12 +425,11 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
         case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT: {
             if ((cb_state.command_pool->queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
                 const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
-                skip |=
-                    LogError(objlist, vuids->vuid_primitives_generated,
-                             "%s(): queryType of queryPool is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
-                             "the command pool the command buffer %s was allocated from does not support graphics operations (%s).",
-                             cmd_name, FormatHandle(cb_state.commandBuffer()).c_str(),
-                             string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
+                skip |= LogError(
+                    objlist, vuids->vuid_primitives_generated,
+                    "%s(): queryType of queryPool is VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
+                    "the command pool the command buffer %s was allocated from does not support graphics operations (%s).",
+                    cmd_name, FormatHandle(cb_state).c_str(), string_VkQueueFlags(cb_state.command_pool->queue_flags).c_str());
             }
             break;
         }
@@ -444,7 +440,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
                 skip |= LogError(objlist, vuids->vuid_result_status_support,
                                  "%s: the command pool's queue family (index %u) the command buffer %s was allocated "
                                  "from does not support result status queries",
-                                 cmd_name, cb_state.command_pool->queueFamilyIndex, FormatHandle(cb_state.commandBuffer()).c_str());
+                                 cmd_name, cb_state.command_pool->queueFamilyIndex, FormatHandle(cb_state).c_str());
             }
             break;
         }
@@ -472,9 +468,8 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
                 skip |= LogError(objlist, vuids->vuid_dup_query_type,
                                  "%s: Within the same command buffer %s, query %d from pool %s has same queryType as active query "
                                  "%d from pool %s.",
-                                 cmd_name, FormatHandle(cb_state.commandBuffer()).c_str(), query_obj.index,
-                                 FormatHandle(query_obj.pool).c_str(), active_query_obj.index,
-                                 FormatHandle(active_query_obj.pool).c_str());
+                                 cmd_name, FormatHandle(cb_state).c_str(), query_obj.index, FormatHandle(query_obj.pool).c_str(),
+                                 active_query_obj.index, FormatHandle(active_query_obj.pool).c_str());
             }
         }
     }
@@ -669,7 +664,7 @@ bool CoreChecks::ValidatePerformanceQuery(const CMD_BUFFER_STATE &cb_state, cons
         skip |= state_data->LogError(objlist, "VUID-vkQueueSubmit-pCommandBuffers-03220",
                                      "%s: Commandbuffer %s was submitted and contains a performance query but the"
                                      "profiling lock was not held continuously throughout the recording of commands.",
-                                     CommandTypeString(cmd_type), state_data->FormatHandle(cb_state.Handle()).c_str());
+                                     CommandTypeString(cmd_type), state_data->FormatHandle(cb_state).c_str());
     }
 
     QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
@@ -692,7 +687,7 @@ bool CoreChecks::ValidatePerformanceQuery(const CMD_BUFFER_STATE &cb_state, cons
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
                 "%s: Commandbuffer %s contains more than one performance query pool but "
                 "performanceCounterMultipleQueryPools is not enabled.",
-                CommandTypeString(cmd_type), state_data->FormatHandle(cb_state.Handle()).c_str());
+                CommandTypeString(cmd_type), state_data->FormatHandle(cb_state).c_str());
         }
     } else {
         firstPerfQueryPool = query_obj.pool;
@@ -724,21 +719,20 @@ void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQue
 
 void CoreChecks::EnqueueVerifyEndQuery(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj) {
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state.queryUpdates.emplace_back([query_obj](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                   QueryMap *localQueryToStateMap) {
+    cb_state.queryUpdates.emplace_back([this, query_obj](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                         VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                         QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
-        auto device_data = cb_state_arg.dev_data;
-        auto query_pool_state = device_data->Get<QUERY_POOL_STATE>(query_obj.pool);
+        // NOTE: dev_data == this, but the compiler "Visual Studio 16" complains Get is ambiguous if dev_data isn't used
+        auto query_pool_state = cb_state_arg.dev_data->Get<QUERY_POOL_STATE>(query_obj.pool);
         if (query_pool_state->has_perf_scope_command_buffer && (cb_state_arg.command_count - 1) != query_obj.end_command_index) {
             const LogObjectList objlist(cb_state_arg.commandBuffer(), query_pool_state->pool());
-            skip |= device_data->LogError(objlist, "VUID-vkCmdEndQuery-queryPool-03227",
-                                          "vkCmdEndQuery: Query pool %s was created with a counter of scope "
-                                          "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
-                                          "command in the command buffer %s.",
-                                          device_data->FormatHandle(query_obj.pool).c_str(),
-                                          device_data->FormatHandle(cb_state_arg.Handle()).c_str());
+            skip |= LogError(objlist, "VUID-vkCmdEndQuery-queryPool-03227",
+                             "vkCmdEndQuery: Query pool %s was created with a counter of scope "
+                             "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
+                             "command in the command buffer %s.",
+                             FormatHandle(query_obj.pool).c_str(), FormatHandle(cb_state_arg).c_str());
         }
         return skip;
     });
@@ -833,12 +827,12 @@ bool CoreChecks::ValidateQueryPoolIndex(const QUERY_POOL_STATE &query_pool_state
     if (firstQuery >= available_query_count) {
         skip |= LogError(query_pool_state.pool(), first_vuid,
                          "%s: In Query %s the firstQuery (%u) is greater or equal to the queryPool size (%u).", func_name,
-                         FormatHandle(query_pool_state.pool()).c_str(), firstQuery, available_query_count);
+                         FormatHandle(query_pool_state).c_str(), firstQuery, available_query_count);
     }
     if ((firstQuery + queryCount) > available_query_count) {
         skip |= LogError(query_pool_state.pool(), sum_vuid,
                          "%s: In Query %s the sum of firstQuery (%u) + queryCount (%u) is greater than the queryPool size (%u).",
-                         func_name, FormatHandle(query_pool_state.pool()).c_str(), firstQuery, queryCount, available_query_count);
+                         func_name, FormatHandle(query_pool_state).c_str(), firstQuery, queryCount, available_query_count);
     }
     return skip;
 }

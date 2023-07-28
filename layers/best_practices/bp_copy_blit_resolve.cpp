@@ -148,17 +148,17 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
             cmd.Handle(), kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
             "vkCmdClearAttachments() issued on %s prior to any Draw Cmds in current render pass. It is recommended you "
             "use RenderPass LOAD_OP_CLEAR on attachments instead.",
-            FormatHandle(cmd.Handle()).c_str());
+            FormatHandle(cmd).c_str());
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_COLOR_BIT) &&
         rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
-        skip |= LogPerformanceWarning(
-            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
-            "%svkCmdClearAttachments() issued on %s for color attachment #%u in this subpass, "
-            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
-            "it is more efficient.",
-            secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd.Handle()).c_str(), color_attachment);
+        skip |=
+            LogPerformanceWarning(device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                                  "%svkCmdClearAttachments() issued on %s for color attachment #%u in this subpass, "
+                                  "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                                  "it is more efficient.",
+                                  secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd).c_str(), color_attachment);
     }
 
     if ((new_aspects & VK_IMAGE_ASPECT_DEPTH_BIT) &&
@@ -168,7 +168,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
                                   "%svkCmdClearAttachments() issued on %s for the depth attachment in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
-                                  secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd.Handle()).c_str());
+                                  secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd).c_str());
 
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
             const auto cmd_state = GetRead<bp_state::CommandBuffer>(cmd.commandBuffer());
@@ -184,7 +184,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
                                   "%svkCmdClearAttachments() issued on %s for the stencil attachment in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
-                                  secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd.Handle()).c_str());
+                                  secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd).c_str());
     }
 
     return skip;

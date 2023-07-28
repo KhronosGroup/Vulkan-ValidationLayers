@@ -40,7 +40,7 @@ struct hash<VulkanTypedHandle> {
 // inheriting from enable_shared_from_this<> adds a method, shared_from_this(), which
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
-class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
+class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHandleWrapper {
   public:
     // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
@@ -50,7 +50,7 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     using NodeList = small_vector<std::shared_ptr<BASE_NODE>, 4, uint32_t>;
 
     template <typename Handle>
-    BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t), destroyed_(false) {}
+    BASE_NODE(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false) {}
 
     // because shared_from_this() does not work from the constructor, this 2nd phase
     // constructor is where a state object should call AddParent() on its child nodes.
@@ -74,11 +74,9 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     static bool Invalid(const BASE_NODE *node) { return !node || node->Destroyed(); }
     static bool Invalid(const std::shared_ptr<const BASE_NODE> &node) { return !node || node->Destroyed(); }
 
-    const VulkanTypedHandle &Handle() const { return handle_; }
+    using TypedHandleWrapper::Handle;
     static VulkanTypedHandle Handle(const BASE_NODE *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
     static VulkanTypedHandle Handle(const std::shared_ptr<const BASE_NODE> &node) { return Handle(node.get()); }
-
-    VulkanObjectType Type() const { return handle_.type; }
 
     virtual bool InUse() const;
 
@@ -106,8 +104,6 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     // returns a copy of the current set of parents so that they can be walked
     // without the tree lock held. If unlink == true, parent_nodes_ is also cleared.
     NodeMap GetParentsForInvalidate(bool unlink);
-
-    VulkanTypedHandle handle_;
 
     // Set to true when the API-level object is destroyed, but this object may
     // hang around until its shared_ptr refcount goes to zero.

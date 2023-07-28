@@ -160,6 +160,18 @@ struct LoggingLabelState {
     }
 };
 
+class TypedHandleWrapper {
+  public:
+    template <typename Handle>
+    TypedHandleWrapper(Handle h, VulkanObjectType t) : handle_(h, t) {}
+
+    const VulkanTypedHandle &Handle() const { return handle_; }
+    VulkanObjectType Type() const { return handle_.type; }
+
+  protected:
+    VulkanTypedHandle handle_;
+};
+
 typedef struct _debug_report_data {
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
     VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
@@ -229,9 +241,11 @@ typedef struct _debug_report_data {
         return FormatHandle(object_string[handle.type], handle.handle);
     }
 
-    template <typename HANDLE_T>
-    std::string FormatHandle(HANDLE_T handle) const {
-        return FormatHandle(VkHandleInfo<HANDLE_T>::Typename(), HandleToUint64(handle));
+    std::string FormatHandle(const TypedHandleWrapper &wrapper) const { return FormatHandle(wrapper.Handle()); }
+
+    template <typename T, typename std::enable_if_t<!std::is_base_of<TypedHandleWrapper, T>::value, void *> = nullptr>
+    std::string FormatHandle(T handle) const {
+        return FormatHandle(VkHandleInfo<T>::Typename(), HandleToUint64(handle));
     }
 
 } debug_report_data;

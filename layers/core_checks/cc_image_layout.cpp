@@ -160,7 +160,7 @@ bool CoreChecks::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const 
                                         "%s: Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
                                         ") with specific layout %s that doesn't match the "
                                         "%s layout %s.",
-                                        caller, FormatHandle(image_state.Handle()).c_str(), subres.arrayLayer, subres.mipLevel,
+                                        caller, FormatHandle(image_state).c_str(), subres.arrayLayer, subres.mipLevel,
                                         string_VkImageLayout(layout_check.expected_layout), layout_check.message,
                                         string_VkImageLayout(layout_check.layout));
             }
@@ -190,7 +190,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
                 skip |= LogPerformanceWarning(objlist, kVUID_Core_DrawState_InvalidImageLayout,
                                               "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
-                                              FormatHandle(image_state.Handle()).c_str(), string_VkImageLayout(optimal_layout));
+                                              FormatHandle(image_state).c_str(), string_VkImageLayout(optimal_layout));
             }
         } else if (IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if (image_state.shared_presentable) {
@@ -205,10 +205,9 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
         } else {
             *error = true;
             const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-            skip |=
-                LogError(objlist, layout_invalid_msg_code, "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.",
-                         caller, FormatHandle(image_state.Handle()).c_str(), string_VkImageLayout(explicit_layout),
-                         string_VkImageLayout(optimal_layout));
+            skip |= LogError(
+                objlist, layout_invalid_msg_code, "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
+                FormatHandle(image_state).c_str(), string_VkImageLayout(explicit_layout), string_VkImageLayout(optimal_layout));
         }
     }
     return skip;
@@ -352,10 +351,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                                          ", mip level %" PRIu32
                                          ") "
                                          "to be in layout %s--instead, current layout is %s.",
-                                         loc.Message().c_str(), FormatHandle(cb_state.commandBuffer()).c_str(),
-                                         FormatHandle(image_state->Handle()).c_str(), subresource.aspectMask,
-                                         subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(initial_layout),
-                                         string_VkImageLayout(image_layout));
+                                         loc.Message().c_str(), FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
+                                         subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
+                                         string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                     }
                 }
             }
@@ -466,7 +464,7 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassC
                          "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
                          "tiling: %s, usage: %s, "
                          "flags: %s does not support a rasterizationSamples count of %s",
-                         function_name, subpass, msg.str().c_str(), FormatHandle(image_state->Handle()).c_str(),
+                         function_name, subpass, msg.str().c_str(), FormatHandle(*image_state).c_str(),
                          string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
                          string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
                          string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(msrtss_samples));
@@ -695,7 +693,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                              "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle.",
-                             FormatHandle(framebuffer_state.framebuffer()).c_str(), i, FormatHandle(image_view).c_str());
+                             FormatHandle(framebuffer_state).c_str(), i, FormatHandle(image_view).c_str());
             continue;
         }
 
@@ -704,10 +702,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
         if (!image_state) {
             const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view, image);
-            skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                             "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
-                             FormatHandle(framebuffer_state.framebuffer()).c_str(), i, FormatHandle(image_view).c_str(),
-                             FormatHandle(image).c_str());
+            skip |=
+                LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                         "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
+                         FormatHandle(framebuffer_state).c_str(), i, FormatHandle(image_view).c_str(), FormatHandle(image).c_str());
             continue;
         }
         auto attachment_initial_layout = render_pass_info->pAttachments[i].initialLayout;

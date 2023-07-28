@@ -414,7 +414,7 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE &cb_state, const V
         skip = LogError(objlist, "VUID-vkQueueSubmit-pSubmits-04626",
                         "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
                         "this queue family %d.",
-                        FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(object).c_str(), queueFamilyIndex);
+                        FormatHandle(cb_state).c_str(), FormatHandle(object).c_str(), queueFamilyIndex);
     }
     return skip;
 }
@@ -435,7 +435,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
             skip |= LogError(objlist, vuid,
                              "%s Primary %s created in queue family %d is being submitted on %s "
                              "from queue family %d.",
-                             loc.Message().c_str(), FormatHandle(cb_state.commandBuffer()).c_str(), pool->queueFamilyIndex,
+                             loc.Message().c_str(), FormatHandle(cb_state).c_str(), pool->queueFamilyIndex,
                              FormatHandle(queue).c_str(), queue_state->queueFamilyIndex);
         }
 
@@ -481,7 +481,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
         (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
         skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_CommandBufferSingleSubmitViolation,
                          "%s recorded with VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT has been submitted %" PRIu64 " times.",
-                         FormatHandle(cb_state.commandBuffer()).c_str(), submissions);
+                         FormatHandle(cb_state).c_str(), submissions);
     }
 
     // Validate that cmd buffers have been updated
@@ -493,13 +493,13 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
 
         case CbState::New:
             skip |= LogError(cb_state.commandBuffer(), vu_id, "%s used in the call to %s is unrecorded and contains no commands.",
-                             FormatHandle(cb_state.commandBuffer()).c_str(), call_source);
+                             FormatHandle(cb_state).c_str(), call_source);
             break;
 
         case CbState::Recording:
             skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_NoEndCommandBuffer,
-                             "You must call vkEndCommandBuffer() on %s before this call to %s!",
-                             FormatHandle(cb_state.commandBuffer()).c_str(), call_source);
+                             "You must call vkEndCommandBuffer() on %s before this call to %s!", FormatHandle(cb_state).c_str(),
+                             call_source);
             break;
 
         default: /* recorded */
@@ -519,7 +519,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, SubmitError::kCmdNotSimultaneous);
 
         skip |= LogError(device, vuid, "%s %s is already in use and is not marked for simultaneous use.", loc.Message().c_str(),
-                         FormatHandle(cb_state.commandBuffer()).c_str());
+                         FormatHandle(cb_state).c_str());
     }
     return skip;
 }
@@ -538,7 +538,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
         const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdInSubmit);
         skip |=
             LogError(cb_state.commandBuffer(), vuid, "%s Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.",
-                     loc.Message().c_str(), FormatHandle(cb_state.commandBuffer()).c_str());
+                     loc.Message().c_str(), FormatHandle(cb_state).c_str());
     } else {
         for (const auto *sub_cb : cb_state.linkedCommandBuffers) {
             skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards);
@@ -551,7 +551,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                 skip |= LogError(objlist, vuid,
                                  "%s %s was submitted with secondary %s but that buffer has subsequently been bound to "
                                  "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                                 loc.Message().c_str(), FormatHandle(cb_state.commandBuffer()).c_str(),
+                                 loc.Message().c_str(), FormatHandle(cb_state).c_str(),
                                  FormatHandle(sub_cb->commandBuffer()).c_str(), FormatHandle(sub_cb->primaryCommandBuffer).c_str());
             }
 

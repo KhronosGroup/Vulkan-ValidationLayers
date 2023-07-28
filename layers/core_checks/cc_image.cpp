@@ -1219,7 +1219,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                              ") does not support required feature %s for the external format "
                              "found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures used by %s.",
                              func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(),
-                             FormatHandle(image_state.image()).c_str());
+                             FormatHandle(image_state).c_str());
         } else {
             skip |= LogError(
                 objlist, vuid,
@@ -1227,7 +1227,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                 " used by %s "
                 "with tiling %s.",
                 func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(), image_state.createInfo.format,
-                FormatHandle(image_state.image()).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
+                FormatHandle(image_state).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
         }
     }
     return skip;
@@ -2317,7 +2317,7 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const 
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image.%s", cmd_name,
-                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(image_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state).c_str(), FormatHandle(image_state).c_str(), more_message);
     }
     return skip;
 }
@@ -2331,7 +2331,7 @@ bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, cons
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image.%s", cmd_name,
-                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(image_state.Handle()).c_str(), more_message);
+                         FormatHandle(cb_state).c_str(), FormatHandle(image_state).c_str(), more_message);
     }
     return skip;
 }

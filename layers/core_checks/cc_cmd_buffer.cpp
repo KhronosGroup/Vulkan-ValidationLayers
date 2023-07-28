@@ -44,7 +44,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, co
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.commandBuffer());
         skip |= LogError(objlist, vuid, "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
-                         FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(obj).c_str(), cause_str);
+                         FormatHandle(cb_state).c_str(), FormatHandle(obj).c_str(), cause_str);
     }
     return skip;
 }
@@ -507,7 +507,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                             objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                             ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
-                            FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(query_object.pool).c_str());
+                            FormatHandle(cb_state).c_str(), FormatHandle(query_object.pool).c_str());
                     }
                 }
                 active_types.insert(query_pool_state->createInfo.queryType);
@@ -520,8 +520,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                 skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                                  "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                                  " of type %d but a query of that type has been started on secondary %s.",
-                                 FormatHandle(cb_state.commandBuffer()).c_str(), FormatHandle(query_object.pool).c_str(),
-                                 query_pool_state->createInfo.queryType, FormatHandle(sub_cb_state.commandBuffer()).c_str());
+                                 FormatHandle(cb_state).c_str(), FormatHandle(query_object.pool).c_str(),
+                                 query_pool_state->createInfo.queryType, FormatHandle(sub_cb_state).c_str());
             }
         }
     }
@@ -532,8 +532,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
         skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094",
                          "vkCmdExecuteCommands(): Primary %s created in queue family %d has secondary "
                          "%s created in queue family %d.",
-                         FormatHandle(cb_state.commandBuffer()).c_str(), primary_pool->queueFamilyIndex,
-                         FormatHandle(sub_cb_state.commandBuffer()).c_str(), secondary_pool->queueFamilyIndex);
+                         FormatHandle(cb_state).c_str(), primary_pool->queueFamilyIndex, FormatHandle(sub_cb_state).c_str(),
+                         secondary_pool->queueFamilyIndex);
     }
 
     return skip;
