@@ -251,13 +251,11 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
         } else {
             prefix = "Shader validation error occurred ";
         }
-        for (const Instruction &insn : module_state.GetInstructions()) {
-            if (insn.Opcode() == spv::OpFunction) {
-                break;  // Debug Info is always before first function
-            }
-            if ((insn.Opcode() == spv::OpString) && (insn.Length() >= 3) && (insn.Word(1) == reported_file_id)) {
+
+        for (const Instruction *insn : module_state.static_data_.debug_string_inst) {
+            if (insn->Length() >= 3 && insn->Word(1) == reported_file_id) {
                 found_opstring = true;
-                reported_filename = insn.GetAsString(2);
+                reported_filename = insn->GetAsString(2);
                 if (reported_filename.empty()) {
                     filename_stream << prefix << "at line " << reported_line_number;
                 } else {
@@ -270,6 +268,7 @@ void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *d
                 break;
             }
         }
+
         if (!found_opstring) {
             filename_stream << "Unable to find SPIR-V OpString for file id " << reported_file_id << " from OpLine instruction."
                             << std::endl;

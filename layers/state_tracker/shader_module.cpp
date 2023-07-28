@@ -806,6 +806,10 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
                 transform_feedback_stream_inst.push_back(&insn);
                 break;
 
+            case spv::OpString:
+                debug_string_inst.push_back(&insn);
+                break;
+
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
