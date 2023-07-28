@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "gpu_validation/gpu_utils.h"
+#include "gpu_validation/gpu_state_tracker.h"
 #include "gpu_validation/gpu_error_message.h"
 #include "gpu_validation/gv_descriptor_sets.h"
 #include "state_tracker/pipeline_state.h"

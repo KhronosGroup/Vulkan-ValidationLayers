@@ -273,8 +273,8 @@ target_sources(vvl PRIVATE
     gpu_validation/debug_printf.h
     gpu_validation/gpu_error_message.cpp
     gpu_validation/gpu_error_message.h
-    gpu_validation/gpu_utils.cpp
-    gpu_validation/gpu_utils.h
+    gpu_validation/gpu_state_tracker.cpp
+    gpu_validation/gpu_state_tracker.h
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h
