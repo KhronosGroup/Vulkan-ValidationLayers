@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu_validation/gpu_utils.h"
+#include "gpu_validation/gpu_state_tracker.h"
 #include "sync/sync_utils.h"
 #include "vma/vma.h"
 
