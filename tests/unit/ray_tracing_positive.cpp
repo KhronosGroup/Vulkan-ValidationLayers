@@ -415,6 +415,22 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
+    TEST_DESCRIPTION("Regression test for nullptr crash when Sync1 barrier API is used for acceleration structure accesses");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // This stage can not be used with ACCELERATION_STRUCTURE_READ access when ray query is disabled, but VVL also should not crash.
+    constexpr VkPipelineStageFlags invalid_src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+    auto barrier = LvlInitStruct<VkMemoryBarrier>();
+    barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreChecks-unhandled-bad-access-flags");
+    m_commandBuffer->begin();
+    m_commandBuffer->PipelineBarrier(invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     TEST_DESCRIPTION("Build a list of destination acceleration structures, then do an update build on that same list");
 
