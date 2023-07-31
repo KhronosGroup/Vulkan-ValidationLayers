@@ -705,13 +705,16 @@ struct RenderPassDepState {
 
             const auto subpass_src_stages =
                 sync_utils::ExpandPipelineStages(subpass_dep.srcStageMask, sync_utils::kAllQueueTypes, disabled_features);
+            const auto barrier_src_stages =
+                sync_utils::ExpandPipelineStages(src_stage_mask, sync_utils::kAllQueueTypes, disabled_features);
+
             const auto subpass_dst_stages =
                 sync_utils::ExpandPipelineStages(subpass_dep.dstStageMask, sync_utils::kAllQueueTypes, disabled_features);
+            const auto barrier_dst_stages =
+                sync_utils::ExpandPipelineStages(dst_stage_mask, sync_utils::kAllQueueTypes, disabled_features);
 
-            const bool is_subset = ((subpass_src_stages == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
-                                    (src_stage_mask == (subpass_src_stages & src_stage_mask))) &&
-                                   ((subpass_dst_stages == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
-                                    (dst_stage_mask == (subpass_dst_stages & dst_stage_mask)));
+            const bool is_subset = (barrier_src_stages == (subpass_src_stages & barrier_src_stages)) &&
+                                   (barrier_dst_stages == (subpass_dst_stages & barrier_dst_stages));
             if (is_subset) return false;  // subset is found, return skip value (false)
         }
         return core->LogError(rp_handle, vuid,
