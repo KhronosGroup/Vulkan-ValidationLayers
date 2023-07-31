@@ -595,6 +595,114 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
+    TEST_DESCRIPTION("Use subgroup size control features when they are not enabled using a shader module identifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_module_id_features =
+        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+    GetPhysicalDeviceFeatures2(shader_module_id_features);
+
+    auto subgroup_size_control_features = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
+    subgroup_size_control_features.subgroupSizeControl = VK_FALSE;
+    shader_cache_control_features.pNext = &subgroup_size_control_features;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = &stage_ci;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    stage_ci.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02784");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
+    TEST_DESCRIPTION("Use subgroup size control features when they are not enabled using a shader module identifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_module_id_features =
+        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+    GetPhysicalDeviceFeatures2(shader_module_id_features);
+
+    auto subgroup_size_control_features = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
+    subgroup_size_control_features.subgroupSizeControl = VK_FALSE;
+    shader_cache_control_features.pNext = &subgroup_size_control_features;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
+
+    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    vk::GetShaderModuleIdentifierEXT(device(), cs.handle(), &get_identifier);
+    sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.cp_ci_.stage = stage_ci;
+    pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-flags-02784");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
     TEST_DESCRIPTION("Use subgroup size control features with wrong shader stage");
 
