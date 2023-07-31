@@ -140,7 +140,10 @@ const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size
 void Location::AppendFields(std::ostream& out) const {
     if (prev) {
         prev->AppendFields(out);
-        out << ".";
+        const bool needs_dot = prev->structure != Struct::Empty || prev->field != Field::Empty;
+        if (needs_dot) {
+            out << ".";
+        }
     }
     out << String(field);
     if (index != Location::kNoIndex) {
