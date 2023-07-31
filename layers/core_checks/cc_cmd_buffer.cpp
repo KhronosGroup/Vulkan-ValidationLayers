@@ -788,9 +788,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     bool active_occlusion_query = false;
     for (const auto &active_query : cb_state->activeQueries) {
         auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
-        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_OCCLUSION) {
+        const auto queryType = query_pool_state->createInfo.queryType;
+        if (queryType == VK_QUERY_TYPE_OCCLUSION) {
             active_occlusion_query = true;
-            break;
+        }
+        if (queryType != VK_QUERY_TYPE_OCCLUSION && queryType != VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-commandBuffer-07594",
+                             "vkCmdExecuteCommands(): query with type %s is active.", string_VkQueryType(queryType));
         }
     }
 
