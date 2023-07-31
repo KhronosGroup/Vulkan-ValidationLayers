@@ -1119,9 +1119,17 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLay
                                                const VkImageSubresourceLayers &subres_layers, uint32_t region_index,
                                                const IMAGE_STATE &image_state, const char *func_name, const char *image_label,
                                                const char *field_name, const char *vuid) const {
+    return ValidateHostCopyCurrentLayout(device, expected_layout, RangeFromLayers(subres_layers), region_index, image_state,
+                                         func_name, image_label, field_name, vuid);
+}
+
+bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLayout expected_layout,
+                                               const VkImageSubresourceRange &validate_range, uint32_t region_index,
+                                               const IMAGE_STATE &image_state, const char *func_name, const char *image_label,
+                                               const char *field_name, const char *vuid) const {
     using Map = GlobalImageLayoutRangeMap;
     bool skip = false;
-    const VkImageSubresourceRange subres_range = image_state.NormalizeSubresourceRange(RangeFromLayers(subres_layers));
+    const VkImageSubresourceRange subres_range = image_state.NormalizeSubresourceRange(validate_range);
 
     Map::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
 
@@ -1138,6 +1146,8 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLay
     };
 
     CheckState check_state(expected_layout, subres_range.aspectMask);
+
+    auto guard = image_state.layout_range_map->ReadLock();
     image_state.layout_range_map->AnyInRange(range_gen, [&check_state](const Map::key_type &range, const VkImageLayout &layout) {
         bool mismatch = false;
         if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {

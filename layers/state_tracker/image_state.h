@@ -224,6 +224,7 @@ class IMAGE_STATE : public BINDABLE {
     }
 
     void SetInitialLayoutMap();
+    void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
