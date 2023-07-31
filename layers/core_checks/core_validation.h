@@ -869,7 +869,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                VkShaderModuleIdentifierEXT* pIdentifier) const override;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
-    virtual bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;
+    bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;
     bool ValidatePointSizeShaderState(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
                                       const EntryPoint& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
@@ -883,8 +883,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                               const PIPELINE_STATE& pipeline, const EntryPoint& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_STATE& module_state, const Instruction* insn) const;
-    bool ValidateShaderStageMaxResources(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                         const PIPELINE_STATE& pipeline) const;
+    bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage) const;
     bool ValidateMemoryScope(const SPIRV_MODULE_STATE& module_state, const Instruction& insn) const;
     bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state,
@@ -893,7 +892,7 @@ class CoreChecks : public ValidationStateTracker {
                                       safe_VkPipelineShaderStageCreateInfo const* create_info, const uint32_t local_size_x) const;
     bool ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const PIPELINE_STATE& pipeline) const;
-    bool ValidateShaderSubgroupSizeControl(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+    bool ValidateShaderSubgroupSizeControl(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stage,
                                            VkPipelineShaderStageCreateFlags flags) const;
     bool ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory) const;
@@ -914,8 +913,7 @@ class CoreChecks : public ValidationStateTracker {
                                    const EntryPoint& entrypoint) const;
     bool ValidateBuiltinLimits(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                const PIPELINE_STATE& pipeline) const;
-    bool ValidateSpecializations(const SPIRV_MODULE_STATE& module_state, const safe_VkSpecializationInfo* spec,
-                                 const PIPELINE_STATE& pipeline) const;
+    bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const PIPELINE_STATE& pipeline) const;
     bool RequirePropertyFlag(const SPIRV_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
                              const char* vuid) const;
     bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name,
