@@ -563,10 +563,9 @@ uint32_t GetImageHeight<VkImageToMemoryCopyEXT>(VkImageToMemoryCopyEXT data) {
     return data.memoryImageHeight;
 }
 template <typename HandleT, typename RegionType>
-bool CoreChecks::ValidateBufferMemoryImageCopyData(const HandleT handle, uint32_t regionCount,
-                                                   const RegionType *pRegions, const IMAGE_STATE &image_state, const char *function,
-                                                   CMD_TYPE cmd_type, bool from_image, bool is_memory) const {
-
+bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType *pRegions,
+                                               const IMAGE_STATE &image_state, const char *function, CMD_TYPE cmd_type,
+                                               bool from_image, bool is_memory) const {
     // Validation common to vkCmdCopyImageToBuffer, vkCmdCopyBufferToImage, vkCopyMemoryToImageEXT, and vkCopyImageToMemoryEXT
     bool skip = false;
     const bool is_2 = (cmd_type == CMD_COPYBUFFERTOIMAGE2KHR || cmd_type == CMD_COPYBUFFERTOIMAGE2);
@@ -831,8 +830,8 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
 
     const VkFormat image_format = image_state.createInfo.format;
 
-    skip |= ValidateBufferMemoryImageCopyData(cb_state.commandBuffer(), regionCount, pRegions, image_state, function, cmd_type,
-                                              image_to_buffer, false);
+    skip |= ValidateHeterogeneousCopyData(cb_state.commandBuffer(), regionCount, pRegions, image_state, function, cmd_type,
+                                          image_to_buffer, false);
 
     for (uint32_t i = 0; i < regionCount; i++) {
         const RegionType region = pRegions[i];
@@ -2697,12 +2696,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         skip |= LogError(device, vuid, "%s() was called when the hostImageCopy feature was not enabled", func_name);
     }
 
-    // TODO If *Image is sparse then all memory ranges accessed by the copy command must be bound as described in Binding Resource
-    // Memory
-
-    skip |= ValidateBufferMemoryImageCopyData(device, regionCount, info_ptr->pRegions, *image_state, func_name, CMD_NONE,
-                                              false, true);
-    // TODO Is this 7965, 7966, or both?
+    skip |=
+        ValidateHeterogeneousCopyData(device, regionCount, info_ptr->pRegions, *image_state, func_name, CMD_NONE, from_image, true);
     skip |= ValidateMemoryIsBoundToImage(
         device, *image_state, func_name,
         from_image ? "VUID-vkCopyImageToMemoryEXT-srcImage-07965" : "VUID-vkCopyMemoryToImageEXT-dstImage-07965");
@@ -2775,14 +2770,6 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     skip |=
         UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, func_name);
 
-    // Todo *ImageLayout must specify the current layout of the image subresources of dstImage specified in pRegions
-    // Todo *ImageLayout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopyDstLayouts
-
-    // ToDo pHostPointer must point to memory that is large enough to contain all memory locations
-    // that are accessed according to Buffer and Image Addressing, for each element of pRegions
-
-    // ToDo The union of all source regions, and the union of all destination regions, specified by the
-    // elements of pRegions, must not overlap in memory
     return skip;
 }
 
@@ -2871,11 +2858,8 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
     bool skip = false;
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
     auto image_state = Get<IMAGE_STATE>(dst_image);
-    auto regionCount = pCopyMemoryToImageInfo->regionCount;
     const char func_name[] = "vkCopyMemoryToImageEXT";
 
-    skip |= ValidateBufferMemoryImageCopyData(device, regionCount, pCopyMemoryToImageInfo->pRegions, *image_state, func_name,
-                                              CMD_NONE, false, true);
     skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, false);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
@@ -2890,10 +2874,6 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
     auto src_image = pCopyImageToMemoryInfo->srcImage;
     auto image_state = Get<IMAGE_STATE>(src_image);
     const char func_name[] = "vkCopyImageToMemoryEXT";
-
-    skip |=
-        ValidateBufferMemoryImageCopyData(device, pCopyImageToMemoryInfo->regionCount,
-                                          pCopyImageToMemoryInfo->pRegions, *image_state, func_name, CMD_NONE, true, true);
 
     skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, true);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
