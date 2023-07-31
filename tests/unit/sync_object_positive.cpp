@@ -2361,3 +2361,54 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, uint64_t(1e10)));
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6204
+TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
+    TEST_DESCRIPTION("Specify expandable stages in subpass barrier");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    subpass_dependency.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
+    subpass_dependency.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &subpass_dependency;
+    const vk_testing::RenderPass rp(*m_device, rpci);
+
+    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.renderPass = rp;
+    fbci.width = m_width;
+    fbci.height = m_height;
+    fbci.layers = 1;
+    const vk_testing::Framebuffer fb(*m_device, fbci);
+
+    m_renderPassBeginInfo.renderPass = rp;
+    m_renderPassBeginInfo.framebuffer = fb;
+
+    auto barrier = LvlInitStruct<VkMemoryBarrier>();
+    barrier.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // The issue was that implementation expands *subpass* compound stages but did not expand *barrier* compound stages.
+    // Specify expandable stage (VERTEX_INPUT_BIT is INDEX_INPUT_BIT + VERTEX_ATTRIBUTE_INPUT_BIT) to ensure it's correctly
+    // matched against subpass stages.
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &barrier, 0,
+                                     nullptr, 0, nullptr);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
