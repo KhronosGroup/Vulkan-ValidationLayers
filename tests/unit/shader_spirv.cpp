@@ -1218,7 +1218,7 @@ TEST_F(NegativeShaderSpirv, SpecializationApplied) {
 }
 
 TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBounds) {
-    TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
+    TEST_DESCRIPTION("Validate VkSpecializationInfo offset.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1249,6 +1249,65 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBounds) {
         helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationInfo-offset-00773");
+}
+
+TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
+    TEST_DESCRIPTION("Validate VkSpecializationInfo offset using a shader module identifier.");
+
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_module_id_features =
+        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+    GetPhysicalDeviceFeatures2(shader_module_id_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout (constant_id = 0) const float x = 0.0f;
+        void main(){
+           gl_Position = vec4(x);
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
+    // Entry offset is greater than dataSize.
+    const VkSpecializationMapEntry entry = {0, 5, sizeof(uint32_t)};
+    uint32_t data = 1;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(float),
+        &data,
+    };
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+    stage_ci.pSpecializationInfo = &specialization_info;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = &stage_ci;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSpecializationInfo-offset-00773");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderSpirv, SpecializationSizeOutOfBounds) {

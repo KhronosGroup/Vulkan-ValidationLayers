@@ -72,6 +72,80 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
+    TEST_DESCRIPTION("Use VkPipelineShaderStageCreateInfo to set robustness");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    CreateComputePipelineHelper pipe(*this);
+
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.LateBindPipelineInfo();
+
+    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+    pipe.cp_ci_.stage.pNext = &pipeline_robustness_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) {
+    TEST_DESCRIPTION("Use VkPipelineShaderStageCreateInfo to set robustness using a shader module identifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_module_id_features =
+        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+    GetPhysicalDeviceFeatures2(shader_module_id_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
+
+    CreateComputePipelineHelper pipe(*this);
+
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.LateBindPipelineInfo();
+
+    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    vk::GetShaderModuleIdentifierEXT(device(), cs.handle(), &get_identifier);
+    sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
+    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>(&sm_id_create_info);
+    pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+    pipe.cp_ci_.stage.module = VK_NULL_HANDLE;
+    pipe.cp_ci_.stage.pNext = &pipeline_robustness_info;
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+}
+
 // Need to fix check to check if feature is exposed
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
 TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
