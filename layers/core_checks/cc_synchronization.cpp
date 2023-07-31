@@ -657,11 +657,8 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
     return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2);
 }
 
-// transient helper struct for checking parts of VUID 02285
 struct RenderPassDepState {
     using Location = core_error::Location;
-    using Func = core_error::Func;
-    using Struct = core_error::Struct;
     using Field = core_error::Field;
 
     const CoreChecks *core;
@@ -685,103 +682,97 @@ struct RenderPassDepState {
           self_dependencies(self_deps),
           dependencies(deps) {}
 
-    VkMemoryBarrier2KHR GetSubPassDepBarrier(const safe_VkSubpassDependency2 &dep) {
-        VkMemoryBarrier2KHR result;
-
-        const auto *barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dep.pNext);
-        if (barrier) {
-            result = *barrier;
-        } else {
-            result.srcStageMask = dep.srcStageMask;
-            result.dstStageMask = dep.dstStageMask;
-            result.srcAccessMask = dep.srcAccessMask;
-            result.dstAccessMask = dep.dstAccessMask;
+    VkMemoryBarrier2 GetSubPassDepBarrier(const safe_VkSubpassDependency2 &dep) const {
+        // "If a VkMemoryBarrier2 is included in the pNext chain, srcStageMask, dstStageMask,
+        // srcAccessMask, and dstAccessMask parameters are ignored. The synchronization and
+        // access scopes instead are defined by the parameters of VkMemoryBarrier2."
+        if (const auto override_barrier = LvlFindInChain<VkMemoryBarrier2>(dep.pNext)) {
+            return *override_barrier;
         }
-        return result;
+
+        auto barrier = LvlInitStruct<VkMemoryBarrier2>();
+        barrier.srcStageMask = dep.srcStageMask;
+        barrier.dstStageMask = dep.dstStageMask;
+        barrier.srcAccessMask = dep.srcAccessMask;
+        barrier.dstAccessMask = dep.dstAccessMask;
+        return barrier;
     }
 
-    bool ValidateStage(const Location &loc, VkPipelineStageFlags2KHR src_stage_mask, VkPipelineStageFlags2KHR dst_stage_mask) {
-        // Look for matching mask in any self-dependency
-        bool match = false;
+    bool ValidateStage(const Location &loc, VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask) const {
+        // Look for srcStageMask + dstStageMask superset in any self-dependency
         for (const auto self_dep_index : self_dependencies) {
-            const auto sub_dep = GetSubPassDepBarrier(dependencies[self_dep_index]);
-            auto sub_src_stage_mask =
-                sync_utils::ExpandPipelineStages(sub_dep.srcStageMask, sync_utils::kAllQueueTypes, disabled_features);
-            auto sub_dst_stage_mask =
-                sync_utils::ExpandPipelineStages(sub_dep.dstStageMask, sync_utils::kAllQueueTypes, disabled_features);
-            match = ((sub_src_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
-                     (src_stage_mask == (sub_src_stage_mask & src_stage_mask))) &&
-                    ((sub_dst_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
-                     (dst_stage_mask == (sub_dst_stage_mask & dst_stage_mask)));
-            if (match) break;
+            const auto subpass_dep = GetSubPassDepBarrier(dependencies[self_dep_index]);
+
+            const auto subpass_src_stages =
+                sync_utils::ExpandPipelineStages(subpass_dep.srcStageMask, sync_utils::kAllQueueTypes, disabled_features);
+            const auto subpass_dst_stages =
+                sync_utils::ExpandPipelineStages(subpass_dep.dstStageMask, sync_utils::kAllQueueTypes, disabled_features);
+
+            const bool is_subset = ((subpass_src_stages == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
+                                    (src_stage_mask == (subpass_src_stages & src_stage_mask))) &&
+                                   ((subpass_dst_stages == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
+                                    (dst_stage_mask == (subpass_dst_stages & dst_stage_mask)));
+            if (is_subset) return false;  // subset is found, return skip value (false)
         }
-        if (!match) {
-            std::stringstream self_dep_ss;
-            stream_join(self_dep_ss, ", ", self_dependencies);
-            core->LogError(rp_handle, vuid,
-                           "%s (0x%" PRIx64
-                           ") is not a subset of VkSubpassDependency srcAccessMask "
-                           "for any self-dependency of subpass %d of %s for which dstAccessMask is also a subset. "
-                           "Candidate VkSubpassDependency are pDependencies entries [%s].",
-                           loc.dot(Field::srcStageMask).Message().c_str(), src_stage_mask, active_subpass,
-                           core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
-            core->LogError(rp_handle, vuid,
-                           "%s (0x%" PRIx64
-                           ") is not a subset of VkSubpassDependency dstAccessMask "
-                           "for any self-dependency of subpass %d of %s for which srcAccessMask is also a subset. "
-                           "Candidate VkSubpassDependency are pDependencies entries [%s].",
-                           loc.dot(Field::dstStageMask).Message().c_str(), dst_stage_mask, active_subpass,
-                           core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
-        }
-        return !match;
+        bool skip = false;
+        std::stringstream self_dep_ss;
+        stream_join(self_dep_ss, ", ", self_dependencies);
+        skip |= core->LogError(rp_handle, vuid,
+                               "%s (0x%" PRIx64
+                               ") is not a subset of VkSubpassDependency srcAccessMask "
+                               "for any self-dependency of subpass %d of %s for which dstAccessMask is also a subset. "
+                               "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                               loc.dot(Field::srcStageMask).Message().c_str(), src_stage_mask, active_subpass,
+                               core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
+        skip |= core->LogError(rp_handle, vuid,
+                               "%s (0x%" PRIx64
+                               ") is not a subset of VkSubpassDependency dstAccessMask "
+                               "for any self-dependency of subpass %d of %s for which srcAccessMask is also a subset. "
+                               "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                               loc.dot(Field::dstStageMask).Message().c_str(), dst_stage_mask, active_subpass,
+                               core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
+        return skip;
     }
 
-    bool ValidateAccess(const Location &loc, VkAccessFlags2KHR src_access_mask, VkAccessFlags2KHR dst_access_mask) {
-        bool match = false;
-
+    bool ValidateAccess(const Location &loc, VkAccessFlags2 src_access_mask, VkAccessFlags2 dst_access_mask) const {
+        // Look for srcAccessMask + dstAccessMask superset in any self-dependency
         for (const auto self_dep_index : self_dependencies) {
-            const auto sub_dep = GetSubPassDepBarrier(dependencies[self_dep_index]);
-            match = (src_access_mask == (sub_dep.srcAccessMask & src_access_mask)) &&
-                    (dst_access_mask == (sub_dep.dstAccessMask & dst_access_mask));
-            if (match) break;
+            const auto subpass_dep = GetSubPassDepBarrier(dependencies[self_dep_index]);
+            const bool is_subset = (src_access_mask == (subpass_dep.srcAccessMask & src_access_mask)) &&
+                                   (dst_access_mask == (subpass_dep.dstAccessMask & dst_access_mask));
+            if (is_subset) return false;  // subset is found, return skip value (false)
         }
-        if (!match) {
-            std::stringstream self_dep_ss;
-            stream_join(self_dep_ss, ", ", self_dependencies);
-            core->LogError(rp_handle, vuid,
-                           "%s (0x%" PRIx64
-                           ") is not a subset of VkSubpassDependency "
-                           "srcAccessMask of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
-                           loc.dot(Field::srcAccessMask).Message().c_str(), src_access_mask, active_subpass,
-                           core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
-            core->LogError(rp_handle, vuid,
-                           "%s (0x%" PRIx64
-                           ") is not a subset of VkSubpassDependency "
-                           "dstAccessMask of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
-                           loc.dot(Field::dstAccessMask).Message().c_str(), dst_access_mask, active_subpass,
-                           core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
-        }
-        return !match;
+        bool skip = false;
+        std::stringstream self_dep_ss;
+        stream_join(self_dep_ss, ", ", self_dependencies);
+        skip |= core->LogError(rp_handle, vuid,
+                               "%s (0x%" PRIx64
+                               ") is not a subset of VkSubpassDependency "
+                               "srcAccessMask of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
+                               loc.dot(Field::srcAccessMask).Message().c_str(), src_access_mask, active_subpass,
+                               core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
+        skip |= core->LogError(rp_handle, vuid,
+                               "%s (0x%" PRIx64
+                               ") is not a subset of VkSubpassDependency "
+                               "dstAccessMask of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
+                               loc.dot(Field::dstAccessMask).Message().c_str(), dst_access_mask, active_subpass,
+                               core->FormatHandle(rp_handle).c_str(), self_dep_ss.str().c_str());
+        return skip;
     }
 
-    bool ValidateDependencyFlag(VkDependencyFlags dependency_flags) {
-        bool match = false;
-
+    bool ValidateDependencyFlag(VkDependencyFlags dependency_flags) const {
         for (const auto self_dep_index : self_dependencies) {
-            const auto &sub_dep = dependencies[self_dep_index];
-            match = sub_dep.dependencyFlags == dependency_flags;
-            if (match) break;
+            const auto &subpass_dep = dependencies[self_dep_index];
+            const bool match = subpass_dep.dependencyFlags == dependency_flags;
+            if (match) return false;  // match is found, return skip value (false)
         }
-        if (!match) {
-            std::stringstream self_dep_ss;
-            stream_join(self_dep_ss, ", ", self_dependencies);
-            core->LogError(rp_handle, vuid,
-                           "%s: dependencyFlags param (0x%x) does not equal VkSubpassDependency dependencyFlags value for any "
-                           "self-dependency of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
-                           func_name.c_str(), dependency_flags, active_subpass, core->FormatHandle(rp_handle).c_str(),
-                           self_dep_ss.str().c_str());
-        }
-        return !match;
+        std::stringstream self_dep_ss;
+        stream_join(self_dep_ss, ", ", self_dependencies);
+        return core->LogError(rp_handle, vuid,
+                              "%s: dependencyFlags param (0x%x) does not equal VkSubpassDependency dependencyFlags value for any "
+                              "self-dependency of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
+                              func_name.c_str(), dependency_flags, active_subpass, core->FormatHandle(rp_handle).c_str(),
+                              self_dep_ss.str().c_str());
     }
 };
 
