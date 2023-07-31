@@ -997,25 +997,25 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
                 b.Init(id_to_type_id[insn.Word(4)], module_state, spec, id_to_spec_id);
                 c.Init(id_to_type_id[insn.Word(5)], module_state, spec, id_to_spec_id);
                 flags = a.isInt() || b.isInt() || c.isInt() || r.isInt() ? insn.Word(6) : 0;
-                if (a.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsMask) == 0)) {
+                if (a.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08976",
                                      "Component type of matrix A is signed integer type, but MatrixASignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (b.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsMask) == 0)) {
+                if (b.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978",
                                      "Component type of matrix B is signed integer type, but MatrixBSignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (c.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsMask) == 0)) {
+                if (c.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980",
                                      "Component type of matrix C is signed integer type, but MatrixCSignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (r.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsMask) == 0)) {
+                if (r.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
                         module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982",
                         "Component type of matrix Result is signed integer type, but MatrixResultSignedComponents flag is not "
@@ -1066,7 +1066,7 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
                         }
                     }
                     if (i < cooperative_matrix_properties_khr.size() &&
-                        (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationMask) != 0 &&
+                        (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0 &&
                         !cooperative_matrix_properties_khr[i].saturatingAccumulation) {
                         skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-saturatingAccumulation-08983",
                                          "SaturatingAccumulation cooperative matrix operand must be present if and only if "
