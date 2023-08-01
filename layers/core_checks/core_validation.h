@@ -888,8 +888,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryScope(const SPIRV_MODULE_STATE& module_state, const Instruction& insn) const;
     bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* create_info) const;
-    bool ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE& module_state,
-                                      safe_VkPipelineShaderStageCreateInfo const* create_info, const uint32_t local_size_x) const;
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6225
+    // bool ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE& module_state,
+    //                                   safe_VkPipelineShaderStageCreateInfo const* create_info, const uint32_t local_size_x) const;
     bool ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderSubgroupSizeControl(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stage,

@@ -702,6 +702,9 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
     return skip;
 }
 
+// Turned off due to backward breaking SPIRV-Headers
+// see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6225
+#if 0
 // Validate SPV_KHR_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_state,
@@ -989,9 +992,9 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
                 break;
         }
     }
-
     return skip;
 }
+#endif
 
 bool CoreChecks::ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                            const PIPELINE_STATE &pipeline) const {
