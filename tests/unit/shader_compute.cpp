@@ -652,7 +652,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
         )";
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
-        VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
+        VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -692,7 +692,7 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
                OpFunctionEnd
         )";
 
-    auto cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr);
+    auto cs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
     if (cs) {
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,

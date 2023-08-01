@@ -1037,8 +1037,7 @@ TEST_F(NegativeAtomic, Float2) {
     const auto set_info = [this, &current_shader, &current_bindings](CreateComputePipelineHelper &helper) {
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-        helper.cs_ =
-            VkShaderObj::CreateFromGLSL(*this, VK_SHADER_STAGE_COMPUTE_BIT, current_shader, "main", nullptr, SPV_ENV_VULKAN_1_1);
+        helper.cs_ = VkShaderObj::CreateFromGLSL(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
         // Skip the test if shader failed to compile
         helper.override_skip_ = !static_cast<bool>(helper.cs_);
         helper.dsl_bindings_ = current_bindings;

@@ -597,7 +597,7 @@ class VkShaderObj : public vk_testing::ShaderModule {
     // optional arguments listed order of most likely to be changed manually by a test
     VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                 const spv_target_env env = SPV_ENV_VULKAN_1_0, SpvSourceType source_type = SPV_SOURCE_GLSL,
-                const VkSpecializationInfo *spec_info = nullptr, char const *name = "main", bool debug = false);
+                const VkSpecializationInfo *spec_info = nullptr, char const *entry_point = "main", bool debug = false);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
     bool InitFromGLSL(bool debug = false);
@@ -607,14 +607,14 @@ class VkShaderObj : public vk_testing::ShaderModule {
 
     // These functions return a pointer to a newly created _and initialized_ VkShaderObj if initialization was successful.
     // Otherwise, {} is returned.
-    static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkRenderFramework &framework, VkShaderStageFlagBits stage,
-                                                       const std::string &code, const char *entry_point = "main",
+    static std::unique_ptr<VkShaderObj> CreateFromGLSL(VkRenderFramework *framework, const char *source,
+                                                       VkShaderStageFlagBits stage, const spv_target_env = SPV_ENV_VULKAN_1_0,
                                                        const VkSpecializationInfo *spec_info = nullptr,
-                                                       const spv_target_env = SPV_ENV_VULKAN_1_0, bool debug = false);
-    static std::unique_ptr<VkShaderObj> CreateFromASM(VkRenderFramework &framework, VkShaderStageFlagBits stage,
-                                                      const std::string &code, const char *entry_point = "main",
+                                                       const char *entry_point = "main", bool debug = false);
+    static std::unique_ptr<VkShaderObj> CreateFromASM(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
+                                                      const spv_target_env spv_env = SPV_ENV_VULKAN_1_0,
                                                       const VkSpecializationInfo *spec_info = nullptr,
-                                                      const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
+                                                      const char *entry_point = "main");
 
 #if defined(VVL_TESTS_USE_CMAKE)
     struct GlslangTargetEnv {

@@ -641,7 +641,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
     if (float16Int8.shaderInt8 == VK_TRUE) {
         // storageBuffer8BitAccess
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int8
                OpExtension "SPV_KHR_8bit_storage"
@@ -664,7 +664,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -674,7 +674,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // uniformAndStorageBuffer8BitAccess
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int8
                OpExtension "SPV_KHR_8bit_storage"
@@ -696,7 +696,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -707,7 +707,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // storagePushConstant8
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int8
                OpExtension "SPV_KHR_8bit_storage"
@@ -727,7 +727,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
@@ -742,7 +742,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
     if (float16Int8.shaderFloat16 == VK_TRUE) {
         // storageBuffer16BitAccess - float
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpExtension "SPV_KHR_16bit_storage"
@@ -765,7 +765,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -775,7 +775,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // uniformAndStorageBuffer16BitAccess - float
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpExtension "SPV_KHR_16bit_storage"
@@ -797,7 +797,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -808,7 +808,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // storagePushConstant16 - float
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpExtension "SPV_KHR_16bit_storage"
@@ -828,7 +828,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
@@ -841,7 +841,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // storageInputOutput16 - float
         {
-            const std::string vs_source = R"(
+            const char *vs_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpExtension "SPV_KHR_16bit_storage"
@@ -859,9 +859,9 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-            const std::string fs_source = R"(
+            const char *fs_source = R"(
                OpCapability Shader
                OpCapability Float16
                OpExtension "SPV_KHR_16bit_storage"
@@ -885,7 +885,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, "main", nullptr);
+            auto fs = VkShaderObj::CreateFromASM(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
@@ -901,7 +901,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
     if (features2.features.shaderInt16 == VK_TRUE) {
         // storageBuffer16BitAccess - int
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int16
                OpExtension "SPV_KHR_16bit_storage"
@@ -924,7 +924,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -934,7 +934,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // uniformAndStorageBuffer16BitAccess - int
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int16
                OpExtension "SPV_KHR_16bit_storage"
@@ -956,7 +956,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -967,7 +967,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // storagePushConstant16 - int
         {
-            const std::string spv_source = R"(
+            const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int16
                OpExtension "SPV_KHR_16bit_storage"
@@ -987,7 +987,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
                 VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
@@ -1000,7 +1000,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
 
         // storageInputOutput16 - int
         {
-            const std::string vs_source = R"(
+            const char *vs_source = R"(
                OpCapability Shader
                OpCapability Int16
                OpExtension "SPV_KHR_16bit_storage"
@@ -1018,9 +1018,9 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_source, "main", nullptr);
+            auto vs = VkShaderObj::CreateFromASM(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-            const std::string fs_source = R"(
+            const char *fs_source = R"(
                OpCapability Shader
                OpCapability Int16
                OpExtension "SPV_KHR_16bit_storage"
@@ -1045,7 +1045,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-            auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, "main", nullptr);
+            auto fs = VkShaderObj::CreateFromASM(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
@@ -1068,7 +1068,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
         //   X b;
         //   uint8_t c;
         // } Data;
-        const std::string spv_source = R"(
+        const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int8
                OpCapability Int16
@@ -1100,7 +1100,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
                OpReturn
                OpFunctionEnd
         )";
-        auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+        auto vs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
             helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -1368,7 +1368,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     // layout (constant_id = 2) const float c = 3.0f;
     // layout (constant_id = 3) const bool d = true;
     // layout (constant_id = 4) const bool f = false;
-    std::string cs_src = R"(
+    const char *cs_src = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main"
@@ -1417,52 +1417,52 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
 
     // Sanity check
-    cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+    cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
     if (cs) {
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
         // signed int mismatch
         entries[0].size = 0;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[0].size = 2;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[0].size = 8;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[0].size = 4;  // reset
 
         // unsigned int mismatch
         entries[1].size = 1;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[1].size = 8;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[1].size = 3;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[1].size = 4;  // reset
 
         // float mismatch
         entries[2].size = 0;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[2].size = 8;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[2].size = 7;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[2].size = 4;  // reset
 
         // bool mismatch
         entries[3].size = sizeof(VkBool32) / 2;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         entries[3].size = sizeof(VkBool32) + 1;
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
     }
 
@@ -1470,7 +1470,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         // #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
         // layout (constant_id = 0) const int8_t a = int8_t(3);
         // layout (constant_id = 1) const uint8_t b = uint8_t(3);
-        cs_src = R"(
+        const char *cs_int8 = R"(
                OpCapability Shader
                OpCapability Int8
                OpMemoryModel Logical GLSL450
@@ -1496,32 +1496,32 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         entries[0] = {0, 0, 1};  // OpTypeInt 8
         entries[1] = {1, 0, 1};  // OpTypeInt 8
 
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         if (cs) {
             // Sanity check
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
             // signed int 8 mismatch
             entries[0].size = 0;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 2;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 4;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 1;  // reset
 
             // unsigned int 8 mismatch
             entries[1].size = 0;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[1].size = 2;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[1].size = 4;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs = VkShaderObj::CreateFromASM(this, cs_int8, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         }
     }
@@ -1529,7 +1529,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     if (float64_support == true) {
         // #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         // layout (constant_id = 0) const float64_t a = 3.0f;
-        cs_src = R"(
+        const char *cs_float64 = R"(
                OpCapability Shader
                OpCapability Float64
                OpMemoryModel Logical GLSL450
@@ -1551,23 +1551,27 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         specialization_info.mapEntryCount = 1;
         entries[0] = {0, 0, 8};  // OpTypeFloat 64
 
-        cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+        cs = VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
         if (cs) {
             // Sanity check
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
             // float 64 mismatch
             entries[0].size = 1;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs =
+                VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 2;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs =
+                VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 4;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs =
+                VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
             entries[0].size = 16;
-            cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, cs_src, "main", &specialization_info);
+            cs =
+                VkShaderObj::CreateFromASM(this, cs_float64, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, &specialization_info);
             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkSpecializationMapEntry-constantID-00776");
         }
     }
@@ -1626,7 +1630,7 @@ TEST_F(NegativeShaderSpirv, ShaderModuleCheckCapability) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Capability ImageRect is not allowed by Vulkan");
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1999,7 +2003,7 @@ TEST_F(NegativeShaderSpirv, NoUniformBufferStandardLayout10) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2043,7 +2047,7 @@ TEST_F(NegativeShaderSpirv, NoUniformBufferStandardLayout12) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2086,7 +2090,7 @@ TEST_F(NegativeShaderSpirv, NoScalarBlockLayout10) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2129,7 +2133,7 @@ TEST_F(NegativeShaderSpirv, NoScalarBlockLayout12) {
         )";
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
 

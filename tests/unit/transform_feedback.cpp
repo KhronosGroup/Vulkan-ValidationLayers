@@ -740,7 +740,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-        auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vsSource.str().c_str(), "main", nullptr);
+        auto vs = VkShaderObj::CreateFromASM(this, vsSource.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -793,7 +793,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-        auto gs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+        auto gs = VkShaderObj::CreateFromASM(this, gsSource.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -853,7 +853,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-        auto gs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource, "main", nullptr);
+        auto gs = VkShaderObj::CreateFromASM(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -908,7 +908,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-        auto gs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+        auto gs = VkShaderObj::CreateFromASM(this, gsSource.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -967,7 +967,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-        auto gs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+        auto gs = VkShaderObj::CreateFromASM(this, gsSource.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -1038,7 +1038,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpFunctionEnd
         )asm";
 
-            auto gs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_GEOMETRY_BIT, gsSource.str().c_str(), "main", nullptr);
+            auto gs = VkShaderObj::CreateFromASM(this, gsSource.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
 
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs->GetStageCreateInfo(),
