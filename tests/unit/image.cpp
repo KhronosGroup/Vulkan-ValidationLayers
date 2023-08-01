@@ -3440,151 +3440,113 @@ TEST_F(NegativeImage, ImageMinLimits) {
     }
 }
 
-TEST_F(NegativeImage, ImageMaxLimits) {
+TEST_F(NegativeImage, MaxLimitsMipLevelsAndExtent) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.extent = {8, 8, 1};
+    image_ci.mipLevels = 4 + 1;  // 4 = log2(8) + 1
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
 
-    // Check for VK_KHR_get_physical_device_properties2
-    AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    AddOptionalExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+    image_ci.extent = {8, 15, 1};
+    image_ci.mipLevels = 4 + 1;  // 4 = floor(log2(15)) + 1
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
+}
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    const bool push_fragment_density_support = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    const bool push_fragment_density_offset_support = IsExtensionsEnabled(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
+TEST_F(NegativeImage, MaxLimitsMipLevels) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
 
-    const VkImageCreateInfo safe_image_ci = [this]() {
-        auto ci = DefaultImageInfo();
-        ci.extent = {1, 1, 1};
-        return ci;
-    }();
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+    image_ci.extent = {64, 64, 1};
+    image_ci.format = FindFormatLinearWithoutMips(gpu(), image_ci);
+    image_ci.mipLevels = 2;
 
-    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &safe_image_ci));
+    if (image_ci.format != VK_FORMAT_UNDEFINED) {
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
+    } else {
+        printf("Cannot find a format to test maxMipLevels limit; skipping part of test.\n");
+    }
+}
+
+TEST_F(NegativeImage, MaxLimitsArrayLayers) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+
+    VkImageFormatProperties img_limits;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+
+    if (img_limits.maxArrayLayers != vvl::kU32Max) {
+        image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
+    } else {
+        printf("VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test.\n");
+    }
+}
+
+TEST_F(NegativeImage, MaxLimitsSamples) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    bool found = FindFormatWithoutSamples(gpu(), image_ci);
+
+    if (found) {
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02258");
+    } else {
+        printf("Could not find a format with some unsupported samples; skipping part of test.\n");
+    }
+}
+
+TEST_F(NegativeImage, MaxLimitsExtent) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+
+    VkImageFormatProperties img_limits;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+
+    image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02252");
+
+    image_ci.extent = {1, img_limits.maxExtent.height + 1, 1};
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02253");
+
+    image_ci.extent = {1, 1, img_limits.maxExtent.depth + 1};
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02254");
+}
+
+TEST_F(NegativeImage, MaxLimitsFramebuffer) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    ASSERT_NO_FATAL_FAILURE(Init());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.extent = {8, 8, 1};
-        image_ci.mipLevels = 4 + 1;  // 4 = log2(8) + 1
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
+    VkImageFormatProperties img_limits;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-        image_ci.extent = {8, 15, 1};
-        image_ci.mipLevels = 4 + 1;  // 4 = floor(log2(15)) + 1
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
+    if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
+        image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+        if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
+        }
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
+    } else {
+        printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
     }
 
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-        image_ci.extent = {64, 64, 1};
-        image_ci.format = FindFormatLinearWithoutMips(gpu(), image_ci);
-        image_ci.mipLevels = 2;
-
-        if (image_ci.format != VK_FORMAT_UNDEFINED) {
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
-        } else {
-            printf("Cannot find a format to test maxMipLevels limit; skipping part of test.\n");
+    if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
+        image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+        if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
         }
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-
-        VkImageFormatProperties img_limits;
-        ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
-
-        if (img_limits.maxArrayLayers != vvl::kU32Max) {
-            image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
-        } else {
-            printf("VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test.\n");
-        }
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        bool found = FindFormatWithoutSamples(gpu(), image_ci);
-
-        if (found) {
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02258");
-        } else {
-            printf("Could not find a format with some unsupported samples; skipping part of test.\n");
-        }
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.imageType = VK_IMAGE_TYPE_3D;
-
-        VkImageFormatProperties img_limits;
-        ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
-
-        image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02252");
-
-        image_ci.extent = {1, img_limits.maxExtent.height + 1, 1};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02253");
-
-        image_ci.extent = {1, 1, img_limits.maxExtent.depth + 1};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02254");
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
-
-        VkImageFormatProperties img_limits;
-        ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
-
-        if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
-            image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
-            if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
-            }
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
-        } else {
-            printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
-        }
-
-        if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
-            image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
-            if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
-            }
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
-        } else {
-            printf("VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n");
-        }
-    }
-
-    {
-        if (!push_fragment_density_support) {
-            printf("VK_EXT_fragment_density_map Extension not supported, skipping tests\n");
-        } else {
-            VkImageCreateInfo image_ci = safe_image_ci;
-            image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-            image_ci.format = VK_FORMAT_R8G8_UNORM;  // only mandatory format for fragment density map
-            VkImageFormatProperties img_limits;
-            ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
-
-            image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
-            if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
-            }
-
-            if (!push_fragment_density_offset_support) {
-                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514");
-            }
-
-            image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
-            if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
-            }
-
-            if (!push_fragment_density_offset_support) {
-                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515");
-            }
-        }
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
+    } else {
+        printf("VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n");
     }
 }
 
