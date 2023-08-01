@@ -560,24 +560,6 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_render_target_fmt = GetRenderTargetFormat();
 
-    m_lineWidth = 1.0f;
-
-    m_depthBiasConstantFactor = 0.0f;
-    m_depthBiasClamp = 0.0f;
-    m_depthBiasSlopeFactor = 0.0f;
-
-    m_blendConstants[0] = 1.0f;
-    m_blendConstants[1] = 1.0f;
-    m_blendConstants[2] = 1.0f;
-    m_blendConstants[3] = 1.0f;
-
-    m_minDepthBounds = 0.f;
-    m_maxDepthBounds = 1.f;
-
-    m_compareMask = 0xff;
-    m_writeMask = 0xff;
-    m_reference = 0;
-
     m_commandPool = new VkCommandPoolObj(m_device, m_device->graphics_queue_node_index_, flags);
 
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);

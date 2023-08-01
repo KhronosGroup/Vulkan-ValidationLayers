@@ -245,16 +245,6 @@ class VkRenderFramework : public VkTestFramework {
 
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
-    float m_lineWidth;
-    float m_depthBiasConstantFactor;
-    float m_depthBiasClamp;
-    float m_depthBiasSlopeFactor;
-    float m_blendConstants[4];
-    float m_minDepthBounds;
-    float m_maxDepthBounds;
-    uint32_t m_compareMask;
-    uint32_t m_writeMask;
-    uint32_t m_reference;
     bool m_addRenderPassSelfDependency;
     std::vector<VkSubpassDependency> m_additionalSubpassDependencies;
     std::vector<VkClearValue> m_renderPassClearValues;
