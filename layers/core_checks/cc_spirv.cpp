@@ -702,9 +702,6 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
     return skip;
 }
 
-// Turned off due to backward breaking SPIRV-Headers
-// see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6225
-#if 0
 // Validate SPV_KHR_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_state,
@@ -886,25 +883,25 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
                 b.Init(id_to_type_id[insn.Word(4)], module_state, spec, id_to_spec_id);
                 c.Init(id_to_type_id[insn.Word(5)], module_state, spec, id_to_spec_id);
                 flags = a.isInt() || b.isInt() || c.isInt() || r.isInt() ? insn.Word(6) : 0;
-                if (a.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsMask) == 0)) {
+                if (a.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08976",
                                      "Component type of matrix A is signed integer type, but MatrixASignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (b.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsMask) == 0)) {
+                if (b.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978",
                                      "Component type of matrix B is signed integer type, but MatrixBSignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (c.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsMask) == 0)) {
+                if (c.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980",
                                      "Component type of matrix C is signed integer type, but MatrixCSignedComponents flag is not "
                                      "present in flags (%" PRIu32 ")",
                                      flags);
                 }
-                if (r.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsMask) == 0)) {
+                if (r.isSignedInt() && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask) == 0)) {
                     skip |= LogError(
                         module_state.handle(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982",
                         "Component type of matrix Result is signed integer type, but MatrixResultSignedComponents flag is not "
@@ -955,7 +952,7 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
                         }
                     }
                     if (i < cooperative_matrix_properties_khr.size() &&
-                        (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationMask) != 0 &&
+                        (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0 &&
                         !cooperative_matrix_properties_khr[i].saturatingAccumulation) {
                         skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-saturatingAccumulation-08983",
                                          "SaturatingAccumulation cooperative matrix operand must be present if and only if "
@@ -994,7 +991,6 @@ bool CoreChecks::ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE &module_s
     }
     return skip;
 }
-#endif
 
 bool CoreChecks::ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                            const PIPELINE_STATE &pipeline) const {
@@ -2382,10 +2378,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, create_info);
     }
-    // TODO - Add once glslang support lands
-    // if (enabled_features.cooperative_matrix_features_khr.cooperativeMatrix) {
-    //     skip |= ValidateCooperativeMatrixKHR(module_state, create_info, local_size_x);
-    // }
+    if (enabled_features.cooperative_matrix_features_khr.cooperativeMatrix) {
+        skip |= ValidateCooperativeMatrixKHR(module_state, create_info, local_size_x);
+    }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, stage);
     }
