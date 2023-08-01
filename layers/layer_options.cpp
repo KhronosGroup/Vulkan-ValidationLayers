@@ -324,10 +324,23 @@ static bool Has(const VkValidationFeaturesEXT *validation_features_ext, VkValida
     return false;
 }
 
+static bool Has(const VkValidationFlagsEXT *validation_flags_ext, VkValidationCheckEXT disable) {
+    for (uint32_t i = 0; i < validation_flags_ext->disabledValidationCheckCount; ++i) {
+        if (validation_flags_ext->pDisabledValidationChecks[i] == VK_VALIDATION_CHECK_ALL_EXT) {
+            return true;
+        }
+        if (validation_flags_ext->pDisabledValidationChecks[i] == disable) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void InitLayerSettings(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, LayerSettings *settings) {
     assert(settings != nullptr);
 
     const VkValidationFeaturesEXT *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    const VkValidationFlagsEXT *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(pCreateInfo->pNext);
 
     VlLayerSettingSet layerSettingSet = VK_NULL_HANDLE;
     vlCreateLayerSettingSet(OBJECT_LAYER_NAME, vlFindLayerSettingsCreateInfo(pCreateInfo), pAllocator, nullptr, &layerSettingSet);
@@ -385,6 +398,14 @@ void InitLayerSettings(const VkInstanceCreateInfo *pCreateInfo, const VkAllocati
         }
         if (Has(validation_features_ext, VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT)) {
             settings->validate.sync = true;
+        }
+    }
+    if (validation_flags_ext != nullptr) {
+        if (Has(validation_flags_ext, VK_VALIDATION_CHECK_SHADERS_EXT)) {
+            settings->validate.core_shaders = false;
+        }
+        if (Has(validation_flags_ext, VK_VALIDATION_CHECK_ALL_EXT)) {
+            settings->validate.core_shaders = false;
         }
     }
 
