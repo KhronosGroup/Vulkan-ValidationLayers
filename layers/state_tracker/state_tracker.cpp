@@ -5026,36 +5026,41 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(
     cb_state->UpdateTraceRayCmd(CMD_TRACERAYSINDIRECTKHR);
 }
 
-std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
-                                                                                     VkShaderModule handle,
-                                                                                     uint32_t unique_shader_id) const {
-    const auto module_state = std::make_shared<SHADER_MODULE_STATE>(create_info, handle, unique_shader_id);
-    if (module_state->spirv && module_state->spirv->static_data_.has_group_decoration) {
+void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
+                                                                    VkDeviceAddress indirectDeviceAddress) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->UpdateTraceRayCmd(CMD_TRACERAYSINDIRECT2KHR);
+}
+
+void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                             void *csm_state_data) {
+    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
+    csm_state->module_state = std::make_unique<SPIRV_MODULE_STATE>(pCreateInfo->codeSize, pCreateInfo->pCode);
+    if (csm_state->module_state && csm_state->module_state->static_data_.has_group_decoration) {
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
         std::vector<uint32_t> optimized_binary;
         // Run optimizer to flatten decorations only, set skip_validation so as to not re-run validator
-        auto result = optimizer.Run(module_state->spirv->words_.data(), module_state->spirv->words_.size(), &optimized_binary,
-                                    spvtools::ValidatorOptions(), true);
+        auto result = optimizer.Run(csm_state->module_state->words_.data(), csm_state->module_state->words_.size(),
+                                    &optimized_binary, spvtools::ValidatorOptions(), true);
 
         if (result) {
             // Easier to just re-create the ShaderModule as StaticData uses itself when building itself up
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
-            VkShaderModuleCreateInfo new_create_info = create_info;
-            new_create_info.pCode = optimized_binary.data();
-            new_create_info.codeSize = optimized_binary.size() * sizeof(uint32_t);
-            return std::make_shared<SHADER_MODULE_STATE>(new_create_info, handle, unique_shader_id);
+            csm_state->module_state =
+                std::make_unique<SPIRV_MODULE_STATE>(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data());
         }
     }
-    return module_state;
 }
 
-void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
-                                                                    VkDeviceAddress indirectDeviceAddress) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->UpdateTraceRayCmd(CMD_TRACERAYSINDIRECT2KHR);
+void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                           const VkShaderCreateInfoEXT *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                                           void *csm_state_data) {
+    // TODO - Add support for VK_EXT_shader_object
 }
 
 void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
@@ -5063,9 +5068,8 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
                                                               VkShaderModule *pShaderModule, VkResult result,
                                                               void *csm_state_data) {
     if (VK_SUCCESS != result) return;
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-
-    Add(CreateShaderModuleState(*pCreateInfo, *pShaderModule, csm_state->unique_shader_id));
+    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
+    Add(std::make_shared<SHADER_MODULE_STATE>(*pShaderModule, std::move(csm_state->module_state), csm_state->unique_shader_id));
 }
 
 void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
@@ -5776,7 +5780,7 @@ void ValidationStateTracker::PostCallRecordGetShaderModuleCreateInfoIdentifierEX
                                                                                   const VkShaderModuleCreateInfo *pCreateInfo,
                                                                                   VkShaderModuleIdentifierEXT *pIdentifier) {
     WriteLockGuard guard(shader_identifier_map_lock_);
-    shader_identifier_map_.emplace(*pIdentifier, CreateShaderModuleState(*pCreateInfo, VK_NULL_HANDLE, 0));
+    shader_identifier_map_.emplace(*pIdentifier, std::make_shared<SHADER_MODULE_STATE>(0));
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,

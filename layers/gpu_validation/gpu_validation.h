@@ -218,6 +218,9 @@ class GpuAssisted : public GpuAssistedBase {
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
+    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                       const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
+                                       void* csm_state_data) override;
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo& buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer,
                                     const std::vector<GpuAssistedDescSetState>& descriptor_sets);

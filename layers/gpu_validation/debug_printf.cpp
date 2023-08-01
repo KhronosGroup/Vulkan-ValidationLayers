@@ -129,13 +129,20 @@ bool DebugPrintf::InstrumentShader(const vvl::span<const uint32_t> &input, std::
 void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
+    ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
+    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
                                        csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
     }
+}
+
+void DebugPrintf::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
+                                                VkShaderEXT *pShaders, void *csm_state_data) {
+    // TODO - Add VK_EXT_shader_object support
 }
 
 vartype vartype_lookup(char intype) {

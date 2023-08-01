@@ -494,14 +494,14 @@ struct SPIRV_MODULE_STATE {
     const StaticData static_data_;
 
     // Hold a handle so error message can know where the SPIR-V was from (VkShaderModule or VkShaderEXT)
-    const VulkanTypedHandle handle_;
-    VulkanTypedHandle handle() const { return handle_; }
+    VulkanTypedHandle handle_;                            // Will be updated once its known its valid SPIR-V
+    VulkanTypedHandle handle() const { return handle_; }  // matches normal convention to get handle
 
     // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validaiton
     SPIRV_MODULE_STATE(vvl::span<const uint32_t> code) : words_(code.begin(), code.end()), static_data_(*this) {}
 
-    SPIRV_MODULE_STATE(size_t codeSize, const uint32_t *pCode, VulkanTypedHandle handle)
-        : words_(pCode, pCode + codeSize / sizeof(uint32_t)), static_data_(*this), handle_(handle) {}
+    SPIRV_MODULE_STATE(size_t codeSize, const uint32_t *pCode)
+        : words_(pCode, pCode + codeSize / sizeof(uint32_t)), static_data_(*this) {}
 
     const Instruction *FindDef(uint32_t id) const {
         auto it = static_data_.definitions.find(id);
@@ -585,13 +585,17 @@ struct SPIRV_MODULE_STATE {
 
 // Represents a VkShaderModule handle
 struct SHADER_MODULE_STATE : public BASE_NODE {
-    SHADER_MODULE_STATE(const VkShaderModuleCreateInfo &create_info, VkShaderModule shader_module, uint32_t unique_shader_id = 0)
-        : BASE_NODE(shader_module, kVulkanObjectTypeShaderModule), gpu_validation_shader_id(unique_shader_id) {
-        // Sometime an empty SHADER_MODULE_STATE is needed with no actual SPIR-V backing it for GPL
-        if (create_info.pCode[0] == spv::MagicNumber) {
-            spirv = std::make_unique<SPIRV_MODULE_STATE>(create_info.codeSize, create_info.pCode, handle_);
-        }
+    SHADER_MODULE_STATE(VkShaderModule shader_module, std::unique_ptr<SPIRV_MODULE_STATE> spirv_module, uint32_t unique_shader_id)
+        : BASE_NODE(shader_module, kVulkanObjectTypeShaderModule),
+          spirv(std::move(spirv_module)),
+          gpu_validation_shader_id(unique_shader_id) {
+        spirv->handle_ = handle_;
     }
+
+    // For when we need to create a module with no SPIR-V backing it
+    SHADER_MODULE_STATE(uint32_t unique_shader_id)
+        : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
+          gpu_validation_shader_id(unique_shader_id) {}
 
     // If null, means this is a empty object and no shader backing it
     std::unique_ptr<SPIRV_MODULE_STATE> spirv;
@@ -604,8 +608,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 struct SHADER_OBJECT_STATE : public BASE_NODE {
     SHADER_OBJECT_STATE(const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object, uint32_t unique_shader_id = 0)
         : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT),
-          spirv(std::make_unique<SPIRV_MODULE_STATE>(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode),
-                                                     handle_)),
+          spirv(std::make_unique<SPIRV_MODULE_STATE>(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode))),
           gpu_validation_shader_id(unique_shader_id) {}
 
     std::unique_ptr<SPIRV_MODULE_STATE> spirv;
