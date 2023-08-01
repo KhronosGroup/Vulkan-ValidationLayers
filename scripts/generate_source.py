@@ -404,7 +404,7 @@ def main(argv):
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
             temp_filename = os.path.join(temp_dir, filename)
             repo_filename = os.path.join(repo_dir, filename)
-            if filename.startswith('gpu_'):
+            if filename.startswith('gpu_') or filename.startswith('inst_'):
                 # The shaders requires glslangvalidator,
                 # so updated manually with generate_spirv when needed
                 continue

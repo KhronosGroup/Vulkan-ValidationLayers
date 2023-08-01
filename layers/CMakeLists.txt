@@ -111,6 +111,9 @@ target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Headers::SPIRV-Headers)
 find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
 target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-opt)
 
+find_package(SPIRV-Tools-link REQUIRED CONFIG QUIET)
+target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-link)
+
 find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
 
 # See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
