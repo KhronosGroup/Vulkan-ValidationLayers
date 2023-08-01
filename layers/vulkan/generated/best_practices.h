@@ -1177,6 +1177,34 @@ void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkResult                                    result) override;
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,

@@ -2523,6 +2523,461 @@ void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(const VkPhysicalDeviceShaderEnqueueFeaturesAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    shaderEnqueue(in_struct->shaderEnqueue)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX),
+    pNext(nullptr),
+    shaderEnqueue()
+{}
+
+safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX(const safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& copy_src)
+{
+    sType = copy_src.sType;
+    shaderEnqueue = copy_src.shaderEnqueue;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::operator=(const safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderEnqueue = copy_src.shaderEnqueue;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::~safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::initialize(const VkPhysicalDeviceShaderEnqueueFeaturesAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderEnqueue = in_struct->shaderEnqueue;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX::initialize(const safe_VkPhysicalDeviceShaderEnqueueFeaturesAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    shaderEnqueue = copy_src->shaderEnqueue;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX(const VkPhysicalDeviceShaderEnqueuePropertiesAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    maxExecutionGraphDepth(in_struct->maxExecutionGraphDepth),
+    maxExecutionGraphShaderOutputNodes(in_struct->maxExecutionGraphShaderOutputNodes),
+    maxExecutionGraphShaderPayloadSize(in_struct->maxExecutionGraphShaderPayloadSize),
+    maxExecutionGraphShaderPayloadCount(in_struct->maxExecutionGraphShaderPayloadCount),
+    executionGraphDispatchAddressAlignment(in_struct->executionGraphDispatchAddressAlignment)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX),
+    pNext(nullptr),
+    maxExecutionGraphDepth(),
+    maxExecutionGraphShaderOutputNodes(),
+    maxExecutionGraphShaderPayloadSize(),
+    maxExecutionGraphShaderPayloadCount(),
+    executionGraphDispatchAddressAlignment()
+{}
+
+safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX(const safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& copy_src)
+{
+    sType = copy_src.sType;
+    maxExecutionGraphDepth = copy_src.maxExecutionGraphDepth;
+    maxExecutionGraphShaderOutputNodes = copy_src.maxExecutionGraphShaderOutputNodes;
+    maxExecutionGraphShaderPayloadSize = copy_src.maxExecutionGraphShaderPayloadSize;
+    maxExecutionGraphShaderPayloadCount = copy_src.maxExecutionGraphShaderPayloadCount;
+    executionGraphDispatchAddressAlignment = copy_src.executionGraphDispatchAddressAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::operator=(const safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxExecutionGraphDepth = copy_src.maxExecutionGraphDepth;
+    maxExecutionGraphShaderOutputNodes = copy_src.maxExecutionGraphShaderOutputNodes;
+    maxExecutionGraphShaderPayloadSize = copy_src.maxExecutionGraphShaderPayloadSize;
+    maxExecutionGraphShaderPayloadCount = copy_src.maxExecutionGraphShaderPayloadCount;
+    executionGraphDispatchAddressAlignment = copy_src.executionGraphDispatchAddressAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::~safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::initialize(const VkPhysicalDeviceShaderEnqueuePropertiesAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxExecutionGraphDepth = in_struct->maxExecutionGraphDepth;
+    maxExecutionGraphShaderOutputNodes = in_struct->maxExecutionGraphShaderOutputNodes;
+    maxExecutionGraphShaderPayloadSize = in_struct->maxExecutionGraphShaderPayloadSize;
+    maxExecutionGraphShaderPayloadCount = in_struct->maxExecutionGraphShaderPayloadCount;
+    executionGraphDispatchAddressAlignment = in_struct->executionGraphDispatchAddressAlignment;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX::initialize(const safe_VkPhysicalDeviceShaderEnqueuePropertiesAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    maxExecutionGraphDepth = copy_src->maxExecutionGraphDepth;
+    maxExecutionGraphShaderOutputNodes = copy_src->maxExecutionGraphShaderOutputNodes;
+    maxExecutionGraphShaderPayloadSize = copy_src->maxExecutionGraphShaderPayloadSize;
+    maxExecutionGraphShaderPayloadCount = copy_src->maxExecutionGraphShaderPayloadCount;
+    executionGraphDispatchAddressAlignment = copy_src->executionGraphDispatchAddressAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkExecutionGraphPipelineScratchSizeAMDX::safe_VkExecutionGraphPipelineScratchSizeAMDX(const VkExecutionGraphPipelineScratchSizeAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkExecutionGraphPipelineScratchSizeAMDX::safe_VkExecutionGraphPipelineScratchSizeAMDX() :
+    sType(VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_SCRATCH_SIZE_AMDX),
+    pNext(nullptr),
+    size()
+{}
+
+safe_VkExecutionGraphPipelineScratchSizeAMDX::safe_VkExecutionGraphPipelineScratchSizeAMDX(const safe_VkExecutionGraphPipelineScratchSizeAMDX& copy_src)
+{
+    sType = copy_src.sType;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkExecutionGraphPipelineScratchSizeAMDX& safe_VkExecutionGraphPipelineScratchSizeAMDX::operator=(const safe_VkExecutionGraphPipelineScratchSizeAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkExecutionGraphPipelineScratchSizeAMDX::~safe_VkExecutionGraphPipelineScratchSizeAMDX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExecutionGraphPipelineScratchSizeAMDX::initialize(const VkExecutionGraphPipelineScratchSizeAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkExecutionGraphPipelineScratchSizeAMDX::initialize(const safe_VkExecutionGraphPipelineScratchSizeAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkExecutionGraphPipelineCreateInfoAMDX::safe_VkExecutionGraphPipelineCreateInfoAMDX(const VkExecutionGraphPipelineCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    stageCount(in_struct->stageCount),
+    pStages(nullptr),
+    pLibraryInfo(nullptr),
+    layout(in_struct->layout),
+    basePipelineHandle(in_struct->basePipelineHandle),
+    basePipelineIndex(in_struct->basePipelineIndex)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (in_struct->pLibraryInfo)
+        pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(in_struct->pLibraryInfo);
+}
+
+safe_VkExecutionGraphPipelineCreateInfoAMDX::safe_VkExecutionGraphPipelineCreateInfoAMDX() :
+    sType(VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX),
+    pNext(nullptr),
+    flags(),
+    stageCount(),
+    pStages(nullptr),
+    pLibraryInfo(nullptr),
+    layout(),
+    basePipelineHandle(),
+    basePipelineIndex()
+{}
+
+safe_VkExecutionGraphPipelineCreateInfoAMDX::safe_VkExecutionGraphPipelineCreateInfoAMDX(const safe_VkExecutionGraphPipelineCreateInfoAMDX& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    pLibraryInfo = nullptr;
+    layout = copy_src.layout;
+    basePipelineHandle = copy_src.basePipelineHandle;
+    basePipelineIndex = copy_src.basePipelineIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (copy_src.pLibraryInfo)
+        pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(*copy_src.pLibraryInfo);
+}
+
+safe_VkExecutionGraphPipelineCreateInfoAMDX& safe_VkExecutionGraphPipelineCreateInfoAMDX::operator=(const safe_VkExecutionGraphPipelineCreateInfoAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pStages)
+        delete[] pStages;
+    if (pLibraryInfo)
+        delete pLibraryInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    pLibraryInfo = nullptr;
+    layout = copy_src.layout;
+    basePipelineHandle = copy_src.basePipelineHandle;
+    basePipelineIndex = copy_src.basePipelineIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (copy_src.pLibraryInfo)
+        pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(*copy_src.pLibraryInfo);
+
+    return *this;
+}
+
+safe_VkExecutionGraphPipelineCreateInfoAMDX::~safe_VkExecutionGraphPipelineCreateInfoAMDX()
+{
+    if (pStages)
+        delete[] pStages;
+    if (pLibraryInfo)
+        delete pLibraryInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExecutionGraphPipelineCreateInfoAMDX::initialize(const VkExecutionGraphPipelineCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pStages)
+        delete[] pStages;
+    if (pLibraryInfo)
+        delete pLibraryInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    stageCount = in_struct->stageCount;
+    pStages = nullptr;
+    pLibraryInfo = nullptr;
+    layout = in_struct->layout;
+    basePipelineHandle = in_struct->basePipelineHandle;
+    basePipelineIndex = in_struct->basePipelineIndex;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (in_struct->pLibraryInfo)
+        pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(in_struct->pLibraryInfo);
+}
+
+void safe_VkExecutionGraphPipelineCreateInfoAMDX::initialize(const safe_VkExecutionGraphPipelineCreateInfoAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    stageCount = copy_src->stageCount;
+    pStages = nullptr;
+    pLibraryInfo = nullptr;
+    layout = copy_src->layout;
+    basePipelineHandle = copy_src->basePipelineHandle;
+    basePipelineIndex = copy_src->basePipelineIndex;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (stageCount && copy_src->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src->pStages[i]);
+        }
+    }
+    if (copy_src->pLibraryInfo)
+        pLibraryInfo = new safe_VkPipelineLibraryCreateInfoKHR(*copy_src->pLibraryInfo);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkDeviceOrHostAddressConstAMDX::safe_VkDeviceOrHostAddressConstAMDX(const VkDeviceOrHostAddressConstAMDX* in_struct, PNextCopyState*)
+{
+    initialize(in_struct);
+}
+
+safe_VkDeviceOrHostAddressConstAMDX::safe_VkDeviceOrHostAddressConstAMDX() :
+    hostAddress(nullptr)
+{}
+
+safe_VkDeviceOrHostAddressConstAMDX::safe_VkDeviceOrHostAddressConstAMDX(const safe_VkDeviceOrHostAddressConstAMDX& copy_src)
+{
+    deviceAddress = copy_src.deviceAddress;
+    hostAddress = copy_src.hostAddress;
+}
+
+safe_VkDeviceOrHostAddressConstAMDX& safe_VkDeviceOrHostAddressConstAMDX::operator=(const safe_VkDeviceOrHostAddressConstAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+
+    deviceAddress = copy_src.deviceAddress;
+    hostAddress = copy_src.hostAddress;
+
+    return *this;
+}
+
+safe_VkDeviceOrHostAddressConstAMDX::~safe_VkDeviceOrHostAddressConstAMDX()
+{
+}
+
+void safe_VkDeviceOrHostAddressConstAMDX::initialize(const VkDeviceOrHostAddressConstAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    deviceAddress = in_struct->deviceAddress;
+    hostAddress = in_struct->hostAddress;
+}
+
+void safe_VkDeviceOrHostAddressConstAMDX::initialize(const safe_VkDeviceOrHostAddressConstAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    deviceAddress = copy_src->deviceAddress;
+    hostAddress = copy_src->hostAddress;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+safe_VkPipelineShaderStageNodeCreateInfoAMDX::safe_VkPipelineShaderStageNodeCreateInfoAMDX(const VkPipelineShaderStageNodeCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    index(in_struct->index)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+safe_VkPipelineShaderStageNodeCreateInfoAMDX::safe_VkPipelineShaderStageNodeCreateInfoAMDX() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX),
+    pNext(nullptr),
+    pName(nullptr),
+    index()
+{}
+
+safe_VkPipelineShaderStageNodeCreateInfoAMDX::safe_VkPipelineShaderStageNodeCreateInfoAMDX(const safe_VkPipelineShaderStageNodeCreateInfoAMDX& copy_src)
+{
+    sType = copy_src.sType;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+}
+
+safe_VkPipelineShaderStageNodeCreateInfoAMDX& safe_VkPipelineShaderStageNodeCreateInfoAMDX::operator=(const safe_VkPipelineShaderStageNodeCreateInfoAMDX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+
+    return *this;
+}
+
+safe_VkPipelineShaderStageNodeCreateInfoAMDX::~safe_VkPipelineShaderStageNodeCreateInfoAMDX()
+{
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineShaderStageNodeCreateInfoAMDX::initialize(const VkPipelineShaderStageNodeCreateInfoAMDX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    index = in_struct->index;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+void safe_VkPipelineShaderStageNodeCreateInfoAMDX::initialize(const safe_VkPipelineShaderStageNodeCreateInfoAMDX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    index = copy_src->index;
+    pNext = SafePnextCopy(copy_src->pNext);
+    pName = SafeStringCopy(copy_src->pName);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),

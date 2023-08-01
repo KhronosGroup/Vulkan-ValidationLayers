@@ -2045,6 +2045,25 @@ bool PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     const VkDeviceImageMemoryRequirements*      pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const override;
+bool PreCallValidateCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) const override;
+bool PreCallValidateGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) const override;
+bool PreCallValidateGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) const override;
+bool PreCallValidateGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) const override;
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
@@ -2420,6 +2439,59 @@ bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
     struct AHardwareBuffer**                    pBuffer) const override;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) const override;
+void PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) const override;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) const override;
@@ -2820,8 +2892,8 @@ bool PreCallValidateTransitionImageLayoutEXT(
 bool PreCallValidateGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) const override;
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) const override;
 bool PreCallValidateReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) const override;

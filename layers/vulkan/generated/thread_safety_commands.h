@@ -3533,6 +3533,52 @@ void PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) override;
 
+void PreCallRecordCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) override;
+
+void PostCallRecordCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) override;
+
+void PreCallRecordGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) override;
+
+void PostCallRecordGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) override;
+
+void PreCallRecordGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) override;
+
+void PostCallRecordGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) override;
+
+void PreCallRecordGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) override;
+
+void PostCallRecordGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) override;
+
 void PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -4145,6 +4191,99 @@ void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkResult                                    result) override;
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) override;
+
+void PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) override;
+
+void PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) override;
+
+void PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex,
+    VkResult                                    result) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) override;
+
+void PostCallRecordCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) override;
+
+void PostCallRecordCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) override;
+
+void PostCallRecordCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) override;
+
+void PostCallRecordCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) override;
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) override;
@@ -4936,14 +5075,14 @@ void PostCallRecordTransitionImageLayoutEXT(
 void PreCallRecordGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) override;
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) override;
 
 void PostCallRecordGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) override;
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) override;
 
 void PreCallRecordReleaseSwapchainImagesEXT(
     VkDevice                                    device,

@@ -4936,6 +4936,51 @@ bool ObjectLifetimes::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindIndexBuffer2KHR-commandBuffer-parameter", "VUID-vkCmdBindIndexBuffer2KHR-commonparent", "vkCmdBindIndexBuffer2KHR");
+    skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdBindIndexBuffer2KHR-buffer-parameter", "VUID-vkCmdBindIndexBuffer2KHR-commonparent", "vkCmdBindIndexBuffer2KHR");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetRenderingAreaGranularityKHR-device-parameter", kVUIDUndefined, "vkGetRenderingAreaGranularityKHR");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDeviceImageSubresourceLayoutKHR-device-parameter", kVUIDUndefined, "vkGetDeviceImageSubresourceLayoutKHR");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetImageSubresourceLayout2KHR-device-parameter", kVUIDUndefined, "vkGetImageSubresourceLayout2KHR");
+    skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkGetImageSubresourceLayout2KHR-image-parameter", "VUID-vkGetImageSubresourceLayout2KHR-image-parent", "vkGetImageSubresourceLayout2KHR");
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
@@ -5787,6 +5832,132 @@ bool ObjectLifetimes::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     return skip;
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateExecutionGraphPipelinesAMDX-device-parameter", kVUIDUndefined, "vkCreateExecutionGraphPipelinesAMDX");
+    skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true, "VUID-vkCreateExecutionGraphPipelinesAMDX-pipelineCache-parameter", "VUID-vkCreateExecutionGraphPipelinesAMDX-pipelineCache-parent", "vkCreateExecutionGraphPipelinesAMDX");
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            if (pCreateInfos[index0].pStages) {
+                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true, "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined, "VkPipelineShaderStageCreateInfo");
+                }
+            }
+            if (pCreateInfos[index0].pLibraryInfo) {
+                if ((pCreateInfos[index0].pLibraryInfo->libraryCount > 0) && (pCreateInfos[index0].pLibraryInfo->pLibraries)) {
+                    for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
+                        skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline, false, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter", kVUIDUndefined, "VkPipelineLibraryCreateInfoKHR");
+                    }
+                }
+            }
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, "VUID-VkExecutionGraphPipelineCreateInfoAMDX-layout-parameter", "VUID-VkExecutionGraphPipelineCreateInfoAMDX-commonparent", "VkExecutionGraphPipelineCreateInfoAMDX");
+            if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
+                skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false, kVUIDUndefined, "VUID-VkExecutionGraphPipelineCreateInfoAMDX-commonparent", "VkExecutionGraphPipelineCreateInfoAMDX");
+        }
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+        }
+    }
+
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetExecutionGraphPipelineScratchSizeAMDX-device-parameter", kVUIDUndefined, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+    skip |= ValidateObject(executionGraph, kVulkanObjectTypePipeline, false, "VUID-vkGetExecutionGraphPipelineScratchSizeAMDX-executionGraph-parameter", "VUID-vkGetExecutionGraphPipelineScratchSizeAMDX-executionGraph-parent", "vkGetExecutionGraphPipelineScratchSizeAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-device-parameter", kVUIDUndefined, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+    skip |= ValidateObject(executionGraph, kVulkanObjectTypePipeline, false, "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-executionGraph-parameter", "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-executionGraph-parent", "vkGetExecutionGraphPipelineNodeIndexAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdInitializeGraphScratchMemoryAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphIndirectAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphIndirectAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphIndirectCountAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphIndirectCountAMDX");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
@@ -6790,11 +6961,11 @@ bool ObjectLifetimes::PreCallValidateTransitionImageLayoutEXT(
 bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) const {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetImageSubresourceLayout2EXT-device-parameter", kVUIDUndefined, "vkGetImageSubresourceLayout2EXT");
-    skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkGetImageSubresourceLayout2EXT-image-parameter", "VUID-vkGetImageSubresourceLayout2EXT-image-parent", "vkGetImageSubresourceLayout2EXT");
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetImageSubresourceLayout2KHR-device-parameter", kVUIDUndefined, "vkGetImageSubresourceLayout2EXT");
+    skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkGetImageSubresourceLayout2KHR-image-parameter", "VUID-vkGetImageSubresourceLayout2KHR-image-parent", "vkGetImageSubresourceLayout2EXT");
 
     return skip;
 }

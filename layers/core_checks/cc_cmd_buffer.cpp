@@ -396,21 +396,21 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
     assert(cb_state_ptr);
 
     bool skip = ValidateBufferUsageFlags(commandBuffer, *buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
-                                         "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
+                                         "VUID-vkCmdBindIndexBuffer-buffer-08784", "vkCmdBindIndexBuffer()",
                                          "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
     skip |= ValidateCmd(*cb_state_ptr, CMD_BINDINDEXBUFFER);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindIndexBuffer()",
-                                          "VUID-vkCmdBindIndexBuffer-buffer-00434");
+                                          "VUID-vkCmdBindIndexBuffer-buffer-08785");
     const auto offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (offset % offset_align) {
         const LogObjectList objlist(commandBuffer, buffer);
-        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-00432",
+        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-08783",
                          "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", offset,
                          string_VkIndexType(indexType));
     }
     if (offset >= buffer_state->requirements.size) {
         const LogObjectList objlist(commandBuffer, buffer);
-        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-00431",
+        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-08782",
                          "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64 ").",
                          offset, buffer_state->requirements.size);
     }

@@ -488,6 +488,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_format_feature_flags2{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_maintenance4{kNotEnabled};
+    ExtEnabled vk_khr_maintenance5{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
@@ -539,6 +540,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_android_external_memory_android_hardware_buffer{kNotEnabled};
     ExtEnabled vk_ext_sampler_filter_minmax{kNotEnabled};
     ExtEnabled vk_amd_gpu_shader_int16{kNotEnabled};
+    ExtEnabled vk_amdx_shader_enqueue{kNotEnabled};
     ExtEnabled vk_amd_mixed_attachment_samples{kNotEnabled};
     ExtEnabled vk_amd_shader_fragment_mask{kNotEnabled};
     ExtEnabled vk_ext_inline_uniform_block{kNotEnabled};
@@ -900,6 +902,9 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {VK_KHR_MAINTENANCE_4_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance4, {{
                            {&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {VK_KHR_MAINTENANCE_5_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance5, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
+                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
             {VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_position_fetch, {{
                            {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix, {{
@@ -991,6 +996,13 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_sampler_filter_minmax, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_AMD_GPU_SHADER_INT16_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_gpu_shader_int16, {})},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amdx_shader_enqueue, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
+#endif
             {VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_mixed_attachment_samples, {})},
             {VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_fragment_mask, {})},
             {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
@@ -1621,6 +1633,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME,
     VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_5_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
     VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME,
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
@@ -1682,6 +1695,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
     VK_AMD_GPU_SHADER_INT16_EXTENSION_NAME,
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME,
+#endif
     VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME,
     VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,

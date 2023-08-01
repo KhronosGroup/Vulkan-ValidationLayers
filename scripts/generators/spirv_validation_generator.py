@@ -31,6 +31,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         # should be attempted to be cleared
         self.capabilityExcludeList = [
             'ClusterCullingShadingHUAWEI',
+            'ShaderEnqueueAMDX',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.

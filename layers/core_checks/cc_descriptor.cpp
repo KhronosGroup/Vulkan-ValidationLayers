@@ -2517,13 +2517,13 @@ static bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE con
     switch (type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (!(usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT)) {
-                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00334";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-08765";
                 error_usage_bit = "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (!(usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT)) {
-                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00335";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-08766";
                 error_usage_bit = "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
             }
             break;

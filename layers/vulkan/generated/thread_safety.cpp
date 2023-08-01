@@ -5281,6 +5281,74 @@ void ThreadSafety::PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR(
     FinishReadObjectParentInstance(device, "vkGetDeviceImageSparseMemoryRequirementsKHR");
 }
 
+void ThreadSafety::PreCallRecordCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) {
+    StartWriteObject(commandBuffer, "vkCmdBindIndexBuffer2KHR");
+    StartReadObject(buffer, "vkCmdBindIndexBuffer2KHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) {
+    FinishWriteObject(commandBuffer, "vkCmdBindIndexBuffer2KHR");
+    FinishReadObject(buffer, "vkCmdBindIndexBuffer2KHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) {
+    StartReadObjectParentInstance(device, "vkGetRenderingAreaGranularityKHR");
+}
+
+void ThreadSafety::PostCallRecordGetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) {
+    FinishReadObjectParentInstance(device, "vkGetRenderingAreaGranularityKHR");
+}
+
+void ThreadSafety::PreCallRecordGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    StartReadObjectParentInstance(device, "vkGetDeviceImageSubresourceLayoutKHR");
+}
+
+void ThreadSafety::PostCallRecordGetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    FinishReadObjectParentInstance(device, "vkGetDeviceImageSubresourceLayoutKHR");
+}
+
+void ThreadSafety::PreCallRecordGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    StartReadObjectParentInstance(device, "vkGetImageSubresourceLayout2KHR");
+    StartReadObject(image, "vkGetImageSubresourceLayout2KHR");
+}
+
+void ThreadSafety::PostCallRecordGetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    FinishReadObjectParentInstance(device, "vkGetImageSubresourceLayout2KHR");
+    FinishReadObject(image, "vkGetImageSubresourceLayout2KHR");
+}
+
 void ThreadSafety::PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -6222,6 +6290,139 @@ void ThreadSafety::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
 }
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    StartReadObjectParentInstance(device, "vkCreateExecutionGraphPipelinesAMDX");
+    StartReadObject(pipelineCache, "vkCreateExecutionGraphPipelinesAMDX");
+}
+
+void ThreadSafety::PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreateExecutionGraphPipelinesAMDX");
+    FinishReadObject(pipelineCache, "vkCreateExecutionGraphPipelinesAMDX");
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index]);
+        }
+    }
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) {
+    StartReadObjectParentInstance(device, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+    StartReadObject(executionGraph, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+}
+
+void ThreadSafety::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+    FinishReadObject(executionGraph, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) {
+    StartReadObjectParentInstance(device, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+    StartReadObject(executionGraph, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+}
+
+void ThreadSafety::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+    FinishReadObject(executionGraph, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) {
+    StartReadObject(commandBuffer, "vkCmdInitializeGraphScratchMemoryAMDX");
+}
+
+void ThreadSafety::PostCallRecordCmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) {
+    FinishReadObject(commandBuffer, "vkCmdInitializeGraphScratchMemoryAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    StartReadObject(commandBuffer, "vkCmdDispatchGraphAMDX");
+}
+
+void ThreadSafety::PostCallRecordCmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    FinishReadObject(commandBuffer, "vkCmdDispatchGraphAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    StartReadObject(commandBuffer, "vkCmdDispatchGraphIndirectAMDX");
+}
+
+void ThreadSafety::PostCallRecordCmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    FinishReadObject(commandBuffer, "vkCmdDispatchGraphIndirectAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) {
+    StartReadObject(commandBuffer, "vkCmdDispatchGraphIndirectCountAMDX");
+}
+
+void ThreadSafety::PostCallRecordCmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) {
+    FinishReadObject(commandBuffer, "vkCmdDispatchGraphIndirectCountAMDX");
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {
@@ -7472,8 +7673,8 @@ void ThreadSafety::PostCallRecordTransitionImageLayoutEXT(
 void ThreadSafety::PreCallRecordGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     StartReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
     StartReadObject(image, "vkGetImageSubresourceLayout2EXT");
 }
@@ -7481,8 +7682,8 @@ void ThreadSafety::PreCallRecordGetImageSubresourceLayout2EXT(
 void ThreadSafety::PostCallRecordGetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     FinishReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
     FinishReadObject(image, "vkGetImageSubresourceLayout2EXT");
 }

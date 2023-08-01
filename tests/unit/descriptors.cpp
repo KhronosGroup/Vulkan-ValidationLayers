@@ -1909,8 +1909,8 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         "VUID-VkWriteDescriptorSet-descriptorType-00337",        // COMBINED_IMAGE_SAMPLER
         "VUID-VkWriteDescriptorSet-descriptorType-00337",        // SAMPLED_IMAGE
         "VUID-VkWriteDescriptorSet-descriptorType-00339",        // STORAGE_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-00334",        // UNIFORM_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00335",        // STORAGE_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-08765",        // UNIFORM_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-08766",        // STORAGE_TEXEL_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER_DYNAMIC
