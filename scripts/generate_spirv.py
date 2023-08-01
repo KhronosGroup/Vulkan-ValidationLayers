@@ -44,7 +44,13 @@ def compile(filename, glslang_validator):
 
     # invoke glslangValidator
     try:
-        args = [glslang_validator, "-V", "-H", "-o", tmpfile, filename]
+        args = [glslang_validator]
+        # functions called by the SPIRV-Tools instrumentation require special options
+        if tmpfile.startswith("inst_"):
+            args += ["--no-link", "--target-env", "vulkan1.0"]
+        else:
+            args += ["-V"]
+        args += ["-o", tmpfile, filename]
         output = subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise Exception(e.output)
@@ -128,7 +134,7 @@ def main():
                         choices=['vulkan'],
                         help='Specify API name to generate')
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
-    parser.add_argument('--glslang', action='store', type=str, help='Path to glslangvalidator to use')
+    parser.add_argument('--glslang', action='store', type=str, help='Path to glslangValidator to use')
     parser.add_argument('--outfilename', action='store', type=str, help='Optional path to output file')
     args = parser.parse_args()
 

@@ -39,9 +39,9 @@ void valErrorOut(uint error, uint count) {
     uint vo_idx = atomicAdd(output_buffer_count, VAL_OUT_RECORD_SZ);
     if (vo_idx + VAL_OUT_RECORD_SZ > output_buffer.length())
         return;
-    output_buffer[vo_idx + _kInstValidationOutError] = _kInstErrorPreDispatchValidate;
-    output_buffer[vo_idx + _kInstValidationOutError + 1] = error;
-    output_buffer[vo_idx + _kInstValidationOutError + 2] = count;
+    output_buffer[vo_idx + kInstValidationOutError] = kInstErrorPreDispatchValidate;
+    output_buffer[vo_idx + kInstValidationOutError + 1] = error;
+    output_buffer[vo_idx + kInstValidationOutError + 2] = count;
 }
 
 void main() {

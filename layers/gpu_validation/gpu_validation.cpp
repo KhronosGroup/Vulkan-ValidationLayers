@@ -20,6 +20,7 @@
 #include "utils/shader_utils.h"
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/instrument.hpp"
+#include "spirv-tools/linker.hpp"
 #include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 // Generated shaders
@@ -27,6 +28,7 @@
 #include "generated/gpu_pre_draw_vert.h"
 #include "generated/gpu_pre_dispatch_comp.h"
 #include "generated/gpu_as_inspection_comp.h"
+#include "generated/inst_functions_comp.h"
 
 // Keep in sync with the GLSL shader below.
 struct GpuAccelerationStructureBuildValidationBuffer {
@@ -161,7 +163,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         validate_descriptors = false;
     }
 
-    output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
+    output_buffer_size = sizeof(uint32_t) * (kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
 
     if (validate_descriptors && !force_buffer_device_address) {
         validate_descriptors = false;
@@ -985,50 +987,108 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
                 break;
         }
     };
+    std::vector<std::vector<uint32_t>> binaries(2);
 
     // Load original shader SPIR-V
-    new_pgm.clear();
-    new_pgm.reserve(input.size());
-    new_pgm.insert(new_pgm.end(), &input.front(), &input.back() + 1);
+    binaries[0].reserve(input.size());
+    binaries[0].insert(binaries[0].end(), &input.front(), &input.back() + 1);
 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    spvtools::ValidatorOptions val_options;
-    AdjustValidatorOptions(device_extensions, enabled_features, val_options);
-    spvtools::OptimizerOptions opt_options;
-    opt_options.set_run_validator(true);
-    opt_options.set_validator_options(val_options);
-    Optimizer optimizer(target_env);
-    optimizer.SetMessageConsumer(gpu_console_message_consumer);
     *unique_shader_id = unique_shader_module_id++;
-    if (validate_descriptors) {
-        optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, *unique_shader_id));
-    }
+    // Instrument the user's shader
+    {
+        ValidatorOptions val_options;
+        AdjustValidatorOptions(device_extensions, enabled_features, val_options);
+        OptimizerOptions opt_options;
+        opt_options.set_run_validator(true);
+        opt_options.set_validator_options(val_options);
+        Optimizer inst_passes(target_env);
+        inst_passes.SetMessageConsumer(gpu_console_message_consumer);
+        if (validate_descriptors) {
+            inst_passes.RegisterPass(CreateInstBindlessCheckPass(*unique_shader_id));
+        }
 
-    // Call CreateAggressiveDCEPass with preserve_interface == true
-    optimizer.RegisterPass(CreateAggressiveDCEPass(true));
-    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
-        optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, *unique_shader_id));
+        if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+             IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+            shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
+            inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(*unique_shader_id));
+        }
+        if (!inst_passes.Run(binaries[0].data(), binaries[0].size(), &binaries[0], opt_options)) {
+            ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
+            assert(false);
+            return false;
+        }
     }
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
-    std::string instrumented_error;
-    if (!pass) {
-        ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
-    } else if (validate_instrumented_shaders &&
-               (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout,
-                                   device_extensions.vk_ext_scalar_block_layout, instrumented_error))) {
-        std::ostringstream strm;
-        strm << "Instrumented shader is invalid, error = " << instrumented_error << " Proceeding with non instrumented shader.";
-        ReportSetupProblem(device, strm.str().c_str());
-        pass = false;
+    {
+        // The instrumentation code is not a complete SPIRV module so we cannot validate it separately
+        OptimizerOptions options;
+        options.set_run_validator(false);
+        // Load instrumentation helper functions
+        size_t inst_size = sizeof(inst_functions_comp) / sizeof(uint32_t);
+        binaries[1].reserve(inst_size);  // the shader will be copied in by the optimizer
+
+        // The compiled instrumentation functions use 7 for their data.
+        // Switch that to the highest set number supported by the actual VkDevice.
+        Optimizer switch_descriptorsets(target_env);
+        switch_descriptorsets.SetMessageConsumer(gpu_console_message_consumer);
+        switch_descriptorsets.RegisterPass(CreateSwitchDescriptorSetPass(7, desc_set_bind_index));
+
+        if (!switch_descriptorsets.Run(inst_functions_comp, inst_size, &binaries[1], options)) {
+            ReportSetupProblem(
+                device, "Failure to switch descriptorsets in instrumentation code. Proceeding with non-instrumented shader.");
+            assert(false);
+            return false;
+        }
     }
-    return pass;
+    // Link in the instrumentation helper functions
+    {
+        Context context(target_env);
+        context.SetMessageConsumer(gpu_console_message_consumer);
+        LinkerOptions link_options;
+        link_options.SetUseHighestVersion(true);
+
+        spv_result_t link_status = Link(context, binaries, &new_pgm, link_options);
+        if (link_status != SPV_SUCCESS && link_status != SPV_WARNING) {
+            std::ostringstream strm;
+            strm << "Failed to link Instrumented shader, error = " << link_status << " Proceeding with non instrumented shader.";
+            ReportSetupProblem(device, strm.str().c_str());
+            assert(false);
+            return false;
+        }
+    }
+    // (Maybe) validate the instrumented and linked shader
+    if (validate_instrumented_shaders) {
+        std::string instrumented_error;
+        if (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout, device_extensions.vk_ext_scalar_block_layout,
+                               instrumented_error)) {
+            std::ostringstream strm;
+            strm << "Instrumented shader is invalid, error = " << instrumented_error << " Proceeding with non instrumented shader.";
+            ReportSetupProblem(device, strm.str().c_str());
+            assert(false);
+            return false;
+        }
+    }
+    // Run Dead Code elimination
+    {
+        OptimizerOptions opt_options;
+        opt_options.set_run_validator(false);
+        Optimizer dce_pass(target_env);
+        dce_pass.SetMessageConsumer(gpu_console_message_consumer);
+        // Call CreateAggressiveDCEPass with preserve_interface == true
+        dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
+        if (!dce_pass.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options)) {
+            ReportSetupProblem(device, "Failure to run DCE on instrumented shader.  Proceeding with non-instrumented shader.");
+            assert(false);
+            return false;
+        }
+    }
+    return true;
 }
+
 // Create the instrumented shader data to provide to the driver.
 void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
@@ -1065,16 +1125,8 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
 bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, bool &oob_access,
                                const GpuAssistedBufferInfo &buf_info, GpuAssisted *gpu_assisted,
                                const std::vector<GpuAssistedDescSetState> &descriptor_sets) {
-    using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
-    static_assert(
-        spvtools::kInstErrorMax == _kInstErrorMax,
-        "If this asserts then SPIRV-Tools was updated with a new instrument.hpp and kInstErrorMax was updated. This needs to be "
-        "changed in GPU-AV so that the GLSL gpu_shaders can read the constants.");
-    static_assert(spvtools::kInstValidationOutError == _kInstValidationOutError,
-                  "If this asserts then SPIRV-Tools was updated with a new instrument.hpp and kInstValidationOutError was updated. "
-                  "This needs to be changed in GPU-AV so that the GLSL gpu_shaders can read the constants.");
     const GpuVuid vuid = GetGpuVuid(buf_info.command);
     oob_access = false;
     switch (debug_record[kInstValidationOutError]) {
@@ -1141,10 +1193,10 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                     assert(false);
             }
         } break;
-        case _kInstErrorPreDrawValidate: {
+        case kInstErrorPreDrawValidate: {
             // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-            if (debug_record[_kPreValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
-                uint32_t count = debug_record[_kPreValidateSubError + 1];
+            if (debug_record[kPreValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
+                uint32_t count = debug_record[kPreValidateSubError + 1];
                 uint32_t stride = buf_info.pre_draw_resources.stride;
                 uint32_t offset = static_cast<uint32_t>(buf_info.pre_draw_resources.offset);
                 uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
@@ -1156,13 +1208,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                 } else {
                     vuid_msg = vuid.count_exceeds_bufsize;
                 }
-            } else if (debug_record[_kPreValidateSubError] == pre_draw_count_exceeds_limit_error) {
-                uint32_t count = debug_record[_kPreValidateSubError + 1];
+            } else if (debug_record[kPreValidateSubError] == pre_draw_count_exceeds_limit_error) {
+                uint32_t count = debug_record[kPreValidateSubError + 1];
                 strm << "Indirect draw count of " << count << " would exceed maxDrawIndirectCount limit of "
                      << gpu_assisted->phys_dev_props.limits.maxDrawIndirectCount;
                 vuid_msg = vuid.count_exceeds_device_limit;
-            } else if (debug_record[_kPreValidateSubError] == pre_draw_first_instance_error) {
-                uint32_t index = debug_record[_kPreValidateSubError + 1];
+            } else if (debug_record[kPreValidateSubError] == pre_draw_first_instance_error) {
+                uint32_t index = debug_record[kPreValidateSubError + 1];
                 strm << "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the "
                      << ((buf_info.command == Func::vkCmdDrawIndirect) ? "VkDrawIndirectCommand" : "VkDrawIndexedIndirectCommand")
                      << " structure at index " << index << " is not zero";
@@ -1170,21 +1222,21 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
             }
             return_code = false;
         } break;
-        case _kInstErrorPreDispatchValidate: {
-            if (debug_record[_kPreValidateSubError] == pre_dispatch_count_exceeds_limit_x_error) {
-                uint32_t count = debug_record[_kPreValidateSubError + 1];
+        case kInstErrorPreDispatchValidate: {
+            if (debug_record[kPreValidateSubError] == pre_dispatch_count_exceeds_limit_x_error) {
+                uint32_t count = debug_record[kPreValidateSubError + 1];
                 strm << "Indirect dispatch VkDispatchIndirectCommand::x of " << count
                      << " would exceed maxComputeWorkGroupCount[0] limit of "
                      << gpu_assisted->phys_dev_props.limits.maxComputeWorkGroupCount[0];
                 vuid_msg = vuid.group_exceeds_device_limit_x;
-            } else if (debug_record[_kPreValidateSubError] == pre_dispatch_count_exceeds_limit_y_error) {
-                uint32_t count = debug_record[_kPreValidateSubError + 1];
+            } else if (debug_record[kPreValidateSubError] == pre_dispatch_count_exceeds_limit_y_error) {
+                uint32_t count = debug_record[kPreValidateSubError + 1];
                 strm << "Indirect dispatch VkDispatchIndirectCommand:y of " << count
                      << " would exceed maxComputeWorkGroupCount[1] limit of "
                      << gpu_assisted->phys_dev_props.limits.maxComputeWorkGroupCount[1];
                 vuid_msg = vuid.group_exceeds_device_limit_y;
-            } else if (debug_record[_kPreValidateSubError] == pre_dispatch_count_exceeds_limit_z_error) {
-                uint32_t count = debug_record[_kPreValidateSubError + 1];
+            } else if (debug_record[kPreValidateSubError] == pre_dispatch_count_exceeds_limit_z_error) {
+                uint32_t count = debug_record[kPreValidateSubError + 1];
                 strm << "Indirect dispatch VkDispatchIndirectCommand::z of " << count
                      << " would exceed maxComputeWorkGroupCount[2] limit of "
                      << gpu_assisted->phys_dev_props.limits.maxComputeWorkGroupCount[2];
@@ -1212,8 +1264,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
 void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo &buffer_info,
                                              uint32_t operation_index, uint32_t *const debug_output_buffer,
                                              const std::vector<GpuAssistedDescSetState> &descriptor_sets) {
-    using namespace spvtools;
-    const uint32_t total_words = debug_output_buffer[kDebugOutputSizeOffset];
+    const uint32_t total_words = debug_output_buffer[spvtools::kDebugOutputSizeOffset];
     bool oob_access;
     // A zero here means that the shader instrumentation didn't write anything.
     // If you have nothing to say, don't say it here.
@@ -1240,7 +1291,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
     vvl::span<const uint32_t> pgm;
     // The first record starts at this offset after the total_words.
-    const uint32_t *debug_record = &debug_output_buffer[kDebugOutputDataOffset];
+    const uint32_t *debug_record = &debug_output_buffer[spvtools::kDebugOutputDataOffset];
     // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
     // by the instrumented shader.
     auto it = shader_map.find(debug_record[kInstCommonOutShaderId]);
@@ -1271,9 +1322,9 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     }
 
     // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-    const uint32_t words_to_clear = std::min(total_words, output_buffer_size - kDebugOutputDataOffset);
-    debug_output_buffer[kDebugOutputSizeOffset] = 0;
-    memset(&debug_output_buffer[kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
+    const uint32_t words_to_clear = std::min(total_words, output_buffer_size - spvtools::kDebugOutputDataOffset);
+    debug_output_buffer[spvtools::kDebugOutputSizeOffset] = 0;
+    memset(&debug_output_buffer[spvtools::kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
@@ -1404,8 +1455,8 @@ void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeli
     // and how big each of the bindings is
     if (number_of_sets > 0 && validate_descriptors && force_buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        assert(number_of_sets <= spvtools::kDebugInputBindlessMaxDescSets);
-        buffer_info.size = spvtools::kDebugInputBindlessMaxDescSets * 8; // 64 bit addresses
+        assert(number_of_sets <= kDebugInputBindlessMaxDescSets);
+        buffer_info.size = kDebugInputBindlessMaxDescSets * 8;  // 64 bit addresses
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;

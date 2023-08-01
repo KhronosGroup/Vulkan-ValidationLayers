@@ -427,6 +427,7 @@ source_set("vulkan_core_validation_glslang") {
     "${vvl_spirv_tools_dir}:spvtools",
     "${vvl_spirv_tools_dir}:spvtools_opt",
     "${vvl_spirv_tools_dir}:spvtools_val",
+    "${vvl_spirv_tools_dir}:spvtools_link",
   ]
   public_configs = [
     "$vulkan_headers_dir:vulkan_headers_config",

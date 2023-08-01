@@ -251,10 +251,11 @@ In general, the implementation does:
     For devices that have a very high or no limit on this bound, pick an index that isn't too high, but above most other device
     maxima such as 32.
 * When creating a ShaderModule, pass the SPIR-V bytecode to the SPIR-V optimizer to perform the instrumentation pass.
-    Pass the desired descriptor set binding index to the optimizer via a parameter so that the instrumented
+    Update the desired descriptor set binding index to the optimizer via SwitchDescriptorSet pass so that the the instrumented
     code knows which descriptor to use for writing error report data to the memory block.
     If descriptor indexing is enabled, turn on OOB and write state checking in the instrumentation pass.
     If the buffer_device_address extension is enabled, apply a pass to add instrumentation checking for out of bounds buffer references.
+    Link the instrumentation helper functions in layers/gpu_shaders/inst_functions.comp to the instrumented bytecode.
     Use the instrumented bytecode to create the ShaderModule.
 * For all pipeline layouts, add our descriptor set to the layout, at the binding index determined earlier.
     Fill any gaps with empty descriptor sets.
