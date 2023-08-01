@@ -540,7 +540,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness feature not supported";
     }
-    pipeline_robustness_features.pipelineRobustness = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
