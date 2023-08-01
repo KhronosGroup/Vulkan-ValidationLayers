@@ -1002,7 +1002,7 @@ TEST_F(PositivePipeline, ShaderTileImage) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageDepthReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageDepthReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         ds_ci.depthWriteEnable = false;
         CreatePipelineHelper pipe(*this);
@@ -1016,7 +1016,7 @@ TEST_F(PositivePipeline, ShaderTileImage) {
     }
 
     if (shader_tile_image_features.shaderTileImageStencilReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageStencilReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageStencilReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VkStencilOpState stencil_state = {};
         stencil_state.failOp = VK_STENCIL_OP_KEEP;
@@ -1042,7 +1042,7 @@ TEST_F(PositivePipeline, ShaderTileImage) {
     }
 
     if (shader_tile_image_features.shaderTileImageColorReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageColorReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageColorReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto ms_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
         ms_ci.sampleShadingEnable = VK_TRUE;

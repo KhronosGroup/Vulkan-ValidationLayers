@@ -266,7 +266,7 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
                OpFunctionEnd
         )";
 
-    VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
+    VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT);
 }
 
 TEST_F(PositiveShaderInterface, ScalarBlockLayout) {

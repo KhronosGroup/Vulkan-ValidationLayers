@@ -291,7 +291,7 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
                OpReturn
                OpFunctionEnd
     )asm";
-    auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main");
+    auto vs = VkShaderObj::CreateFromASM(this, vs_src.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
 
     if (vs) {
         // struct has {
