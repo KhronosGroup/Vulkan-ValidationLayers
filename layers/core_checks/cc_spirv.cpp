@@ -2104,7 +2104,7 @@ bool CoreChecks::ValidateShaderTileImage(const SPIRV_MODULE_STATE &module_state,
                                          const PIPELINE_STATE &pipeline, const VkShaderStageFlagBits stage) const {
     bool skip = false;
 
-    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && !IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
+    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) || !IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
         return skip;
     }
 
