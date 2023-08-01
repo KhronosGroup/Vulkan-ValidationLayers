@@ -3460,14 +3460,21 @@ TEST_F(NegativeImage, MaxLimitsMipLevels) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
     image_ci.extent = {64, 64, 1};
-    image_ci.format = FindFormatLinearWithoutMips(gpu(), image_ci);
     image_ci.mipLevels = 2;
 
-    if (image_ci.format != VK_FORMAT_UNDEFINED) {
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
-    } else {
-        printf("Cannot find a format to test maxMipLevels limit; skipping part of test.\n");
+    const VkFormat first_vk_format = static_cast<VkFormat>(1);
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected
+    for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
+        image_ci.format = format;
+
+        VkImageFormatProperties img_limits;
+        if (VK_SUCCESS == GPDIFPHelper(gpu(), &image_ci, &img_limits) && img_limits.maxMipLevels == 1) {
+            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
+            return;  // end test
+        }
     }
+
+    GTEST_SKIP() << "Cannot find a format to test maxMipLevels limit; skipping part of test";
 }
 
 TEST_F(NegativeImage, MaxLimitsArrayLayers) {
@@ -3478,25 +3485,34 @@ TEST_F(NegativeImage, MaxLimitsArrayLayers) {
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-    if (img_limits.maxArrayLayers != vvl::kU32Max) {
-        image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
-    } else {
-        printf("VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test.\n");
+    if (img_limits.maxArrayLayers == vvl::kU32Max) {
+        GTEST_SKIP() << "VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test";
     }
+    image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
 }
 
 TEST_F(NegativeImage, MaxLimitsSamples) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkImageCreateInfo image_ci = DefaultImageInfo();
-    bool found = FindFormatWithoutSamples(gpu(), image_ci);
 
-    if (found) {
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02258");
-    } else {
-        printf("Could not find a format with some unsupported samples; skipping part of test.\n");
+    const VkFormat first_vk_format = static_cast<VkFormat>(1);
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected
+    for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
+        image_ci.format = format;
+        for (VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_64_BIT; samples > 0;
+             samples = static_cast<VkSampleCountFlagBits>(samples >> 1)) {
+            image_ci.samples = samples;
+            VkImageFormatProperties img_limits;
+            if (VK_SUCCESS == GPDIFPHelper(gpu(), &image_ci, &img_limits) && !(img_limits.sampleCounts & samples)) {
+                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02258");
+                return;  // end test
+            }
+        }
     }
+
+    GTEST_SKIP() << "Could not find a format with some unsupported samples; skipping part of test.";
 }
 
 TEST_F(NegativeImage, MaxLimitsExtent) {
