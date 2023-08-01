@@ -2640,3 +2640,39 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsQCOM) {
+    TEST_DESCRIPTION("Tests physical device limits for VK_QCOM_fragment_density_map_offset.");
+    AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = 0;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8_UNORM;
+    image_ci.extent = {1, 1, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageFormatProperties img_limits;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+
+    image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+    if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
+    }
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514");
+
+    image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+    if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
+    }
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515");
+}
