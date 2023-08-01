@@ -7415,6 +7415,78 @@ void ThreadSafety::PostCallRecordCmdSetStencilOpEXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCopyMemoryToImageEXT(
+    VkDevice                                    device,
+    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo) {
+    StartReadObjectParentInstance(device, "vkCopyMemoryToImageEXT");
+}
+
+void ThreadSafety::PostCallRecordCopyMemoryToImageEXT(
+    VkDevice                                    device,
+    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCopyMemoryToImageEXT");
+}
+
+void ThreadSafety::PreCallRecordCopyImageToMemoryEXT(
+    VkDevice                                    device,
+    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo) {
+    StartReadObjectParentInstance(device, "vkCopyImageToMemoryEXT");
+}
+
+void ThreadSafety::PostCallRecordCopyImageToMemoryEXT(
+    VkDevice                                    device,
+    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCopyImageToMemoryEXT");
+}
+
+void ThreadSafety::PreCallRecordCopyImageToImageEXT(
+    VkDevice                                    device,
+    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo) {
+    StartReadObjectParentInstance(device, "vkCopyImageToImageEXT");
+}
+
+void ThreadSafety::PostCallRecordCopyImageToImageEXT(
+    VkDevice                                    device,
+    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCopyImageToImageEXT");
+}
+
+void ThreadSafety::PreCallRecordTransitionImageLayoutEXT(
+    VkDevice                                    device,
+    uint32_t                                    transitionCount,
+    const VkHostImageLayoutTransitionInfoEXT*   pTransitions) {
+    StartReadObjectParentInstance(device, "vkTransitionImageLayoutEXT");
+}
+
+void ThreadSafety::PostCallRecordTransitionImageLayoutEXT(
+    VkDevice                                    device,
+    uint32_t                                    transitionCount,
+    const VkHostImageLayoutTransitionInfoEXT*   pTransitions,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkTransitionImageLayoutEXT");
+}
+
+void ThreadSafety::PreCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    StartReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
+    StartReadObject(image, "vkGetImageSubresourceLayout2EXT");
+}
+
+void ThreadSafety::PostCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    FinishReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
+    FinishReadObject(image, "vkGetImageSubresourceLayout2EXT");
+}
+
 void ThreadSafety::PreCallRecordReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
@@ -7855,24 +7927,6 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateEnumNV(
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     FinishWriteObject(commandBuffer, "vkCmdSetFragmentShadingRateEnumNV");
     // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PreCallRecordGetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
-    StartReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
-    StartReadObject(image, "vkGetImageSubresourceLayout2EXT");
-}
-
-void ThreadSafety::PostCallRecordGetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
-    FinishReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
-    FinishReadObject(image, "vkGetImageSubresourceLayout2EXT");
 }
 
 void ThreadSafety::PreCallRecordGetDeviceFaultInfoEXT(
@@ -8765,6 +8819,51 @@ void ThreadSafety::PostCallRecordCmdDecompressMemoryIndirectCountNV(
     uint32_t                                    stride) {
     FinishWriteObject(commandBuffer, "vkCmdDecompressMemoryIndirectCountNV");
     // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordGetPipelineIndirectMemoryRequirementsNV(
+    VkDevice                                    device,
+    const VkComputePipelineCreateInfo*          pCreateInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    StartReadObjectParentInstance(device, "vkGetPipelineIndirectMemoryRequirementsNV");
+}
+
+void ThreadSafety::PostCallRecordGetPipelineIndirectMemoryRequirementsNV(
+    VkDevice                                    device,
+    const VkComputePipelineCreateInfo*          pCreateInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    FinishReadObjectParentInstance(device, "vkGetPipelineIndirectMemoryRequirementsNV");
+}
+
+void ThreadSafety::PreCallRecordCmdUpdatePipelineIndirectBufferNV(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipeline                                  pipeline) {
+    StartWriteObject(commandBuffer, "vkCmdUpdatePipelineIndirectBufferNV");
+    StartReadObject(pipeline, "vkCmdUpdatePipelineIndirectBufferNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdUpdatePipelineIndirectBufferNV(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipeline                                  pipeline) {
+    FinishWriteObject(commandBuffer, "vkCmdUpdatePipelineIndirectBufferNV");
+    FinishReadObject(pipeline, "vkCmdUpdatePipelineIndirectBufferNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordGetPipelineIndirectDeviceAddressNV(
+    VkDevice                                    device,
+    const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
+    StartReadObjectParentInstance(device, "vkGetPipelineIndirectDeviceAddressNV");
+}
+
+void ThreadSafety::PostCallRecordGetPipelineIndirectDeviceAddressNV(
+    VkDevice                                    device,
+    const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
+    VkDeviceAddress                             result) {
+    FinishReadObjectParentInstance(device, "vkGetPipelineIndirectDeviceAddressNV");
 }
 
 void ThreadSafety::PreCallRecordCmdSetTessellationDomainOriginEXT(

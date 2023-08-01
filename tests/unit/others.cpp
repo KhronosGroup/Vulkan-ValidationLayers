@@ -199,7 +199,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     VkLayerSettingEXT setting = {
         OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(std::size(id)), {&id}
     };
-    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, {&setting}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
 
     // Communicate list of structinfo pairs to layers
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
@@ -258,7 +258,7 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     const VkLayerSettingEXT setting = {
         OBJECT_LAYER_NAME, "custom_stype_list",
         VK_LAYER_SETTING_TYPE_UINT32_EXT, static_cast<uint32_t>(custom_struct_info.size()), {&custom_struct_info[0]}};
-    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, {&setting}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
     ASSERT_NO_FATAL_FAILURE(InitState());
