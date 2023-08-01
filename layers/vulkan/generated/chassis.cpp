@@ -771,17 +771,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
+        skip |= intercept->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
     }
+
+    // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
+    if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
+
     VkResult result = DispatchCreateShaderModule(device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result, &csm_state);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+
+    create_shader_module_api_state csm_state{};
+
+    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, &csm_state);
+    }
+
+    // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
+    if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
+
+    VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result, &csm_state);
     }
     return result;
 }
@@ -14799,31 +14835,6 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo);
     }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
-    VkDevice                                    device,
-    uint32_t                                    createInfoCount,
-    const VkShaderCreateInfoEXT*                pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkShaderEXT*                                pShaders) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateShadersEXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateShadersEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
-    }
-    VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateShadersEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result);
-    }
-    return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(

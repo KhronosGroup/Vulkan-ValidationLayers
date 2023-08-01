@@ -867,6 +867,12 @@ class CoreChecks : public ValidationStateTracker {
                                                      VkShaderModuleIdentifierEXT* pIdentifier) const override;
     bool PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                                VkShaderModuleIdentifierEXT* pIdentifier) const override;
+    void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
+                                         void* csm_state_data) override;
+    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                       const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
+                                       void* csm_state_data) override;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
     bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;

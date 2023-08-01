@@ -23,7 +23,7 @@ Currently these are
   - This `spirv-opt` pass is used to inject the constants from the pipeline layout.
   - Some checks require the runtime spec constant values
 - Flatten OpGroupDecorations
-- Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
+  - Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
 - Debug Printf
   - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md).
 - GPU-VA
@@ -48,7 +48,7 @@ The code is currently split up into the following main sections
 
 All Shader Validation can be broken into 4 types of checks
 
-- Standalone with runtime properties
+- SPIR-V with runtime properties
   - Things like features and limits
 - Shader interface
   - Ex. going between a Vertex and Fragment shader
@@ -65,32 +65,36 @@ When dealing with shader validation there are a few concepts to understand and n
   - Tied to a shader stage (fragment, vertex, etc)
   - Knows which variables and instructions are touched in stage
     - There might be things in a `ShaderModule` not related to shader stage validation
-- `Shader Module`
-  - a `VkShaderModule` object
-  - contains all information about the SPIR-V module
+- `SPIR-V Module`
+  - `SPIRV_MODULE_STATE`
+  - This object takes in SPIR-V, parses it, creates `EntryPoint` objects, validates what we can
+    - We do validation first as sometimes a bad SPIR-V can [crash a driver](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2835)
+    - can contain [multiple EntryPoints](https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/entry_execution.md#instructions-with-multiple-execution-modes)
   - contains SPIR-V instructions (in an array of `uint32_t` words)
   - knows the relationship between instructions
-  - can contain multiple `EntryPoints`
-    - [For more details](https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/entry_execution.md#instructions-with-multiple-execution-modes)
+- `Shader Module` and `Shader Object`
+  - `VkShaderModule` object (`SHADER_MODULE_STATE`) or `VkShaderEXT` object (`SHADER_OBJECT_STATE`)
+  - **can** hold a `SPIR-V module` reference
+    - `Pipeline Library` (GPL) (`VK_EXT_graphics_pipeline_library`)
+        - part of a pipeline that can be reused
+    - `ShaderModuleIdentifier` (`VK_EXT_shader_module_identifier`)
+        - lets app use a hash instead of having the driver re-create the `ShaderModule`
+        - not possible to validate as the VVL don't know what the `ShaderModule` is
 - `Pipeline`
-  - contains 1 or more shader object
+  - contains 1 or more `Shader Module` object
   - decides both which `Shader Module` and `EntryPoint` are used
   - has other state not known if validating just the shader object
-- `Pipeline Library` (GPL) (`VK_EXT_graphics_pipeline_library`)
-  - part of a pipeline that can be reused
-- `ShaderModuleIdentifier` (`VK_EXT_shader_module_identifier`)
-  - lets app use a hash instead of having the driver re-create the `ShaderModule`
-  - not possible to validate as the VVL don't know what the `ShaderModule` is
 
 When dealing with validation, it is important to know what should be validated, and when.
 
 If validation only cares about... :
 
-- the SPIR-V itself, is mapped to the `Shader Module`
+- the SPIR-V itself, is mapped to the `SPIRV_MODULE_STATE`
 - if two stages interface, needs to be done when all stages are there
-  -For `Pipeline Library` it might need to wait until linking
+  - For `Pipeline Library` it might need to wait until linking
 - descriptors variables, use `EntryPoint`
 - the stage of a shader module is always known, regardless of even using `ShaderModuleIdentifier`
+- Pipeline can have fields that are related to shaders, but [don't actually require the SPIR-V](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6226)
 
 ### Variables
 
