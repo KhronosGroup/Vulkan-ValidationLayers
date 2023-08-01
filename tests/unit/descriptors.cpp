@@ -1021,7 +1021,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     ASSERT_TRUE(image.initialized());
 
     vk_testing::ImageView view;
-    auto image_view_create_info = SafeSaneImageViewCreateInfo(image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto image_view_create_info = image.BasicTargetViewCreatInfo();
     view.init(*m_device, image_view_create_info);
     ASSERT_TRUE(view.initialized());
 
@@ -1150,7 +1150,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
         image_ds.Init(32, 32, 1, format_ds, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                       VK_IMAGE_TILING_OPTIMAL, 0);
         ASSERT_TRUE(image_ds.initialized());
-        auto ds_view_ci = SafeSaneImageViewCreateInfo(image_ds, format_ds, VK_IMAGE_ASPECT_DEPTH_BIT);
+        auto ds_view_ci = image_ds.BasicTargetViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT);
         depth_view.init(*m_device, ds_view_ci);
         ds_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         stencil_view.init(*m_device, ds_view_ci);

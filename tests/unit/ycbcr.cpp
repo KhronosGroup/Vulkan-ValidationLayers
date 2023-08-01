@@ -1460,7 +1460,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     auto ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion.handle();
 
-    auto image_view_ci = image_obj.TargetViewCI(mp_format);
+    auto image_view_ci = image_obj.BasicTargetViewCreatInfo();
     image_view_ci.pNext = &ycbcr_info;
     auto image_view = image_obj.targetView(image_view_ci);
 

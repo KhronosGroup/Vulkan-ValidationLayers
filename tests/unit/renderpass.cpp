@@ -1353,8 +1353,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_TILING_OPTIMAL);
         vk_testing::ImageView image_view_no_fb_loop;
-        auto image_view_ci = no_fb_loop_attachment.TargetViewCI(VK_FORMAT_R8G8B8A8_UNORM);
-        image_view_ci.image = no_fb_loop_attachment.handle();
+        auto image_view_ci = no_fb_loop_attachment.BasicTargetViewCreatInfo();
         image_view_no_fb_loop.init(*m_device, image_view_ci);
         views[0] = image_view_no_fb_loop.handle();
         descriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3810,8 +3809,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     two_count_image.init(&image_create_info);
 
     vk_testing::ImageView two_count_image_view;
-    auto image_view_ci = two_count_image.TargetViewCI(VK_FORMAT_B8G8R8A8_UNORM);
-    image_view_ci.image = two_count_image.handle();
+    auto image_view_ci = two_count_image.BasicTargetViewCreatInfo();
     two_count_image_view.init(*m_device, image_view_ci);
 
     color_attachment.imageView = two_count_image_view.handle();
@@ -3826,8 +3824,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     VkImageObj one_count_image(m_device);
     one_count_image.init(&image_create_info);
     vk_testing::ImageView one_count_image_view;
-    auto one_count_image_view_ci = one_count_image.TargetViewCI(VK_FORMAT_B8G8R8A8_UNORM);
-    one_count_image_view_ci.image = one_count_image.handle();
+    auto one_count_image_view_ci = one_count_image.BasicTargetViewCreatInfo();
     one_count_image_view.init(*m_device, one_count_image_view_ci);
     color_attachment.imageView = one_count_image_view.handle();
     // Attachments with a sample count of VK_SAMPLE_COUNT_1_BIT must have been created with
@@ -3841,8 +3838,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
     good_one_count_image.init(&image_create_info);
     vk_testing::ImageView good_one_count_image_view;
-    auto good_one_count_image_view_ci = good_one_count_image.TargetViewCI(VK_FORMAT_B8G8R8A8_UNORM);
-    good_one_count_image_view_ci.image = good_one_count_image.handle();
+    auto good_one_count_image_view_ci = good_one_count_image.BasicTargetViewCreatInfo();
     good_one_count_image_view.init(*m_device, good_one_count_image_view_ci);
     color_attachment.imageView = good_one_count_image_view.handle();
     color_attachment.resolveImageView = good_one_count_image_view.handle();
@@ -3935,10 +3931,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         VkImageObj unsampleable_image(m_device);
         unsampleable_image.init(&image_create_info);
         vk_testing::ImageView unsampleable_image_view;
-        auto unsampleable_image_view_ci = unsampleable_image.TargetViewCI(unsampleable_format);
-        unsampleable_image_view_ci.image = unsampleable_image.handle();
-        unsampleable_image_view_ci.subresourceRange.baseMipLevel = 0;
-        unsampleable_image_view_ci.subresourceRange.levelCount = 1;
+        auto unsampleable_image_view_ci = unsampleable_image.BasicTargetViewCreatInfo();
         unsampleable_image_view.init(*m_device, unsampleable_image_view_ci);
         begin_rendering_info.pNext = &ms_render_to_ss;
         ms_render_to_ss.rasterizationSamples = unsampleable_count;
