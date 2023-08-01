@@ -273,15 +273,15 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
-    ray_query_feature.rayQuery = VK_TRUE;
-    if (!CheckSynchronization2SupportAndInitState(this, &ray_query_feature)) {
-        GTEST_SKIP() << "Synchronization2 not supported";
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&ray_query_feature);
+    GetPhysicalDeviceFeatures2(sync2_features);
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "synchronization2 not supported";
     }
-
-    GetPhysicalDeviceFeatures2(ray_query_feature);
     if (!ray_query_feature.rayQuery) {
         GTEST_SKIP() << "Ray query feature needs to be enabled";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -353,15 +353,15 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
-    ray_query_feature.rayQuery = VK_TRUE;
-    if (!CheckSynchronization2SupportAndInitState(this, &ray_query_feature)) {
-        GTEST_SKIP() << "Synchronization2 not supported";
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&ray_query_feature);
+    GetPhysicalDeviceFeatures2(sync2_features);
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "synchronization2 not supported";
     }
-
-    GetPhysicalDeviceFeatures2(ray_query_feature);
     if (!ray_query_feature.rayQuery) {
         GTEST_SKIP() << "Ray query feature needs to be enabled";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
