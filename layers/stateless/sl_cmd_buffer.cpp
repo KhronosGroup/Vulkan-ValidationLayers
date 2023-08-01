@@ -32,13 +32,13 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
     bool skip = false;
 
     if (indexType == VK_INDEX_TYPE_NONE_NV) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-02507",
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-08786",
                          "vkCmdBindIndexBuffer() indexType must not be VK_INDEX_TYPE_NONE_NV.");
     }
 
     const auto *index_type_uint8_features = LvlFindInChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
     if (indexType == VK_INDEX_TYPE_UINT8_EXT && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-02765",
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-08787",
                          "vkCmdBindIndexBuffer() indexType is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature is not enabled.");
     }
 

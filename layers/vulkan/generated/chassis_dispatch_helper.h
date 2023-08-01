@@ -861,6 +861,18 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDeviceImageSparseMemoryRequirementsKHR,
     InterceptIdPreCallRecordGetDeviceImageSparseMemoryRequirementsKHR,
     InterceptIdPostCallRecordGetDeviceImageSparseMemoryRequirementsKHR,
+    InterceptIdPreCallValidateCmdBindIndexBuffer2KHR,
+    InterceptIdPreCallRecordCmdBindIndexBuffer2KHR,
+    InterceptIdPostCallRecordCmdBindIndexBuffer2KHR,
+    InterceptIdPreCallValidateGetRenderingAreaGranularityKHR,
+    InterceptIdPreCallRecordGetRenderingAreaGranularityKHR,
+    InterceptIdPostCallRecordGetRenderingAreaGranularityKHR,
+    InterceptIdPreCallValidateGetDeviceImageSubresourceLayoutKHR,
+    InterceptIdPreCallRecordGetDeviceImageSubresourceLayoutKHR,
+    InterceptIdPostCallRecordGetDeviceImageSubresourceLayoutKHR,
+    InterceptIdPreCallValidateGetImageSubresourceLayout2KHR,
+    InterceptIdPreCallRecordGetImageSubresourceLayout2KHR,
+    InterceptIdPostCallRecordGetImageSubresourceLayout2KHR,
     InterceptIdPreCallValidateDebugMarkerSetObjectTagEXT,
     InterceptIdPreCallRecordDebugMarkerSetObjectTagEXT,
     InterceptIdPostCallRecordDebugMarkerSetObjectTagEXT,
@@ -996,6 +1008,27 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetMemoryAndroidHardwareBufferANDROID,
     InterceptIdPreCallRecordGetMemoryAndroidHardwareBufferANDROID,
     InterceptIdPostCallRecordGetMemoryAndroidHardwareBufferANDROID,
+    InterceptIdPreCallValidateCreateExecutionGraphPipelinesAMDX,
+    InterceptIdPreCallRecordCreateExecutionGraphPipelinesAMDX,
+    InterceptIdPostCallRecordCreateExecutionGraphPipelinesAMDX,
+    InterceptIdPreCallValidateGetExecutionGraphPipelineScratchSizeAMDX,
+    InterceptIdPreCallRecordGetExecutionGraphPipelineScratchSizeAMDX,
+    InterceptIdPostCallRecordGetExecutionGraphPipelineScratchSizeAMDX,
+    InterceptIdPreCallValidateGetExecutionGraphPipelineNodeIndexAMDX,
+    InterceptIdPreCallRecordGetExecutionGraphPipelineNodeIndexAMDX,
+    InterceptIdPostCallRecordGetExecutionGraphPipelineNodeIndexAMDX,
+    InterceptIdPreCallValidateCmdInitializeGraphScratchMemoryAMDX,
+    InterceptIdPreCallRecordCmdInitializeGraphScratchMemoryAMDX,
+    InterceptIdPostCallRecordCmdInitializeGraphScratchMemoryAMDX,
+    InterceptIdPreCallValidateCmdDispatchGraphAMDX,
+    InterceptIdPreCallRecordCmdDispatchGraphAMDX,
+    InterceptIdPostCallRecordCmdDispatchGraphAMDX,
+    InterceptIdPreCallValidateCmdDispatchGraphIndirectAMDX,
+    InterceptIdPreCallRecordCmdDispatchGraphIndirectAMDX,
+    InterceptIdPostCallRecordCmdDispatchGraphIndirectAMDX,
+    InterceptIdPreCallValidateCmdDispatchGraphIndirectCountAMDX,
+    InterceptIdPreCallRecordCmdDispatchGraphIndirectCountAMDX,
+    InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX,
     InterceptIdPreCallValidateCmdSetSampleLocationsEXT,
     InterceptIdPreCallRecordCmdSetSampleLocationsEXT,
     InterceptIdPostCallRecordCmdSetSampleLocationsEXT,
@@ -2517,6 +2550,18 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceImageSparseMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceImageSparseMemoryRequirementsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindIndexBuffer2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindIndexBuffer2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindIndexBuffer2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetRenderingAreaGranularityKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetRenderingAreaGranularityKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetRenderingAreaGranularityKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceImageSubresourceLayoutKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceImageSubresourceLayoutKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceImageSubresourceLayoutKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout2KHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDebugMarkerSetObjectTagEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDebugMarkerSetObjectTagEXT);
@@ -2657,6 +2702,41 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryAndroidHardwareBufferANDROID);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryAndroidHardwareBufferANDROID);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryAndroidHardwareBufferANDROID);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateExecutionGraphPipelinesAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateExecutionGraphPipelinesAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateExecutionGraphPipelinesAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdInitializeGraphScratchMemoryAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdInitializeGraphScratchMemoryAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdInitializeGraphScratchMemoryAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDispatchGraphAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDispatchGraphAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDispatchGraphAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDispatchGraphIndirectAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDispatchGraphIndirectAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDispatchGraphIndirectAMDX);
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDispatchGraphIndirectCountAMDX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDispatchGraphIndirectCountAMDX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDispatchGraphIndirectCountAMDX);
 #endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetSampleLocationsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetSampleLocationsEXT);

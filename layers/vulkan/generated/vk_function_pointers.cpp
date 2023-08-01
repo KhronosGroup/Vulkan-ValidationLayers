@@ -469,6 +469,10 @@ PFN_vkCmdTraceRaysIndirect2KHR CmdTraceRaysIndirect2KHR;
 PFN_vkGetDeviceBufferMemoryRequirementsKHR GetDeviceBufferMemoryRequirementsKHR;
 PFN_vkGetDeviceImageMemoryRequirementsKHR GetDeviceImageMemoryRequirementsKHR;
 PFN_vkGetDeviceImageSparseMemoryRequirementsKHR GetDeviceImageSparseMemoryRequirementsKHR;
+PFN_vkCmdBindIndexBuffer2KHR CmdBindIndexBuffer2KHR;
+PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
+PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
+PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
 PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
@@ -548,6 +552,27 @@ PFN_vkGetAndroidHardwareBufferPropertiesANDROID GetAndroidHardwareBufferProperti
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
 #endif //VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCreateExecutionGraphPipelinesAMDX CreateExecutionGraphPipelinesAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkGetExecutionGraphPipelineScratchSizeAMDX GetExecutionGraphPipelineScratchSizeAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkGetExecutionGraphPipelineNodeIndexAMDX GetExecutionGraphPipelineNodeIndexAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCmdInitializeGraphScratchMemoryAMDX CmdInitializeGraphScratchMemoryAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCmdDispatchGraphAMDX CmdDispatchGraphAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCmdDispatchGraphIndirectAMDX CmdDispatchGraphIndirectAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCmdDispatchGraphIndirectCountAMDX CmdDispatchGraphIndirectCountAMDX;
+#endif //VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
 PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
 PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;
@@ -1549,6 +1574,14 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_KHR_maintenance5", [](VkInstance , VkDevice device) {
+                CmdBindIndexBuffer2KHR = reinterpret_cast<PFN_vkCmdBindIndexBuffer2KHR>(GetDeviceProcAddr(device, "vkCmdBindIndexBuffer2KHR"));
+                GetRenderingAreaGranularityKHR = reinterpret_cast<PFN_vkGetRenderingAreaGranularityKHR>(GetDeviceProcAddr(device, "vkGetRenderingAreaGranularityKHR"));
+                GetDeviceImageSubresourceLayoutKHR = reinterpret_cast<PFN_vkGetDeviceImageSubresourceLayoutKHR>(GetDeviceProcAddr(device, "vkGetDeviceImageSubresourceLayoutKHR"));
+                GetImageSubresourceLayout2KHR = reinterpret_cast<PFN_vkGetImageSubresourceLayout2KHR>(GetDeviceProcAddr(device, "vkGetImageSubresourceLayout2KHR"));
+            }
+        },
+        {
             "VK_KHR_cooperative_matrix", [](VkInstance instance, VkDevice ) {
                 GetPhysicalDeviceCooperativeMatrixPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR"));
             }
@@ -1650,6 +1683,19 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif //VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        {
+            "VK_AMDX_shader_enqueue", [](VkInstance , VkDevice device) {
+                CreateExecutionGraphPipelinesAMDX = reinterpret_cast<PFN_vkCreateExecutionGraphPipelinesAMDX>(GetDeviceProcAddr(device, "vkCreateExecutionGraphPipelinesAMDX"));
+                GetExecutionGraphPipelineScratchSizeAMDX = reinterpret_cast<PFN_vkGetExecutionGraphPipelineScratchSizeAMDX>(GetDeviceProcAddr(device, "vkGetExecutionGraphPipelineScratchSizeAMDX"));
+                GetExecutionGraphPipelineNodeIndexAMDX = reinterpret_cast<PFN_vkGetExecutionGraphPipelineNodeIndexAMDX>(GetDeviceProcAddr(device, "vkGetExecutionGraphPipelineNodeIndexAMDX"));
+                CmdInitializeGraphScratchMemoryAMDX = reinterpret_cast<PFN_vkCmdInitializeGraphScratchMemoryAMDX>(GetDeviceProcAddr(device, "vkCmdInitializeGraphScratchMemoryAMDX"));
+                CmdDispatchGraphAMDX = reinterpret_cast<PFN_vkCmdDispatchGraphAMDX>(GetDeviceProcAddr(device, "vkCmdDispatchGraphAMDX"));
+                CmdDispatchGraphIndirectAMDX = reinterpret_cast<PFN_vkCmdDispatchGraphIndirectAMDX>(GetDeviceProcAddr(device, "vkCmdDispatchGraphIndirectAMDX"));
+                CmdDispatchGraphIndirectCountAMDX = reinterpret_cast<PFN_vkCmdDispatchGraphIndirectCountAMDX>(GetDeviceProcAddr(device, "vkCmdDispatchGraphIndirectCountAMDX"));
+            }
+        },
+#endif //VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_EXT_sample_locations", [](VkInstance instance, VkDevice device) {
                 CmdSetSampleLocationsEXT = reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleLocationsEXT"));
@@ -2359,6 +2405,10 @@ void ResetAllExtensions() {
     GetDeviceBufferMemoryRequirementsKHR = nullptr;
     GetDeviceImageMemoryRequirementsKHR = nullptr;
     GetDeviceImageSparseMemoryRequirementsKHR = nullptr;
+    CmdBindIndexBuffer2KHR = nullptr;
+    GetRenderingAreaGranularityKHR = nullptr;
+    GetDeviceImageSubresourceLayoutKHR = nullptr;
+    GetImageSubresourceLayout2KHR = nullptr;
     GetPhysicalDeviceCooperativeMatrixPropertiesKHR = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;
@@ -2438,6 +2488,27 @@ void ResetAllExtensions() {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     GetMemoryAndroidHardwareBufferANDROID = nullptr;
 #endif //VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    CreateExecutionGraphPipelinesAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    GetExecutionGraphPipelineScratchSizeAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    GetExecutionGraphPipelineNodeIndexAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    CmdInitializeGraphScratchMemoryAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    CmdDispatchGraphAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    CmdDispatchGraphIndirectAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    CmdDispatchGraphIndirectCountAMDX = nullptr;
+#endif //VK_ENABLE_BETA_EXTENSIONS
     CmdSetSampleLocationsEXT = nullptr;
     GetPhysicalDeviceMultisamplePropertiesEXT = nullptr;
     GetImageDrmFormatModifierPropertiesEXT = nullptr;

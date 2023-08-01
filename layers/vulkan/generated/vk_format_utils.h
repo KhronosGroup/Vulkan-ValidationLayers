@@ -127,6 +127,7 @@ enum class FORMAT_COMPATIBILITY_CLASS {
     _8BIT_3PLANE_420,
     _8BIT_3PLANE_422,
     _8BIT_3PLANE_444,
+    _8BIT_ALPHA,
     _96BIT
 };
 // Numeric formats with more then one numeric type (D16_UNORM_S8_UINT) will return false

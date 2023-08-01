@@ -286,6 +286,10 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdTraceRaysIndirect2KHR(VkCommandBuffer c
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount, VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {  }
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType) {  }
+static VKAPI_ATTR void VKAPI_CALL StubGetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo, VkExtent2D* pGranularity) {  }
+static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo, VkSubresourceLayout2KHR* pLayout) {  }
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource, VkSubresourceLayout2KHR* pLayout) {  }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator) {  }
@@ -365,6 +369,27 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetAndroidHardwareBufferPropertiesANDR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryAndroidHardwareBufferANDROID(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer) { return VK_SUCCESS; }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) { return VK_SUCCESS; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo) { return VK_SUCCESS; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex) { return VK_SUCCESS; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR void VKAPI_CALL StubCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {  }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo) {  }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, const VkDispatchGraphCountInfoAMDX* pCountInfo) {  }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceAddress countInfo) {  }
+#endif // VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo) {  }
 static VKAPI_ATTR void VKAPI_CALL StubGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples, VkMultisamplePropertiesEXT* pMultisampleProperties) {  }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image, VkImageDrmFormatModifierPropertiesEXT* pProperties) { return VK_SUCCESS; }
@@ -450,7 +475,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCopyMemoryToImageEXT(VkDevice device, 
 static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount, const VkHostImageLayoutTransitionInfoEXT* pTransitions) { return VK_SUCCESS; }
-static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {  }
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource, VkSubresourceLayout2KHR* pLayout) {  }
 static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubGetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {  }
@@ -804,6 +829,10 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkGetDeviceBufferMemoryRequirementsKHR", { "VK_KHR_maintenance4" } },
     { "vkGetDeviceImageMemoryRequirementsKHR", { "VK_KHR_maintenance4" } },
     { "vkGetDeviceImageSparseMemoryRequirementsKHR", { "VK_KHR_maintenance4" } },
+    { "vkCmdBindIndexBuffer2KHR", { "VK_KHR_maintenance5" } },
+    { "vkGetRenderingAreaGranularityKHR", { "VK_KHR_maintenance5" } },
+    { "vkGetDeviceImageSubresourceLayoutKHR", { "VK_KHR_maintenance5" } },
+    { "vkGetImageSubresourceLayout2KHR", { "VK_KHR_maintenance5" } },
     { "vkDebugMarkerSetObjectTagEXT", { "VK_EXT_debug_marker" } },
     { "vkDebugMarkerSetObjectNameEXT", { "VK_EXT_debug_marker" } },
     { "vkCmdDebugMarkerBeginEXT", { "VK_EXT_debug_marker" } },
@@ -849,6 +878,13 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkCmdInsertDebugUtilsLabelEXT", { "VK_EXT_debug_utils" } },
     { "vkGetAndroidHardwareBufferPropertiesANDROID", { "VK_ANDROID_external_memory_android_hardware_buffer" } },
     { "vkGetMemoryAndroidHardwareBufferANDROID", { "VK_ANDROID_external_memory_android_hardware_buffer" } },
+    { "vkCreateExecutionGraphPipelinesAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkGetExecutionGraphPipelineScratchSizeAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkGetExecutionGraphPipelineNodeIndexAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkCmdInitializeGraphScratchMemoryAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkCmdDispatchGraphAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkCmdDispatchGraphIndirectAMDX", { "VK_AMDX_shader_enqueue" } },
+    { "vkCmdDispatchGraphIndirectCountAMDX", { "VK_AMDX_shader_enqueue" } },
     { "vkCmdSetSampleLocationsEXT", { "VK_EXT_sample_locations" } },
     { "vkGetImageDrmFormatModifierPropertiesEXT", { "VK_EXT_image_drm_format_modifier" } },
     { "vkCreateValidationCacheEXT", { "VK_EXT_validation_cache" } },
@@ -1563,6 +1599,14 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetDeviceImageMemoryRequirementsKHR == nullptr) { table->GetDeviceImageMemoryRequirementsKHR = (PFN_vkGetDeviceImageMemoryRequirementsKHR)StubGetDeviceImageMemoryRequirementsKHR; }
     table->GetDeviceImageSparseMemoryRequirementsKHR = (PFN_vkGetDeviceImageSparseMemoryRequirementsKHR) gpa(device, "vkGetDeviceImageSparseMemoryRequirementsKHR");
     if (table->GetDeviceImageSparseMemoryRequirementsKHR == nullptr) { table->GetDeviceImageSparseMemoryRequirementsKHR = (PFN_vkGetDeviceImageSparseMemoryRequirementsKHR)StubGetDeviceImageSparseMemoryRequirementsKHR; }
+    table->CmdBindIndexBuffer2KHR = (PFN_vkCmdBindIndexBuffer2KHR) gpa(device, "vkCmdBindIndexBuffer2KHR");
+    if (table->CmdBindIndexBuffer2KHR == nullptr) { table->CmdBindIndexBuffer2KHR = (PFN_vkCmdBindIndexBuffer2KHR)StubCmdBindIndexBuffer2KHR; }
+    table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR) gpa(device, "vkGetRenderingAreaGranularityKHR");
+    if (table->GetRenderingAreaGranularityKHR == nullptr) { table->GetRenderingAreaGranularityKHR = (PFN_vkGetRenderingAreaGranularityKHR)StubGetRenderingAreaGranularityKHR; }
+    table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR) gpa(device, "vkGetDeviceImageSubresourceLayoutKHR");
+    if (table->GetDeviceImageSubresourceLayoutKHR == nullptr) { table->GetDeviceImageSubresourceLayoutKHR = (PFN_vkGetDeviceImageSubresourceLayoutKHR)StubGetDeviceImageSubresourceLayoutKHR; }
+    table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR) gpa(device, "vkGetImageSubresourceLayout2KHR");
+    if (table->GetImageSubresourceLayout2KHR == nullptr) { table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)StubGetImageSubresourceLayout2KHR; }
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT) gpa(device, "vkDebugMarkerSetObjectTagEXT");
     if (table->DebugMarkerSetObjectTagEXT == nullptr) { table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)StubDebugMarkerSetObjectTagEXT; }
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT) gpa(device, "vkDebugMarkerSetObjectNameEXT");
@@ -1659,6 +1703,34 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetMemoryAndroidHardwareBufferANDROID = (PFN_vkGetMemoryAndroidHardwareBufferANDROID) gpa(device, "vkGetMemoryAndroidHardwareBufferANDROID");
     if (table->GetMemoryAndroidHardwareBufferANDROID == nullptr) { table->GetMemoryAndroidHardwareBufferANDROID = (PFN_vkGetMemoryAndroidHardwareBufferANDROID)StubGetMemoryAndroidHardwareBufferANDROID; }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->CreateExecutionGraphPipelinesAMDX = (PFN_vkCreateExecutionGraphPipelinesAMDX) gpa(device, "vkCreateExecutionGraphPipelinesAMDX");
+    if (table->CreateExecutionGraphPipelinesAMDX == nullptr) { table->CreateExecutionGraphPipelinesAMDX = (PFN_vkCreateExecutionGraphPipelinesAMDX)StubCreateExecutionGraphPipelinesAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->GetExecutionGraphPipelineScratchSizeAMDX = (PFN_vkGetExecutionGraphPipelineScratchSizeAMDX) gpa(device, "vkGetExecutionGraphPipelineScratchSizeAMDX");
+    if (table->GetExecutionGraphPipelineScratchSizeAMDX == nullptr) { table->GetExecutionGraphPipelineScratchSizeAMDX = (PFN_vkGetExecutionGraphPipelineScratchSizeAMDX)StubGetExecutionGraphPipelineScratchSizeAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->GetExecutionGraphPipelineNodeIndexAMDX = (PFN_vkGetExecutionGraphPipelineNodeIndexAMDX) gpa(device, "vkGetExecutionGraphPipelineNodeIndexAMDX");
+    if (table->GetExecutionGraphPipelineNodeIndexAMDX == nullptr) { table->GetExecutionGraphPipelineNodeIndexAMDX = (PFN_vkGetExecutionGraphPipelineNodeIndexAMDX)StubGetExecutionGraphPipelineNodeIndexAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->CmdInitializeGraphScratchMemoryAMDX = (PFN_vkCmdInitializeGraphScratchMemoryAMDX) gpa(device, "vkCmdInitializeGraphScratchMemoryAMDX");
+    if (table->CmdInitializeGraphScratchMemoryAMDX == nullptr) { table->CmdInitializeGraphScratchMemoryAMDX = (PFN_vkCmdInitializeGraphScratchMemoryAMDX)StubCmdInitializeGraphScratchMemoryAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->CmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX) gpa(device, "vkCmdDispatchGraphAMDX");
+    if (table->CmdDispatchGraphAMDX == nullptr) { table->CmdDispatchGraphAMDX = (PFN_vkCmdDispatchGraphAMDX)StubCmdDispatchGraphAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->CmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX) gpa(device, "vkCmdDispatchGraphIndirectAMDX");
+    if (table->CmdDispatchGraphIndirectAMDX == nullptr) { table->CmdDispatchGraphIndirectAMDX = (PFN_vkCmdDispatchGraphIndirectAMDX)StubCmdDispatchGraphIndirectAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->CmdDispatchGraphIndirectCountAMDX = (PFN_vkCmdDispatchGraphIndirectCountAMDX) gpa(device, "vkCmdDispatchGraphIndirectCountAMDX");
+    if (table->CmdDispatchGraphIndirectCountAMDX == nullptr) { table->CmdDispatchGraphIndirectCountAMDX = (PFN_vkCmdDispatchGraphIndirectCountAMDX)StubCmdDispatchGraphIndirectCountAMDX; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
     table->CmdSetSampleLocationsEXT = (PFN_vkCmdSetSampleLocationsEXT) gpa(device, "vkCmdSetSampleLocationsEXT");
     if (table->CmdSetSampleLocationsEXT == nullptr) { table->CmdSetSampleLocationsEXT = (PFN_vkCmdSetSampleLocationsEXT)StubCmdSetSampleLocationsEXT; }
     table->GetImageDrmFormatModifierPropertiesEXT = (PFN_vkGetImageDrmFormatModifierPropertiesEXT) gpa(device, "vkGetImageDrmFormatModifierPropertiesEXT");

@@ -305,6 +305,8 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
     {spv::CapabilityCooperativeMatrixKHR, {0, &VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix, nullptr, ""}},
+    // Not found in current SPIR-V Headers
+    //    {spv::CapabilityShaderEnqueueAMDX, {0, &VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderEnqueue, nullptr, ""}},
 };
 // clang-format on
 

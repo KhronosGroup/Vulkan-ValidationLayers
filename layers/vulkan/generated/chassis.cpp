@@ -8787,6 +8787,97 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkDeviceSize                                size,
+    VkIndexType                                 indexType) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindIndexBuffer2KHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindIndexBuffer2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+    }
+    DispatchCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(
+    VkDevice                                    device,
+    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
+    VkExtent2D*                                 pGranularity) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetRenderingAreaGranularityKHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetRenderingAreaGranularityKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+    }
+    DispatchGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetRenderingAreaGranularityKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(
+    VkDevice                                    device,
+    const VkDeviceImageSubresourceInfoKHR*      pInfo,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceImageSubresourceLayoutKHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSubresourceLayoutKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+    }
+    DispatchGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSubresourceLayoutKHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2KHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+    }
+    DispatchGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
@@ -10213,6 +10304,180 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(
         intercept->PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, result);
     }
     return result;
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateExecutionGraphPipelinesAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateExecutionGraphPipelinesAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    }
+    VkResult result = DispatchCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateExecutionGraphPipelinesAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
+    }
+    return result;
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetExecutionGraphPipelineScratchSizeAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetExecutionGraphPipelineScratchSizeAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+    }
+    VkResult result = DispatchGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineScratchSizeAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, result);
+    }
+    return result;
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetExecutionGraphPipelineNodeIndexAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetExecutionGraphPipelineNodeIndexAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+    }
+    VkResult result = DispatchGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetExecutionGraphPipelineNodeIndexAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, result);
+    }
+    return result;
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdInitializeGraphScratchMemoryAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+    }
+    DispatchCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+    }
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+    }
+    DispatchCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+    }
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+    }
+    DispatchCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+    }
+}
+
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             scratch,
+    VkDeviceAddress                             countInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectCountAMDX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectCountAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+    }
+    DispatchCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+    }
 }
 
 #endif
@@ -11770,8 +12035,8 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
 VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
+    const VkImageSubresource2KHR*               pSubresource,
+    VkSubresourceLayout2KHR*                    pLayout) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2EXT]) {
@@ -15690,6 +15955,10 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetDeviceBufferMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceBufferMemoryRequirementsKHR}},
     {"vkGetDeviceImageMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageMemoryRequirementsKHR}},
     {"vkGetDeviceImageSparseMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageSparseMemoryRequirementsKHR}},
+    {"vkCmdBindIndexBuffer2KHR", {kFuncTypeDev, (void*)CmdBindIndexBuffer2KHR}},
+    {"vkGetRenderingAreaGranularityKHR", {kFuncTypeDev, (void*)GetRenderingAreaGranularityKHR}},
+    {"vkGetDeviceImageSubresourceLayoutKHR", {kFuncTypeDev, (void*)GetDeviceImageSubresourceLayoutKHR}},
+    {"vkGetImageSubresourceLayout2KHR", {kFuncTypeDev, (void*)GetImageSubresourceLayout2KHR}},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR}},
     {"vkCreateDebugReportCallbackEXT", {kFuncTypeInst, (void*)CreateDebugReportCallbackEXT}},
     {"vkDestroyDebugReportCallbackEXT", {kFuncTypeInst, (void*)DestroyDebugReportCallbackEXT}},
@@ -15768,6 +16037,27 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
 #endif
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     {"vkGetMemoryAndroidHardwareBufferANDROID", {kFuncTypeDev, (void*)GetMemoryAndroidHardwareBufferANDROID}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCreateExecutionGraphPipelinesAMDX", {kFuncTypeDev, (void*)CreateExecutionGraphPipelinesAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkGetExecutionGraphPipelineScratchSizeAMDX", {kFuncTypeDev, (void*)GetExecutionGraphPipelineScratchSizeAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkGetExecutionGraphPipelineNodeIndexAMDX", {kFuncTypeDev, (void*)GetExecutionGraphPipelineNodeIndexAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCmdInitializeGraphScratchMemoryAMDX", {kFuncTypeDev, (void*)CmdInitializeGraphScratchMemoryAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCmdDispatchGraphAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCmdDispatchGraphIndirectAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphIndirectAMDX}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {"vkCmdDispatchGraphIndirectCountAMDX", {kFuncTypeDev, (void*)CmdDispatchGraphIndirectCountAMDX}},
 #endif
     {"vkCmdSetSampleLocationsEXT", {kFuncTypeDev, (void*)CmdSetSampleLocationsEXT}},
     {"vkGetPhysicalDeviceMultisamplePropertiesEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceMultisamplePropertiesEXT}},

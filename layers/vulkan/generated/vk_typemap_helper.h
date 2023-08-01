@@ -3166,6 +3166,78 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAI
     typedef VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR Type;
 };
 
+// Map type VkPhysicalDeviceMaintenance5FeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceMaintenance5FeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR> {
+    typedef VkPhysicalDeviceMaintenance5FeaturesKHR Type;
+};
+
+// Map type VkPhysicalDeviceMaintenance5PropertiesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceMaintenance5PropertiesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES_KHR> {
+    typedef VkPhysicalDeviceMaintenance5PropertiesKHR Type;
+};
+
+// Map type VkRenderingAreaInfoKHR to id VK_STRUCTURE_TYPE_RENDERING_AREA_INFO_KHR
+template <> struct LvlTypeMap<VkRenderingAreaInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_RENDERING_AREA_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RENDERING_AREA_INFO_KHR> {
+    typedef VkRenderingAreaInfoKHR Type;
+};
+
+// Map type VkImageSubresource2KHR to id VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR
+template <> struct LvlTypeMap<VkImageSubresource2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR> {
+    typedef VkImageSubresource2KHR Type;
+};
+
+// Map type VkDeviceImageSubresourceInfoKHR to id VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO_KHR
+template <> struct LvlTypeMap<VkDeviceImageSubresourceInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO_KHR> {
+    typedef VkDeviceImageSubresourceInfoKHR Type;
+};
+
+// Map type VkSubresourceLayout2KHR to id VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR
+template <> struct LvlTypeMap<VkSubresourceLayout2KHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR> {
+    typedef VkSubresourceLayout2KHR Type;
+};
+
+// Map type VkPipelineCreateFlags2CreateInfoKHR to id VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR
+template <> struct LvlTypeMap<VkPipelineCreateFlags2CreateInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR> {
+    typedef VkPipelineCreateFlags2CreateInfoKHR Type;
+};
+
+// Map type VkBufferUsageFlags2CreateInfoKHR to id VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR
+template <> struct LvlTypeMap<VkBufferUsageFlags2CreateInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR> {
+    typedef VkBufferUsageFlags2CreateInfoKHR Type;
+};
+
 // Map type VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
@@ -4071,6 +4143,56 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_
     typedef VkAndroidHardwareBufferFormatProperties2ANDROID Type;
 };
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkPhysicalDeviceShaderEnqueueFeaturesAMDX to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderEnqueueFeaturesAMDX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX> {
+    typedef VkPhysicalDeviceShaderEnqueueFeaturesAMDX Type;
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkPhysicalDeviceShaderEnqueuePropertiesAMDX to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderEnqueuePropertiesAMDX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX> {
+    typedef VkPhysicalDeviceShaderEnqueuePropertiesAMDX Type;
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkExecutionGraphPipelineScratchSizeAMDX to id VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_SCRATCH_SIZE_AMDX
+template <> struct LvlTypeMap<VkExecutionGraphPipelineScratchSizeAMDX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_SCRATCH_SIZE_AMDX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_SCRATCH_SIZE_AMDX> {
+    typedef VkExecutionGraphPipelineScratchSizeAMDX Type;
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkExecutionGraphPipelineCreateInfoAMDX to id VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX
+template <> struct LvlTypeMap<VkExecutionGraphPipelineCreateInfoAMDX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX> {
+    typedef VkExecutionGraphPipelineCreateInfoAMDX Type;
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkPipelineShaderStageNodeCreateInfoAMDX to id VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX
+template <> struct LvlTypeMap<VkPipelineShaderStageNodeCreateInfoAMDX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX> {
+    typedef VkPipelineShaderStageNodeCreateInfoAMDX Type;
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 // Map type VkSampleLocationsInfoEXT to id VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT
 template <> struct LvlTypeMap<VkSampleLocationsInfoEXT> {
@@ -5102,24 +5224,6 @@ template <> struct LvlTypeMap<VkHostImageCopyDevicePerformanceQueryEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY_EXT> {
     typedef VkHostImageCopyDevicePerformanceQueryEXT Type;
-};
-
-// Map type VkSubresourceLayout2EXT to id VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT
-template <> struct LvlTypeMap<VkSubresourceLayout2EXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT> {
-    typedef VkSubresourceLayout2EXT Type;
-};
-
-// Map type VkImageSubresource2EXT to id VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT
-template <> struct LvlTypeMap<VkImageSubresource2EXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT> {
-    typedef VkImageSubresource2EXT Type;
 };
 
 // Map type VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT

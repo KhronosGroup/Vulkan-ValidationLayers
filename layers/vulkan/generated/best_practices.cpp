@@ -2218,6 +2218,53 @@ void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
+    if (result > VK_SUCCESS) {
+        LogPositiveSuccessCode("vkCreateExecutionGraphPipelinesAMDX", result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
+        return;
+    }
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkCreateExecutionGraphPipelinesAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+    }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    VkExecutionGraphPipelineScratchSizeAMDX*    pSizeInfo,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, result);
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetExecutionGraphPipelineScratchSizeAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+    }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+void BestPractices::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
+    VkDevice                                    device,
+    VkPipeline                                  executionGraph,
+    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
+    uint32_t*                                   pNodeIndex,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, result);
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetExecutionGraphPipelineNodeIndexAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+    }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 void BestPractices::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,
