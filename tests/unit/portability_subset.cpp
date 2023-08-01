@@ -514,7 +514,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     vk_testing::ImageView view;
-    auto image_view_create_info = SafeSaneImageViewCreateInfo(image, img_format, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto image_view_create_info = image.BasicTargetViewCreatInfo();
     view.init(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};

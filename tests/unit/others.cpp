@@ -2779,8 +2779,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     metal_texture_info.image = VK_NULL_HANDLE;
     vk_testing::ImageView image_view_no_struct;
-    auto image_view_ci = image_obj.TargetViewCI(VK_FORMAT_B8G8R8A8_UNORM);
-    image_view_ci.image = image_obj.handle();
+    auto image_view_ci = image_obj.BasicTargetViewCreatInfo();
     image_view_no_struct.init(*m_device, image_view_ci);
     metal_texture_info.imageView = image_view_no_struct.handle();
     // ImageView not created with struct in pNext

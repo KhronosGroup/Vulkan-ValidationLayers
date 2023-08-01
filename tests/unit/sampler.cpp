@@ -840,7 +840,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     vk_testing::ImageView view;
-    auto image_view_create_info = SafeSaneImageViewCreateInfo(image, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto image_view_create_info = image.BasicTargetViewCreatInfo();
     view.init(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};

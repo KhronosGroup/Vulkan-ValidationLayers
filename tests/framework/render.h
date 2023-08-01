@@ -439,21 +439,16 @@ class VkImageObj : public vk_testing::Image {
 
     VkImage image() const { return handle(); }
 
-    VkImageViewCreateInfo TargetViewCI(VkFormat format) const {
+    VkImageViewCreateInfo BasicTargetViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
         auto ci = LvlInitStruct<VkImageViewCreateInfo>();
-        ci.format = format;
+        ci.image = handle();
+        ci.format = format();
         ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ci.components.r = VK_COMPONENT_SWIZZLE_R;
         ci.components.g = VK_COMPONENT_SWIZZLE_G;
         ci.components.b = VK_COMPONENT_SWIZZLE_B;
         ci.components.a = VK_COMPONENT_SWIZZLE_A;
-        ci.subresourceRange = {
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,                          // base mip level
-            VK_REMAINING_MIP_LEVELS,    // level count
-            0,                          // base array layer
-            VK_REMAINING_ARRAY_LAYERS,  // layer count
-        };
+        ci.subresourceRange = {aspect_mask, 0, 1, 0, 1};
         ci.flags = 0;
         return ci;
     }
