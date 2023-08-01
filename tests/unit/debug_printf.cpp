@@ -31,27 +31,26 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     InitDebugPrintfFramework();
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
+    if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
+    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto features = m_device->phy().features();
-    if (!features.vertexPipelineStoresAndAtomics || !features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "GPU-Assisted printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
-    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+        GTEST_SKIP() << "Test not supported by MockICD, Debug Printf test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
     uint32_t qfi = 0;
@@ -251,7 +250,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (features.shaderInt64) {
+    if (features2.features.shaderInt64) {
         char const *shader_source_int64 =
             "#version 450\n"
             "#extension GL_EXT_debug_printf : enable\n"
