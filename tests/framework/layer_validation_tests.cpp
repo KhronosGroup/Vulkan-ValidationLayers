@@ -592,26 +592,6 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFor
     return SafeSaneImageViewCreateInfo(image.handle(), format, aspect_mask);
 }
 
-bool CheckSynchronization2SupportAndInitState(VkRenderFramework *render_framework, void *phys_dev_pnext /*= nullptr*/) {
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(render_framework->instance(), "vkGetPhysicalDeviceFeatures2");
-
-    {
-        auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
-        auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
-        vkGetPhysicalDeviceFeatures2(render_framework->gpu(), &features2);
-        if (!sync2_features.synchronization2) {
-            return false;
-        }
-    }
-
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(phys_dev_pnext);
-    sync2_features.synchronization2 = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
-    render_framework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    return true;
-}
-
 void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_TRUE(m_device && m_device->initialized());  // VKTriangleTest assumes Init() has finished
 
