@@ -1107,6 +1107,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "VectorComputeCallableFunctionINTEL";
         case spv::DecorationMediaBlockIOINTEL:
             return "MediaBlockIOINTEL";
+        case spv::DecorationFPMaxErrorDecorationINTEL:
+            return "FPMaxErrorDecorationINTEL";
         case spv::DecorationLatencyControlLabelINTEL:
             return "LatencyControlLabelINTEL";
         case spv::DecorationLatencyControlConstraintINTEL:

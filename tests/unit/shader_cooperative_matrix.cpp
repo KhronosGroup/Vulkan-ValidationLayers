@@ -357,7 +357,9 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSameScope) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
+// Tests fail in CI from failing spirv-as
+// Need to rewrite tests without subtests logic
+TEST_F(NegativeShaderCooperativeMatrix, DISABLED_MatchSizeWithProperties) {
     TEST_DESCRIPTION("Check size match properties");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -481,7 +483,9 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     }
 }
 
-TEST_F(NegativeShaderCooperativeMatrix, KHRSignedCheck) {
+// Tests fail in CI from failing spirv-as
+// Need to rewrite tests without subtests logic
+TEST_F(NegativeShaderCooperativeMatrix, DISABLED_KHRSignedCheck) {
     TEST_DESCRIPTION("Test that if component type of is signed check that appropriate MatrixSignedComponents is present");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
