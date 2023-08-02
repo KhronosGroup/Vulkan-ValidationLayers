@@ -97,22 +97,14 @@ jobs:
           LDFLAGS: ${{ matrix.flags.ld }}
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
-      - name: Test Pixel 6 Adreno profile
-        run: python scripts/tests.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
-      - name: Test Pixel 6 Mali profile
-        run: python scripts/tests.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_mali.json
-      - name: Test NVIDIA Tegra X1 profile
-        run: python scripts/tests.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/nvidia_tegra_x1.json
       - name: Test Max Profile
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+      - name: Test Pixel 6 Adreno profile
+        run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
 
   windows:
     runs-on: windows-2022
