@@ -500,9 +500,6 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
@@ -565,9 +562,6 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Check for external semaphore import and export capability

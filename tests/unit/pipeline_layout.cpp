@@ -1042,10 +1042,6 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
 
     auto mut_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mut_features);
-    if (!mut_features.mutableDescriptorType) {
-        GTEST_SKIP() << "mutableDescriptorType not supported.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mut_features));
 
     VkDescriptorSetLayoutBinding layout_binding = {};

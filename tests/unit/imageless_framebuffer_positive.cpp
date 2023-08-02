@@ -22,9 +22,6 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
 
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
     GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer not supported.";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -88,11 +85,8 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     auto imageless_framebuffer = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_framebuffer);
-    if (imageless_framebuffer.imagelessFramebuffer == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(imageless_framebuffer);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_framebuffer));
 
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled - requires imageView2DOn3DImage to be VK_TRUE.\n";

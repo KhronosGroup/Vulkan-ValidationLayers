@@ -22,12 +22,8 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     }
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
-    if (!ray_tracing_features.rayTracingPipeline) {
-        GTEST_SKIP() << "Feature rayTracing is not supported.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(ray_tracing_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
@@ -126,15 +122,8 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
 
     auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&features13);
-    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
-    if (!ray_tracing_features.rayTracingPipeline) {
-        GTEST_SKIP() << "Feature rayTracing is not supported.";
-    }
-    if (!features13.pipelineCreationCacheControl) {
-        GTEST_SKIP() << "Feature pipelineCreationCacheControl is not supported.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(ray_tracing_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);

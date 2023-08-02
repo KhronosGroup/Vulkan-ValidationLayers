@@ -26,9 +26,6 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkAttachmentDescription attachment = {0,
@@ -127,9 +124,6 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkAttachmentDescription attachment = {0,

@@ -1622,10 +1622,6 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
 
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
-    if (buffer_device_address_features.bufferDeviceAddressCaptureReplay != VK_TRUE) {
-        GTEST_SKIP() << "bufferDeviceAddressCaptureReplay feature not supported";
-    }
-
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
@@ -1715,10 +1711,6 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
 
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
-    if (buffer_device_address_features.bufferDeviceAddress != VK_TRUE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
-    }
-
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));

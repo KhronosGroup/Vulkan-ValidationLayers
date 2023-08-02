@@ -31,12 +31,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     auto float16_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
     auto cooperative_matrix_features = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
     auto memory_model_features = LvlInitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
-    auto features2 = GetPhysicalDeviceFeatures2(memory_model_features);
-    if (memory_model_features.vulkanMemoryModel == VK_FALSE) {
-        GTEST_SKIP() << "vulkanMemoryModel feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(memory_model_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const VkDescriptorSetLayoutObj dsl(m_device, bindings);
@@ -109,15 +105,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     auto storage16_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16_features);
     auto cooperative_matrix_features = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(&storage16_features);
     auto memory_model_features = LvlInitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
-    auto features2 = GetPhysicalDeviceFeatures2(memory_model_features);
-    if (memory_model_features.vulkanMemoryModel == VK_FALSE) {
-        GTEST_SKIP() << "vulkanMemoryModel feature not supported";
-    }
-    if (!cooperative_matrix_features.cooperativeMatrix) {
-        GTEST_SKIP() << "cooperativeMatrix feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(memory_model_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
     VkCooperativeMatrixPropertiesKHR props = LvlInitStruct<VkCooperativeMatrixPropertiesKHR>();
     uint32_t props_count = 1;

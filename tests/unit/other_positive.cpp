@@ -335,12 +335,9 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
-        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
-    host_query_reset_features.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    auto host_query_reset_features = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(host_query_reset_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_query_reset_features));
 
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -434,8 +431,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!bda_features.bufferDeviceAddress) {
-        printf("Buffer Device Address feature not supported, skipping test\n");
-        return;
+        GTEST_SKIP() << "Buffer Device Address feature not supported, skipping test";
     }
 
     VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();

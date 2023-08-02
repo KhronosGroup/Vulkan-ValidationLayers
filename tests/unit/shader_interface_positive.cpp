@@ -282,11 +282,6 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
 
     auto scalar_block_features = LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
     GetPhysicalDeviceFeatures2(scalar_block_features);
-
-    if (scalar_block_features.scalarBlockLayout != VK_TRUE) {
-        GTEST_SKIP() << "scalarBlockLayout feature not supported";
-    }
-
     auto set_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &set_features2));
@@ -371,9 +366,6 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
     }
     auto maintenance_4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
     GetPhysicalDeviceFeatures2(maintenance_4_features);
-    if (!maintenance_4_features.maintenance4) {
-        GTEST_SKIP() << "maintenance4 is required but not enabled.";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance_4_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

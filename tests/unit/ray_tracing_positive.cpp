@@ -37,13 +37,8 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     }
 
     auto accel_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(accel_struct_features);
-
-    if (accel_struct_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(accel_struct_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &accel_struct_features));
 
     auto build_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -72,14 +67,6 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
     GetPhysicalDeviceFeatures2(acc_structure_features);
-
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
-    }
-    if (acc_structure_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
 
     m_commandBuffer->begin();
@@ -148,10 +135,6 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     // Needed for Ray Tracing
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    if (!ray_tracing_features.rayTracingPipeline) {
-        GTEST_SKIP() << "Feature rayTracing is not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -275,12 +258,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&ray_query_feature);
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
-    if (!ray_query_feature.rayQuery) {
-        GTEST_SKIP() << "Ray query feature needs to be enabled";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -355,12 +332,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&ray_query_feature);
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
-    if (!ray_query_feature.rayQuery) {
-        GTEST_SKIP() << "Ray query feature needs to be enabled";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -446,17 +417,6 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-
-    if (ray_query_features.rayQuery == VK_FALSE) {
-        GTEST_SKIP() << "rayQuery feature is not supported";
-    }
-    if (accel_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature is not supported";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     constexpr size_t build_info_count = 10;

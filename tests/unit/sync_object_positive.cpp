@@ -80,9 +80,6 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
@@ -133,9 +130,6 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
@@ -814,9 +808,6 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
@@ -1375,9 +1366,6 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
@@ -1798,9 +1786,6 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     vk_testing::Queue *q0 = m_device->graphics_queues()[0];
@@ -2036,9 +2021,6 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
@@ -2292,9 +2274,6 @@ TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     WaitTimelineSemThreadData data(*m_device);
 
@@ -2323,10 +2302,6 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     if (!SemaphoreExportImportSupported(gpu(), handle_type)) {

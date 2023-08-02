@@ -1015,9 +1015,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(mesh_shader_supported ? &mesh_shader_features : nullptr);
 
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
-    if (!bda_features.bufferDeviceAddress) {
-        GTEST_SKIP() << "Buffer Device Address feature not supported";
-    }
     features2.features.robustBufferAccess = VK_FALSE;
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1409,8 +1406,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     auto features_12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&features_13);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features_12);
     GetPhysicalDeviceFeatures2(features2);
-    if (!features_12.drawIndirectCount || !features_13.synchronization2) {
-        GTEST_SKIP() << "drawIndirectCount and synchronization2 both not supported";
+    if (!features_12.drawIndirectCount) {
+        GTEST_SKIP() << "drawIndirectCount not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

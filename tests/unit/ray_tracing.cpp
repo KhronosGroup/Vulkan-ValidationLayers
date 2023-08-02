@@ -31,9 +31,6 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -90,9 +87,6 @@ TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryDisable
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -170,9 +164,6 @@ TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryDisable
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -253,9 +244,6 @@ TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -335,9 +323,6 @@ TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -450,19 +435,12 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
 
     auto accel_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto ray_tracing_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&accel_struct_features);
-    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_pipeline_features);
-
-    if (!accel_struct_features.accelerationStructure) {
-        GTEST_SKIP() << "accelerationStructure not supported, skipping test";
-    }
-    if (!ray_tracing_pipeline_features.rayTracingPipeline) {
-        GTEST_SKIP() << "rayTracingPipeline not supported, skipping test";
-    }
+    GetPhysicalDeviceFeatures2(ray_tracing_pipeline_features);
 
     auto accel_struct_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
     GetPhysicalDeviceProperties2(accel_struct_props);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_pipeline_features));
 
     // Create one descriptor set layout holding (maxPerStageDescriptorAccelerationStructures + 1) bindings
     // for the same shader stage
@@ -739,13 +717,8 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
-    auto features2 = GetPhysicalDeviceFeatures2(bda_features);
-
-    if (as_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature is not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(bda_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
     auto blas_no_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
@@ -789,9 +762,6 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&bda_features);
     auto features2 = GetPhysicalDeviceFeatures2(accel_features);
 
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
-    }
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
@@ -991,16 +961,13 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
 
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
-    auto features2 = GetPhysicalDeviceFeatures2(as_features);
+    GetPhysicalDeviceFeatures2(as_features);
 
-    if (as_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature is not supported";
-    }
     if (as_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &as_features));
 
     // Init a non host visible buffer
     VkBufferObj non_host_visible_buffer;
@@ -1108,10 +1075,6 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
-    }
-
-    if (ray_query_features.rayQuery == VK_FALSE && ray_tracing_features.rayTracingPipeline == VK_FALSE) {
-        GTEST_SKIP() << "Both of the required features rayQuery and rayTracing are not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -1248,10 +1211,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     // Needed for Ray Tracing
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    if (!ray_tracing_features.rayTracingPipeline) {
-        GTEST_SKIP() << "Feature rayTracing is not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1531,10 +1490,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << "not supported, skipping test";
     }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -1572,9 +1527,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << "not supported, skipping test";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
     }
     if (maintenance1_features.rayTracingPipelineTraceRaysIndirect2 == VK_FALSE) {
         GTEST_SKIP() << "rayTracingPipelineTraceRaysIndirect2 not supported";
@@ -1964,16 +1916,6 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    if (ray_query_features.rayQuery == VK_FALSE) {
-        GTEST_SKIP() << "rayQuery feature is not supported";
-    }
-    if (accel_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature is not supported";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     constexpr size_t build_info_count = 3;
@@ -2266,9 +2208,6 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&ray_tracing_features);
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
     GetPhysicalDeviceFeatures2(acc_struct_features);
-    if (ray_query_features.rayQuery == VK_FALSE && ray_tracing_features.rayTracingPipeline == VK_FALSE) {
-        GTEST_SKIP() << "Both of the required features rayQuery and rayTracing are not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
 
     constexpr VkDeviceSize buffer_size = 4096;
@@ -2322,15 +2261,8 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto buffer_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&ray_tracing_features);
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_address_features);
-    auto features2 = GetPhysicalDeviceFeatures2(acc_structure_features);
-    if (acc_structure_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature not supported";
-    }
-    if (buffer_address_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(acc_structure_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
 
     m_commandBuffer->begin();
 
@@ -2459,7 +2391,6 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Test requires at least Vulkan 1.1";
@@ -2468,17 +2399,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    GetPhysicalDeviceFeatures2(features2);
-    if (accel_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure not supported";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
-    }
-    if (ray_query_features.rayQuery == VK_FALSE) {
-        GTEST_SKIP() << "rayQuery not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(ray_query_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_query_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
@@ -2563,7 +2485,6 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
     auto ray_tracing_maintenance1 = LvlInitStruct<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(&ray_query_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_maintenance1);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -2573,20 +2494,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    GetPhysicalDeviceFeatures2(features2);
-    if (accel_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure not supported";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
-    }
-    if (ray_query_features.rayQuery == VK_FALSE) {
-        GTEST_SKIP() << "rayQuery not supported";
-    }
-    if (ray_tracing_maintenance1.rayTracingMaintenance1 == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingMaintenance1 not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(ray_tracing_maintenance1);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_maintenance1, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {

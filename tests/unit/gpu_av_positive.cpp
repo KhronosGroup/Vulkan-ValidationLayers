@@ -250,9 +250,6 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     }
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
-    if (!bda_features.bufferDeviceAddress) {
-        GTEST_SKIP() << "Buffer Device Address feature not supported";
-    }
     features2.features.robustBufferAccess = VK_FALSE;
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -367,12 +364,6 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>(&sync2_features);
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
@@ -410,11 +401,8 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceProperties properties = {};

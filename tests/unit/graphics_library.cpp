@@ -1416,11 +1416,6 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
     auto executable_features = LvlInitStruct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
     InitBasicGraphicsLibrary(&executable_features);
     if (::testing::Test::IsSkipped()) return;
-
-    if (!executable_features.pipelineExecutableInfo) {
-        GTEST_SKIP() << "pipelineExecutableInfo not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     {

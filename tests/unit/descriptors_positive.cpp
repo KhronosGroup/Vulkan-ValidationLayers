@@ -720,11 +720,8 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
@@ -828,17 +825,8 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&mutable_descriptor_type_features);
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
-    auto features2 = GetPhysicalDeviceFeatures2(bda_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    if (acc_struct_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature not supported";
-    }
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(bda_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
     std::array descriptor_types = {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR};
 
@@ -1133,12 +1121,8 @@ TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     }
 
     auto mutable_descriptor = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor);
-    if (mutable_descriptor.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor));
 
     VkImageObj image1(m_device);
     VkImageObj image2(m_device);

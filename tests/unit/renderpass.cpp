@@ -800,13 +800,8 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsF
     }
 
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-
-    if (!separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        GTEST_SKIP() << "separateDepthStencilLayouts feature not supported, skipping test.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
     const VkFormat stencil_format = VK_FORMAT_S8_UINT;
@@ -1393,12 +1388,9 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
     }
 
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    if (!separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        GTEST_SKIP() << "separateDepthStencilLayouts not supported, skipping test.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
+    ASSERT_NO_FATAL_FAILURE(
+        InitState(nullptr, &separate_depth_stencil_layouts_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Closure to create a render pass with just a depth/stencil image used as an input attachment (not a depth attachment!).
     // This image purposely has not VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.
@@ -1481,12 +1473,8 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
-    if (!separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        GTEST_SKIP() << "separateDepthStencilLayouts not supported, skipping test.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     // Closure to create a render pass with just a depth/stencil image with specified format.
     // The layout is set to have more or less components than what this format has, triggering an error.
@@ -4445,13 +4433,9 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSynchronization2) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto synchronization2_feature = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(synchronization2_feature);
-    if (!synchronization2_feature.synchronization2) {
-        GTEST_SKIP() << "synchronization2 no supported, skipping test.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(sync2_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
 
     constexpr std::array<VkAttachmentDescription, 2> attachments = {{
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE,
@@ -4520,13 +4504,9 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto separate_depth_stencil_layout_feature = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layout_feature);
-    if (!separate_depth_stencil_layout_feature.separateDepthStencilLayouts) {
-        GTEST_SKIP() << "synchronization2 no supported, skipping test.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &separate_depth_stencil_layouts_features));
 
     std::array<VkAttachmentDescription, 3> attachments = {{
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE,

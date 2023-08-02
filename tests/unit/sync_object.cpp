@@ -797,9 +797,6 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -1594,9 +1591,6 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Find queues of two families
@@ -1662,9 +1656,6 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -1866,9 +1857,6 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -1981,9 +1969,8 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(sync2_features);
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(sync2_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
 
     if (m_device->graphics_queues().size() < 2) {
         GTEST_SKIP() << "2 graphics queues are needed";
@@ -2034,7 +2021,9 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         vk::QueueWaitIdle(m_device->m_queue);
         vk::QueueWaitIdle(other);
     }
-    if (sync2_features.synchronization2) {
+
+    // sync 2
+    if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         auto signal_sem_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
         signal_sem_info.semaphore = semaphore.handle();
         signal_sem_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -2222,9 +2211,6 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
@@ -2319,9 +2305,6 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -2374,9 +2357,6 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
@@ -2499,9 +2479,6 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto index = m_device->graphics_queue_node_index_;
@@ -2640,14 +2617,8 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
 
     auto vk12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&vk12_features);
-    auto features2 = GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 required";
-    }
-    if (!vk12_features.timelineSemaphore) {
-        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::timelineSemaphore required";
-    }
-    InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    GetPhysicalDeviceFeatures2(sync2_features);
+    InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     GetPhysicalDeviceProperties2(timelineproperties);
@@ -2741,9 +2712,8 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
 
     auto timeline_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&timeline_features);
-    auto features2 = GetPhysicalDeviceFeatures2(sync2_features);
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(sync2_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
 
     auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
@@ -2821,7 +2791,8 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         ASSERT_VK_SUCCESS(vk::QueueBindSparse(m_device->m_queue, 2, bind_info, VK_NULL_HANDLE));
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
     }
-    if (sync2_features.synchronization2) {
+
+    if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         vk_testing::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);
@@ -2878,9 +2849,6 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // We need two queues for this
@@ -2981,9 +2949,6 @@ TEST_F(NegativeSyncObject, WaitSemaphoresType) {
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -3021,13 +2986,9 @@ TEST_F(NegativeSyncObject, SignalSemaphoreType) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto timelinefeatures = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    GetPhysicalDeviceFeatures2(timelinefeatures);
-    if (!timelinefeatures.timelineSemaphore) {
-        GTEST_SKIP() << "Timeline semaphores are not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore;
@@ -3055,9 +3016,6 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
@@ -3192,14 +3150,8 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
 
     auto vk12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&vk12_features);
-    auto features2 = GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 required";
-    }
-    if (!vk12_features.timelineSemaphore) {
-        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::timelineSemaphore required";
-    }
-    InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    GetPhysicalDeviceFeatures2(sync2_features);
+    InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     GetPhysicalDeviceProperties2(timelineproperties);
@@ -3300,10 +3252,6 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
 
     auto timelinefeatures = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
     GetPhysicalDeviceFeatures2(timelinefeatures);
-    if (!timelinefeatures.timelineSemaphore) {
-        GTEST_SKIP() << "Timeline semaphores are not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();

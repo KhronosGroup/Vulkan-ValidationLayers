@@ -181,10 +181,6 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
     InitBasicDynamicRendering(&sync2_features);
     if (::testing::Test::IsSkipped()) return;
 
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
@@ -935,10 +931,6 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>(&sync2_features);
     InitBasicDynamicRendering(&shader_tile_image_features);
     if (::testing::Test::IsSkipped()) return;
-
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
     if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
         !shader_tile_image_features.shaderTileImageStencilReadAccess) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";

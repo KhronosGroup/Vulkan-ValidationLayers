@@ -538,13 +538,6 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     auto feedback_loop_features =
         LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(&feedback_loop_dynamic_features);
     GetPhysicalDeviceFeatures2(feedback_loop_features);
-    if (!feedback_loop_dynamic_features.attachmentFeedbackLoopDynamicState) {
-        GTEST_SKIP() << "attachmentFeedbackLoopDynamicState is not supported.";
-    }
-    if (!feedback_loop_features.attachmentFeedbackLoopLayout) {
-        GTEST_SKIP() << "attachmentFeedbackLoopLayout is not supported.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &feedback_loop_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
