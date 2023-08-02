@@ -22,6 +22,7 @@
 #include "glslang/SPIRV/SPVRemapper.h"
 #include <filesystem>
 #include <cmath>
+#include <cstdarg>
 
 // Command-line options
 enum TOptions {

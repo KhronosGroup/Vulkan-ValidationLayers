@@ -467,7 +467,7 @@ foreach(layer_info, layers) {
     configs -= vulkan_undefine_configs
     configs += [ ":generated_layers_config" ]
     public_configs = [ ":vulkan_layer_config" ]
-    deps = [ 
+    deps = [
         ":vulkan_layer_utils",
         "$vulkan_utility_libraries_dir:vulkan_layer_settings",
     ]

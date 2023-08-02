@@ -17,6 +17,7 @@
  */
 
 #include "layer_options.h"
+#include <vulkan/layer/vk_layer_settings.hpp>
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
 // part of the VVL but not the layer utils library.
@@ -329,20 +330,6 @@ uint32_t SetMessageDuplicateLimit(const std::string &config_message_limit, const
     return limit;
 }
 
-const VkLayerSettingsEXT *FindSettingsInChain(const void *next) {
-    const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
-    const VkLayerSettingsEXT *found = nullptr;
-    while (current) {
-        if (VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT == current->sType) {
-            found = reinterpret_cast<const VkLayerSettingsEXT *>(current);
-            current = nullptr;
-        } else {
-            current = current->pNext;
-        }
-    }
-    return found;
-}
-
 static bool SetBool(const std::string &config_string, const std::string &env_string, bool default_val) {
     bool result = default_val;
 
@@ -417,54 +404,65 @@ static void SetValidationGPUBasedSetting(CHECK_ENABLED &enable_data, const char 
     }
 }
 
+static std::string Merge(const std::vector<std::string>& strings) {
+    std::string result;
+
+    for (std::size_t i = 0, n = strings.size(); i < n; ++i) {
+        if (!result.empty()) {
+            result += ",";
+        }
+        result += strings[i];
+    }
+
+    return result;
+}
+
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // If not cleared, garbage has been seen in some Android run effecting the error message
     custom_stype_info.clear();
 
-    const auto layer_settings_ext = FindSettingsInChain(settings_data->pnext_chain);
-    if (layer_settings_ext) {
-        for (uint32_t i = 0; i < layer_settings_ext->settingCount; i++) {
-            auto cur_setting = layer_settings_ext->pSettings[i];
-            std::string name(cur_setting.name);
-            if (name == SETTING_ENABLES) {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                SetLocalEnableSetting(data, ",", settings_data->enables);
-            } else if (name == SETTING_DISABLES) {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                SetLocalDisableSetting(data, ",", settings_data->disables);
-            } else if (name == SETTING_MESSAGE_ID_FILTER) {
-                std::string data(cur_setting.data.arrayString.pCharArray);
-                CreateFilterMessageIdList(data, ",", settings_data->message_filter_list);
-            } else if (name == SETTING_DUPLICATE_MESSAGE_LIMIT) {
-                *settings_data->duplicate_message_limit = cur_setting.data.value32;
-            } else if (name == SETTING_CUSTOM_STYPE_LIST) {
-                if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT) {
-                    std::string data(cur_setting.data.arrayString.pCharArray);
-                    SetCustomStypeInfo(data, ",");
-                } else if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT) {
-                    for (uint32_t j = 0; j < cur_setting.data.arrayInt32.count / 2; j++) {
-                        auto stype_id = cur_setting.data.arrayInt32.pInt32Array[j * 2];
-                        auto struct_size = cur_setting.data.arrayInt32.pInt32Array[(j * 2) + 1];
-                        bool found = false;
-                        // Prevent duplicate entries
-                        for (const auto &item : custom_stype_info) {
-                            if (item.first == stype_id) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size));
-                    }
-                }
-            }
-        }
+    VlLayerSettingSet layerSettingSet = VK_NULL_HANDLE;
+    vlCreateLayerSettingSet(OBJECT_LAYER_NAME, vlFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
+                            &layerSettingSet);
+   
+    std::vector<std::string> enables;
+    if (vlHasLayerSetting(layerSettingSet, SETTING_ENABLES)) {
+        vlGetLayerSettingValues(layerSettingSet, SETTING_ENABLES, enables);
     }
-    const auto *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(settings_data->pnext_chain);
+    const std::string& string_enables = Merge(enables);
+    SetLocalEnableSetting(string_enables, ",", settings_data->enables);
+
+    std::vector<std::string> disables;
+    if (vlHasLayerSetting(layerSettingSet, SETTING_DISABLES)) {
+        vlGetLayerSettingValues(layerSettingSet, SETTING_DISABLES, disables);
+    }
+    const std::string& string_disables = Merge(disables);
+    SetLocalDisableSetting(string_disables, ",", settings_data->disables);
+
+    std::vector<std::string> message_id_filter;
+    if (vlHasLayerSetting(layerSettingSet, SETTING_MESSAGE_ID_FILTER)) {
+        vlGetLayerSettingValues(layerSettingSet, SETTING_MESSAGE_ID_FILTER, message_id_filter);
+    }
+    const std::string& string_message_id_filter = Merge(message_id_filter);
+    CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
+
+    if (vlHasLayerSetting(layerSettingSet, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
+        vlGetLayerSettingValue(layerSettingSet, SETTING_DUPLICATE_MESSAGE_LIMIT, *settings_data->duplicate_message_limit);
+    }
+
+    std::vector<std::string> vector_custom_stype_info;
+    if (vlHasLayerSetting(layerSettingSet, SETTING_CUSTOM_STYPE_LIST)) {
+        vlGetLayerSettingValues(layerSettingSet, SETTING_CUSTOM_STYPE_LIST, vector_custom_stype_info);
+    }
+    const std::string &string_custom_stype_info = Merge(vector_custom_stype_info);
+    SetCustomStypeInfo(string_custom_stype_info, ",");
+
+    const auto *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(settings_data->create_info);
     if (validation_features_ext) {
         SetValidationFeatures(settings_data->disables, settings_data->enables, validation_features_ext);
     }
-    const auto *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(settings_data->pnext_chain);
+    const auto *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(settings_data->create_info);
     if (validation_flags_ext) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
@@ -540,4 +538,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // Fine Grained Locking
     *settings_data->fine_grained_locking =
         SetBool(GetConfigValue(SETTING_FINE_GRAINED_LOCKING), GetConfigValue(SETTING_FINE_GRAINED_LOCKING), true);
+
+    vlDestroyLayerSettingSet(layerSettingSet, nullptr);
 }
