@@ -396,6 +396,16 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
+    auto buffer_usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext);
+    if (buffer_usage_flags2) {
+        if ((buffer_usage_flags2->usage &
+             ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
+            skip |= LogError(device, "VUID-VkBufferViewCreateInfo-pNext-08780",
+                             "vkCreateBufferView: VkBufferUsageFlags2CreateInfoKHR::usage is %s.",
+                             string_VkBufferUsageFlags2KHR(buffer_usage_flags2->usage).c_str());
+        }
+    }
+
     skip |= ValidateBufferViewRange(buffer_state, pCreateInfo, device_limits);
 
     skip |= ValidateBufferViewBuffer(buffer_state, pCreateInfo);

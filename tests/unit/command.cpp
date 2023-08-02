@@ -7276,6 +7276,19 @@ TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeCommand, BindIndexBufferHandles) {
+    TEST_DESCRIPTION("call vkCmdBindIndexBuffer with bad Handles");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkBufferObj buffer;
+    buffer.init(*m_device, 64, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    m_commandBuffer->begin();
+    VkBuffer bad_buffer = CastToHandle<VkBuffer, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-buffer-parameter");
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), bad_buffer, 0, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeCommand, ClearImageAspectMask) {
     TEST_DESCRIPTION("Need to use VK_IMAGE_ASPECT_COLOR_BIT.");
 

@@ -14630,6 +14630,7 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer2KHR(
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance5)) skip |= OutputExtensionError("vkCmdBindIndexBuffer2KHR", "VK_KHR_maintenance5");
     skip |= ValidateRequiredHandle("vkCmdBindIndexBuffer2KHR", "buffer", buffer);
     skip |= ValidateRangedEnum("vkCmdBindIndexBuffer2KHR", "indexType", "VkIndexType", indexType, "VUID-vkCmdBindIndexBuffer2KHR-indexType-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
     return skip;
 }
 

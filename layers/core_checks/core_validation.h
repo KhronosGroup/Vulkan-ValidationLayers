@@ -120,7 +120,8 @@ struct DrawDispatchVuid {
     const char* storage_image_write_without_format_07027 = kVUIDUndefined;
     const char* storage_texel_buffer_read_without_format_07030 = kVUIDUndefined;
     const char* storage_texel_buffer_write_without_format_07029 = kVUIDUndefined;
-    const char* storage_image_write_texel_count_04115 = kVUIDUndefined;
+    const char* storage_image_write_texel_count_08795 = kVUIDUndefined;
+    const char* storage_image_write_texel_count_08796 = kVUIDUndefined;
     const char* storage_texel_buffer_write_texel_count_04469 = kVUIDUndefined;
     const char* depth_compare_sample_06479 = kVUIDUndefined;
     const char* depth_read_only_06886 = kVUIDUndefined;
@@ -1596,8 +1597,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites) const override;
+    bool ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, VkDeviceSize offset,
+                                    VkIndexType indexType, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            VkIndexType indexType) const override;
+    bool PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkDeviceSize size, VkIndexType indexType) const override;
     bool PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const override;
     bool ValidateVTGShaderStages(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type) const;

@@ -670,30 +670,136 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    static const uint32_t ibo_data[3] = {0, 1, 2};
-    VkConstantBufferObj ibo(m_device, sizeof(ibo_data), (const void *)&ibo_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(m_device->device(), ibo.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Set offset over buffer size
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-08782");
-    m_commandBuffer->BindIndexBuffer(&ibo, mem_reqs.size + sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
+    m_commandBuffer->BindIndexBuffer(&buffer, mem_reqs.size + sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Set offset to be misaligned with index buffer UINT32 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-08783");
-    m_commandBuffer->BindIndexBuffer(&ibo, 1, VK_INDEX_TYPE_UINT32);
+    m_commandBuffer->BindIndexBuffer(&buffer, 1, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-indexType-08787");
-    m_commandBuffer->BindIndexBuffer(&ibo, 1, VK_INDEX_TYPE_UINT8_EXT);
+    m_commandBuffer->BindIndexBuffer(&buffer, 1, VK_INDEX_TYPE_UINT8_EXT);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeBuffer, IndexBuffer2Offset) {
+    TEST_DESCRIPTION("Submit bad offsets binding the index buffer using vkCmdBindIndexBuffer2KHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Set offset over buffer size
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-offset-08782");
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), mem_reqs.size + sizeof(uint32_t), VK_WHOLE_SIZE,
+                               VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    // Set offset to be misaligned with index buffer UINT32 type
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-offset-08783");
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    // Test for missing pNext struct for index buffer UINT8 type
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-indexType-08787");
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8_EXT);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeBuffer, IndexBuffer2Size) {
+    TEST_DESCRIPTION("Submit bad size binding the index buffer using vkCmdBindIndexBuffer2KHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-size-08767");
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 4, 6, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer2KHR-size-08768");
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 4, mem_reqs.size, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeBuffer, BufferUsageFlags2) {
+    TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBufferObj buffer(*m_device, buffer_ci);
+
+    auto buffer_usage_flags = LvlInitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR;
+
+    auto buffer_view_ci = LvlInitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buffer_view_ci.range = VK_WHOLE_SIZE;
+    buffer_view_ci.buffer = buffer.handle();
+    CreateBufferViewTest(*this, &buffer_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-08780"});
 }
 
 TEST_F(NegativeBuffer, CreateBufferSize) {

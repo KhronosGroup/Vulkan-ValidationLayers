@@ -1013,6 +1013,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.cooperative_matrix_features_khr = *cooperative_matrix_features_khr;
         }
 
+        const auto *maintenance5_features = LvlFindInChain<VkPhysicalDeviceMaintenance5FeaturesKHR>(pCreateInfo->pNext);
+        if (maintenance5_features) {
+            enabled_features.maintenance5_features = *maintenance5_features;
+        }
+
         const auto *compute_shader_derivatives_features =
             LvlFindInChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
         if (compute_shader_derivatives_features) {

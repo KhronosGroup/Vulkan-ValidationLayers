@@ -388,33 +388,65 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
+bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, VkDeviceSize offset,
+                                            VkIndexType indexType, CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const char *api_call = CommandTypeString(cmd_type);
+    const bool is_2 = cmd_type != CMD_BINDINDEXBUFFER;
+
+    skip |= ValidateCmd(cb_state, cmd_type);
+
+    const char *vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
+    skip |= ValidateBufferUsageFlags(cb_state.commandBuffer(), buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, api_call,
+                                     "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
+    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, api_call, vuid);
+
+    const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
+    if (!IsIntegerMultipleOf(offset, offset_align)) {
+        const LogObjectList objlist(cb_state.commandBuffer(), buffer_state.buffer());
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
+        skip |= LogError(objlist, vuid, "%s() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", api_call,
+                         offset, string_VkIndexType(indexType));
+    }
+    if (offset >= buffer_state.requirements.size) {
+        const LogObjectList objlist(cb_state.commandBuffer(), buffer_state.buffer());
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
+        skip |= LogError(objlist, vuid, "%s() offset (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64 ").",
+                         api_call, offset, buffer_state.requirements.size);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
-    auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    assert(buffer_state);
-    assert(cb_state_ptr);
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    return ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, CMD_BINDINDEXBUFFER);
+}
 
-    bool skip = ValidateBufferUsageFlags(commandBuffer, *buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
-                                         "VUID-vkCmdBindIndexBuffer-buffer-08784", "vkCmdBindIndexBuffer()",
-                                         "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
-    skip |= ValidateCmd(*cb_state_ptr, CMD_BINDINDEXBUFFER);
-    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindIndexBuffer()",
-                                          "VUID-vkCmdBindIndexBuffer-buffer-08785");
-    const auto offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
-    if (offset % offset_align) {
-        const LogObjectList objlist(commandBuffer, buffer);
-        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-08783",
-                         "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", offset,
-                         string_VkIndexType(indexType));
+bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkDeviceSize size, VkIndexType indexType) const {
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    bool skip = false;
+    skip |= ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, CMD_BINDINDEXBUFFER2KHR);
+    if (size != VK_WHOLE_SIZE) {
+        const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
+        if (!IsIntegerMultipleOf(size, offset_align)) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer2KHR-size-08767",
+                             "vkCmdBindIndexBuffer2KHR() size (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", size,
+                             string_VkIndexType(indexType));
+        }
+        if ((offset + size) > buffer_state->requirements.size) {
+            const LogObjectList objlist(commandBuffer, buffer);
+            skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer2KHR-size-08768",
+                             "vkCmdBindIndexBuffer2KHR() size (0x%" PRIxLEAST64 ") + offset (0x%" PRIxLEAST64
+                             ") is larger then the buffer size (0x%" PRIxLEAST64 ").",
+                             size, offset, buffer_state->requirements.size);
+        }
     }
-    if (offset >= buffer_state->requirements.size) {
-        const LogObjectList objlist(commandBuffer, buffer);
-        skip |= LogError(objlist, "VUID-vkCmdBindIndexBuffer-offset-08782",
-                         "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64 ").",
-                         offset, buffer_state->requirements.size);
-    }
-
     return skip;
 }
 
