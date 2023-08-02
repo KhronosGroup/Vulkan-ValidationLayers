@@ -72,3 +72,11 @@ def incIndent(indent: str) -> str:
 
 def decIndent(indent: str) -> str:
     return indent[:-INDENT_SPACES] if indent and (len(indent) > INDENT_SPACES) else ''
+
+# Add the indent to each line of the input
+def addIndent(indent: str, input: str) -> str:
+    out = ''
+    lines = input.split('\n')
+    for line in lines:
+        out += f'{indent}{line}\n'
+    return out
