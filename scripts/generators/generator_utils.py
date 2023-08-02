@@ -50,9 +50,12 @@ def buildListVUID(valid_usage_file: str) -> set:
 
     # List of VUs that should exists, but have a spec bug
     for vuid in [
-        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553
-        "VUID-VkImageViewCreateInfo-commonparent",
-        "VUID-VkMicromapBuildInfoEXT-commonparent",
+        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3582
+        "VUID-VkCopyImageToImageInfoEXT-commonparent",
+        "VUID-vkUpdateDescriptorSetWithTemplate-descriptorSet-parent",
+        "VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-parent",
+        "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-parent",
+        "VUID-vkGetDescriptorSetHostMappingVALVE-descriptorSet-parent",
         ]:
         valid_vuids.add(vuid)
 

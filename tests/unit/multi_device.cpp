@@ -130,7 +130,33 @@ TEST_F(MultiDeviceTest, CommonParentImageView) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-commonparent");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateImageView-image-09179");
     vk::CreateImageView(m_second_device->device(), &ivci, nullptr, &image_view);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
+    TEST_DESCRIPTION("Test binding pipeline from another device");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    auto features = m_device->phy().features();
+    m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
+
+    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.setLayoutCount = 0;
+    vk_testing::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
+
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    cs.InitFromGLSLTry(false, m_second_device);
+
+    auto pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
+    pipeline_ci.layout = pipeline_layout.handle();
+    pipeline_ci.stage = cs.GetStageCreateInfo();
+    vk_testing::Pipeline pipeline(*m_second_device, pipeline_ci);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commonparent");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
