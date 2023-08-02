@@ -553,10 +553,8 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     auto shaderObjectFeatures = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shaderObjectFeatures);
-    if (shaderObjectFeatures.shaderObject == VK_FALSE) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
+    features2.features.tessellationShader = VK_FALSE;
+    features2.features.geometryShader = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -608,11 +606,8 @@ TEST_F(NegativeShaderObject, CreateMeshShadersWithoutEnabledFeatures) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     auto shaderObjectFeatures = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (shaderObjectFeatures.shaderObject == VK_FALSE) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(shaderObjectFeatures);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shaderObjectFeatures));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
@@ -666,10 +661,8 @@ TEST_F(NegativeShaderObject, BindTessellationAndGeometryShadersWithoutEnabledFea
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     auto shaderObjectFeatures = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shaderObjectFeatures);
-    if (shaderObjectFeatures.shaderObject == VK_FALSE) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
+    features2.features.tessellationShader = VK_FALSE;
+    features2.features.geometryShader = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -831,12 +824,8 @@ TEST_F(NegativeShaderObject, BindTaskAndMeshShadersWithoutEnabledFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     auto shaderObjectFeatures = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shaderObjectFeatures);
-    if (shaderObjectFeatures.shaderObject == VK_FALSE) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(shaderObjectFeatures);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shaderObjectFeatures));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }

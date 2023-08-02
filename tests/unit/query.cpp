@@ -538,9 +538,6 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     if (!performance_features.performanceCounterQueryPools) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
-    if (!host_query_reset_features.hostQueryReset) {
-        GTEST_SKIP() << "Missing host query reset.";
-    }
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doens't match up with profile queues";
     }
@@ -766,9 +763,6 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     if (!performance_features.performanceCounterQueryPools) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
-    if (!host_query_reset_features.hostQueryReset) {
-        GTEST_SKIP() << "Missing host query reset.";
-    }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features, pool_flags));
@@ -917,12 +911,9 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
-        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
-    host_query_reset_features.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    auto host_query_reset_features = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(host_query_reset_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_query_reset_features));
 
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -945,12 +936,9 @@ TEST_F(NegativeQuery, HostyResetBadRange) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
-        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
-    host_query_reset_features.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    auto host_query_reset_features = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(host_query_reset_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_query_reset_features));
 
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -974,12 +962,9 @@ TEST_F(NegativeQuery, HostyResetQueryPool) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
-        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
-    host_query_reset_features.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    auto host_query_reset_features = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(host_query_reset_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_query_reset_features));
 
     // Create and destroy a query pool.
     VkQueryPool query_pool;
@@ -1007,12 +992,9 @@ TEST_F(NegativeQuery, HostyResetDevice) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
-        LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
-    host_query_reset_features.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    auto host_query_reset_features = LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(host_query_reset_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_query_reset_features));
 
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;

@@ -28,12 +28,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer not supported.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
@@ -430,12 +426,8 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         imageless_features.pNext = &mv_features;
     }
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t attachmentWidth = 512;
@@ -544,11 +536,8 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     }
 
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer feature not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -693,14 +682,8 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
 
     auto mv_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&mv_features);
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer feature not supported.";
-    }
-    if (!mv_features.multiview) {
-        GTEST_SKIP() << "multivew feature not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -851,14 +834,8 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
 
     auto mv_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&mv_features);
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer feature not supported.";
-    }
-    if (!mv_features.multiview) {
-        GTEST_SKIP() << "multiview feature not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -1160,12 +1137,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(imageless_features);
-    if (!imageless_features.imagelessFramebuffer) {
-        GTEST_SKIP() << "imagelessFramebuffer feature not supported.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(imageless_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};

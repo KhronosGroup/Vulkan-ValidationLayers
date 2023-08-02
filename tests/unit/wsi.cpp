@@ -567,18 +567,14 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore) {
     }
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore feature not supported.";
-    }
-
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
     GetPhysicalDeviceProperties2(timeline_semaphore_props);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
         // If using MockICD and profiles the value might be zero'ed and cause false errors
         GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
     ASSERT_TRUE(InitSwapchain());
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -614,11 +610,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     }
 
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported.";
-    }
-
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
     GetPhysicalDeviceProperties2(timeline_semaphore_props);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
@@ -626,7 +618,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore2KHR) {
         GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     ASSERT_TRUE(InitSwapchain());
 

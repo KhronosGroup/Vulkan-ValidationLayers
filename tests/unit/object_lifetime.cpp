@@ -169,9 +169,6 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkBuffer buffer;
@@ -242,9 +239,6 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImage image;

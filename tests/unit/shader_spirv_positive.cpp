@@ -372,14 +372,12 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
     auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
     auto scalar_block_layout_features =
         LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
-    auto features2 = GetPhysicalDeviceFeatures2(scalar_block_layout_features);
-
+    GetPhysicalDeviceFeatures2(scalar_block_layout_features);
     if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
         uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
         GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &scalar_block_layout_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -435,12 +433,11 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    GetPhysicalDeviceFeatures2(features12);
     if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
         GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);

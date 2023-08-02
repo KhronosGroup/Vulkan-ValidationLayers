@@ -214,9 +214,6 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkBufferObj buffer_a;
@@ -758,9 +755,6 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -4715,9 +4709,6 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     QSTestContext test(m_device, m_device->m_queue_obj);

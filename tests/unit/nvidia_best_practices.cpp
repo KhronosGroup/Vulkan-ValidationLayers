@@ -264,23 +264,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto rt_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&rt_pipeline_features);
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
     GetPhysicalDeviceFeatures2(bda_features);
-
-    if (as_features.accelerationStructure == VK_FALSE) {
-        GTEST_SKIP() << "accelerationStructure feature is not supported";
-    }
-
-    if (bda_features.bufferDeviceAddress == VK_FALSE) {
-        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
-    }
-
-    if (rt_pipeline_features.rayTracingPipeline == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingPipeline feature is not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
     VkQueueObj *graphics_queue = m_device->GetDefaultQueue();
@@ -662,10 +649,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
     }
-    if (!synchronization2_features.synchronization2) {
-        GTEST_SKIP() << "This test requires synchronization2";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;

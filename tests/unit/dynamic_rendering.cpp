@@ -2603,11 +2603,6 @@ TEST_F(NegativeDynamicRendering, WithBarrier) {
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     InitBasicDynamicRendering(&sync2_features);
     if (::testing::Test::IsSkipped()) return;
-
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
@@ -2665,9 +2660,6 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
     auto features2 = GetPhysicalDeviceFeatures2(vk13features);
     if (!vk13features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    if (!vk13features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
     }
 
     if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
@@ -2743,9 +2735,6 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     auto features2 = GetPhysicalDeviceFeatures2(vk13features);
     if (!vk13features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    if (!vk13features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
     }
 
     if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
@@ -5278,10 +5267,6 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     InitBasicDynamicRendering(&synchronization2);
     if (::testing::Test::IsSkipped()) return;
-
-    if (!synchronization2.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
-    }
 
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);

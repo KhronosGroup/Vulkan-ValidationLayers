@@ -327,12 +327,9 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
     }
 
     auto zero_initialize_work_group_memory_features = LvlInitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(zero_initialize_work_group_memory_features);
-    if (!zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
-        GTEST_SKIP() << "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is required but not enabled.";
-    }
+    GetPhysicalDeviceFeatures2(zero_initialize_work_group_memory_features);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &zero_initialize_work_group_memory_features));
 
     const char *spv_source = R"(
                OpCapability Shader

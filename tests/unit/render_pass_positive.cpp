@@ -520,11 +520,6 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
 
     auto pd_imageless_fb_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
     GetPhysicalDeviceFeatures2(pd_imageless_fb_features);
-
-    if (pd_imageless_fb_features.imagelessFramebuffer != VK_TRUE) {
-        GTEST_SKIP() << "VkPhysicalDeviceImagelessFramebufferFeaturesKHR::imagelessFramebuffer feature not supported";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_imageless_fb_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     constexpr uint32_t width = 512;
@@ -1647,13 +1642,8 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     }
 
     auto separate_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(separate_features);
-    if (!separate_features.separateDepthStencilLayouts) {
-        printf("separateDepthStencilLayouts feature not supported, skipping tests\n");
-        return;
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(separate_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &separate_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties props;

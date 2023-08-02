@@ -108,11 +108,8 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     }
 
     auto buffer_addr_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(buffer_addr_features);
-    if (!buffer_addr_features.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(buffer_addr_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
@@ -163,11 +160,8 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     }
 
     auto buffer_addr_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(buffer_addr_features);
-    if (!buffer_addr_features.bufferDeviceAddress) {
-        GTEST_SKIP() << "bufferDeviceAddress not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    GetPhysicalDeviceFeatures2(buffer_addr_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_addr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();

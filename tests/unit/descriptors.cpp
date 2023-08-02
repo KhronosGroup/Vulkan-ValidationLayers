@@ -3761,11 +3761,8 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -3825,11 +3822,8 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
 
     VkDescriptorPoolSize pool_sizes[2] = {};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
@@ -3895,11 +3889,8 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -4047,11 +4038,8 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutdesc_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutdesc_features);
-    if (!mutdesc_features.mutableDescriptorType) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutdesc_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutdesc_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -4143,12 +4131,8 @@ TEST_F(NegativeDescriptors, MutableDescriptors) {
     }
 
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature is not supported, skipping test";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -4221,11 +4205,8 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     auto mutdesc_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutdesc_features);
-    if (!mutdesc_features.mutableDescriptorType) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutdesc_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutdesc_features));
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
@@ -4300,11 +4281,8 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     }
 
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -4958,11 +4936,8 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
 
     vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -5005,9 +4980,6 @@ TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
     }
     auto mutdesc_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mutdesc_features);
-    if (!mutdesc_features.mutableDescriptorType) {
-        GTEST_SKIP() << "mutableDescriptorType feature not supported.";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutdesc_features));
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -5061,12 +5033,8 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "Test requires unsupported mutableDescriptorType feature";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
 
@@ -5368,11 +5336,8 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
-    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        GTEST_SKIP() << "Test requires unsupported mutableDescriptorType feature";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mutable_descriptor_type_features));
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 

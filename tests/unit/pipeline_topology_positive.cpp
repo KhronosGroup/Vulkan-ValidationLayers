@@ -192,11 +192,8 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
     auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(maint4features);
-    if (!maint4features.maintenance4) {
-        GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    GetPhysicalDeviceFeatures2(maint4features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maint4features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const std::string vs_src = R"asm(

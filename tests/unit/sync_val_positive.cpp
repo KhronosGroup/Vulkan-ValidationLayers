@@ -179,9 +179,6 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 10'000;
@@ -240,9 +237,6 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 1'000;
@@ -292,9 +286,6 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     }
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        GTEST_SKIP() << "timelineSemaphore not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 15'000;

@@ -891,9 +891,6 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     }
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
-    if (!sync2_features.synchronization2) {
-        GTEST_SKIP() << "synchronization2 feature not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
