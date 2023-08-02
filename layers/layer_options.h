@@ -16,7 +16,10 @@
  * limitations under the License.
  */
 
+#pragma once
 #include "generated/chassis.h"
+
+#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
@@ -24,11 +27,11 @@ extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
 typedef struct {
     const char *layer_description;
-    const void *pnext_chain;
+    const VkInstanceCreateInfo *create_info;
     CHECK_ENABLED &enables;
     CHECK_DISABLED &disables;
     std::unordered_set<uint32_t> &message_filter_list;
-    int32_t *duplicate_message_limit;
+    uint32_t *duplicate_message_limit;
     bool *fine_grained_locking;
 } ConfigAndEnvSettings;
 

@@ -354,7 +354,7 @@ target_sources(vvl PRIVATE
     utils/shader_utils.cpp
     utils/shader_utils.h
     layer_options.cpp
-    vk_layer_settings_ext.h
+    layer_options.h
 )
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
@@ -397,6 +397,7 @@ endif()
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(vvl PRIVATE robin_hood::robin_hood)
 endif()
+
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS Vulkan::LayerSettings VkLayer_utils)

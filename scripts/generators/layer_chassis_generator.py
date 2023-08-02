@@ -293,14 +293,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
 #include "vulkan/vulkan.h"
 #include "utils/cast_utils.h"
-#include "vk_layer_settings_ext.h"
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "vk_object_types.h"
-#include "vulkan/vk_layer.h"
 #include "vk_enum_string_helper.h"
 #include "utils/vk_layer_extension_utils.h"
 #include "utils/vk_layer_utils.h"
@@ -783,7 +781,6 @@ vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mappi
 
 bool wrap_handles = true;
 
-#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"\n
 ''')
 
@@ -1055,7 +1052,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
     bool lock_setting;
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
+    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo, local_enables, local_disables,
         report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);

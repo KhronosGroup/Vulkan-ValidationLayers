@@ -320,6 +320,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 #include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
+#include <vulkan/layer/vk_layer_settings_ext.h>
+
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
                                                       const VkBaseOutStructure* header, const char *pnext_vuid,
                                                       bool is_physdev_api, bool is_const_param) const {
@@ -593,8 +595,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             extStructVar = f'allowed_structs_{structTypeName}'
             extStructCount = f'{extStructVar}.size()'
             extStructData = f'{extStructVar}.data()'
-            extraStype = ', VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
-            extraStruct = ', VkInstanceLayerSettingsEXT' if structTypeName == 'VkInstanceCreateInfo' else ''
+            extraStype = ', VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
+            extraStruct = ', VkLayerSettingsCreateInfoEXT' if structTypeName == 'VkInstanceCreateInfo' else ''
             extStructNames = '"' + ', '.join(struct.extendedBy) + extraStruct + '"'
             extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
             checkExpr.append(f'constexpr std::array {extStructVar} = {{ {extendedBy}{extraStype} }};\n')

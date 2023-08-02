@@ -14,9 +14,9 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vulkan/layer/vk_layer_settings_ext.h>
 
 #include "../layers/vk_lunarg_device_profile_api_layer.h"
-#include "vk_layer_settings_ext.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -24,7 +24,6 @@
 #endif
 
 #include "test_common.h"
-#include "vk_layer_config.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_format_utils.h"
 #include "generated/vk_extension_helper.h"
@@ -63,6 +62,8 @@ using std::vector;
 #error The lsan_interface.h header was not found!
 #endif
 #endif
+
+#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data

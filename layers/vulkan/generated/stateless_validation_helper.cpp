@@ -27,6 +27,8 @@
 #include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
+#include <vulkan/layer/vk_layer_settings_ext.h>
+
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
                                                       const VkBaseOutStructure* header, const char *pnext_vuid,
                                                       bool is_physdev_api, bool is_const_param) const {
@@ -5546,9 +5548,9 @@ bool StatelessValidation::PreCallValidateCreateInstance(
     skip |= ValidateStructType("vkCreateInstance", "pCreateInfo", "VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true, "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
     {
-        constexpr std::array allowed_structs_VkInstanceCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT, VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT };
+        constexpr std::array allowed_structs_VkInstanceCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT, VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT };
 
-        skip |= ValidateStructPnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkDirectDriverLoadingListLUNARG, VkExportMetalObjectCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT, VkInstanceLayerSettingsEXT", pCreateInfo->pNext, allowed_structs_VkInstanceCreateInfo.size(), allowed_structs_VkInstanceCreateInfo.data(), GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", false, true);
+        skip |= ValidateStructPnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkDirectDriverLoadingListLUNARG, VkExportMetalObjectCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT, VkLayerSettingsCreateInfoEXT", pCreateInfo->pNext, allowed_structs_VkInstanceCreateInfo.size(), allowed_structs_VkInstanceCreateInfo.data(), GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", false, true);
 
         skip |= ValidateFlags("vkCreateInstance", "pCreateInfo->flags", "VkInstanceCreateFlagBits", AllVkInstanceCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkInstanceCreateInfo-flags-parameter");
 

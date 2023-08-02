@@ -185,8 +185,8 @@ typedef struct _debug_report_data {
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
-    int32_t duplicate_message_limit = 0;
-    mutable vvl::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
+    uint32_t duplicate_message_limit = 0;
+    mutable vvl::unordered_map<uint32_t, uint32_t> duplicate_message_count_map{};
     const void *instance_pnext_chain{};
     bool forceDefaultLogCallback{false};
     uint32_t device_created = 0;

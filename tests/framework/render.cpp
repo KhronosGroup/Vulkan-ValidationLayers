@@ -25,7 +25,6 @@
 #include "generated/vk_format_utils.h"
 #include "generated/vk_extension_helper.h"
 #include "utils/vk_layer_utils.h"
-#include "vk_layer_settings_ext.h"
 #include "layer_validation_tests.h"
 
 using std::string;
