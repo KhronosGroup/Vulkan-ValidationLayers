@@ -102,7 +102,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDraw-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDraw-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDraw-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDraw-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDraw-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDraw-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDraw-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDraw-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDraw-None-06886";
@@ -258,7 +259,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMultiEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMultiEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMultiEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMultiEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMultiEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMultiEXT-None-06886";
@@ -415,7 +417,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndexed-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndexed-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndexed-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndexed-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndexed-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndexed-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndexed-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndexed-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndexed-None-06886";
@@ -572,7 +575,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMultiIndexedEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMultiIndexedEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMultiIndexedEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMultiIndexedEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMultiIndexedEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMultiIndexedEXT-None-06886";
@@ -730,7 +734,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndirect-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndirect-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndirect-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndirect-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndirect-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndirect-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndirect-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndirect-None-06886";
@@ -889,7 +894,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndexedIndirect-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndexedIndirect-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndexedIndirect-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndexedIndirect-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndexedIndirect-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndexedIndirect-None-06886";
@@ -993,7 +999,8 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDispatch-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDispatch-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDispatch-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDispatch-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDispatch-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDispatch-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDispatch-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDispatch-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatch-None-08114";
@@ -1035,7 +1042,8 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDispatchIndirect-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDispatchIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDispatchIndirect-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDispatchIndirect-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDispatchIndirect-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDispatchIndirect-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDispatchIndirect-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDispatchIndirect-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchIndirect-None-08114";
@@ -1132,7 +1140,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndirectCount-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndirectCount-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndirectCount-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndirectCount-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndirectCount-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndirectCount-None-06886";
@@ -1294,7 +1303,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndexedIndirectCount-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndexedIndirectCount-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndexedIndirectCount-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndexedIndirectCount-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndexedIndirectCount-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndexedIndirectCount-None-06886";
@@ -1398,7 +1408,8 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdTraceRaysNV-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdTraceRaysNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdTraceRaysNV-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdTraceRaysNV-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdTraceRaysNV-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdTraceRaysNV-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdTraceRaysNV-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdTraceRaysNV-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysNV-None-08114";
@@ -1438,7 +1449,8 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdTraceRaysKHR-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdTraceRaysKHR-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdTraceRaysKHR-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdTraceRaysKHR-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdTraceRaysKHR-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysKHR-None-08114";
@@ -1480,7 +1492,8 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdTraceRaysIndirectKHR-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdTraceRaysIndirectKHR-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdTraceRaysIndirectKHR-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdTraceRaysIndirectKHR-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdTraceRaysIndirectKHR-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
@@ -1522,7 +1535,8 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdTraceRaysIndirect2KHR-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdTraceRaysIndirect2KHR-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdTraceRaysIndirect2KHR-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdTraceRaysIndirect2KHR-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdTraceRaysIndirect2KHR-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
@@ -1605,7 +1619,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksNV-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksNV-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksNV-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksNV-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksNV-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksNV-None-06886";
@@ -1755,7 +1770,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksIndirectNV-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksIndirectNV-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksIndirectNV-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06886";
@@ -1908,7 +1924,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06886";
@@ -2055,7 +2072,8 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksEXT-None-06886";
@@ -2205,7 +2223,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06886";
@@ -2358,7 +2377,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06886";
@@ -2516,7 +2536,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDrawIndirectByteCountEXT-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDrawIndirectByteCountEXT-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDrawIndirectByteCountEXT-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDrawIndirectByteCountEXT-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDrawIndirectByteCountEXT-None-06479";
         depth_read_only_06886                    = "VUID-vkCmdDrawIndirectByteCountEXT-None-06886";
@@ -2620,7 +2641,8 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         storage_image_write_without_format_07027 = "VUID-vkCmdDispatchBase-OpTypeImage-07027";
         storage_texel_buffer_read_without_format_07030  = "VUID-vkCmdDispatchBase-OpTypeImage-07030";
         storage_texel_buffer_write_without_format_07029 = "VUID-vkCmdDispatchBase-OpTypeImage-07029";
-        storage_image_write_texel_count_04115           = "VUID-vkCmdDispatchBase-None-04115";
+        storage_image_write_texel_count_08795           = "VUID-vkCmdDispatchBase-OpImageWrite-08795";
+        storage_image_write_texel_count_08796           = "VUID-vkCmdDispatchBase-OpImageWrite-08796";
         storage_texel_buffer_write_texel_count_04469    = "VUID-vkCmdDispatchBase-OpImageWrite-04469";
         depth_compare_sample_06479               = "VUID-vkCmdDispatchBase-None-06479";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchBase-None-08114";

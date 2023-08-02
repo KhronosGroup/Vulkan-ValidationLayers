@@ -133,6 +133,9 @@
                 "VkPhysicalDeviceMaintenance4Features": {
                     "maintenance4": true
                 },
+                "VkPhysicalDeviceMaintenance5Features": {
+                    "maintenance5": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -1860,6 +1863,7 @@
                 "VK_KHR_maintenance2": 1,
                 "VK_KHR_maintenance3": 1,
                 "VK_KHR_maintenance4": 1,
+                "VK_KHR_maintenance5": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_executable_properties": 1,
@@ -7293,6 +7297,16 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT"
                         ]
+                    }
+                },
+                "VK_FORMAT_A8_UNORM_KHR": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [],
+                        "optimalTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT"
+                        ],
+                        "bufferFeatures": []
                     }
                 }
             },

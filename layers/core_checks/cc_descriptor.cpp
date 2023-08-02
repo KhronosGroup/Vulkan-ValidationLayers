@@ -1184,7 +1184,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                  sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
                 (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
                 if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
-                    image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
+                    image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 ||
+                    image_view_format == VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, sampler_state->sampler(), image_view_state->image_view());
                     return LogError(objlist, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015",
@@ -1354,10 +1355,19 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         for (const uint32_t texel_component_count : binding_info.second.variable->write_without_formats_component_count_list) {
             const uint32_t format_component_count = FormatComponentCount(image_view_format);
-            if (texel_component_count < format_component_count) {
+            if (image_view_format == VK_FORMAT_A8_UNORM_KHR) {
+                if (texel_component_count != 4) {
+                    auto set = context.descriptor_set.GetSet();
+                    const LogObjectList objlist(set, image_view);
+                    return LogError(device, context.vuids.storage_image_write_texel_count_08796,
+                                    "%s: OpImageWrite Texel operand only contains %" PRIu32
+                                    " components, but the VkImageView is mapped to a OpImage format of VK_FORMAT_A8_UNORM_KHR.\n",
+                                    context.caller, texel_component_count);
+                }
+            } else if (texel_component_count < format_component_count) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
-                return LogError(device, context.vuids.storage_image_write_texel_count_04115,
+                return LogError(device, context.vuids.storage_image_write_texel_count_08795,
                                 "%s: OpImageWrite Texel operand only contains %" PRIu32
                                 " components, but the VkImageView is mapped to a OpImage format of %s has %" PRIu32
                                 " components.\n",

@@ -82,6 +82,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdDrawMultiIndexedEXT',
             'vkCmdClearAttachments',
             'vkCmdBindIndexBuffer',
+            'vkCmdBindIndexBuffer2KHR',
             'vkCmdCopyBuffer',
             'vkCmdUpdateBuffer',
             'vkCmdFillBuffer',

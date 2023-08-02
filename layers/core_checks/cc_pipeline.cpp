@@ -677,13 +677,13 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline) const {
                                      pipeline.GetCreateFunctionName(), pipeline.create_index,
                                      string_VkShaderStageFlagBits(stage_ci.stage));
                 }
-            } else if (stage_ci.module == VK_NULL_HANDLE) {
+            } else if (stage_ci.module == VK_NULL_HANDLE && !enabled_features.maintenance5_features.maintenance5) {
                 skip |= LogError(
-                    device, "VUID-VkPipelineShaderStageCreateInfo-stage-06846",
+                    device, "VUID-VkPipelineShaderStageCreateInfo-stage-08771",
                     "%s pCreateInfos[%" PRIu32
                     "] module (stage %s) VkPipelineShaderStageCreateInfo has no VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                    "struct in the pNext chain, the graphicsPipelineLibrary feature is not enabled, and module is not a valid "
-                    "VkShaderModule",
+                    "struct in the pNext chain, the neither graphicsPipelineLibrary or maintenance5 feature are not enabled, and "
+                    "module is not a valid VkShaderModule",
                     pipeline.GetCreateFunctionName(), pipeline.create_index, string_VkShaderStageFlagBits(stage_ci.stage));
             }
         }

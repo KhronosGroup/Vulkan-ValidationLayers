@@ -525,7 +525,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
         pipe.InitPreRasterLibInfo(1, &stage_ci);
         pipe.InitState();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06846");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-08771");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607");
         pipe.CreateGraphicsPipeline();
@@ -1771,7 +1771,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06846");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-08771");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
