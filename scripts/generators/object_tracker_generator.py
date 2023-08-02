@@ -19,7 +19,7 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (buildListVUID, incIndent, decIndent, addIndent)
+from generators.generator_utils import (buildListVUID, getVUID, incIndent, decIndent, addIndent)
 from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
 
@@ -173,25 +173,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "VkAccelerationStructureNV-accelerationStructure-compatalloc": "\"VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03753\"",
             "VkAccelerationStructureNV-accelerationStructure-nullalloc": "\"VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03754\"",
            }
-
-    #
-    # Get VUID identifier from implicit VUID tag
-    def GetVuid(self, parent: str, suffix: str) -> str:
-        vuid_string = 'VUID-%s-%s' % (parent, suffix)
-        vuid = "kVUIDUndefined"
-        if '->' in vuid_string:
-           return vuid
-        if vuid_string in self.valid_vuids:
-            vuid = "\"%s\"" % vuid_string
-        else:
-            alias =  self.vk.commands[parent].alias if parent in self.vk.commands else None
-            if alias:
-                alias_string = 'VUID-%s-%s' % (alias, suffix)
-                if alias_string in self.valid_vuids:
-                    vuid = "\"%s\"" % alias_string
-        return vuid
-    def isNonDispatchable(self, name: str) -> bool:
-        return name in self.vk.handles and not self.vk.handles[name].dispatchable
 
     # Work up Handle's parents to see if it VkDevice
     def isParentDevice(self, handle: Handle) -> bool:
@@ -404,7 +385,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
         return "kVUIDUndefined"
 
     # recursively walks struct members (and command params)
-    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName, isTopLevelCreate: bool) -> str:
+    # parentName == Struct or Command calling into this
+    # topCommand == The command called from (when in a struct)
+    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName: str, topCommand: str, isTopLevelCreate: bool) -> str:
         pre_call_validate = ''
         index = f'index{str(arrayIndex)}'
         arrayIndex += 1
@@ -421,12 +404,17 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                     countName = None
                     nullAllowed = 'true' if member.noAutoValidity else str(member.optional).lower()
 
-                paramVUID = self.GetVuid(parentName, f'{member.name}-parameter')
-                parentVUID = self.GetVuid(parentName, f'{member.name}-parent')
+                # Replace with alias if one
+                alias = self.vk.commands[parentName].alias if parentName in self.vk.commands else None
+                parent = alias if alias else parentName
+                vuid_string = f'VUID-{parent}-{member.name}-parameter'
+                # TODO: Currently just brute force check all VUs, but shuold be smarter what makes these `-parameter` VUs
+                paramVUID = f'"{vuid_string}"' if vuid_string in self.valid_vuids else "kVUIDUndefined"
 
                 # TODO: Revise object 'parent' handling.  Each object definition in the XML specifies a parent, this should
                 #       all be handled in codegen (or at least called out)
                 # These objects do not have a VkDevice as their (ultimate) parent objecs, so skip the current code-gen'd parent checks
+                parentVUID = 'kVUIDUndefined'
                 parent_exception_list = [
                     'VkPhysicalDevice',
                     'VkSwapchainKHR',
@@ -435,12 +423,25 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                     'VkDisplayModeKHR',
                     'VkDebugReportCallbackEXT',
                     'VkDebugUtilsMessengerEXT']
-                if member.type in parent_exception_list:
-                    parentVUID = 'kVUIDUndefined'
-                else:
-                    # If no parent VUID for this member, look for a commonparent VUID
-                    if parentVUID == 'kVUIDUndefined':
-                        parentVUID = self.GetVuid(parentName, 'commonparent')
+                # always skip the first member, its the dispatch handle and has not parent VUs
+                if member.type not in parent_exception_list and member != members[0]:
+                    # Replace with alias if one
+                    alias = self.vk.commands[parentName].alias if parentName in self.vk.commands else None
+                    parent = alias if alias else parentName
+
+                    if members[0].type == 'VkDevice':
+                        parentVUID = getVUID(self.valid_vuids, f'VUID-{parent}-{member.name}-parent')
+                    # Can only have a 'common parent' VU if there are 2 handles and one isn't a VkDevice
+                    elif len([x for x in members if x.type in self.vk.handles]) > 1:
+                        parentVUID = getVUID(self.valid_vuids, f'VUID-{parent}-commonparent')
+                    elif topCommand != parentName: # in a struct
+                        # TODO: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3553#note_424431
+                        # There are many cases where the handle in the struct needs to be the same device as
+                        # the calling function, but currently no VUs are generated from the spec
+                        #
+                        # Adding this one vkCreateImageView as has been seen in real world and a VU was created already
+                        if topCommand == 'vkCreateImageView' and member.name == 'image':
+                            parentVUID = "\"VUID-vkCreateImageView-image-09179\""
 
                 if countName is not None:
                     pre_call_validate += addIndent(indent,
@@ -475,7 +476,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         indent = incIndent(indent)
                         local_prefix = f'{prefix}{member.name}[{index}].'
                         # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, local_prefix, arrayIndex, member.type, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, local_prefix, arrayIndex, member.type, topCommand, False)
                         indent = decIndent(indent)
                         pre_call_validate += f'{indent}}}\n'
                         indent = decIndent(indent)
@@ -488,7 +489,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         pre_call_validate += f'{indent}if ({prefix}{member.name}) {{\n'
                         indent = incIndent(indent)
                         # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, False)
                         indent = decIndent(indent)
                         pre_call_validate += '%s}\n' % indent
                     # Single Nested Struct
@@ -496,7 +497,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         # Update struct prefix
                         new_prefix = f'{prefix}{member.name}.'
                         # Process sub-structs
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, False)
         return pre_call_validate
     #
     # For a particular API, generate the object handling code
@@ -509,7 +510,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
         isCreate = any(x in command.name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']) or ('vkGet' in command.name and command.params[-1].pointer)
         isDestroy = any(x in command.name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
 
-        pre_call_validate += self.validateObjects(command.params, indent, '', 0, command.name, isCreate)
+        pre_call_validate += self.validateObjects(command.params, indent, '', 0, command.name, command.name, isCreate)
 
         # Handle object create operations if last parameter is created by this call
         if isCreate:
