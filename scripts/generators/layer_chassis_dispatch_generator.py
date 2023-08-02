@@ -19,7 +19,7 @@
 
 import sys
 import os
-from generators.generator_utils import (incIndent, decIndent)
+from generators.generator_utils import (incIndent, decIndent, addIndent)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 
@@ -254,18 +254,14 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                 param = command.params[-2] # Last param is always VkAllocationCallbacks
                 if self.isNonDispatchable(param.type):
                     # Remove a single handle from the map
-                    destroy_ndo_code += f'{indent}uint64_t {param.name}_id = CastToUint64({param.name});\n'
-                    destroy_ndo_code += f'{indent}auto iter = unique_id_mapping.pop({param.name}_id);\n'
-                    destroy_ndo_code += f'{indent}if (iter != unique_id_mapping.end()) {{\n'
-                    indent = incIndent(indent)
-                    destroy_ndo_code += f'{indent}{param.name} = ({param.type})iter->second;\n'
-                    indent = decIndent(indent)
-                    destroy_ndo_code += f'{indent}}} else {{\n'
-                    indent = incIndent(indent)
-                    destroy_ndo_code += f'{indent}{param.name} = ({param.type})0;\n'
-                    indent = decIndent(indent)
-                    destroy_ndo_code += f'{indent}}}\n'
-
+                    destroy_ndo_code += addIndent(indent,
+f'''uint64_t {param.name}_id = CastToUint64({param.name});
+auto iter = unique_id_mapping.pop({param.name}_id);
+if (iter != unique_id_mapping.end()) {{
+    {param.name} = ({param.type})iter->second;
+}} else {{
+    {param.name} = ({param.type})0;
+}}''')
             (api_decls, api_pre, api_post) = self.uniquifyMembers(command.params, indent, '', 0, isCreate, isDestroy, True)
             api_post += create_ndo_code
             if isDestroy:

@@ -19,7 +19,7 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (buildListVUID, incIndent, decIndent)
+from generators.generator_utils import (buildListVUID, incIndent, decIndent, addIndent)
 from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
 
@@ -443,15 +443,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                         parentVUID = self.GetVuid(parentName, 'commonparent')
 
                 if countName is not None:
-                    pre_call_validate += f'{indent}if (({countName} > 0) && ({prefix}{member.name})) {{\n'
-                    indent = incIndent(indent)
-                    pre_call_validate += f'{indent}for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{\n'
-                    indent = incIndent(indent)
-                    pre_call_validate += f'{indent}skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, "{parentName}");\n'
-                    indent = decIndent(indent)
-                    pre_call_validate += f'{indent}}}\n'
-                    indent = decIndent(indent)
-                    pre_call_validate += f'{indent}}}\n'
+                    pre_call_validate += addIndent(indent,
+f'''if (({countName} > 0) && ({prefix}{member.name})) {{
+    for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
+        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, "{parentName}");
+    }}
+}}''')
                 else:
                     bonus_indent = ''
                     if 'basePipelineHandle' in member.name:
