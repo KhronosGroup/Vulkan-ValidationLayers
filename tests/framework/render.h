@@ -439,7 +439,7 @@ class VkImageObj : public vk_testing::Image {
 
     VkImage image() const { return handle(); }
 
-    VkImageViewCreateInfo BasicTargetViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
+    VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
         auto ci = LvlInitStruct<VkImageViewCreateInfo>();
         ci.image = handle();
         ci.format = format();

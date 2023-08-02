@@ -737,7 +737,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    auto image_view_ci = image.BasicTargetViewCreatInfo();
+    auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     VkImageView imageView = image.targetView(image_view_ci);
 

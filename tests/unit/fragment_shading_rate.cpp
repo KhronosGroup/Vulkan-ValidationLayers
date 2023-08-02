@@ -1060,7 +1060,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     VkImageCreateInfo ici = VkImageObj::ImageCreateInfo2D(
         1, 1, 1, 2, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
     image.InitNoLayout(ici);
-    auto image_view_ci = image.BasicTargetViewCreatInfo();
+    auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     const auto imageView = image.targetView(image_view_ci);

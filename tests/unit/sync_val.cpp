@@ -3849,13 +3849,13 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     sampled_image.Init(image_ci);
     auto sampled_view = std::make_unique<vk_testing::ImageView>();
-    auto imageview_ci = sampled_image.BasicTargetViewCreatInfo();
+    auto imageview_ci = sampled_image.BasicViewCreatInfo();
     sampled_view->init(*m_device, imageview_ci);
 
     VkImageObj combined_image(m_device);
     image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     combined_image.Init(image_ci);
-    imageview_ci = combined_image.BasicTargetViewCreatInfo();
+    imageview_ci = combined_image.BasicViewCreatInfo();
     auto combined_view = std::make_unique<vk_testing::ImageView>();
     combined_view->init(*m_device, imageview_ci);
 
