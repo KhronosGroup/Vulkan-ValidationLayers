@@ -589,8 +589,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
     if (image_load_pointer->Opcode() == spv::OpVariable) {
         variable_image_insn = image_load_pointer;
     } else if (image_load_pointer->Opcode() == spv::OpAccessChain || image_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
-        // TODO 5465 - Better way to check for descriptor indexing
-        // If Image is an array, need to get the index
+        // If Image is an array (but not descriptor indexing), then need to get the index
         // Currently just need to care about the first image_loads because the above loop will have combos to
         // image-to-samplers for us
         const Instruction* const_def = module_state.GetConstantDef(image_load_pointer->Word(4));
@@ -623,7 +622,7 @@ ImageAccess::ImageAccess(const SPIRV_MODULE_STATE& module_state, const Instructi
             variable_sampler_insn = sampler_load_pointer;
         } else if (sampler_load_pointer->Opcode() == spv::OpAccessChain ||
                    sampler_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
-            // TODO 5465 - Better way to check for descriptor indexing
+            // Can have descriptor indexing of samplers
             const Instruction* const_def = module_state.GetConstantDef(sampler_load_pointer->Word(4));
             if (const_def) {
                 sampler_access_chain_index = const_def->GetConstantValue();
@@ -1115,8 +1114,8 @@ uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
     return total_size;
 }
 
-// If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
-// Otherwise, returns src->end().
+// If the instruction at |id| is a constant or copy of a constant, returns the instruction
+// Cases such as runtime arrays, will not find a constant and return NULL
 const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
     const Instruction* value = FindDef(id);
 
@@ -1132,16 +1131,15 @@ const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
     return nullptr;
 }
 
-// Either returns the constant value described by the instruction at id, or 1
+// Returns the constant value described by the instruction at |id|
+// Caller ensures there can't be a runtime array or specialization constants
 uint32_t SPIRV_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     const Instruction* value = GetConstantDef(id);
 
-    if (!value) {
-        // TODO: Either ensure that the specialization transform is already performed on a module we're
-        //       considering here, OR -- specialize on the fly now.
-        // If using to get index into array, this could be hit if using VK_EXT_descriptor_indexing
-        return 1;
-    }
+    // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
+    // or unhandled specialization constants
+    // Caller needs to call GetConstantDef() and check if null
+    assert(value);
 
     return value->GetConstantValue();
 }
@@ -1319,8 +1317,8 @@ bool SPIRV_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const
                         if (insn->Word(3) == target_id) {
                             if (type == spv::OpMemberDecorate) {
                                 // Get the target member of the struct
-                                // NOTE: this will only work for structs and arrays of structs. Deeper levels of nesting (e.g.,
-                                // arrays of structs of structs) is not currently supported.
+                                // NOTE: this will only work for structs and arrays of structs.
+                                // Deeper levels of nesting (arrays of structs of structs) is not currently supported.
                                 const Instruction* value_def = GetConstantDef(insn->Word(4 + target_member_offset));
                                 if (value_def) {
                                     auto value = value_def->GetConstantValue();

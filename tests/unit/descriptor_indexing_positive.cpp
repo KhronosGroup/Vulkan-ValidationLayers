@@ -28,6 +28,20 @@ void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_indexing_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
+void DescriptorIndexingTest::ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings) {
+    InitBasicDescriptorIndexing();
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -361,4 +375,92 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     vk::FreeMemory(device(), memory1, nullptr);
     vk::FreeMemory(device(), memory3, nullptr);
+}
+
+TEST_F(PositiveDescriptorIndexing, PipelineShaderBasic) {
+    TEST_DESCRIPTION("Test basic usage of GL_EXT_nonuniform_qualifier.");
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0) buffer block { int x; };
+        void main() {
+            nonuniformEXT int data;
+            int table[5];
+            data = table[nonuniformEXT(x)];
+        }
+    )glsl";
+
+    ComputePipelineShaderTest(csSource, bindings);
+}
+
+TEST_F(PositiveDescriptorIndexing, PipelineShaderSampler2D) {
+    TEST_DESCRIPTION("Indexing into a Sampler2D (combined image sampler).");
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0) buffer block { vec2 x; };
+        layout(set=0, binding=1) uniform sampler2D t;
+        void main() {
+            vec4 vColor4 = texture(t, nonuniformEXT(x));
+        }
+    )glsl";
+
+    ComputePipelineShaderTest(csSource, bindings);
+}
+
+TEST_F(PositiveDescriptorIndexing, PipelineShaderImageBufferArray) {
+    TEST_DESCRIPTION("Indexing into a ImageVuffer array (texel buffer).");
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0) buffer block { int x; };
+        layout(set=0, binding=1, rgba8ui) uniform uimageBuffer image_buffer_array[];
+        void main() {
+            vec4 color = vec4(1.0);
+            color += imageLoad(image_buffer_array[x], 0);
+            // uses a OpCopyObject
+            color += imageLoad(image_buffer_array[nonuniformEXT(x)], 0);
+        }
+    )glsl";
+
+    ComputePipelineShaderTest(csSource, bindings);
+}
+
+TEST_F(PositiveDescriptorIndexing, PipelineShaderMultiArrayIndexing) {
+    TEST_DESCRIPTION("Indexing into a nested array.");
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    char const *csSource = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform A { uint value; };
+        layout(set = 0, binding = 1) uniform B { uint tex_index[1]; };
+        layout(set = 0, binding = 2) uniform sampler2D tex[6];
+        void main() {
+            vec4 color = vec4(1.0);
+            color +=  texture(tex[tex_index[value]], vec2(0, 0));
+            color +=  texture(tex[tex_index[nonuniformEXT(value)]], vec2(0, 0));
+            color +=  texture(tex[nonuniformEXT(tex_index[value])], vec2(0, 0));
+        }
+    )glsl";
+
+    ComputePipelineShaderTest(csSource, bindings);
 }

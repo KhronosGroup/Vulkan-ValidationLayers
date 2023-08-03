@@ -170,8 +170,8 @@ struct ImageAccess {
     bool is_read_from = false;
 
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
-    uint32_t image_access_chain_index = kInvalidValue;    // Index 0
-    uint32_t sampler_access_chain_index = kInvalidValue;  // Index 0
+    uint32_t image_access_chain_index = kInvalidValue;    // OpAccessChain's Index 0
+    uint32_t sampler_access_chain_index = kInvalidValue;  // OpAccessChain's Index 0
     uint32_t texel_component_count = kInvalidValue;
 
     ImageAccess(const SPIRV_MODULE_STATE &module_state, const Instruction &image_insn);
