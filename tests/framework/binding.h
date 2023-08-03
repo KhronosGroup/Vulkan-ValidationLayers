@@ -432,25 +432,18 @@ static constexpr NoMemT no_mem{};
 class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
     explicit Buffer() : NonDispHandle(), create_info_(LvlInitStruct<decltype(create_info_)>()) {}
-    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info); }
-    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props) {
+    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props = 0) {
         init(dev, info, mem_props);
     }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
         init(dev, info, mem_props, alloc_info_pnext);
     }
-    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props,
-                    VkMemoryAllocateFlags alloc_flags) {
-        auto memflagsinfo = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
-        memflagsinfo.flags = alloc_flags;
-        init(dev, info, mem_props, &memflagsinfo);
-    }
     explicit Buffer(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props, VkBufferUsageFlags usage,
-                    void *alloc_info_pnext) {
+                    void *alloc_info_pnext = nullptr) {
         init(dev, size, mem_props, usage, alloc_info_pnext);
     }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
-    explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
+    explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size, 0); }
     Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
         create_info_ = std::move(rhs.create_info_);
         internal_mem_ = std::move(rhs.internal_mem_);
@@ -480,15 +473,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
               void *alloc_info_pnext) {
         init(dev, create_info(size, usage), mem_props, alloc_info_pnext);
     }
-    void init(const Device &dev, VkDeviceSize size) { init(dev, size, 0); }
-    void init_as_src(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
-                     const std::vector<uint32_t> *queue_families = nullptr) {
-        init(dev, create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, queue_families), reqs);
-    }
-    void init_as_dst(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
-                     const std::vector<uint32_t> *queue_families = nullptr) {
-        init(dev, create_info(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families), reqs);
-    }
     void init_as_src_and_dst(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
                              const std::vector<uint32_t> *queue_families = nullptr, bool memory = true) {
         if (memory)
@@ -497,11 +481,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
             init_no_mem(dev,
                         create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families));
     }
-    void init_as_storage(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
-        const std::vector<uint32_t> *queue_families = nullptr) {
-        init(dev, create_info(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, queue_families), reqs);
-    }
-
     void init_no_mem(const Device &dev, const VkBufferCreateInfo &info);
 
     // get the internal memory

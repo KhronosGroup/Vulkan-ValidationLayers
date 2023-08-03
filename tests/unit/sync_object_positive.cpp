@@ -2212,7 +2212,7 @@ struct SemBufferRaceData {
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
             auto buffer = std::make_unique<vk_testing::Buffer>();
-            buffer->init_as_dst(dev, (VkDeviceSize)20, reqs);
+            buffer->init(dev, 20, reqs, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
             // main thread sets up buffer
             // main thread signals 1

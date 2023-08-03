@@ -493,7 +493,9 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         buffCI.queueFamilyIndexCount = 1;
         buffCI.pQueueFamilyIndices = &qfi;
 
-        vk_testing::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+        auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vk_testing::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
         auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
         dbbi.address = d_buffer.address();
@@ -554,7 +556,9 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         buffCI.usage |= VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
     }
 
-    vk_testing::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vk_testing::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     {
         auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
@@ -601,7 +605,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         }
     }
 
-    vk_testing::Buffer d_buffer2(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    vk_testing::Buffer d_buffer2(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     if (descriptor_buffer_properties.descriptorBufferOffsetAlignment != 1) {
         auto dbbi2 = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
@@ -616,8 +620,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 
     {
         buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-        vk_testing::Buffer bufferA(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+        vk_testing::Buffer bufferA(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
         auto dbbi2 = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
         dbbi2.address = bufferA.address();
@@ -688,7 +691,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
         buffCI.queueFamilyIndexCount = 1;
         buffCI.pQueueFamilyIndices = &qfi;
-        vk_testing::Buffer bufferA(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+        vk_testing::Buffer bufferA(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
         auto dbbi2 = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
         dbbi2.address = bufferA.address();
@@ -861,7 +864,9 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    vk_testing::Buffer buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vk_testing::Buffer buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
     dbbi.address = buffer.address();

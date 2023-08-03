@@ -1298,12 +1298,11 @@ TEST_F(NegativeCommand, CompressedImageMipCopy) {
     ASSERT_TRUE(odd_image.initialized());
 
     // Allocate buffers
-    VkMemoryPropertyFlags reqs = 0;
-    VkBufferObj buffer_1024, buffer_64, buffer_16, buffer_8;
-    buffer_1024.init_as_src_and_dst(*m_device, 1024, reqs);
-    buffer_64.init_as_src_and_dst(*m_device, 64, reqs);
-    buffer_16.init_as_src_and_dst(*m_device, 16, reqs);
-    buffer_8.init_as_src_and_dst(*m_device, 8, reqs);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_1024(*m_device, 1024, 0, transfer_usage);
+    VkBufferObj buffer_64(*m_device, 64, 0, transfer_usage);
+    VkBufferObj buffer_16(*m_device, 16, 0, transfer_usage);
+    VkBufferObj buffer_8(*m_device, 8, 0, transfer_usage);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -1606,12 +1605,11 @@ TEST_F(NegativeCommand, ImageBufferCopy) {
     }
 
     // Allocate buffers
-    VkBufferObj buffer_256k, buffer_128k, buffer_64k, buffer_16k;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer_256k.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k
-    buffer_128k.init_as_src_and_dst(*m_device, 131072, reqs);  // 128k
-    buffer_64k.init_as_src_and_dst(*m_device, 65536, reqs);    // 64k
-    buffer_16k.init_as_src_and_dst(*m_device, 16384, reqs);    // 16k
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_256k(*m_device, 262144, 0, transfer_usage);  // 256k
+    VkBufferObj buffer_128k(*m_device, 131072, 0, transfer_usage);  // 128k
+    VkBufferObj buffer_64k(*m_device, 65536, 0, transfer_usage);    // 64k
+    VkBufferObj buffer_16k(*m_device, 16384, 0, transfer_usage);    // 16k
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -2140,10 +2138,8 @@ TEST_F(NegativeCommand, MiscImageLayer) {
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 64bpp
+    VkBufferObj buffer(*m_device, 128 * 128 * 8, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr);
     ASSERT_TRUE(image.initialized());
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src(*m_device, 128 * 128 * 8, reqs);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 128;
     region.bufferImageHeight = 128;
@@ -2157,9 +2153,7 @@ TEST_F(NegativeCommand, MiscImageLayer) {
     VkImageObj image2(m_device);
     image2.Init(128, 128, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 16bpp
     ASSERT_TRUE(image2.initialized());
-    VkBufferObj buffer2;
-    VkMemoryPropertyFlags reqs2 = 0;
-    buffer2.init_as_src(*m_device, 128 * 128 * 2, reqs2);
+    VkBufferObj buffer2(*m_device, 128 * 128 * 2, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr);
     m_commandBuffer->begin();
 
     // Image must have offset.z of 0 and extent.depth of 1
@@ -2965,9 +2959,8 @@ TEST_F(NegativeCommand, CopyImageZeroSize) {
     dst_image.init(&ci);
     ASSERT_TRUE(dst_image.initialized());
 
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src_and_dst(*m_device, 16384, reqs);  // large enough for image
+    // large enough for image
+    VkBufferObj buffer(*m_device, 16384, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
 
     m_commandBuffer->begin();
 
@@ -4378,10 +4371,8 @@ TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
                   VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(ds_image.initialized());
 
-    // Allocate buffers
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
+    // 256k to have more then enough to copy
+    VkBufferObj buffer(*m_device, 262144, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -4424,10 +4415,8 @@ TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
                VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    // Allocate buffers
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
+    // 256k to have more then enough to copy
+    VkBufferObj buffer(*m_device, 262144, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -5769,9 +5758,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferSize) {
 
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
-    VkMemoryPropertyFlags reqs = 0;
-    VkBufferObj buffer;
-    buffer.init_as_src_and_dst(*m_device, dataSize, reqs);
+    VkBufferObj buffer(*m_device, dataSize, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dataSize-00033");
     m_commandBuffer->begin();
@@ -5787,9 +5774,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
 
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
-    VkMemoryPropertyFlags reqs = 0;
-    VkBufferObj buffer;
-    buffer.init_as_src_and_dst(*m_device, dataSize, reqs);
+    VkBufferObj buffer(*m_device, dataSize, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dstOffset-00032");
     m_commandBuffer->begin();
@@ -6236,11 +6221,8 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     image2.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkBufferObj dst_buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    dst_buffer.init_as_dst(*m_device, 128 * 128, reqs);
-    VkBufferObj src_buffer;
-    src_buffer.init_as_src(*m_device, 128 * 128, reqs);
+    VkBufferObj dst_buffer(*m_device, 128 * 128, 0, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj src_buffer(*m_device, 128 * 128, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     auto copy_region = LvlInitStruct<VkImageCopy2>();
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.layerCount = 1;

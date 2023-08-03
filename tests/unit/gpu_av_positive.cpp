@@ -335,7 +335,9 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     // Make another buffer to write to
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    vk_testing::Buffer buffer1(*m_device, bci, mem_props, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vk_testing::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();

@@ -67,7 +67,9 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     auto buffer_binding_info = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
     buffer_binding_info.address = buffer.address();

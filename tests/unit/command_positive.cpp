@@ -925,10 +925,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
 
     VkCommandPoolObj pool(m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj buffer;
-    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     cb.begin();
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
