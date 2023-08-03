@@ -411,3 +411,45 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
+    TEST_DESCRIPTION("Test executing secondary command buffer with VkCommandBufferInheritanceInfo::queryFlags.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!m_device->phy().features().inheritedQueries) {
+        GTEST_SKIP() << "inheritedQueries not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    qpci.queryCount = 1;
+    vk_testing::QueryPool query_pool(*m_device, qpci);
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    cbii.renderPass = m_renderPass;
+    cbii.framebuffer = m_framebuffer;
+    cbii.occlusionQueryEnable = VK_TRUE;
+    cbii.queryFlags = VK_QUERY_CONTROL_PRECISE_BIT;
+
+    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cbbi.pInheritanceInfo = &cbii;
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+    VkCommandBuffer secondary_handle = secondary.handle();
+    vk::BeginCommandBuffer(secondary_handle, &cbbi);
+    vk::EndCommandBuffer(secondary_handle);
+
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_commandBuffer->end();
+}
