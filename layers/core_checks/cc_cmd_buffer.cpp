@@ -1314,9 +1314,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
                 skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00103",
                                  "vkCmdExecuteCommands(): command buffer %s has an active occlusion query with VkQueryControlFlags "
-                                 "0X%x, but secondary command "
+                                 "0X%" PRIx32
+                                 ", but secondary command "
                                  "buffer %s (pCommandBuffers[%" PRIu32
-                                 "]) was recorded with VkCommandBufferInheritanceInfo::queryFlags 0X%x",
+                                 "]) was recorded with VkCommandBufferInheritanceInfo::queryFlags 0X%" PRIx32 "",
                                  FormatHandle(commandBuffer).c_str(), active_occlusion_query->control_flags,
                                  FormatHandle(pCommandBuffers[i]).c_str(), i, sub_cb_state.inheritanceInfo.queryFlags);
             }
