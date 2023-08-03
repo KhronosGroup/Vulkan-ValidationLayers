@@ -580,7 +580,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 }
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                VkFence fence) const {
+                                                VkFence fence, ErrorObject &errorObj) const {
     auto queue_data = Get<QUEUE_STATE>(queue);
     auto fence_state = Get<FENCE_STATE>(fence);
     bool skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114",

@@ -18,6 +18,17 @@ import os
 import sys
 import json
 
+# TODO - This is a temporary design to allow us to slowly increase functions to use
+#  ErrorObject until we feel confident with the design to roll it out everywhere
+# (this allows use to see what works well before spending time refactoring each call)
+error_object_functions = [
+    'vkCreateRenderPass',
+    'vkCreateRenderPass2',
+    'vkCreateRenderPass2KHR',
+    'vkCmdPushConstants',
+    'vkQueueBindSparse',
+]
+
 # Build a set of all vuid text strings found in validusage.json
 def buildListVUID(valid_usage_file: str) -> set:
 

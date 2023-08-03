@@ -22,6 +22,7 @@
 #include <sstream>
 #include <limits>
 
+#include "logging.h"
 #include "containers/custom_containers.h"
 namespace core_error {
 // structure to track where a validation error occurs, and capture enough information
@@ -259,3 +260,14 @@ static const std::string& FindVUID(OuterKey key, const Location& loc, const Tabl
 }
 
 }  // namespace core_error
+
+// Contains all information needed for errors to be logged out
+// This allows only a single object to be passed around for error messages
+struct ErrorObject {
+    std::string command;
+    VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
+    LogObjectList objlist;
+
+    ErrorObject(std::string command_, VulkanTypedHandle handle_) : command(command_), handle(handle_), objlist(handle) {}
+    std::string Location() const { return command; }
+};

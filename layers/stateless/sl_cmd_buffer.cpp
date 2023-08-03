@@ -294,7 +294,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
 
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                                 const void *pValues) const {
+                                                                 const void *pValues, ErrorObject &errorObj) const {
     bool skip = false;
     const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
     // Check that offset + size don't exceed the max.

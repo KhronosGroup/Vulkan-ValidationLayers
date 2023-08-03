@@ -1427,7 +1427,7 @@ static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
     return subpass == VK_SUBPASS_EXTERNAL ? sync_utils::kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
 }
 
-bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const Location &in_loc,
+bool CoreChecks::ValidateSubpassDependency(ErrorObject &errorObj, const Location &in_loc,
                                            const VkSubpassDependency2 &dependency) const {
     bool skip = false;
     Location loc = in_loc;
@@ -1445,13 +1445,13 @@ bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const L
         converted_barrier.dstAccessMask = dependency.dstAccessMask;
     }
     auto src_queue_flags = SubpassToQueueFlags(dependency.srcSubpass);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
-    skip |= ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
+    skip |= ValidatePipelineStage(errorObj.objlist, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
+    skip |= ValidateAccessMask(errorObj.objlist, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
                                converted_barrier.srcStageMask);
 
     auto dst_queue_flags = SubpassToQueueFlags(dependency.dstSubpass);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
-    skip |= ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
+    skip |= ValidatePipelineStage(errorObj.objlist, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
+    skip |= ValidateAccessMask(errorObj.objlist, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
                                converted_barrier.dstStageMask);
     return skip;
 }

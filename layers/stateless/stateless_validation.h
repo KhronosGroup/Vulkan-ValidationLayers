@@ -675,13 +675,16 @@ class StatelessValidation : public ValidationObject {
                                                   const VkDescriptorSet *pDescriptorSets) const;
 
     bool manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
+                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
+                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                 ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
+                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                    ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                   const VkCommandBuffer *pCommandBuffers) const;
@@ -1070,8 +1073,8 @@ class StatelessValidation : public ValidationObject {
         const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) const;
 
     bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                const void *pValues) const;
+                                                VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
+                                                ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                    const VkPipelineCache *pSrcCaches) const;

@@ -472,22 +472,22 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                                 const VkAllocationCallbacks *pAllocator,
-                                                                 VkRenderPass *pRenderPass) const {
+                                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                                 ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                  VkRenderPass *pRenderPass) const {
+                                                                  VkRenderPass *pRenderPass, ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkRenderPass *pRenderPass) const {
+                                                                     VkRenderPass *pRenderPass, ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }

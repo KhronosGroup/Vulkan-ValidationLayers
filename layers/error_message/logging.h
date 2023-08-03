@@ -303,6 +303,10 @@ static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMess
 VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
                        std::string_view vuid_text, const char *format, va_list argptr);
 
+struct ErrorObject;
+VKAPI_ATTR bool LogMessage(const debug_report_data *debug_data, VkFlags msg_flags, const ErrorObject &errorObj,
+                           std::string_view vuid_text, const char *format, va_list argptr);
+
 VKAPI_ATTR VkResult LayerCreateMessengerCallback(debug_report_data *debug_data, bool default_callback,
                                                  const VkDebugUtilsMessengerCreateInfoEXT *create_info,
                                                  VkDebugUtilsMessengerEXT *messenger);

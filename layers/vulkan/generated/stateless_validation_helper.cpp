@@ -6122,7 +6122,8 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueBindSparse", "bindInfoCount", "pBindInfo", "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO", bindInfoCount, pBindInfo, VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, false, true, "VUID-VkBindSparseInfo-sType-sType", "VUID-vkQueueBindSparse-pBindInfo-parameter", kVUIDUndefined);
     if (pBindInfo != nullptr)
@@ -7664,7 +7665,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const {
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateRenderPass", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, true, "VUID-vkCreateRenderPass-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -7787,7 +7789,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateRenderPass", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass-pRenderPass-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
     return skip;
 }
 
@@ -8660,12 +8662,13 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues) const {
+    const void*                                 pValues,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdPushConstants", "layout", layout);
     skip |= ValidateFlags("vkCmdPushConstants", "stageFlags", "VkShaderStageFlagBits", AllVkShaderStageFlagBits, stageFlags, kRequiredFlags, "VUID-vkCmdPushConstants-stageFlags-parameter", "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
     skip |= ValidateArray("vkCmdPushConstants", "size", "pValues", size, &pValues, true, true, "VUID-vkCmdPushConstants-size-arraylength", "VUID-vkCmdPushConstants-pValues-parameter");
-    if (!skip) skip |= manual_PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+    if (!skip) skip |= manual_PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, errorObj);
     return skip;
 }
 
@@ -9362,7 +9365,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const {
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateRenderPass2", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
     if (pCreateInfo != nullptr)
@@ -9531,7 +9535,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateRenderPass2", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass2-pRenderPass-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
     return skip;
 }
 
@@ -12578,7 +12582,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const {
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCreateRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCreateRenderPass2KHR", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
@@ -12748,7 +12753,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateRenderPass2KHR", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass2-pRenderPass-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
     return skip;
 }
 

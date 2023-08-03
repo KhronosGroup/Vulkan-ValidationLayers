@@ -26,6 +26,7 @@
 #include "generated/vk_safe_struct.h"
 #include "generated/vk_validation_error_messages.h"
 #include "external/xxhash.h"
+#include "core_error_location.h"
 
 VKAPI_ATTR void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes
@@ -332,6 +333,111 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view 
         return false;
     }
     return true;
+}
+
+// TODO - Migrate LogMsg to LogMessage, but provides a migration path
+VKAPI_ATTR bool LogMessage(const debug_report_data *debug_data, VkFlags msg_flags, const ErrorObject &errorObj,
+                           std::string_view vuid_text, const char *format, va_list argptr) {
+    assert(*(vuid_text.data() + vuid_text.size()) == '\0');
+
+    VkDebugUtilsMessageSeverityFlagsEXT severity;
+    VkDebugUtilsMessageTypeFlagsEXT type;
+
+    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &type);
+    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
+    // Avoid logging cost if msg is to be ignored
+    if (!LogMsgEnabled(debug_data, vuid_text, severity, type)) {
+        return false;
+    }
+
+    // Best guess at an upper bound for message length. At least some of the extra space
+    // should get used to store the VUID URL and text in the common case, without additional allocations.
+    std::string str_plus_spec_text(1024, '\0');
+
+    // vsnprintf() returns the number of characters that *would* have been printed, if there was
+    // enough space. If we have a huge message, reallocate the string and try again.
+    int result;
+    size_t old_size = str_plus_spec_text.size();
+    // The va_list will be destroyed by the call to vsnprintf(), so use a copy in case we need
+    // to try again.
+    va_list arg_copy;
+    va_copy(arg_copy, argptr);
+    result = vsnprintf(str_plus_spec_text.data(), str_plus_spec_text.size(), format, arg_copy);
+    va_end(arg_copy);
+
+    assert(result >= 0);
+    if (result < 0) {
+        str_plus_spec_text = "Message generation failure";
+    } else if (static_cast<size_t>(result) <= old_size) {
+        // Shrink the string to exactly fit the successfully printed string
+        str_plus_spec_text.resize(result);
+    } else {
+        // Grow buffer to fit needed size. Note that the input size to vsnprintf() must
+        // include space for the trailing '\0' character, but the return value DOES NOT
+        // include the `\0' character.
+        str_plus_spec_text.resize(result + 1);
+        // consume the va_list passed to us by the caller
+        result = vsnprintf(str_plus_spec_text.data(), str_plus_spec_text.size(), format, argptr);
+        // remove the `\0' character from the string
+        str_plus_spec_text.resize(result);
+    }
+
+    str_plus_spec_text = errorObj.Location() + "(): " + str_plus_spec_text;
+
+    // Append the spec error text to the error message, unless it contains a word treated as special
+    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos) &&
+        (vuid_text.rfind("SYNC-", 0) == std::string::npos) && (vuid_text.find("INTERNAL-ERROR-") == std::string::npos)) {
+        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
+        // this point in the error reporting path
+        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
+        const char *spec_text = nullptr;
+        std::string spec_type;
+        for (uint32_t i = 0; i < num_vuids; i++) {
+            if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
+                spec_text = vuid_spec_text[i].spec_text;
+                spec_type = vuid_spec_text[i].url_id;
+                break;
+            }
+        }
+
+        // Construct and append the specification text and link to the appropriate version of the spec
+        if (nullptr != spec_text) {
+            std::string spec_link = "https://www.khronos.org/registry/vulkan/specs/_MAGIC_KHRONOS_SPEC_TYPE_/html/vkspec.html";
+#ifdef ANNOTATED_SPEC_LINK
+            spec_link = ANNOTATED_SPEC_LINK;
+#endif
+            static std::string kAtToken = "_MAGIC_ANNOTATED_SPEC_TYPE_";
+            static std::string kKtToken = "_MAGIC_KHRONOS_SPEC_TYPE_";
+            static std::string kVeToken = "_MAGIC_VERSION_ID_";
+            auto Replace = [](std::string &dest_string, const std::string &to_replace, const std::string &replace_with) {
+                if (dest_string.find(to_replace) != std::string::npos) {
+                    dest_string.replace(dest_string.find(to_replace), to_replace.size(), replace_with);
+                }
+            };
+
+            str_plus_spec_text.append(" The Vulkan spec states: ");
+            str_plus_spec_text.append(spec_text);
+            if (0 == spec_type.compare("default")) {
+                str_plus_spec_text.append(" (https://github.com/KhronosGroup/Vulkan-Docs/search?q=)");
+            } else {
+                str_plus_spec_text.append(" (");
+                str_plus_spec_text.append(spec_link);
+                std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+                std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+                std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+                std::string header_version = major_version + "." + minor_version + "." + patch_version;
+                std::string annotated_spec_type = major_version + "." + minor_version + "-extensions";
+                Replace(str_plus_spec_text, kKtToken, spec_type);
+                Replace(str_plus_spec_text, kAtToken, annotated_spec_type);
+                Replace(str_plus_spec_text, kVeToken, header_version);
+                str_plus_spec_text.append("#");  // CMake hates hashes
+            }
+            str_plus_spec_text.append(vuid_text);
+            str_plus_spec_text.append(")");
+        }
+    }
+
+    return debug_log_msg(debug_data, msg_flags, errorObj.objlist, "Validation", str_plus_spec_text.c_str(), vuid_text.data());
 }
 
 VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
