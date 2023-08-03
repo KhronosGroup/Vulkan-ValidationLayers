@@ -76,7 +76,8 @@ static inline bool RenderPassUsesAttachmentAsImageOnly(const safe_VkRenderPassCr
 }
 
 bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
-                                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const {
+                                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                                    ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {

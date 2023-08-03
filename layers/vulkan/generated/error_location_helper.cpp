@@ -25,7 +25,7 @@
 #include "containers/custom_containers.h"
 #include <assert.h>
 
-namespace core_error {
+namespace vvl {
 
 const char* String(Func func) {
     static const std::string_view table[] = {
@@ -4158,6 +4158,6 @@ const char* String(Field field) {
     };
     return table[(int)field].data();
 }
-}  // namespace core_error
+}  // namespace vvl
 
 // NOLINTEND

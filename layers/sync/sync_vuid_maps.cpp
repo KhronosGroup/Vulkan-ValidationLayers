@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 #include "sync/sync_vuid_maps.h"
-#include "error_message/core_error_location.h"
+#include "error_message/error_location.h"
 #include "core_checks/core_validation.h"
 #include "generated/enum_flag_bits.h"
 
 #include <cassert>
 
 namespace sync_vuid_maps {
-using core_error::Entry;
-using core_error::Field;
-using core_error::FindVUID;
-using core_error::Func;
-using core_error::Key;
-using core_error::Struct;
+using vvl::Entry;
+using vvl::Field;
+using vvl::FindVUID;
+using vvl::Func;
+using vvl::Key;
+using vvl::Struct;
 
 const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap{
     {VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR, "geometryShader"},

@@ -422,7 +422,7 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 }
 
 bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                                   VkFence fence) const {
+                                                   VkFence fence, ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {

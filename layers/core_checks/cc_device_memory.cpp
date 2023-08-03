@@ -91,10 +91,9 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE 
 // Instantiate the versions of the template needed by other .cpp files
 template bool CoreChecks::ValidateMemoryIsBoundToImage<VkDevice, CoreChecks::SimpleErrorLocation>(
     VkDevice_T *, IMAGE_STATE const &, CoreChecks::SimpleErrorLocation const &) const;
-template bool CoreChecks::ValidateMemoryIsBoundToImage<VkCommandBuffer,
-                                                       core_error::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>>(
-    VkCommandBuffer, IMAGE_STATE const &,
-    core_error::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor> const &) const;
+template bool
+CoreChecks::ValidateMemoryIsBoundToImage<VkCommandBuffer, vvl::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>>(
+    VkCommandBuffer, IMAGE_STATE const &, vvl::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor> const &) const;
 template bool CoreChecks::ValidateMemoryIsBoundToImage<VkCommandBuffer, CoreChecks::SimpleErrorLocation>(
     VkCommandBuffer, IMAGE_STATE const &, CoreChecks::SimpleErrorLocation const &) const;
 
@@ -1613,73 +1612,70 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
     }
 }
 
-bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDeviceSize resource_size, const char *func_name,
-                                          const char *parameter_name) const {
+bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDeviceSize resource_size, const Location &loc) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
     if (mem_info) {
         if (phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
             VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memory-01097",
-                             "%s: %s memory type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.", func_name, parameter_name);
+            skip |= LogError("VUID-VkSparseMemoryBind-memory-01097", bind.memory, loc,
+                             "memory type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.");
         }
 
         if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                             "%s: %s memoryOffset (%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", func_name,
-                             parameter_name, bind.memoryOffset, mem_info->alloc_info.allocationSize);
+            skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", bind.memory, loc,
+                             "memoryOffset (%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", bind.memoryOffset,
+                             mem_info->alloc_info.allocationSize);
         }
 
         if ((mem_info->alloc_info.allocationSize - bind.memoryOffset) < bind.size) {
-            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01102",
-                             "%s: %s size (%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
+            skip |= LogError("VUID-VkSparseMemoryBind-size-01102", bind.memory, loc,
+                             "size (%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
                              ") minus memoryOffset (%" PRIu64 ").",
-                             func_name, parameter_name, bind.size, mem_info->alloc_info.allocationSize, bind.memoryOffset);
+                             bind.size, mem_info->alloc_info.allocationSize, bind.memoryOffset);
         }
     }
 
     if (bind.size <= 0) {
-        skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01098", "%s: %s size (%" PRIu64 ") must be greater than 0.",
-                         func_name, parameter_name, bind.size);
+        skip |= LogError("VUID-VkSparseMemoryBind-size-01098", bind.memory, loc, "size (%" PRIu64 ") must be greater than 0.",
+                         bind.size);
     }
 
     if (resource_size <= bind.resourceOffset) {
-        skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-resourceOffset-01099",
-                         "%s: %s resourceOffset (%" PRIu64 ") must be less than the size of the resource (%" PRIu64 ").", func_name,
-                         parameter_name, bind.resourceOffset, resource_size);
+        skip |= LogError("VUID-VkSparseMemoryBind-resourceOffset-01099", bind.memory, loc,
+                         "resourceOffset (%" PRIu64 ") must be less than the size of the resource (%" PRIu64 ").",
+                         bind.resourceOffset, resource_size);
     }
 
     if ((resource_size - bind.resourceOffset) < bind.size) {
-        skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01100",
-                         "%s: %s size (%" PRIu64 ") must be less than or equal to the size of the resource (%" PRIu64
+        skip |= LogError("VUID-VkSparseMemoryBind-size-01100", bind.memory, loc,
+                         "size (%" PRIu64 ") must be less than or equal to the size of the resource (%" PRIu64
                          ") minus resourceOffset (%" PRIu64 ").",
-                         func_name, parameter_name, bind.size, resource_size, bind.resourceOffset);
+                         bind.size, resource_size, bind.resourceOffset);
     }
 
     return skip;
 }
 
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const &image_state,
-                                                               VkImageSubresource const &subresource, uint32_t image_idx,
-                                                               uint32_t bind_idx) const {
+                                                               VkImageSubresource const &subresource, const Location &bind_loc,
+                                                               const Location &subresource_loc) const {
     bool skip =
         ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask, image_state.disjoint,
                                 "vkQueueSparseBind()", "VUID-VkSparseImageMemoryBind-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=
-            LogError(image_state.Handle(), "VUID-VkSparseImageMemoryBind-subresource-01106",
-                     "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].subresource.mipLevel (%" PRIu32
-                     ") is not less than mipLevels (%" PRIu32 ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
-                     bind_idx, image_idx, subresource.mipLevel, image_state.createInfo.mipLevels, bind_idx, image_idx);
+            LogError("VUID-VkSparseImageMemoryBind-subresource-01106", image_state.Handle(), subresource_loc.dot(Field::mipLevel),
+                     "(%" PRIu32 ") is not less than mipLevels (%" PRIu32 ") of %s.image.", subresource.mipLevel,
+                     image_state.createInfo.mipLevels, bind_loc.Fields().c_str());
     }
 
     if (subresource.arrayLayer >= image_state.createInfo.arrayLayers) {
         skip |=
-            LogError(image_state.Handle(), "VUID-VkSparseImageMemoryBind-subresource-01106",
-                     "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].subresource.arrayLayer (%" PRIu32
-                     ") is not less than arrayLayers (%" PRIu32 ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
-                     bind_idx, image_idx, subresource.arrayLayer, image_state.createInfo.arrayLayers, bind_idx, image_idx);
+            LogError("VUID-VkSparseImageMemoryBind-subresource-01106", image_state.Handle(), subresource_loc.dot(Field::arrayLayer),
+                     "(%" PRIu32 ") is not less than arrayLayers (%" PRIu32 ") of %s.image.", subresource.arrayLayer,
+                     image_state.createInfo.arrayLayers, bind_loc.Fields().c_str());
     }
 
     return skip;
@@ -1687,7 +1683,7 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const
 
 // This will only be called after we are sure the image was created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
 bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, VkSparseImageMemoryBind const &bind,
-                                               uint32_t image_idx, uint32_t bind_idx) const {
+                                               const Location &bind_loc, const Location &memory_loc) const {
     bool skip = false;
 
     auto const mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
@@ -1695,77 +1691,81 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
         // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
         // one. We also need to check memory_bind.memory
         if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                             "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "]: memoryOffset (%" PRIu64
-                             ") is not less than the size (%" PRIu64 ") of memory",
-                             bind_idx, image_idx, bind.memoryOffset, mem_info->alloc_info.allocationSize);
+            skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", bind.memory, bind_loc.dot(Field::memoryOffset),
+                             "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of memory.", bind.memoryOffset,
+                             mem_info->alloc_info.allocationSize);
         }
     }
 
     if (image_state) {
-        skip |= ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, image_idx, bind_idx);
+        skip |= ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, bind_loc,
+                                                              memory_loc.dot(Field::subresource));
 
         for (auto const &requirements : image_state->sparse_requirements) {
             VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
             if (SafeModulo(bind.offset.x, granularity.width) != 0) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01107",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
+                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
+                                 bind_loc.dot(Field::offset).dot(Field::x),
+                                 "(%" PRIi32
                                  ") must be a multiple of the sparse image block width "
-                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image",
-                                 bind_idx, image_idx, bind.offset.x, granularity.width);
+                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image.",
+                                 bind.offset.x, granularity.width);
             }
 
             if (SafeModulo(bind.offset.y, granularity.height) != 0) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01109",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
+                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01109", image_state->Handle(),
+                                 bind_loc.dot(Field::offset).dot(Field::y),
+                                 "(%" PRIi32
                                  ") must be a multiple of the sparse image block height "
-                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image",
-                                 bind_idx, image_idx, bind.offset.y, granularity.height);
+                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image.",
+                                 bind.offset.y, granularity.height);
             }
 
             if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01111",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.z (%" PRIi32
+                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01111", image_state->Handle(),
+                                 bind_loc.dot(Field::offset).dot(Field::z),
+                                 "(%" PRIi32
                                  ") must be a multiple of the sparse image block depth "
-                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image",
-                                 bind_idx, image_idx, bind.offset.z, granularity.depth);
+                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image.",
+                                 bind.offset.z, granularity.depth);
             }
 
             VkExtent3D const subresource_extent = image_state->GetEffectiveSubresourceExtent(bind.subresource);
             if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
                 ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01108",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.width (%" PRIu32
+                skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01108", image_state->Handle(),
+                                 bind_loc.dot(Field::extent).dot(Field::width),
+                                 "(%" PRIu32
                                  ") must either be a multiple of the sparse image block width "
                                  "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32
                                  ")) of the image, or else (extent.width + offset.x) (%" PRIu32
-                                 ") must equal the width of the image subresource (%" PRIu32 ")",
-                                 bind_idx, image_idx, bind.extent.width, granularity.width, bind.extent.width + bind.offset.x,
-                                 subresource_extent.width);
+                                 ") must equal the width of the image subresource (%" PRIu32 ").",
+                                 bind.extent.width, granularity.width, bind.extent.width + bind.offset.x, subresource_extent.width);
             }
 
             if ((SafeModulo(bind.extent.height, granularity.height) != 0) &&
                 ((bind.extent.height + bind.offset.y) != subresource_extent.height)) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01110",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.height (%" PRIu32
-                                 ") must either be a multiple of the sparse image block height "
-                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32
-                                 ")) of the image, or else (extent.height + offset.y) (%" PRIu32
-                                 ") must equal the height of the image subresource (%" PRIu32 ")",
-                                 bind_idx, image_idx, bind.extent.height, granularity.height, bind.extent.height + bind.offset.y,
-                                 subresource_extent.height);
+                skip |=
+                    LogError("VUID-VkSparseImageMemoryBind-extent-01110", image_state->Handle(),
+                             bind_loc.dot(Field::extent).dot(Field::height),
+                             "(%" PRIu32
+                             ") must either be a multiple of the sparse image block height "
+                             "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32
+                             ")) of the image, or else (extent.height + offset.y) (%" PRIu32
+                             ") must equal the height of the image subresource (%" PRIu32 ").",
+                             bind.extent.height, granularity.height, bind.extent.height + bind.offset.y, subresource_extent.height);
             }
 
             if ((SafeModulo(bind.extent.depth, granularity.depth) != 0) &&
                 ((bind.extent.depth + bind.offset.z) != subresource_extent.depth)) {
-                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01112",
-                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.depth (%" PRIu32
+                skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01112", image_state->Handle(),
+                                 bind_loc.dot(Field::extent).dot(Field::depth),
+                                 "(%" PRIu32
                                  ") must either be a multiple of the sparse image block depth "
                                  "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32
                                  ")) of the image, or else (extent.depth + offset.z) (%" PRIu32
-                                 ") must equal the depth of the image subresource (%" PRIu32 ")",
-                                 bind_idx, image_idx, bind.extent.depth, granularity.depth, bind.extent.depth + bind.offset.z,
-                                 subresource_extent.depth);
+                                 ") must equal the depth of the image subresource (%" PRIu32 ").",
+                                 bind.extent.depth, granularity.depth, bind.extent.depth + bind.offset.z, subresource_extent.depth);
             }
         }
     }
@@ -1774,24 +1774,23 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
 }
 
 bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                const char *apiName) const {
+                                                ErrorObject &errorObj) const {
     bool skip = false;
-
     if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext_features.bufferDeviceAddress) {
-        skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324",
-                         "%s: The bufferDeviceAddress feature must: be enabled.", apiName);
+        skip |= LogError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324", pInfo->buffer, errorObj.location,
+                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
     if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice &&
         !enabled_features.buffer_device_address_ext_features.bufferDeviceAddressMultiDevice) {
-        skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-device-03325",
-                         "%s: If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must: be enabled.",
-                         apiName);
+        skip |= LogError("VUID-vkGetBufferDeviceAddress-device-03325", pInfo->buffer, errorObj.location,
+                         "If device was created with multiple physical devices, then the "
+                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
     }
 
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     if (buffer_state) {
+        const char *apiName = errorObj.location.StringFunc();
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
             skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, apiName, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
         }
@@ -1804,19 +1803,19 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
-                                          "vkGetBufferDeviceAddressEXT");
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                          ErrorObject &errorObj) const {
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
-                                          "vkGetBufferDeviceAddressKHR");
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                          ErrorObject &errorObj) const {
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo),
-                                          "vkGetBufferDeviceAddress");
+bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
+                                                       ErrorObject &errorObj) const {
+    return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,

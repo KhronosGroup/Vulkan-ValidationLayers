@@ -23,56 +23,66 @@
 #include <limits>
 
 #include "generated/error_location_helper.h"
+#include "logging.h"
 #include "containers/custom_containers.h"
-namespace core_error {
 
+// Holds the Location of where in a function/struct we are
+// the goal is to allow a system that we can pass around this information
+// and the string is generated when we actually have to log an error message
 struct Location {
     static const uint32_t kNoIndex = vvl::kU32Max;
 
     // name of the vulkan function we're checking
-    Func function;
+    const vvl::Func function;
 
-    Struct structure;
-    Field field;
-    // optional index if checking an array.
-    uint32_t index;
+    const vvl::Struct structure;
+    const vvl::Field field;
+    const uint32_t index;  // optional index if checking an array.
+    const bool pNext;      // will print out it is from a pNext chain
     const Location* prev;
 
-    Location(Func func, Struct s, Field f = Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(s), field(f), index(i), prev(nullptr) {}
-    Location(Func func, Field f = Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(Struct::Empty), field(f), index(i), prev(nullptr) {}
-    Location(const Location& prev_loc, Struct s, Field f, uint32_t i)
-        : function(prev_loc.function), structure(s), field(f), index(i), prev(&prev_loc) {}
+    Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
+        : function(func), structure(s), field(f), index(i), pNext(false), prev(nullptr) {}
+    Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
+        : function(func), structure(vvl::Struct::Empty), field(f), index(i), pNext(false), prev(nullptr) {}
+    Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
+        : function(prev_loc.function), structure(s), field(f), index(i), pNext(p), prev(&prev_loc) {}
 
     void AppendFields(std::ostream &out) const;
-    std::string Fields() const {
-        std::stringstream out;
-        AppendFields(out);
-        return out.str();
-    }
-    std::string Message() const {
-        std::stringstream out;
-        out << StringFunc() << "(): ";
-        AppendFields(out);
-        return out.str();
-    }
+    std::string Fields() const;
+    std::string Message() const;
 
     // the dot() method is for walking down into a structure that is being validated
     // eg:  loc.dot(Field::pMemoryBarriers, 5).dot(Field::srcStagemask)
-    Location dot(Struct s, Field sub_field, uint32_t sub_index = kNoIndex) const {
-        Location result(*this, s, sub_field, sub_index);
+    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index, bool pNext = false) const {
+        Location result(*this, s, sub_field, sub_index, pNext);
         return result;
     }
-    Location dot(Field sub_field, uint32_t sub_index = kNoIndex) const {
-        Location result(*this, this->structure, sub_field, sub_index);
+    Location dot(vvl::Struct s, vvl::Field sub_field, bool pNext = false) const {
+        Location result(*this, s, sub_field, kNoIndex, pNext);
+        return result;
+    }
+    Location dot(vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
+        Location result(*this, this->structure, sub_field, sub_index, false);
         return result;
     }
 
-    const char* StringFunc() const { return String(function); }
-    const char* StringStruct() const { return String(structure); }
-    const char* StringField() const { return String(field); }
+    const char* StringFunc() const { return vvl::String(function); }
+    const char* StringStruct() const { return vvl::String(structure); }
+    const char* StringField() const { return vvl::String(field); }
 };
+
+// Contains the base information needed for errors to be logged out
+// Created for each function as a starting point to build off of
+struct ErrorObject {
+    const Location location;   // starting location
+    VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
+    LogObjectList objlist;
+
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_) : location(Location(command_)), handle(handle_), objlist(handle) {}
+};
+
+namespace vvl {
 
 template <typename VuidFunctor>
 struct LocationVuidAdapter {
@@ -156,4 +166,4 @@ static const std::string& FindVUID(OuterKey key, const Location& loc, const Tabl
     return empty;
 }
 
-}  // namespace core_error
+}  // namespace vvl

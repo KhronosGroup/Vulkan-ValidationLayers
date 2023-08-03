@@ -26,6 +26,7 @@
 #include "generated/vk_safe_struct.h"
 #include "generated/vk_validation_error_messages.h"
 #include "external/xxhash.h"
+#include "error_location.h"
 
 VKAPI_ATTR void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes
@@ -347,7 +348,7 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view 
     return true;
 }
 
-VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
+VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects, const Location *loc,
                        std::string_view vuid_text, const char *format, va_list argptr) {
     assert(*(vuid_text.data() + vuid_text.size()) == '\0');
 
@@ -391,6 +392,11 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
         result = vsnprintf(str_plus_spec_text.data(), str_plus_spec_text.size(), format, argptr);
         // remove the `\0' character from the string
         str_plus_spec_text.resize(result);
+    }
+
+    // TODO - make Location a reference once old LogError is gone
+    if (loc) {
+        str_plus_spec_text = loc->Message() + " " + str_plus_spec_text;
     }
 
     // Append the spec error text to the error message, unless it contains a word treated as special

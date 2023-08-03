@@ -19,7 +19,7 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (buildListVUID, getVUID, incIndent, decIndent, addIndent)
+from generators.generator_utils import (buildListVUID, getVUID, incIndent, decIndent, addIndent, error_object_functions)
 from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
 from generators.base_generator import BaseGenerator
 
@@ -230,7 +230,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             terminator = ';\n' if 'ValidationCache' in command.name else ' override;\n'
 
             if pre_call_validate:
-                out.append(f'bool PreCallValidate{prototype} const{terminator}')
+                prePrototype = prototype
+                if command.name in error_object_functions:
+                    prePrototype = prePrototype.replace(')', ',\n    ErrorObject&                                errorObj)')
+                out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
             if pre_call_record:
                 out.append(f'void PreCallRecord{prototype}{terminator}')
@@ -323,8 +326,11 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
 
             # Output PreCallValidateAPI function if necessary
             if pre_call_validate:
+                prePrototype = prototype
+                if command.name in error_object_functions:
+                    prePrototype = prePrototype.replace(')', ',\n    ErrorObject&                                errorObj)')
                 out.append('\n')
-                out.append(f'bool ObjectLifetimes::PreCallValidate{prototype} const {{\n')
+                out.append(f'bool ObjectLifetimes::PreCallValidate{prePrototype} const {{\n')
                 out.append('    bool skip = false;\n')
                 out.append(f'{pre_call_validate}\n')
                 out.append('    return skip;\n')

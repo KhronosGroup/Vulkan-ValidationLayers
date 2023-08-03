@@ -5275,8 +5275,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 }
 
 bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                 const void *pValues) const {
+                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
+                                                 ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
@@ -5293,8 +5293,8 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
                 VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
                 if (matching_stages != range.stageFlags) {
                     skip |=
-                        LogError(commandBuffer, "VUID-vkCmdPushConstants-offset-01796",
-                                 "vkCmdPushConstants(): stageFlags (%s, offset (%" PRIu32 "), and size (%" PRIu32
+                        LogError("VUID-vkCmdPushConstants-offset-01796", commandBuffer, errorObj.location,
+                                 "stageFlags (%s, offset (%" PRIu32 "), and size (%" PRIu32
                                  "),  must contain all stages in overlapping VkPushConstantRange stageFlags (%s), offset (%" PRIu32
                                  "), and size (%" PRIu32 ") in %s.",
                                  string_VkShaderStageFlags(stageFlags).c_str(), offset, size,
@@ -5308,11 +5308,10 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
         }
         if (found_stages != stageFlags) {
             uint32_t missing_stages = ~found_stages & stageFlags;
-            skip |= LogError(
-                commandBuffer, "VUID-vkCmdPushConstants-offset-01795",
-                "vkCmdPushConstants(): %s, VkPushConstantRange in %s overlapping offset = %d and size = %d, do not contain %s.",
-                string_VkShaderStageFlags(stageFlags).c_str(), FormatHandle(layout).c_str(), offset, size,
-                string_VkShaderStageFlags(missing_stages).c_str());
+            skip |= LogError("VUID-vkCmdPushConstants-offset-01795", commandBuffer, errorObj.location,
+                             "%s, VkPushConstantRange in %s overlapping offset = %d and size = %d, do not contain %s.",
+                             string_VkShaderStageFlags(stageFlags).c_str(), FormatHandle(layout).c_str(), offset, size,
+                             string_VkShaderStageFlags(missing_stages).c_str());
         }
     }
     return skip;

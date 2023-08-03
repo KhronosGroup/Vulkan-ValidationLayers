@@ -60,10 +60,8 @@ bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags
     bool skip = false;
     if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, sync_vuid_maps::SubmitError::kHostStageMask);
-        skip |= LogError(
-            device, vuid,
-            "%s stage mask must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.",
-            loc.Message().c_str());
+        skip |= LogError(vuid, device, loc,
+                         "must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.");
     }
     return skip;
 }
@@ -91,8 +89,7 @@ bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *fence_state, const ch
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateBinaryWait(const core_error::Location &loc, VkQueue queue,
-                                              const SEMAPHORE_STATE &semaphore_state) {
+bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue, const SEMAPHORE_STATE &semaphore_state) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
 
@@ -122,7 +119,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const core_error::Location &loc, V
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateWaitSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value) {
+bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &loc, VkSemaphore semaphore, uint64_t value) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
@@ -154,7 +151,7 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const core_error::Location &loc
     return skip;
 }
 
-bool SemaphoreSubmitState::ValidateSignalSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value) {
+bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &loc, VkSemaphore semaphore, uint64_t value) {
     using sync_vuid_maps::GetQueueSubmitVUID;
     using sync_vuid_maps::SubmitError;
     bool skip = false;
@@ -658,8 +655,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
 }
 
 struct RenderPassDepState {
-    using Location = core_error::Location;
-    using Field = core_error::Field;
+    using Field = vvl::Field;
 
     const CoreChecks *core;
     const std::string func_name;
@@ -1427,15 +1423,14 @@ static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
     return subpass == VK_SUBPASS_EXTERNAL ? sync_utils::kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
 }
 
-bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const Location &in_loc,
+bool CoreChecks::ValidateSubpassDependency(ErrorObject &errorObj, const Location &in_loc,
                                            const VkSubpassDependency2 &dependency) const {
     bool skip = false;
-    Location loc = in_loc;
     VkMemoryBarrier2KHR converted_barrier;
     const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dependency.pNext);
+    const Location loc = mem_barrier ? in_loc.dot(Field::pNext) : in_loc;
 
     if (mem_barrier) {
-        loc = in_loc.dot(Field::pNext);
         converted_barrier = *mem_barrier;
     } else {
         // use the subpass dependency flags, upconverted into wider synchronization2 fields.
@@ -1445,13 +1440,13 @@ bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const L
         converted_barrier.dstAccessMask = dependency.dstAccessMask;
     }
     auto src_queue_flags = SubpassToQueueFlags(dependency.srcSubpass);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
-    skip |= ValidateAccessMask(objects, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
+    skip |= ValidatePipelineStage(errorObj.objlist, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
+    skip |= ValidateAccessMask(errorObj.objlist, loc.dot(Field::srcAccessMask), src_queue_flags, converted_barrier.srcAccessMask,
                                converted_barrier.srcStageMask);
 
     auto dst_queue_flags = SubpassToQueueFlags(dependency.dstSubpass);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
-    skip |= ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
+    skip |= ValidatePipelineStage(errorObj.objlist, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
+    skip |= ValidateAccessMask(errorObj.objlist, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
                                converted_barrier.dstStageMask);
     return skip;
 }
@@ -1796,7 +1791,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
         const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
         // Secondary CB case w/o FB specified delay validation
         auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
-        core_error::LocationCapture loc_capture(loc);
+        vvl::LocationCapture loc_capture(loc);
         const auto render_pass = rp_state->renderPass();
         cb_state->cmd_execute_commands_functions.emplace_back(
             [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
@@ -1831,7 +1826,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
         const bool mode_concurrent = handle_state && handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT;
         if (!mode_concurrent) {
             const auto typed_handle = BarrierTypedHandle(barrier);
-            core_error::LocationCapture loc_capture(loc);
+            vvl::LocationCapture loc_capture(loc);
             cb_state->queue_submit_functions.emplace_back(
                 [loc_capture, typed_handle, src_queue_family, dst_queue_family](
                     const ValidationStateTracker &device_data, const QUEUE_STATE &queue_state, const CMD_BUFFER_STATE &cb_state) {
@@ -2024,7 +2019,7 @@ using sync_vuid_maps::QueueError;
 
 class ValidatorState {
   public:
-    ValidatorState(const ValidationStateTracker *device_data, LogObjectList &&obj, const core_error::Location &location,
+    ValidatorState(const ValidationStateTracker *device_data, LogObjectList &&obj, const Location &location,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : device_data_(device_data),
           objects_(std::move(obj)),
@@ -2112,7 +2107,7 @@ class ValidatorState {
   protected:
     const ValidationStateTracker *device_data_;
     const LogObjectList objects_;
-    const core_error::Location loc_;
+    const Location loc_;
     const VulkanTypedHandle barrier_handle_;
     const VkSharingMode sharing_mode_;
     const uint32_t limit_;
@@ -2467,13 +2462,11 @@ bool CoreChecks::ValidateBarriersForShaderTileImage(const LogObjectList &objlist
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Barrier &mem_barrier = pMemBarriers[i];
-        Location loc(outer_loc.function);
+        auto structure = mem_barrier2 ? Struct::VkMemoryBarrier2 : Struct::VkMemoryBarrier;
+        Location loc(outer_loc.function, structure, Field::pMemoryBarriers, i);
         if constexpr (mem_barrier2) {
-            loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
             skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::srcStageMask), mem_barrier.srcStageMask, vuid);
             skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::dstStageMask), mem_barrier.dstStageMask, vuid);
-        } else {
-            loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
         }
 
         skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask, vuid);
