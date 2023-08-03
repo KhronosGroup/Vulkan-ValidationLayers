@@ -3442,7 +3442,7 @@ void ValidationStateTracker::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer co
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                                         VkFlags flags) {
+                                                         VkQueryControlFlags flags) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
@@ -3453,7 +3453,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
         num_queries = std::max(num_queries, bits);
     }
     for (uint32_t i = 0; i < num_queries; ++i) {
-        QueryObject query_obj = {queryPool, slot};
+        QueryObject query_obj = {queryPool, slot, flags};
         cb_state->RecordCmd(CMD_BEGINQUERY);
         if (!disabled[query_validation]) {
             cb_state->BeginQuery(query_obj);
@@ -4673,7 +4673,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuff
     }
 
     for (uint32_t i = 0; i < num_queries; ++i) {
-        QueryObject query_obj = {queryPool, slot, 0, true, index + i};
+        QueryObject query_obj = {queryPool, slot, flags, 0, true, index + i};
         cb_state->RecordCmd(CMD_BEGINQUERYINDEXEDEXT);
         cb_state->BeginQuery(query_obj);
     }
@@ -4690,7 +4690,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
     }
 
     for (uint32_t i = 0; i < num_queries; ++i) {
-        QueryObject query_obj = {queryPool, slot, 0, true, index + i};
+        QueryObject query_obj = {queryPool, slot, 0, 0, true, index + i};
         cb_state->RecordCmd(CMD_ENDQUERYINDEXEDEXT);
         cb_state->EndQuery(query_obj);
     }

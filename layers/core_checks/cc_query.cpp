@@ -303,8 +303,8 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const c
     return false;
 }
 
-bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, VkFlags flags, uint32_t index,
-                                    CMD_TYPE cmd, const ValidateBeginQueryVuids *vuids) const {
+bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, VkQueryControlFlags flags,
+                                    uint32_t index, CMD_TYPE cmd, const ValidateBeginQueryVuids *vuids) const {
     bool skip = false;
     auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
@@ -552,7 +552,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                              VkFlags flags) const {
+                                              VkQueryControlFlags flags) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -711,7 +711,8 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
     });
 }
 
-void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
+                                            VkQueryControlFlags flags) {
     if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, slot};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, CMD_BEGINQUERY);
@@ -1118,7 +1119,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     if (disabled[query_validation]) return false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    QueryObject query_obj = {queryPool, slot, 0, true, index};
+    QueryObject query_obj = {queryPool, slot, flags, 0, true, index};
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
     struct BeginQueryIndexedVuids : ValidateBeginQueryVuids {
         BeginQueryIndexedVuids() : ValidateBeginQueryVuids() {
@@ -1195,7 +1196,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
 void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       VkQueryControlFlags flags, uint32_t index) {
     if (disabled[query_validation]) return;
-    QueryObject query_obj = {queryPool, slot, 0, true, index};
+    QueryObject query_obj = {queryPool, slot, flags, 0, true, index};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, CMD_BEGINQUERYINDEXEDEXT);
 }
 
@@ -1203,7 +1204,7 @@ void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffe
                                                     uint32_t index) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query_obj = {queryPool, slot, 0, true, index};
+    QueryObject query_obj = {queryPool, slot, 0, 0, true, index};
     query_obj.end_command_index = cb_state->command_count;  // off by one because cb_state hasn't recorded this yet
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
@@ -1211,7 +1212,7 @@ void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       uint32_t index) const {
     if (disabled[query_validation]) return false;
-    QueryObject query_obj = {queryPool, slot, 0, true, index};
+    QueryObject query_obj = {queryPool, slot, 0, 0, true, index};
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     struct EndQueryIndexedVuids : ValidateEndQueryVuids {

@@ -784,12 +784,12 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
     }
 
-    bool active_occlusion_query = false;
+    const QueryObject *active_occlusion_query = nullptr;
     for (const auto &active_query : cb_state.activeQueries) {
         auto query_pool_state = Get<QUERY_POOL_STATE>(active_query.pool);
         const auto queryType = query_pool_state->createInfo.queryType;
         if (queryType == VK_QUERY_TYPE_OCCLUSION) {
-            active_occlusion_query = true;
+            active_occlusion_query = &active_query;
         }
         if (queryType != VK_QUERY_TYPE_OCCLUSION && queryType != VK_QUERY_TYPE_PIPELINE_STATISTICS) {
             skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-commandBuffer-07594",
@@ -1308,6 +1308,17 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "buffer %s (pCommandBuffers[%" PRIu32
                                  "]) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE",
                                  FormatHandle(commandBuffer).c_str(), FormatHandle(pCommandBuffers[i]).c_str(), i);
+            }
+            if ((sub_cb_state.inheritanceInfo.queryFlags & active_occlusion_query->control_flags) !=
+                active_occlusion_query->control_flags) {
+                const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00103",
+                                 "vkCmdExecuteCommands(): command buffer %s has an active occlusion query with VkQueryControlFlags "
+                                 "0X%x, but secondary command "
+                                 "buffer %s (pCommandBuffers[%" PRIu32
+                                 "]) was recorded with VkCommandBufferInheritanceInfo::queryFlags 0X%x",
+                                 FormatHandle(commandBuffer).c_str(), active_occlusion_query->control_flags,
+                                 FormatHandle(pCommandBuffers[i]).c_str(), i, sub_cb_state.inheritanceInfo.queryFlags);
             }
         }
     }
