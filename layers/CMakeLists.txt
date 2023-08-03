@@ -25,8 +25,12 @@ target_sources(VkLayer_utils PRIVATE
     containers/custom_containers.h
     error_message/logging.h
     error_message/logging.cpp
+    error_message/error_location.cpp
+    error_message/error_location.h
     external/xxhash.h
     external/xxhash.cpp
+    ${API_TYPE}/generated/error_location_helper.cpp
+    ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/vk_function_pointers.cpp
     ${API_TYPE}/generated/vk_function_pointers.h
     ${API_TYPE}/generated/vk_format_utils.h
@@ -236,8 +240,6 @@ target_sources(vvl PRIVATE
     core_checks/cc_video.cpp
     core_checks/cc_wsi.cpp
     core_checks/cc_ycbcr.cpp
-    error_message/core_error_location.cpp
-    error_message/core_error_location.h
     error_message/validation_error_enums.h
     external/vma/vma.h
     external/vma/vma.cpp
@@ -248,8 +250,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/valid_enum_values.h
     ${API_TYPE}/generated/command_validation.cpp
     ${API_TYPE}/generated/dynamic_state_helper.cpp
-    ${API_TYPE}/generated/error_location_helper.cpp
-    ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/layer_chassis_dispatch.cpp
     layer_chassis_dispatch_manual.cpp

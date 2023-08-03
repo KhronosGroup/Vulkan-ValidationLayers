@@ -23,6 +23,7 @@
 
 import os
 from generators.vulkan_object import (Command)
+from generators.generator_utils import (error_object_functions)
 from generators.base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
@@ -297,6 +298,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
+#include "error_message/error_location.h"
 #include "vk_object_types.h"
 #include "vulkan/vk_layer.h"
 #include "vk_enum_string_helper.h"
@@ -532,10 +534,19 @@ class ValidationObject {
         }
 
         // Debug Logging Helpers
+        // deprecated LogError - moving to use one with Location
         bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
-            const bool result = LogMsg(report_data, kErrorBit, objlist, vuid_text, format, argptr);
+            const bool result = LogMsg(report_data, kErrorBit, objlist, nullptr, vuid_text, format, argptr);
+            va_end(argptr);
+            return result;
+        }
+
+        bool DECORATE_PRINTF(5, 6) LogError(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
+            va_list argptr;
+            va_start(argptr, format);
+            const bool result = LogMsg(report_data, kErrorBit, objlist, &loc, vuid_text, format, argptr);
             va_end(argptr);
             return result;
         }
@@ -543,7 +554,7 @@ class ValidationObject {
         bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
-            const bool result = LogMsg(report_data, kWarningBit, objlist, vuid_text, format, argptr);
+            const bool result = LogMsg(report_data, kWarningBit, objlist, nullptr, vuid_text, format, argptr);
             va_end(argptr);
             return result;
         }
@@ -551,7 +562,7 @@ class ValidationObject {
         bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
-            const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, vuid_text, format, argptr);
+            const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, nullptr, vuid_text, format, argptr);
             va_end(argptr);
             return result;
         }
@@ -559,7 +570,7 @@ class ValidationObject {
         bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
-            const bool result = LogMsg(report_data, kInformationBit, objlist, vuid_text, format, argptr);
+            const bool result = LogMsg(report_data, kInformationBit, objlist, nullptr, vuid_text, format, argptr);
             va_end(argptr);
             return result;
         }
@@ -567,7 +578,7 @@ class ValidationObject {
         bool DECORATE_PRINTF(4, 5) LogVerbose(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
-            const bool result = LogMsg(report_data, kVerboseBit, objlist, vuid_text, format, argptr);
+            const bool result = LogMsg(report_data, kVerboseBit, objlist, nullptr, vuid_text, format, argptr);
             va_end(argptr);
             return result;
         }
@@ -647,9 +658,10 @@ class ValidationObject {
             parameters = parameters.replace('\n', '')
             parameters = ' '.join(parameters.split()) # remove duplicate whitespace
             result = f', {command.returnType} result' if command.returnType == 'VkResult' or command.returnType == 'VkDeviceAddress' else ''
+            errorObject = ', ErrorObject& errorObj' if command.name in error_object_functions else ''
 
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
-            out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}) const {{ return false; }};\n')
+            out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}{errorObject}) const {{ return false; }};\n')
             out.append(f'        virtual void PreCallRecord{command.name[2:]}({parameters}) {{}};\n')
             out.append(f'        virtual void PostCallRecord{command.name[2:]}({parameters}{result}) {{}};\n')
             out.extend(['#endif\n'] if command.protect else [])
@@ -1729,13 +1741,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
             # Set up skip and locking
             out.append('    bool skip = false;\n')
 
+            errorObj = ''
+            if command.name in error_object_functions:
+                out.append(f'    ErrorObject errorObj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
+                errorObj = ', errorObj'
+
             # Generate pre-call validation source code
             if not command.instance:
                 out.append(f'    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
             else:
                 out.append('    for (const ValidationObject* intercept : layer_data->object_dispatch) {\n')
             out.append('        auto lock = intercept->ReadLock();\n')
-            out.append(f'        skip |= intercept->PreCallValidate{command.name[2:]}({paramsList});\n')
+            out.append(f'        skip |= intercept->PreCallValidate{command.name[2:]}({paramsList}{errorObj});\n')
             out.append(f'        if (skip) {return_map[command.returnType]}\n')
             out.append('    }\n')
 

@@ -38,7 +38,7 @@ struct CommandBufferSubmitState {
 
     CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
 
-    bool Validate(const core_error::Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
+    bool Validate(const Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
         bool skip = false;
         skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
         auto cmd = cb_state.commandBuffer();
@@ -274,8 +274,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
-            auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
-            info_loc.structure = Struct::VkCommandBufferSubmitInfo;
+            auto info_loc = loc.dot(Struct::VkCommandBufferSubmitInfo, Field::pCommandBufferInfos, i);
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBufferInfos[i].commandBuffer);
             skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
@@ -580,7 +579,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 }
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                VkFence fence) const {
+                                                VkFence fence, ErrorObject &errorObj) const {
     auto queue_data = Get<QUEUE_STATE>(queue);
     auto fence_state = Get<FENCE_STATE>(fence);
     bool skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114",
@@ -591,14 +590,14 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
     const auto queue_flags = physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
-        skip |= LogError(queue, "VUID-vkQueueBindSparse-queuetype",
-                         "vkQueueBindSparse(): a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
+        skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, errorObj.location,
+                         "a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
     }
 
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags);
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
-        Location loc(Func::vkQueueBindSparse, Struct::VkBindSparseInfo);
+        const Location loc = errorObj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, bind_info, loc);
@@ -610,11 +609,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     auto buffer_state = Get<BUFFER_STATE>(buffer_bind.buffer);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
-                        std::stringstream parameter_name;
-                        parameter_name << "pBindInfo[" << bind_idx << "].pBufferBinds[" << buffer_idx << " ].pBinds["
-                                       << buffer_bind_idx << "]";
-                        skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, "vkQueueBindSparse()",
-                                                         parameter_name.str().c_str());
+                        const Location buffer_loc = loc.dot(Field::pBufferBinds, buffer_idx);
+                        const Location bind_loc = buffer_loc.dot(Field::pBinds, buffer_bind_idx);
+                        skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, bind_loc);
                     }
                 }
             }
@@ -628,13 +625,11 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
-                        std::stringstream parameter_name;
-                        parameter_name << "pBindInfo[" << bind_idx << "].pImageOpaqueBinds[" << image_opaque_idx << " ].pBinds["
-                                       << image_opaque_bind_idx << "]";
+                        const Location image_loc = loc.dot(Field::pImageOpaqueBinds, image_opaque_idx);
+                        const Location bind_loc = image_loc.dot(Field::pBinds, image_opaque_bind_idx);
                         // Assuming that no multiplanar disjointed images are possible with sparse memory binding. Needs
                         // confirmation
-                        skip |= ValidateSparseMemoryBind(memory_bind, image_state->requirements[0].size, "vkQueueBindSparse()",
-                                                         parameter_name.str().c_str());
+                        skip |= ValidateSparseMemoryBind(memory_bind, image_state->requirements[0].size, bind_loc);
                     }
                 }
             }
@@ -642,20 +637,20 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
         if (bind_info.pImageBinds) {
             for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
+                const Location bind_loc = loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<IMAGE_STATE>(image_bind.image);
 
                 if (image_state && !(image_state->sparse_residency)) {
-                    skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
-                                     "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: image must have been created with "
-                                     "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",
-                                     bind_idx, image_idx);
+                    skip |= LogError("VUID-VkSparseImageMemoryBindInfo-image-02901", image_bind.image, bind_loc.dot(Field::image),
+                                     "must have been created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set.");
                 }
 
                 if (image_bind.pBinds) {
                     for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
                         const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
-                        skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, image_idx, image_bind_idx);
+                        skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, bind_loc,
+                                                              bind_loc.dot(Field::pBinds, image_bind_idx));
                     }
                 }
             }

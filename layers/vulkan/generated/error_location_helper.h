@@ -25,20 +25,7 @@
 #include <string_view>
 #include <vulkan/vulkan.h>
 
-// structure to track where a validation error occurs, and capture enough information
-// to generate the start of a log message and find the correct VUID for many commonvalidity errors.
-//
-// usage example:
-// Location outer(Func::vkCmdPipelineBarrier, Struct::VkImageMemoryBarrier);
-//     auto struct_level = outer.dot(Field::pImageMemoryBarriers, i);
-//        auto field_level = struct_level.dot(Field::srcAccessMask);
-//        std::cout << field_level.Message() << std::endl;
-// will print:
-//        vkCmdPipelineBarrier(): pImageMemoryBarriers[42].srcAccessMask
-// VUIDs can be found for an error in generic code using a combination of the
-// function, structure, and fieldmembers.
-
-namespace core_error {
+namespace vvl {
 enum class Func {
     Empty = 0,
     vkAcquireDrmDisplayEXT = 1,
@@ -4165,6 +4152,6 @@ enum class Field {
 const char* String(Func func);
 const char* String(Struct structure);
 const char* String(Field field);
-}  // namespace core_error
+}  // namespace vvl
 
 // NOLINTEND

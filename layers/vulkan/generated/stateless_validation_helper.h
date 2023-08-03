@@ -166,7 +166,8 @@ bool PreCallValidateQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence) const override;
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
@@ -389,7 +390,8 @@ bool PreCallValidateCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const override;
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
@@ -665,7 +667,8 @@ bool PreCallValidateCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues) const override;
+    const void*                                 pValues,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
@@ -814,7 +817,8 @@ bool PreCallValidateCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const override;
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
@@ -844,7 +848,8 @@ bool PreCallValidateSignalSemaphore(
     const VkSemaphoreSignalInfo*                pSignalInfo) const override;
 bool PreCallValidateGetBufferDeviceAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const override;
+    const VkBufferDeviceAddressInfo*            pInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateGetBufferOpaqueCaptureAddress(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) const override;
@@ -1345,7 +1350,8 @@ bool PreCallValidateCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const override;
+    VkRenderPass*                               pRenderPass,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
@@ -1499,7 +1505,8 @@ bool PreCallValidateWaitForPresentKHR(
     uint64_t                                    timeout) const override;
 bool PreCallValidateGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const override;
+    const VkBufferDeviceAddressInfo*            pInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) const override;
@@ -2223,7 +2230,8 @@ bool PreCallValidateCreateMetalSurfaceEXT(
 #endif // VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const override;
+    const VkBufferDeviceAddressInfo*            pInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,

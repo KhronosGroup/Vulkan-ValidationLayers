@@ -1179,15 +1179,16 @@ bool IsRegionOverlapping(VkImageSubresourceRange range1, VkImageSubresourceRange
 }
 
 bool CoreChecks::ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
-                                         const char *error_type, const char *function_name) const {
+                                         const Location &loc) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     assert(attachment != VK_ATTACHMENT_UNUSED);
     if (attachment >= attachment_count) {
         const char *vuid =
             use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-03051" : "VUID-VkRenderPassCreateInfo-attachment-00834";
-        skip |= LogError(device, vuid, "%s: %s attachment %d must be less than the total number of attachments %d.", function_name,
-                         error_type, attachment, attachment_count);
+        skip |= LogError(vuid, device, loc.dot(Field::attachment),
+                         "is %" PRIu32 ", but must be less than the total number of attachments (%" PRIu32 ").", attachment,
+                         attachment_count);
     }
     return skip;
 }
@@ -1257,8 +1258,7 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
 // Handles attachment references regardless of type (input, color, depth, etc)
 // Input attachments have extra VUs associated with them
 bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,
-                                             const VkFormat attachment_format, bool input, const char *error_type,
-                                             const char *function_name) const {
+                                             const VkFormat attachment_format, bool input, const Location &loc) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
@@ -1273,9 +1273,8 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             vuid = (use_rp2) ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-03077";
-            skip |= LogError(device, vuid,
-                             "%s: Layout for %s is %s but must not be VK_IMAGE_LAYOUT_[UNDEFINED|PREINITIALIZED|PRESENT_SRC_KHR].",
-                             function_name, error_type, string_VkImageLayout(reference.layout));
+            skip |= LogError(vuid, device, loc, "is %s but must not be VK_IMAGE_LAYOUT_[UNDEFINED|PREINITIALIZED|PRESENT_SRC_KHR].",
+                             string_VkImageLayout(reference.layout));
             break;
 
         // Only other layouts in VUs to be checked
@@ -1285,11 +1284,11 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
         case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
             // First need to make sure feature bit is enabled and the format is actually a depth and/or stencil
             if (!enabled_features.core12.separateDepthStencilLayouts) {
-                skip |= LogError(device, "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
-                                 "%s: Layout for %s is %s but without separateDepthStencilLayouts enabled the layout must not "
+                skip |= LogError("VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313", device, loc,
+                                 "is %s but without separateDepthStencilLayouts enabled the layout must not "
                                  "be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
                                  "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 function_name, error_type, string_VkImageLayout(reference.layout));
+                                 string_VkImageLayout(reference.layout));
             } else if (IsImageLayoutDepthOnly(reference.layout)) {
                 if (attachment_reference_stencil_layout) {
                     // This check doesn't rely on the aspect mask value
@@ -1303,19 +1302,9 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                         stencil_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                         stencil_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                         stencil_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-                        skip |= LogError(device, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
-                                         "%s: In %s with pNext chain instance VkAttachmentReferenceStencilLayout, "
-                                         "the stencilLayout (%s) must not be "
-                                         "VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, "
-                                         "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "
-                                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                         "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR.",
-                                         function_name, error_type, string_VkImageLayout(stencil_layout));
+                        skip |= LogError("VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318", device,
+                                         loc.dot(Struct::VkAttachmentReferenceStencilLayout, Field::stencilLayout),
+                                         "(%s) is not a valid VkImageLayout.", string_VkImageLayout(stencil_layout));
                     }
                 }
             }
@@ -1325,20 +1314,19 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
             if (!enabled_features.core13.synchronization2) {
                 vuid = (use_rp2) ? "VUID-VkAttachmentReference2-synchronization2-06910"
                                  : "VUID-VkAttachmentReference-synchronization2-06910";
-                skip |= LogError(device, vuid,
-                                 "%s: Layout for %s is %s but without synchronization2 enabled the layout must not "
+                skip |= LogError(vuid, device, loc,
+                                 "is %s but without synchronization2 enabled the layout must not "
                                  "be VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR.",
-                                 function_name, error_type, string_VkImageLayout(reference.layout));
+                                 string_VkImageLayout(reference.layout));
             }
             break;
         case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
             if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
                 vuid = (use_rp2) ? "VUID-VkAttachmentReference2-attachmentFeedbackLoopLayout-07311"
                                  : "VUID-VkAttachmentReference-attachmentFeedbackLoopLayout-07311";
-                skip |= LogError(device, vuid,
-                                 "%s: Layout for %s is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
-                                 "attachmentFeedbackLoopLayout feature is not enabled",
-                                 function_name, error_type);
+                skip |= LogError(vuid, device, loc,
+                                 "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                 "attachmentFeedbackLoopLayout feature is not enabled");
             }
             break;
 
@@ -1350,7 +1338,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
 }
 
 bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                   const char *function_name) const {
+                                                   ErrorObject &errorObj) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
@@ -1358,6 +1346,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
     std::vector<bool> attach_first_use(pCreateInfo->attachmentCount, true);
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+        const Location loc = errorObj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         const auto ms_render_to_single_sample = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass.pNext);
         const auto subpass_depth_stencil_resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
@@ -1371,11 +1360,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
                                        : "VUID-VkSubpassDescription-pipelineBindPoint-04952";
-            skip |= LogError(device, vuid,
-                             "%s: Pipeline bind point for pSubpasses[%" PRIu32
+            skip |= LogError(vuid, device, loc,
+                             "Pipeline bind point for pSubpasses[%" PRIu32
                              "] must be VK_PIPELINE_BIND_POINT_GRAPHICS or "
                              "VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI.",
-                             function_name, i);
+                             i);
         }
 
         // Check input attachments first
@@ -1386,26 +1375,19 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             const uint32_t attachment_index = attachment_ref.attachment;
             const VkImageAspectFlags aspect_mask = attachment_ref.aspectMask;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                const Location input_loc = loc.dot(Field::pInputAttachments, j);
                 input_attachments.insert(attachment_index);
-                std::string error_type = "pSubpasses[" + std::to_string(i) + "].pInputAttachments[" + std::to_string(j) + "]";
-                skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
-                                                function_name);
+                skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, input_loc);
 
                 if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-attachment-02801"
                                                : "VUID-VkInputAttachmentAspectReference-aspectMask-01964";
-                    skip |= LogError(
-                        device, vuid,
-                        "%s: Aspect mask for input attachment reference %d in subpass %d includes VK_IMAGE_ASPECT_METADATA_BIT.",
-                        function_name, j, i);
+                    skip |= LogError(vuid, device, input_loc, "aspect mask includes VK_IMAGE_ASPECT_METADATA_BIT.");
                 } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                                           VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-attachment-04563"
                                                : "VUID-VkInputAttachmentAspectReference-aspectMask-02250";
-                    skip |= LogError(device, vuid,
-                                     "%s: Aspect mask for input attachment reference %d in subpass %d includes "
-                                     "VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit.",
-                                     function_name, j, i);
+                    skip |= LogError(vuid, device, input_loc, "aspect mask includes VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit.");
                 }
 
                 const VkImageLayout attachment_layout = attachment_ref.layout;
@@ -1413,28 +1395,24 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                               {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06912" : "VUID-VkSubpassDescription-attachment-06912";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, input_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
                 if (IsValueIn(attachment_layout,
                               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06918" : "VUID-VkSubpassDescription-attachment-06918";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, input_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
                 if (attachment_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06921" : "VUID-VkSubpassDescription-attachment-06921";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, input_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
 
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment_index < pCreateInfo->attachmentCount) {
                     const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_index].format;
-                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, true, error_type.c_str(),
-                                                        function_name);
+                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, true, input_loc);
 
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_index, ATTACHMENT_INPUT,
                                              attachment_ref.layout);
@@ -1443,7 +1421,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         const char *vuid =
                             use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-02525" : "VUID-VkRenderPassCreateInfo-pNext-01963";
                         // Assuming no disjoint image since there's no handle
-                        skip |= ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, false, function_name, vuid);
+                        skip |= ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, false,
+                                                        errorObj.location.StringFunc(), vuid);
                     }
 
                     if (attach_first_use[attachment_index]) {
@@ -1461,10 +1440,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             pCreateInfo->pAttachments[attachment_index].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                             const char *vuid =
                                 use_rp2 ? "VUID-VkSubpassDescription2-loadOp-03064" : "VUID-VkSubpassDescription-loadOp-00846";
-                            skip |= LogError(device, vuid,
-                                             "%s: attachment %u is first used as an input attachment in %s with loadOp set to "
-                                             "VK_ATTACHMENT_LOAD_OP_CLEAR.",
-                                             function_name, attachment_index, error_type.c_str());
+                            skip |= LogError(vuid, device, input_loc,
+                                             "loadOp is VK_ATTACHMENT_LOAD_OP_CLEAR and is where pAttachments[%" PRIu32
+                                             "] is first used.",
+                                             attachment_index);
                         }
                     }
                     attach_first_use[attachment_index] = false;
@@ -1476,13 +1455,13 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
                                                        : "VUID-VkSubpassDescription-pInputAttachments-02647";
-                            skip |= LogError(device, vuid, "%s: Input attachment %s format (%s) lacks sufficient format features.",
-                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            skip |= LogError(vuid, device, input_loc, "format (%s) lacks sufficient format features.",
+                                             string_VkFormat(attachment_format));
                         } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06499"
                                                        : "VUID-VkSubpassDescription-linearColorAttachment-06496";
-                            skip |= LogError(device, vuid, "%s: Input attachment %s format (%s) lacks sufficient format features.",
-                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            skip |= LogError(vuid, device, input_loc, "format (%s) lacks sufficient format features.",
+                                             string_VkFormat(attachment_format));
                         }
                     }
                 }
@@ -1493,8 +1472,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                     // Check for 0
                     if (aspect_mask == 0) {
-                        skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02800",
-                                         "%s: Input attachment %s aspect mask must not be 0.", function_name, error_type.c_str());
+                        skip |= LogError("VUID-VkSubpassDescription2-attachment-02800", device, input_loc,
+                                         "aspect mask must not be 0.");
                     } else {
                         const VkImageAspectFlags valid_bits =
                             (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT |
@@ -1505,9 +1484,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                         // Check for valid aspect mask bits
                         if (aspect_mask & ~valid_bits) {
-                            skip |= LogError(device, "VUID-VkSubpassDescription2-attachment-02799",
-                                             "%s: Input attachment %s aspect mask (0x%" PRIx32 ")is invalid.", function_name,
-                                             error_type.c_str(), aspect_mask);
+                            skip |= LogError("VUID-VkSubpassDescription2-attachment-02799", device, input_loc,
+                                             "aspect mask (0x%" PRIx32 ")is invalid.", aspect_mask);
                         }
                     }
                 }
@@ -1515,15 +1493,14 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         }
 
         for (uint32_t j = 0; j < subpass.preserveAttachmentCount; ++j) {
-            std::string error_type = "pSubpasses[" + std::to_string(i) + "].pPreserveAttachments[" + std::to_string(j) + "]";
+            const Location preserve_loc = loc.dot(Field::preserveAttachmentCount, j);
             uint32_t attachment = subpass.pPreserveAttachments[j];
             if (attachment == VK_ATTACHMENT_UNUSED) {
                 const char *vuid =
                     use_rp2 ? "VUID-VkSubpassDescription2-attachment-03073" : "VUID-VkSubpassDescription-attachment-00853";
-                skip |= LogError(device, vuid, "%s:  Preserve attachment (%d) must not be VK_ATTACHMENT_UNUSED.", function_name, j);
+                skip |= LogError(vuid, device, preserve_loc, "must not be VK_ATTACHMENT_UNUSED.");
             } else {
-                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, error_type.c_str(),
-                                                function_name);
+                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, preserve_loc);
                 if (attachment < pCreateInfo->attachmentCount) {
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_PRESERVE,
                                              VkImageLayout(0) /* preserve doesn't have any layout */);
@@ -1535,47 +1512,46 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             if (subpass.pResolveAttachments) {
-                std::string error_type = "pSubpasses[" + std::to_string(i) + "].pResolveAttachments[" + std::to_string(j) + "]";
+                const Location resolve_loc = loc.dot(Field::pResolveAttachments, j);
                 auto const &attachment_ref = subpass.pResolveAttachments[j];
                 if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount,
-                                                    error_type.c_str(), function_name);
+                    skip |=
+                        ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, resolve_loc);
 
                     const VkImageLayout attachment_layout = attachment_ref.layout;
                     if (IsValueIn(attachment_layout,
                                   {VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
                         const char *vuid =
                             use_rp2 ? "VUID-VkSubpassDescription2-attachment-06914" : "VUID-VkSubpassDescription-attachment-06914";
-                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                        skip |=
+                            LogError(vuid, device, resolve_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                     }
                     if (IsValueIn(attachment_layout, {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
                                                       VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
                         const char *vuid =
                             use_rp2 ? "VUID-VkSubpassDescription2-attachment-06917" : "VUID-VkSubpassDescription-attachment-06917";
-                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                        skip |=
+                            LogError(vuid, device, resolve_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                     }
                     if (IsValueIn(attachment_layout,
                                   {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
                                    VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
                         const char *vuid =
                             use_rp2 ? "VUID-VkSubpassDescription2-attachment-06920" : "VUID-VkSubpassDescription-attachment-06920";
-                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                        skip |=
+                            LogError(vuid, device, resolve_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                     }
                     if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
                         const char *vuid =
                             use_rp2 ? "VUID-VkSubpassDescription2-attachment-06923" : "VUID-VkSubpassDescription-attachment-06923";
-                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                        skip |=
+                            LogError(vuid, device, resolve_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                     }
 
                     // safe to dereference pCreateInfo->pAttachments[]
                     if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
                         const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_ref.attachment].format;
-                        skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, false,
-                                                            error_type.c_str(), function_name);
+                        skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, false, resolve_loc);
                         skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
                                                  ATTACHMENT_RESOLVE, attachment_ref.layout);
 
@@ -1585,10 +1561,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-03067"
                                                        : "VUID-VkSubpassDescription-pResolveAttachments-00849";
                             skip |= LogError(
-                                device, vuid,
-                                "%s: Subpass %u requests multisample resolve into attachment %u, which must "
+                                vuid, device, resolve_loc,
+                                "requests multisample resolve into attachment %u, which must "
                                 "have VK_SAMPLE_COUNT_1_BIT but has %s.",
-                                function_name, i, attachment_ref.attachment,
+                                attachment_ref.attachment,
                                 string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment_ref.attachment].samples));
                         }
 
@@ -1597,18 +1573,16 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-02899"
                                                            : "VUID-VkSubpassDescription-pResolveAttachments-02649";
-                                skip |= LogError(device, vuid,
-                                                 "%s: Resolve attachment %s format (%s) does not contain "
-                                                 "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
-                                                 function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                                skip |= LogError(vuid, device, resolve_loc,
+                                                 "format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                                 string_VkFormat(attachment_format));
                             } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06501"
                                                            : "VUID-VkSubpassDescription-linearColorAttachment-06498";
-                                skip |= LogError(
-                                    device, vuid,
-                                    "%s: Resolve attachment %s format (%s) does not contain "
-                                    "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
-                                    function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                                skip |= LogError(vuid, device, resolve_loc,
+                                                 "format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or "
+                                                 "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                                                 string_VkFormat(attachment_format));
                             }
                         }
 
@@ -1616,11 +1590,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
                             const char *vuid =
                                 use_rp2 ? "VUID-VkRenderPassCreateInfo2-flags-04907" : "VUID-VkSubpassDescription-flags-03341";
-                            skip |= LogError(
-                                device, vuid,
-                                "%s: Subpass %u enables shader resolve, which requires every element of pResolve attachments"
-                                " must be VK_ATTACHMENT_UNUSED, but element %u contains a reference to attachment %u instead.",
-                                function_name, i, j, attachment_ref.attachment);
+                            skip |= LogError(vuid, device, resolve_loc,
+                                             "contains a reference to attachment %u instead of being VK_ATTACHMENT_UNUSED.",
+                                             attachment_ref.attachment);
                         }
                     }
                 }
@@ -1628,36 +1600,33 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         }
 
         if (subpass.pDepthStencilAttachment) {
-            std::string error_type = "pSubpasses[" + std::to_string(i) + "].pDepthStencilAttachment";
             const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
             const VkImageLayout image_layout = subpass.pDepthStencilAttachment->layout;
             if (attachment != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, error_type.c_str(),
-                                                function_name);
+                const Location ds_loc = loc.dot(Field::pDepthStencilAttachment);
+                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, ds_loc);
 
                 const VkImageLayout attachment_layout = subpass.pDepthStencilAttachment->layout;
                 if (IsValueIn(attachment_layout,
                               {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06915" : "VUID-VkSubpassDescription-attachment-06915";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, ds_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
 
                 if (use_rp2 && IsValueIn(attachment_layout,
                                          {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
                     if (LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(subpass.pDepthStencilAttachment->pNext)) {
                         const char *vuid = "VUID-VkSubpassDescription2-attachment-06251";
-                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                        skip |= LogError(vuid, device, ds_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                     }
                 }
 
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment < pCreateInfo->attachmentCount) {
                     const VkFormat attachment_format = pCreateInfo->pAttachments[attachment].format;
-                    skip |= ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, attachment_format, false,
-                                                        error_type.c_str(), function_name);
+                    skip |=
+                        ValidateAttachmentReference(rp_version, *subpass.pDepthStencilAttachment, attachment_format, false, ds_loc);
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_DEPTH,
                                              image_layout);
 
@@ -1671,10 +1640,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900"
                                                    : "VUID-VkSubpassDescription-pDepthStencilAttachment-02650";
-                        skip |= LogError(device, vuid,
-                                         "%s: Depth Stencil %s format (%s) does not contain "
+                        skip |= LogError(vuid, device, ds_loc,
+                                         "format (%s) does not contain "
                                          "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                                         function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                                         string_VkFormat(attachment_format));
                     }
 
                     if (use_rp2 &&
@@ -1689,8 +1658,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                              (subpass_depth_stencil_resolve->pDepthStencilResolveAttachment != VK_NULL_HANDLE &&
                               subpass_depth_stencil_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED))) {
                             std::stringstream message;
-                            message << function_name << ": Subpass " << i
-                                    << " has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                            message << "has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                        "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                        "VK_TRUE and pDepthStencilAttachment has a sample count of VK_SAMPLE_COUNT_1_BIT ";
                             if (!subpass_depth_stencil_resolve) {
@@ -1702,20 +1670,19 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                            "the VkSubpassDescription2 struct for this subpass is not NULL, and its attachment "
                                            "is not VK_ATTACHMENT_UNUSED";
                             }
-                            skip |= LogError(device, "VUID-VkSubpassDescription2-pNext-06871", "%s", message.str().c_str());
+                            skip |= LogError("VUID-VkSubpassDescription2-pNext-06871", device, ds_loc, "%s", message.str().c_str());
                         }
                         if (subpass_depth_stencil_resolve) {
                             if (subpass_depth_stencil_resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
                                 subpass_depth_stencil_resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
                                 std::stringstream message;
-                                message << function_name << ": Subpass " << i
-                                        << " has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                message << "has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                            "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                            "VK_TRUE and there is also a VkSubpassDescriptionDepthStencilResolve struct in the "
                                            "pNext "
                                            "chain whose depthResolveMode and stencilResolveMode members are both "
                                            "VK_RESOLVE_MODE_NONE";
-                                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873", "%s",
+                                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873", device, ds_loc, "%s",
                                                  message.str().c_str());
                             }
                             if (FormatHasDepth(depth_stencil_format)) {
@@ -1723,16 +1690,15 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                     !(subpass_depth_stencil_resolve->depthResolveMode &
                                       phys_dev_props_core12.supportedDepthResolveModes)) {
                                     skip |= LogError(
-                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06874",
-                                        "%s:  Subpass %" PRIu32
-                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06874", device, ds_loc,
+                                        "format is %s and has a "
                                         "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                         "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                         "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
                                         "chain with a depthResolveMode (%s) that is not in "
                                         "VkPhysicalDeviceDepthStencilResolveProperties::supportedDepthResolveModes (%s) or "
                                         "VK_RESOLVE_MODE_NONE",
-                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkFormat(depth_stencil_format),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode),
                                         string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
                                 }
@@ -1742,16 +1708,15 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                     !(subpass_depth_stencil_resolve->stencilResolveMode &
                                       phys_dev_props_core12.supportedStencilResolveModes)) {
                                     skip |= LogError(
-                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06875",
-                                        "%s:  Subpass %" PRIu32
-                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06875", device, ds_loc,
+                                        "format is %s and has a "
                                         "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                         "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                         "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
                                         "chain with a stencilResolveMode (%s) that is not in "
                                         "VkPhysicalDeviceDepthStencilResolveProperties::supportedStencilResolveModes (%s) or "
                                         "VK_RESOLVE_MODE_NONE",
-                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkFormat(depth_stencil_format),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
                                         string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
                                 }
@@ -1762,16 +1727,15 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                     (subpass_depth_stencil_resolve->stencilResolveMode !=
                                      subpass_depth_stencil_resolve->depthResolveMode)) {
                                     skip |= LogError(
-                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876",
-                                        "%s:  Subpass %" PRIu32
-                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876", device, ds_loc,
+                                        "format is %s and has a "
                                         "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                         "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                         "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
                                         "chain with a stencilResolveMode (%s) that is not identical to depthResolveMode (%s) "
                                         "even though VkPhysicalDeviceDepthStencilResolveProperties::independentResolve and "
                                         "VkPhysicalDeviceDepthStencilResolveProperties::independentResolveNone are both VK_FALSE,",
-                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkFormat(depth_stencil_format),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode));
                                 }
@@ -1782,9 +1746,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                      ((subpass_depth_stencil_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) &&
                                       (subpass_depth_stencil_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE)))) {
                                     skip |= LogError(
-                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877",
-                                        "%s:  Subpass %" PRIu32
-                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877", device, ds_loc,
+                                        "format is %s and has a "
                                         "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
                                         "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
                                         "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
@@ -1793,7 +1756,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                         "even though VkPhysicalDeviceDepthStencilResolveProperties::independentResolve == VK_FALSE "
                                         "and "
                                         "VkPhysicalDeviceDepthStencilResolveProperties::independentResolveNone == VK_TRUE",
-                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkFormat(depth_stencil_format),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
                                         string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode));
                                 }
@@ -1801,26 +1764,27 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         }
                     }
 
+                    const Location attachment_loc = loc.dot(Field::pAttachments, attachment);
                     if (IsImageLayoutDepthOnly(subpass.pDepthStencilAttachment->layout)) {
                         if (LvlFindInChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext) == nullptr) {
                             if (FormatIsDepthAndStencil(attachment_format)) {
-                                skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06244",
-                                                 "%s: pAttachments[%" PRIu32 "].format (%s) has both depth and stencil components.",
-                                                 function_name, attachment, string_VkFormat(attachment_format));
+                                skip |= LogError("VUID-VkRenderPassCreateInfo2-attachment-06244", device,
+                                                 attachment_loc.dot(Field::format), "(%s) has both depth and stencil components.",
+                                                 string_VkFormat(attachment_format));
                             }
                         }
                         if (FormatIsStencilOnly(attachment_format)) {
-                            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06246",
-                                             "%s: pAttachments[%" PRIu32 "].format (%s) only has a stencil component.",
-                                             function_name, attachment, string_VkFormat(attachment_format));
+                            skip |=
+                                LogError("VUID-VkRenderPassCreateInfo2-attachment-06246", device, attachment_loc.dot(Field::format),
+                                         "(%s) only has a stencil component.", string_VkFormat(attachment_format));
                         }
                     }
 
                     if (IsImageLayoutStencilOnly(subpass.pDepthStencilAttachment->layout)) {
                         if (!FormatIsStencilOnly(attachment_format)) {
-                            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06245",
-                                             "%s: pAttachments[%" PRIu32 "].format (%s) does not only have a stencil component.",
-                                             function_name, attachment, string_VkFormat(attachment_format));
+                            skip |=
+                                LogError("VUID-VkRenderPassCreateInfo2-attachment-06245", device, attachment_loc.dot(Field::format),
+                                         "(%s) does not only have a stencil component.", string_VkFormat(attachment_format));
                         }
                     }
                 }
@@ -1829,48 +1793,42 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
         uint32_t last_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            std::string error_type = "pSubpasses[" + std::to_string(i) + "].pColorAttachments[" + std::to_string(j) + "]";
             auto const &attachment_ref = subpass.pColorAttachments[j];
             const uint32_t attachment_index = attachment_ref.attachment;
+            const Location color_loc = loc.dot(Field::pColorAttachments, j);
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
-                                                function_name);
+                skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, color_loc);
 
                 const VkImageLayout attachment_layout = attachment_ref.layout;
                 if (IsValueIn(attachment_layout,
                               {VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06913" : "VUID-VkSubpassDescription-attachment-06913";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, color_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
                 if (IsValueIn(attachment_layout, {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
                                                   VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06916" : "VUID-VkSubpassDescription-attachment-06916";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, color_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
                 if (IsValueIn(attachment_layout,
                               {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
                                VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06919" : "VUID-VkSubpassDescription-attachment-06919";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, color_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
                 if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06922" : "VUID-VkSubpassDescription-attachment-06922";
-                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
-                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    skip |= LogError(vuid, device, color_loc, "layout (%s) is invalid.", string_VkImageLayout(attachment_layout));
                 }
 
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment_index < pCreateInfo->attachmentCount) {
                     const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_index].format;
-                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, false, error_type.c_str(),
-                                                        function_name);
+                    skip |= ValidateAttachmentReference(rp_version, attachment_ref, attachment_format, false, color_loc);
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_index, ATTACHMENT_COLOR,
                                              attachment_ref.layout);
 
@@ -1880,12 +1838,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         ms_render_to_single_sample && ms_render_to_single_sample->multisampledRenderToSingleSampledEnable) {
                         if (current_sample_count != VK_SAMPLE_COUNT_1_BIT &&
                             current_sample_count != ms_render_to_single_sample->rasterizationSamples) {
-                            skip |= LogError(device, "VUID-VkSubpassDescription2-pNext-06870",
-                                             "%s:  Subpass %u has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
-                                             "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
-                                             "VK_TRUE and rasterizationSamples set to %s "
+                            skip |= LogError("VUID-VkSubpassDescription2-pNext-06870", device,
+                                             loc.dot(Struct::VkMultisampledRenderToSingleSampledInfoEXT,
+                                                     Field::multisampledRenderToSingleSampled, true),
+                                             "is VK_TRUE and rasterizationSamples set to %s "
                                              "but color attachment ref %u has a sample count of %s.",
-                                             function_name, i,
                                              string_VkSampleCountFlagBits(ms_render_to_single_sample->rasterizationSamples), j,
                                              string_VkSampleCountFlagBits(current_sample_count));
                         }
@@ -1902,13 +1859,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             if (current_sample_count != last_sample_count) {
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
                                                            : "VUID-VkSubpassDescription-pColorAttachments-06868";
-                                skip |= LogError(
-                                    device, vuid,
-                                    "%s: Subpass %u attempts to render to color attachments with inconsistent sample counts."
-                                    "Color attachment ref %u has sample count %s, whereas previous color attachment ref %u has "
-                                    "sample count %s.",
-                                    function_name, i, j, string_VkSampleCountFlagBits(current_sample_count),
-                                    last_sample_count_attachment, string_VkSampleCountFlagBits(last_sample_count));
+                                skip |= LogError(vuid, device, color_loc,
+                                                 "has sample count %s, but the pColorAttachments[%" PRIu32 "] has sample count %s.",
+                                                 string_VkSampleCountFlagBits(current_sample_count), last_sample_count_attachment,
+                                                 string_VkSampleCountFlagBits(last_sample_count));
                             }
                         }
                     }
@@ -1917,10 +1871,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     if (subpass_performs_resolve && current_sample_count == VK_SAMPLE_COUNT_1_BIT) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-03066"
                                                    : "VUID-VkSubpassDescription-pResolveAttachments-00848";
-                        skip |= LogError(device, vuid,
-                                         "%s: Subpass %u requests multisample resolve from attachment %u which has "
+                        skip |= LogError(vuid, device, loc,
+                                         "requests multisample resolve from attachment %u which has "
                                          "VK_SAMPLE_COUNT_1_BIT.",
-                                         function_name, i, attachment_index);
+                                         attachment_index);
                     }
 
                     if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED &&
@@ -1933,8 +1887,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-03070"
                                                            : "VUID-VkSubpassDescription-pColorAttachments-01506";
                                 skip |=
-                                    LogError(device, vuid, "%s: %s has %s which is larger than depth/stencil attachment %s.",
-                                             function_name, error_type.c_str(), string_VkSampleCountFlagBits(current_sample_count),
+                                    LogError(vuid, device, color_loc, "has %s which is larger than depth/stencil attachment %s.",
+                                             string_VkSampleCountFlagBits(current_sample_count),
                                              string_VkSampleCountFlagBits(depth_stencil_sample_count));
                                 break;
                             }
@@ -1947,14 +1901,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             current_sample_count != depth_stencil_sample_count) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
                                                        : "VUID-VkSubpassDescription-pDepthStencilAttachment-01418";
-                            skip |= LogError(device, vuid,
-                                             "%s:  Subpass %u attempts to render to use a depth/stencil attachment with sample "
-                                             "count that differs "
-                                             "from color attachment %u."
-                                             "The depth attachment ref has sample count %s, whereas color attachment ref %u has "
-                                             "sample count %s.",
-                                             function_name, i, j, string_VkSampleCountFlagBits(depth_stencil_sample_count), j,
-                                             string_VkSampleCountFlagBits(current_sample_count));
+                            skip |= LogError(vuid, device, color_loc,
+                                             "has sample count %s but the pDepthStencilAttachment has sample count %s",
+                                             string_VkSampleCountFlagBits(current_sample_count),
+                                             string_VkSampleCountFlagBits(depth_stencil_sample_count));
                             break;
                         }
                     }
@@ -1964,18 +1914,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
                                                        : "VUID-VkSubpassDescription-pColorAttachments-02648";
-                            skip |= LogError(device, vuid,
-                                             "%s: Color attachment %s format (%s) does not contain "
+                            skip |= LogError(vuid, device, color_loc,
+                                             "format (%s) does not contain "
                                              "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
-                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                                             string_VkFormat(attachment_format));
                         } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06500"
                                                        : "VUID-VkSubpassDescription-linearColorAttachment-06497";
                             skip |= LogError(
-                                device, vuid,
-                                "%s: Color attachment %s format (%s) does not contain "
+                                vuid, device, color_loc,
+                                "format (%s) does not contain "
                                 "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
-                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                                string_VkFormat(attachment_format));
                         }
                     }
 
@@ -1993,20 +1943,19 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 if (attachment_index == VK_ATTACHMENT_UNUSED) {
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-03065"
                                                : "VUID-VkSubpassDescription-pResolveAttachments-00847";
-                    skip |= LogError(device, vuid,
-                                     "%s: Subpass %u requests multisample resolve from attachment %u which has "
+                    skip |= LogError(vuid, device, loc,
+                                     "requests multisample resolve from attachment %u which has "
                                      "attachment=VK_ATTACHMENT_UNUSED.",
-                                     function_name, i, attachment_index);
+                                     attachment_index);
                 } else {
                     const auto &color_desc = pCreateInfo->pAttachments[attachment_index];
                     const auto &resolve_desc = pCreateInfo->pAttachments[subpass.pResolveAttachments[j].attachment];
                     if (color_desc.format != resolve_desc.format) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-03068"
                                                    : "VUID-VkSubpassDescription-pResolveAttachments-00850";
-                        skip |= LogError(device, vuid,
-                                         "%s: %s resolves to an attachment with a "
-                                         "different format. color format: %u, resolve format: %u.",
-                                         function_name, error_type.c_str(), color_desc.format, resolve_desc.format);
+                        skip |= LogError(vuid, device, color_loc,
+                                         "format (%s) is different than pResolveAttachments[%" PRIu32 "].attachment format (%s).",
+                                         string_VkFormat(color_desc.format), j, string_VkFormat(resolve_desc.format));
                     }
                 }
             }
@@ -2015,11 +1964,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         if (use_rp2 && enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled &&
             ms_render_to_single_sample) {
             if (ms_render_to_single_sample->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT) {
-                skip |= LogError(
-                    device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878",
-                    "%s(): A VkMultisampledRenderToSingleSampledInfoEXT struct is in the pNext chain of  VkSubpassDescription2 "
-                    "with a rasterizationSamples value of VK_SAMPLE_COUNT_1_BIT which is not allowed",
-                    function_name);
+                skip |= LogError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878", device,
+                                 loc.dot(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples, true),
+                                 "is VK_SAMPLE_COUNT_1_BIT, which is not allowed.");
             }
         }
     }
@@ -2264,13 +2211,13 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
     return skip;
 }
 
-bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                          const VkRenderPassCreateInfo2 *pCreateInfo, const char *function_name) const {
+bool CoreChecks::ValidateCreateRenderPass(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                          ErrorObject &errorObj) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
 
-    skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo, function_name);
+    skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo, errorObj);
 
     skip |= ValidateRenderPassDAG(rp_version, pCreateInfo);
 
@@ -2279,22 +2226,21 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     bool view_mask_non_zero = false;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+        const Location loc = errorObj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
             if (!enabled_features.core11.multiview) {
-                skip |= LogError(device, "VUID-VkSubpassDescription2-multiview-06558",
-                                 "%s: pCreateInfo->pSubpasses[%" PRIu32 "].viewMask is %" PRIu32
-                                 ", but multiview feature is not enabled.",
-                                 function_name, i, subpass.viewMask);
+                skip |= LogError("VUID-VkSubpassDescription2-multiview-06558", device, loc.dot(Field::viewMask),
+                                 "is %" PRIu32 ", but multiview feature is not enabled.", subpass.viewMask);
             }
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
             if (highest_view_bit > 0 &&
                 static_cast<uint32_t>(highest_view_bit) >= phys_dev_ext_props.multiview_props.maxMultiviewViewCount) {
-                skip |= LogError(device, "VUID-VkSubpassDescription2-viewMask-06706",
-                                 "vkCreateRenderPass(): pCreateInfo::pSubpasses[%" PRIu32 "] highest bit (%" PRIu32
+                skip |= LogError("VUID-VkSubpassDescription2-viewMask-06706", device, loc,
+                                 "highest bit (%" PRIu32
                                  ") is not less than VkPhysicalDeviceMultiviewProperties::maxMultiviewViewCount (%" PRIu32 ").",
-                                 i, highest_view_bit, phys_dev_ext_props.multiview_props.maxMultiviewViewCount);
+                                 highest_view_bit, phys_dev_ext_props.multiview_props.maxMultiviewViewCount);
             }
         } else {
             view_mask_zero = true;
@@ -2303,32 +2249,32 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         if ((subpass.flags & VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX) != 0 &&
             (subpass.flags & VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX) == 0) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-03076" : "VUID-VkSubpassDescription-flags-00856";
-            skip |= LogError(device, vuid,
-                             "%s: The flags parameter of subpass description %u includes "
+            skip |= LogError(vuid, device, loc,
+                             "The flags parameter of subpass description %u includes "
                              "VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX but does not also include "
                              "VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX.",
-                             function_name, i);
+                             i);
         }
     }
 
     if (rp_version == RENDER_PASS_VERSION_2) {
         if (view_mask_non_zero && view_mask_zero) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-viewMask-03058",
-                             "%s: Some view masks are non-zero whilst others are zero.", function_name);
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03058", device, errorObj.location,
+                             "Some view masks are non-zero whilst others are zero.");
         }
 
         if (view_mask_zero && pCreateInfo->correlatedViewMaskCount != 0) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-viewMask-03057",
-                             "%s: Multiview is not enabled but correlation masks are still provided", function_name);
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03057", device, errorObj.location,
+                             "Multiview is not enabled but correlation masks are still provided");
         }
     }
     uint32_t aggregated_cvms = 0;
     for (uint32_t i = 0; i < pCreateInfo->correlatedViewMaskCount; ++i) {
         if (aggregated_cvms & pCreateInfo->pCorrelatedViewMasks[i]) {
+            const Location loc = errorObj.location.dot(Field::pCorrelatedViewMasks, i);
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056"
                            : "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841";
-            skip |=
-                LogError(device, vuid, "%s: pCorrelatedViewMasks[%u] contains a previously appearing view bit.", function_name, i);
+            skip |= LogError(vuid, device, loc, "contains a previously appearing view bit.");
         }
         aggregated_cvms |= pCreateInfo->pCorrelatedViewMasks[i];
     }
@@ -2336,38 +2282,44 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     const auto *fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
     if (fragment_density_map_info) {
         if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
+            const Location fragment_loc = errorObj.location.dot(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT,
+                                                                Field::fragmentDensityMapAttachment, true);
+            const Location attchment_loc = fragment_loc.dot(Field::attachment);
+
             if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
                 vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-06472"
                                : "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471";
-                skip |= LogError(device, vuid,
-                                 "vkCreateRenderPass(): fragmentDensityMapAttachment %" PRIu32
-                                 " must be less than attachmentCount %" PRIu32 " of for this render pass.",
+                skip |= LogError(vuid, device, attchment_loc,
+                                 "(%" PRIu32 ") must be less than attachmentCount %" PRIu32 " of for this render pass.",
                                  fragment_density_map_info->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
             } else {
                 if (!(fragment_density_map_info->fragmentDensityMapAttachment.layout ==
                           VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
                       fragment_density_map_info->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
-                                     "vkCreateRenderPass(): Layout of fragmentDensityMapAttachment %" PRIu32
-                                     " must be equal to "
-                                     "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
+                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", device,
+                                     attchment_loc,
+                                     "(%" PRIu32
+                                     ") layout must be equal to "
+                                     "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT or VK_IMAGE_LAYOUT_GENERAL.",
                                      fragment_density_map_info->fragmentDensityMapAttachment.attachment);
                 }
                 if (!(pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
                           VK_ATTACHMENT_LOAD_OP_LOAD ||
                       pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
                           VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
-                                     "vkCreateRenderPass(): FragmentDensityMapAttachment %" PRIu32
-                                     " must reference an attachment with a loadOp "
+                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", device,
+                                     attchment_loc,
+                                     "(%" PRIu32
+                                     ") must reference an attachment with a loadOp "
                                      "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
                                      fragment_density_map_info->fragmentDensityMapAttachment.attachment);
                 }
                 if (pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].storeOp !=
                     VK_ATTACHMENT_STORE_OP_DONT_CARE) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
-                                     "vkCreateRenderPass(): FragmentDensityMapAttachment %" PRIu32
-                                     " must reference an attachment with a storeOp "
+                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", device,
+                                     attchment_loc,
+                                     "(%" PRIu32
+                                     ") must reference an attachment with a storeOp "
                                      "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
                                      fragment_density_map_info->fragmentDensityMapAttachment.attachment);
                 }
@@ -2375,31 +2327,30 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         }
     }
 
-    const LogObjectList objlist(device);
-
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
     auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassDependency(objlist, loc, dependency);
+        skip |= ValidateSubpassDependency(errorObj, loc, dependency);
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
+                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                 ErrorObject &errorObj) const {
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
     const VkRenderPassMultiviewCreateInfo *multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
     if (multiview_info) {
         if (multiview_info->subpassCount && multiview_info->subpassCount != pCreateInfo->subpassCount) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01928",
-                             "vkCreateRenderPass(): Subpass count is %u but multiview info has a subpass count of %u.",
-                             pCreateInfo->subpassCount, multiview_info->subpassCount);
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01928", device, errorObj.location,
+                             "Subpass count is %u but multiview info has a subpass count of %u.", pCreateInfo->subpassCount,
+                             multiview_info->subpassCount);
         } else if (multiview_info->dependencyCount && multiview_info->dependencyCount != pCreateInfo->dependencyCount) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01929",
-                             "vkCreateRenderPass(): Dependency count is %u but multiview info has a dependency count of %u.",
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01929", device, errorObj.location,
+                             "Dependency count is %u but multiview info has a dependency count of %u.",
                              pCreateInfo->dependencyCount, multiview_info->dependencyCount);
         }
         bool all_zero = true;
@@ -2409,39 +2360,35 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             all_not_zero &= multiview_info->pViewMasks[i] != 0;
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
                 static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-                skip |= LogError(device, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697",
-                                 "vkCreateRenderPass(): Most significant bit in "
+                skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", device, errorObj.location,
+                                 "Most significant bit in "
                                  "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (%" PRIu32
                                  ") must be less than maxMultiviewViewCount(%" PRIu32 ").",
                                  i, multiview_info->pViewMasks[i], phys_dev_props_core11.maxMultiviewViewCount);
             }
         }
         if (!all_zero && !all_not_zero) {
-            skip |= LogError(
-                device, "VUID-VkRenderPassCreateInfo-pNext-02513",
-                "vkCreateRenderPass(): elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02513", device, errorObj.location,
+                             "elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
         }
         if (all_zero && multiview_info->correlationMaskCount != 0) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02515",
-                             "vkCreateRenderPass(): VkRenderPassCreateInfo::correlationMaskCount is %" PRIu32
-                             ", but all elements of pViewMasks are 0.",
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02515", device, errorObj.location,
+                             "VkRenderPassCreateInfo::correlationMaskCount is %" PRIu32 ", but all elements of pViewMasks are 0.",
                              multiview_info->correlationMaskCount);
         }
         for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
             if ((pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) {
                 if (i < multiview_info->dependencyCount && multiview_info->pViewOffsets[i] != 0) {
-                    skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02512",
-                                     "vkCreateRenderPass(): VkRenderPassCreateInfo::pDependencies[%" PRIu32
-                                     "].dependencyFlags does not have VK_DEPENDENCY_VIEW_LOCAL_BIT bit set, but the corresponding "
+                    skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02512", device,
+                                     errorObj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
+                                     "does not have VK_DEPENDENCY_VIEW_LOCAL_BIT bit set, but the corresponding "
                                      "VkRenderPassMultiviewCreateInfo::pViewOffsets[%" PRIu32 "] is %" PRIi32 ".",
-                                     i, i, multiview_info->pViewOffsets[i]);
+                                     i, multiview_info->pViewOffsets[i]);
                 }
             } else if (all_zero) {
-                skip |=
-                    LogError(device, "VUID-VkRenderPassCreateInfo-pNext-02514",
-                             "vkCreateRenderPass(): VkRenderPassCreateInfo::pDependencies[%" PRIu32
-                             "].dependencyFlags contains VK_DEPENDENCY_VIEW_LOCAL_BIT bit, but all elements of pViewMasks are 0.",
-                             i);
+                skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02514", device,
+                                 errorObj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
+                                 "contains VK_DEPENDENCY_VIEW_LOCAL_BIT bit, but all elements of pViewMasks are 0.");
             }
         }
     }
@@ -2452,24 +2399,27 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             uint32_t subpass = input_attachment_aspect_info->pAspectReferences[i].subpass;
             uint32_t attachment = input_attachment_aspect_info->pAspectReferences[i].inputAttachmentIndex;
             if (subpass >= pCreateInfo->subpassCount) {
-                skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01926",
-                                 "vkCreateRenderPass(): Subpass index %u specified by input attachment aspect info %u is greater "
-                                 "than the subpass "
-                                 "count of %u for this render pass.",
-                                 subpass, i, pCreateInfo->subpassCount);
+                skip |= LogError(
+                    "VUID-VkRenderPassCreateInfo-pNext-01926", device,
+                    errorObj.location.dot(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i, true)
+                        .dot(Field::subpass),
+                    "is %" PRIu32 " which is not less than pCreateInfo->subpassCount (%" PRIu32 ").", subpass,
+                    pCreateInfo->subpassCount);
             } else if (pCreateInfo->pSubpasses && attachment >= pCreateInfo->pSubpasses[subpass].inputAttachmentCount) {
-                skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01927",
-                                 "vkCreateRenderPass(): Input attachment index %u specified by input attachment aspect info %u is "
-                                 "greater than the "
-                                 "input attachment count of %u for this subpass.",
-                                 attachment, i, pCreateInfo->pSubpasses[subpass].inputAttachmentCount);
+                skip |= LogError(
+                    "VUID-VkRenderPassCreateInfo-pNext-01927", device,
+                    errorObj.location.dot(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i, true)
+                        .dot(Field::inputAttachmentIndex),
+                    "is %" PRIu32 " which is not less then pCreateInfo->pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32
+                    ").",
+                    attachment, subpass, pCreateInfo->pSubpasses[subpass].inputAttachmentCount);
             }
         }
     }
 
     if (!skip) {
         safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr(), "vkCreateRenderPass()");
+        skip |= ValidateCreateRenderPass(RENDER_PASS_VERSION_1, create_info_2.ptr(), errorObj);
     }
 
     return skip;
@@ -2477,12 +2427,13 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
 // VK_KHR_depth_stencil_resolve was added with a requirement on VK_KHR_create_renderpass2 so this will never be able to use
 // VkRenderPassCreateInfo
-bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, const char *function_name) const {
+bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, ErrorObject &errorObj) const {
     bool skip = false;
 
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
+        const Location loc = errorObj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
@@ -2499,11 +2450,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
             continue;
         } else if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
             // while should be ignored, this is an explicit VU and some drivers will crash if this is let through
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177", device, loc,
+                             "includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with resolve attachment %" PRIu32 ", but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
-                             function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
+                             resolve->pDepthStencilResolveAttachment->attachment);
             continue;
         }
 
@@ -2520,11 +2470,12 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
             continue;
         }
 
+        const Location ds_resolve_loc = loc.dot(Struct::VkSubpassDescriptionDepthStencilResolve,
+                                                Field::pDepthStencilResolveAttachment, resolve_attachment, true);
         if (resolve_attachment >= pCreateInfo->attachmentCount) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-pSubpasses-06473",
-                             "%s: pDepthStencilResolveAttachment %" PRIu32 " must be less than attachmentCount %" PRIu32
-                             " of for this render pass.",
-                             function_name, resolve_attachment, pCreateInfo->attachmentCount);
+            skip |=
+                LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473", device, ds_resolve_loc,
+                         "must be less than attachmentCount %" PRIu32 " of for this render pass.", pCreateInfo->attachmentCount);
             // if the index is invalid need to skip everything else to prevent out of bounds index accesses crashing
             continue;
         }
@@ -2540,12 +2491,11 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         if (resolve_has_depth) {
             if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
                   resolve->depthResolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
-                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183",
-                                 "%s: Subpass %" PRIu32
-                                 " includes a VkSubpassDescriptionDepthStencilResolve "
-                                 "structure with invalid depthResolveMode (%s), must be VK_RESOLVE_MODE_NONE or a value from "
+                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183", device,
+                                 loc.dot(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode, true),
+                                 "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
                                  "supportedDepthResolveModes (%s).",
-                                 function_name, i, string_VkResolveModeFlagBits(resolve->depthResolveMode),
+                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
                                  string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
             }
         }
@@ -2553,12 +2503,11 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         if (resolve_has_stencil) {
             if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE ||
                   resolve->stencilResolveMode & phys_dev_props_core12.supportedStencilResolveModes)) {
-                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184",
-                                 "%s: Subpass %" PRIu32
-                                 " includes a VkSubpassDescriptionDepthStencilResolve "
-                                 "structure with invalid stencilResolveMode (%s), must be VK_RESOLVE_MODE_NONE or a value from "
+                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184", device,
+                                 loc.dot(Struct::VkSubpassDescriptionDepthStencilResolve, Field::stencilResolveMode, true),
+                                 "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
                                  "supportedStencilResolveModes (%s).",
-                                 function_name, i, string_VkResolveModeFlagBits(resolve->stencilResolveMode),
+                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode),
                                  string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
             }
         }
@@ -2566,51 +2515,40 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         if (resolve_has_depth && resolve_has_stencil) {
             if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_FALSE &&
                 resolve->depthResolveMode != resolve->stencilResolveMode) {
-                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
-                                 "%s: Subpass %" PRIu32
-                                 " includes a VkSubpassDescriptionDepthStencilResolve "
+                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185", device, loc,
+                                 "includes a VkSubpassDescriptionDepthStencilResolve "
                                  "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical.",
-                                 function_name, i, string_VkResolveModeFlagBits(resolve->depthResolveMode),
+                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
                                  string_VkResolveModeFlagBits(resolve->stencilResolveMode));
             }
 
             if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_TRUE &&
                 !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
                   resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE)) {
-                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186",
-                                 "%s: Subpass %" PRIu32
-                                 " includes a VkSubpassDescriptionDepthStencilResolve "
+                skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186", device, loc,
+                                 "includes a VkSubpassDescriptionDepthStencilResolve "
                                  "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical, or "
                                  "one of them must be VK_RESOLVE_MODE_NONE.",
-                                 function_name, i, string_VkResolveModeFlagBits(resolve->depthResolveMode),
+                                 string_VkResolveModeFlagBits(resolve->depthResolveMode),
                                  string_VkResolveModeFlagBits(resolve->stencilResolveMode));
             }
         }
 
         // Same VU, but better error message if one of the resolves are ignored
         if (resolve_has_depth && !resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
-                             "attachment %" PRIu32
-                             ", but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
-                             "ignored due to format not having stencil component).",
-                             function_name, i, resolve_attachment);
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
+                             ds_resolve_loc,
+                             "is not NULL, but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
+                             "ignored due to format not having stencil component).");
         } else if (!resolve_has_depth && resolve_has_stencil && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
-                             "attachment %" PRIu32
-                             ", but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
-                             "ignored due to format not having depth component).",
-                             function_name, i, resolve_attachment);
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
+                             ds_resolve_loc,
+                             "is not NULL, but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
+                             "ignored due to format not having depth component).");
         } else if (resolve_has_depth && resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
                    resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve structure with resolve "
-                             "attachment %" PRIu32 ", but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.",
-                             function_name, i, resolve_attachment);
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
+                             ds_resolve_loc, "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.");
         }
 
         const uint32_t resolve_depth_size = FormatDepthSize(resolve_attachment_format);
@@ -2619,63 +2557,50 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         if (resolve_depth_size > 0 &&
             ((FormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
              (FormatDepthNumericalType(ds_attachment_format) != FormatDepthNumericalType(ds_attachment_format)))) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
-                             "structure with resolve attachment %" PRIu32 " which has a depth component (size %" PRIu32
-                             "). The depth component "
-                             "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32
-                             ") and the same numerical type.",
-                             function_name, i, resolve_attachment, resolve_depth_size, FormatDepthSize(ds_attachment_format));
+            skip |= LogError(
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
+                "has a depth component (size %" PRIu32
+                "). The depth component "
+                "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
+                resolve_depth_size, FormatDepthSize(ds_attachment_format));
         }
 
         if (resolve_stencil_size > 0 &&
             ((FormatStencilSize(ds_attachment_format) != resolve_stencil_size) ||
              (FormatStencilNumericalType(ds_attachment_format) != FormatStencilNumericalType(resolve_attachment_format)))) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
-                             "structure with resolve attachment %" PRIu32 " which has a stencil component (size %" PRIu32
-                             "). The stencil component "
-                             "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32
-                             ") and the same numerical type.",
-                             function_name, i, resolve_attachment, resolve_stencil_size, FormatStencilSize(ds_attachment_format));
+            skip |= LogError(
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182", device, ds_resolve_loc,
+                "has a stencil component (size %" PRIu32
+                "). The stencil component "
+                "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
+                resolve_stencil_size, FormatStencilSize(ds_attachment_format));
         }
 
         if (pCreateInfo->pAttachments[ds_attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
-                             "structure with resolve attachment %" PRIu32
-                             ". However pDepthStencilAttachment has sample count=VK_SAMPLE_COUNT_1_BIT.",
-                             function_name, i, resolve_attachment);
+            skip |=
+                LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179", device,
+                         ds_resolve_loc, "is not NULL, however pDepthStencilAttachment has sample count=VK_SAMPLE_COUNT_1_BIT.");
         }
 
         if (pCreateInfo->pAttachments[resolve_attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
-                             "structure with resolve attachment %" PRIu32 " which has sample count=VK_SAMPLE_COUNT_1_BIT.",
-                             function_name, i, resolve_attachment);
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180", device,
+                             ds_resolve_loc, "has sample count of VK_SAMPLE_COUNT_1_BIT.");
         }
 
         const VkFormatFeatureFlags2KHR potential_format_features = GetPotentialFormatFeatures(resolve_attachment_format);
         if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
-            skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651",
-                             "%s: Subpass %" PRIu32
-                             " includes a VkSubpassDescriptionDepthStencilResolve "
-                             "structure with resolve attachment %" PRIu32
-                             " with a format (%s) whose features do not contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                             function_name, i, resolve_attachment, string_VkFormat(resolve_attachment_format));
+            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device,
+                             ds_resolve_loc,
+                             "has a format (%s) whose features do not contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             string_VkFormat(resolve_attachment_format));
         }
 
         //  VK_QCOM_render_pass_shader_resolve check of depth/stencil attachmnent
         if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
-            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-flags-04908",
-                             "%s: Subpass %" PRIu32
-                             " enables shader resolve, which requires the depth/stencil resolve attachment"
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-flags-04908", device, loc,
+                             "enables shader resolve, which requires the depth/stencil resolve attachment"
                              " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
-                             function_name, i, resolve_attachment);
+                             resolve_attachment);
         }
     }
 
@@ -2684,14 +2609,14 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
 bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                           const char *function_name) const {
+                                           ErrorObject &errorObj) const {
     bool skip = false;
 
-    skip |= ValidateDepthStencilResolve(pCreateInfo, function_name);
+    skip |= ValidateDepthStencilResolve(pCreateInfo, errorObj);
     skip |= ValidateFragmentShadingRateAttachments(device, pCreateInfo);
 
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr(), function_name);
+    skip |= ValidateCreateRenderPass(RENDER_PASS_VERSION_2, create_info_2.ptr(), errorObj);
 
     return skip;
 }
@@ -2907,13 +2832,15 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(VkDevice device, const V
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "vkCreateRenderPass2KHR()");
+                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                     ErrorObject &errorObj) const {
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "vkCreateRenderPass2()");
+                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                  ErrorObject &errorObj) const {
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
 bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view, const char *attachment,

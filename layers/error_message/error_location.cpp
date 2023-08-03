@@ -15,11 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "core_error_location.h"
+#include "error_location.h"
 #include "utils/vk_layer_utils.h"
 #include <map>
 
-namespace core_error {
+void Location::AppendFields(std::ostream& out) const {
+    if (prev) {
+        prev->AppendFields(out);
+        const bool needs_dot = prev->structure != vvl::Struct::Empty || prev->field != vvl::Field::Empty;
+        if (needs_dot) {
+            out << ".";
+        }
+    }
+    if (field != vvl::Field::Empty) {
+        if (pNext && structure != vvl::Struct::Empty) {
+            out << "pNext<" << vvl::String(structure) << ">.";
+        }
+        out << vvl::String(field);
+        if (index != Location::kNoIndex) {
+            out << "[" << index << "]";
+        }
+    }
+}
+
+std::string Location::Fields() const {
+    std::stringstream out;
+    AppendFields(out);
+    return out.str();
+}
+
+std::string Location::Message() const {
+    std::stringstream out;
+    out << StringFunc() << "(): ";
+    AppendFields(out);
+    return out.str();
+}
+
+namespace vvl {
 LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
 
 const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth) {
@@ -33,20 +65,6 @@ const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size
     capture.emplace_back(loc);
     capture.back().prev = prev_capture;
     return &(capture.back());
-}
-
-void Location::AppendFields(std::ostream& out) const {
-    if (prev) {
-        prev->AppendFields(out);
-        const bool needs_dot = prev->structure != Struct::Empty || prev->field != Field::Empty;
-        if (needs_dot) {
-            out << ".";
-        }
-    }
-    out << String(field);
-    if (index != Location::kNoIndex) {
-        out << "[" << index << "]";
-    }
 }
 
 bool operator<(const Key& lhs, const Key& rhs) {
@@ -108,4 +126,4 @@ bool operator==(const Key& key, const Location& loc) {
     return false;
 }
 
-}  // namespace core_error
+}  // namespace vvl

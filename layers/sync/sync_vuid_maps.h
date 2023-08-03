@@ -20,16 +20,12 @@
 #include <vulkan/vulkan_core.h>
 #include "containers/custom_containers.h"
 
-namespace core_error {
 struct Location;
-}
-
 struct DeviceExtensions;
 struct SubresourceRangeErrorCodes;
 struct DeviceExtensions;
 
 namespace sync_vuid_maps {
-using core_error::Location;
 
 extern const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap;
 
