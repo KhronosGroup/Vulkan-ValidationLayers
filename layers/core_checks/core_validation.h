@@ -562,8 +562,8 @@ class CoreChecks : public ValidationStateTracker {
                                    VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     static bool ValidatePerformanceQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    bool ValidateBeginQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, VkFlags flags, uint32_t index,
-                            CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
+                            uint32_t index, CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
     bool ValidateCmdEndQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, uint32_t index, CMD_TYPE cmd,
                              const ValidateEndQueryVuids* vuids) const;
 
@@ -1699,8 +1699,9 @@ class CoreChecks : public ValidationStateTracker {
 
     void EnqueueVerifyBeginQuery(VkCommandBuffer, const QueryObject& query_obj, const CMD_TYPE cmd_type);
     bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                      VkFlags flags) const override;
-    void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) override;
+                                      VkQueryControlFlags flags) const override;
+    void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
+                                    VkQueryControlFlags flags) override;
     void EnqueueVerifyEndQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj);
     bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;

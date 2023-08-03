@@ -91,6 +91,7 @@ struct QueryObject {
     VkQueryPool pool;
     uint32_t slot;  // use 'slot' as alias to 'query' parameter to help reduce confusing namespace
     uint32_t perf_pass;
+    VkQueryControlFlags control_flags;
 
     // These next five fields are *not* used in hash or comparison, they are effectively a data payload
     mutable uint32_t active_query_index;
@@ -102,10 +103,12 @@ struct QueryObject {
     // the end of the query).
     uint64_t end_command_index;
 
-    QueryObject(VkQueryPool pool_, uint32_t slot_, uint32_t perf_pass_ = 0, bool indexed_ = false, uint32_t index_ = 0)
+    QueryObject(VkQueryPool pool_, uint32_t slot_, VkQueryControlFlags control_flags_ = 0, uint32_t perf_pass_ = 0,
+                bool indexed_ = false, uint32_t index_ = 0)
         : pool(pool_),
           slot(slot_),
           perf_pass(perf_pass_),
+          control_flags(control_flags_),
           active_query_index(slot_),
           last_activatable_query_index(slot_),
           index(index_),
@@ -117,6 +120,7 @@ struct QueryObject {
         : pool(obj.pool),
           slot(obj.slot),
           perf_pass(perf_pass_),
+          control_flags(obj.control_flags),
           active_query_index(obj.active_query_index),
           last_activatable_query_index(obj.last_activatable_query_index),
           index(obj.index),
