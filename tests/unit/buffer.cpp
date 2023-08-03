@@ -24,13 +24,8 @@ TEST_F(NegativeBuffer, Extents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    const VkDeviceSize buffer_size = 2048;
-
-    VkBufferObj buffer_one;
-    VkBufferObj buffer_two;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer_one.init_as_src_and_dst(*m_device, buffer_size, reqs);
-    buffer_two.init_as_src_and_dst(*m_device, buffer_size, reqs);
+    VkBufferObj buffer_one(*m_device, 2048, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer_two(*m_device, 2048, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkBufferCopy copy_info = {4096, 256, 256};
 
@@ -117,10 +112,7 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj buffer;
-    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_commandBuffer->begin();
     // Introduce failure by using dstOffset that is not multiple of 4
@@ -150,11 +142,7 @@ TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     TEST_DESCRIPTION("Check alignment and size parameters for vkCmdFillBuffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj buffer;
-    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
-
+    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     m_commandBuffer->begin();
 
     // Introduce failure by using dstOffset greater than bufferSize
@@ -504,10 +492,9 @@ TEST_F(NegativeBuffer, FillBufferWithinRenderPass) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj dstBuffer;
-    dstBuffer.init_as_dst(*m_device, (VkDeviceSize)1024, reqs);
 
-    m_commandBuffer->FillBuffer(dstBuffer.handle(), 0, 4, 0x11111111);
+    VkBufferObj dst_buffer(*m_device, 1024, reqs, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_commandBuffer->FillBuffer(dst_buffer.handle(), 0, 4, 0x11111111);
 
     m_errorMonitor->VerifyFound();
 
@@ -525,14 +512,12 @@ TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj dstBuffer;
-    dstBuffer.init_as_dst(*m_device, (VkDeviceSize)1024, reqs);
+    VkBufferObj dst_buffer(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkDeviceSize dstOffset = 0;
     uint32_t Data[] = {1, 2, 3, 4, 5, 6, 7, 8};
     VkDeviceSize dataSize = sizeof(Data) / sizeof(uint32_t);
-    vk::CmdUpdateBuffer(m_commandBuffer->handle(), dstBuffer.handle(), dstOffset, dataSize, &Data);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), dst_buffer.handle(), dstOffset, dataSize, &Data);
 
     m_errorMonitor->VerifyFound();
 
@@ -762,11 +747,7 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
 
     VkCommandPoolObj pool(m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    VkBufferObj buffer;
-    buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
-
+    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-apiVersion-07894");
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
@@ -872,10 +853,7 @@ TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
     copy_info.srcOffset = 0;
     copy_info.dstOffset = 0;
     copy_info.size = 256;
-
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src_and_dst(*m_device, copy_info.size, reqs);
+    VkBufferObj buffer(*m_device, copy_info.size, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkBufferObj buffer_shared_memory;
     buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
@@ -912,9 +890,7 @@ TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
     copy_infos[3].dstOffset = 28;
     copy_infos[3].size = 4;
 
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src_and_dst(*m_device, 32, reqs);
+    VkBufferObj buffer(*m_device, 32, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkBufferObj buffer_shared_memory;
     buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());

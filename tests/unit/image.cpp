@@ -46,9 +46,7 @@ TEST_F(NegativeImage, UsageBits) {
     CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-image-04441");
 
     // Initialize buffer with TRANSFER_DST usage
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_dst(*m_device, 128 * 128, reqs);
+    VkBufferObj buffer(*m_device, 128 * 128, 0, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 128;
     region.bufferImageHeight = 128;
@@ -106,9 +104,7 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
 
     VkImageObj width_image(m_device);
     VkImageObj height_image(m_device);
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src(*m_device, 8 * 4 * 2, reqs);
+    VkBufferObj buffer(*m_device, 8 * 4 * 2, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
@@ -197,7 +193,6 @@ TEST_F(NegativeImage, SampleCounts) {
     TEST_DESCRIPTION("Use bad sample counts in image transfer calls to trigger validation errors.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkMemoryPropertyFlags reqs = 0;
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -277,8 +272,7 @@ TEST_F(NegativeImage, SampleCounts) {
     // Create src buffer and dst image with sampleCount = 4 and attempt to copy
     // buffer to image
     {
-        VkBufferObj src_buffer;
-        src_buffer.init_as_src(*m_device, 128 * 128 * 4, reqs);
+        VkBufferObj src_buffer(*m_device, 128 * 128 * 4, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         VkImageObj dst_image(m_device);
@@ -296,12 +290,11 @@ TEST_F(NegativeImage, SampleCounts) {
     // Create dst buffer and src image with sampleCount = 4 and attempt to copy
     // image to buffer
     {
-        VkBufferObj dst_buffer;
-        dst_buffer.init_as_dst(*m_device, 128 * 128 * 4, reqs);
+        VkBufferObj dst_buffer(*m_device, 128 * 128 * 4, 0, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         vk_testing::Image src_image;
-        src_image.init(*m_device, (const VkImageCreateInfo &)image_create_info, reqs);
+        src_image.init(*m_device, (const VkImageCreateInfo &)image_create_info, 0);
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "was created with a sample count of VK_SAMPLE_COUNT_4_BIT but must be VK_SAMPLE_COUNT_1_BIT");

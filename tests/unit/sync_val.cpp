@@ -24,13 +24,11 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     bool has_amd_buffer_maker = IsExtensionsEnabled(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
 
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
-    VkBufferObj buffer_c;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, mem_prop, transfer_usage);
+    VkBufferObj buffer_b(*m_device, 256, mem_prop, transfer_usage);
+    VkBufferObj buffer_c(*m_device, 256, mem_prop, transfer_usage);
 
     VkBufferCopy region = {0, 0, 256};
     VkBufferCopy front2front = {0, 0, 128};

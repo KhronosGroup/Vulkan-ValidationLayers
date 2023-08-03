@@ -547,11 +547,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     pipeline_robustness_features.pipelineRobustness = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkBufferObj uniform_buffer;
-    VkBufferObj storage_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    uniform_buffer.init(*m_device, 4, reqs);
-    storage_buffer.init_as_storage(*m_device, 16, reqs);
+    VkBufferObj uniform_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj storage_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     OneOffDescriptorSet descriptor_set(m_device, {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -642,13 +640,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj offset_buffer;
-    VkBufferObj write_buffer;
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    offset_buffer.init(*m_device, 4, reqs);
-    write_buffer.init_as_storage(*m_device, 16, reqs);
+    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;
@@ -1036,7 +1032,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     // Make another buffer to write to
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    vk_testing::Buffer buffer1(*m_device, bci, mem_props, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vk_testing::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();
@@ -2241,13 +2239,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj offset_buffer;
-    VkBufferObj write_buffer;
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    offset_buffer.init(*m_device, 4, reqs);
-    write_buffer.init_as_storage(*m_device, 16, reqs);
+    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;
@@ -2424,13 +2420,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj offset_buffer;
-    VkBufferObj write_buffer;
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    offset_buffer.init(*m_device, 4, reqs);
-    write_buffer.init_as_storage(*m_device, 16, reqs);
+    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;

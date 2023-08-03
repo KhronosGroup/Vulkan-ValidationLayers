@@ -1407,7 +1407,9 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer(*m_device, buf_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkBufferObj buffer(*m_device, buf_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
@@ -1496,7 +1498,9 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_info.size = 4096;
     buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
 
     const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
 
@@ -1538,7 +1542,9 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_info.size = 4096;
     buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    auto allocate_flag_info = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_flag_info);
 
     const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
 

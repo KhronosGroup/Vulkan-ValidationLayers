@@ -150,7 +150,6 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     std::array<VkImageAspectFlagBits, 3> aspects = {
         {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
     std::array<VkBufferObj, 3> buffers;
-    VkMemoryPropertyFlags reqs = 0;
 
     VkBufferImageCopy copy = {};
     copy.imageSubresource.layerCount = 1;
@@ -159,7 +158,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     copy.imageExtent.width = 16;
 
     for (size_t i = 0; i < aspects.size(); ++i) {
-        buffers[i].init_as_src(*m_device, (VkDeviceSize)16 * 16 * 1, reqs);
+        buffers[i].init(*m_device, 16 * 16 * 1, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
         vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffers[i].handle(), image.handle(),
                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
@@ -321,9 +320,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
     }
 
     // Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes
-    VkBufferObj buffer;
-    VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_src(*m_device, (VkDeviceSize)128 * 128 * 3, reqs);
+    VkBufferObj buffer(*m_device, 128 * 128 * 3, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     VkImageObj mpimage(m_device);
     mpimage.Init(256, 256, 1, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                  VK_IMAGE_TILING_OPTIMAL, 0);
