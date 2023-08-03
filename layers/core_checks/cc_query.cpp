@@ -50,9 +50,11 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
                                                  uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags) const {
     bool skip = false;
 
-    if (flags & (VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | VK_QUERY_RESULT_PARTIAL_BIT | VK_QUERY_RESULT_64_BIT)) {
+    if (flags & (VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_PARTIAL_BIT |
+                 VK_QUERY_RESULT_64_BIT)) {
         std::string invalid_flags_string;
-        for (auto flag : {VK_QUERY_RESULT_WITH_AVAILABILITY_BIT, VK_QUERY_RESULT_PARTIAL_BIT, VK_QUERY_RESULT_64_BIT}) {
+        for (auto flag : {VK_QUERY_RESULT_WITH_AVAILABILITY_BIT, VK_QUERY_RESULT_WITH_STATUS_BIT_KHR, VK_QUERY_RESULT_PARTIAL_BIT,
+                          VK_QUERY_RESULT_64_BIT}) {
             if (flag & flags) {
                 if (invalid_flags_string.size()) {
                     invalid_flags_string += " and ";

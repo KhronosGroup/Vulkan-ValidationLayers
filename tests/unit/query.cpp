@@ -529,6 +529,11 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+
+    // Vulkan 1.1 is a dependency of VK_KHR_video_queue, but both the version and the extension
+    // is optional from the point of view of this test case
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -539,8 +544,11 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         GTEST_SKIP() << "Performance query pools are not supported.";
     }
     if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doens't match up with profile queues";
+        GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doesn't match up with profile queues";
     }
+
+    auto perf_query_props = LvlInitStruct<VkPhysicalDevicePerformanceQueryPropertiesKHR>();
+    GetPhysicalDeviceProperties2(perf_query_props);
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features, pool_flags));
@@ -612,9 +620,12 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     }
 
     {
+        const VkDeviceSize buf_size =
+            std::max((VkDeviceSize)4096, (VkDeviceSize)(sizeof(VkPerformanceCounterResultKHR) * counterIndices.size()));
+
         VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        buf_info.size = 4096;
+        buf_info.size = buf_size;
         buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         VkBuffer buffer;
         VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
@@ -624,7 +635,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        alloc_info.allocationSize = 4096;
+        alloc_info.allocationSize = buf_size;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
         ASSERT_VK_SUCCESS(err);
@@ -637,7 +648,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
         m_commandBuffer->begin(&command_buffer_begin_info);
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, buf_size, 0);
         vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
         m_commandBuffer->end();
 
@@ -724,7 +735,33 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
             m_errorMonitor->VerifyFound();
         }
 
-        // Invalid flags
+        // Invalid flags for vkCmdCopyQueryPoolResults
+        if (perf_query_props.allowCommandBufferQueryCopies) {
+            m_commandBuffer->begin(&command_buffer_begin_info);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
+                                        sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                        VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+            m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
+                                        sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
+            m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+            vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
+                                        sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
+            m_errorMonitor->VerifyFound();
+            if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-03233");
+                vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer, 0,
+                                            sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                            VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
+                m_errorMonitor->VerifyFound();
+            }
+            m_commandBuffer->end();
+        }
+
+        // Invalid flags for vkGetQueryPoolResults
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
@@ -738,6 +775,13 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
+        if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
+            vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                    &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                    VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
+            m_errorMonitor->VerifyFound();
+        }
 
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                 &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
