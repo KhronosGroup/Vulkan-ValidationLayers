@@ -1910,7 +1910,6 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
 
     char const *csSource = R"glsl(
         #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
         layout(set = 0, binding = 1) uniform UniformStruct { ivec4 dummy; int val; } ubo;
 

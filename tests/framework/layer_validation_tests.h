@@ -336,6 +336,7 @@ class DescriptorIndexingTest : public VkLayerTest {
   public:
     void InitBasicDescriptorIndexing(void *pNextFeatures = nullptr);
     VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features;
+    void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
 };
 class NegativeDescriptorIndexing : public DescriptorIndexingTest {};
 class PositiveDescriptorIndexing : public DescriptorIndexingTest {};
