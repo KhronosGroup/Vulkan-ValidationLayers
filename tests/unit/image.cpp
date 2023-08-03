@@ -4142,6 +4142,91 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-pNext-06722");
 }
 
+TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
+    TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_ci = DefaultImageInfo();
+    image_ci.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkImageFormatProperties image_properties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
+                                                              image_ci.usage, image_ci.flags, &image_properties);
+    if (res != VK_SUCCESS) {
+        GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
+    }
+
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01572");
+}
+
+TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
+    TEST_DESCRIPTION("VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto image_ci = DefaultImageInfo();
+    image_ci.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;  // missing MUTABLE_FORMAT_BIT
+    image_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
+
+    VkImageFormatProperties image_properties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
+                                                              image_ci.usage, image_ci.flags, &image_properties);
+    if (res != VK_SUCCESS) {
+        GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
+    }
+
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01573");
+}
+
+TEST_F(NegativeImage, SparseResidencyAliased) {
+    TEST_DESCRIPTION("use VK_IMAGE_CREATE_SPARSE_ALIASED_BIT without sparseResidencyAliased.");
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.sparseResidencyAliased = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
+
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.flags = VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-00969");
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01924");
+}
+
+TEST_F(NegativeImage, SparseResidencyLinear) {
+    TEST_DESCRIPTION("use VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT with VK_IMAGE_TILING_LINEAR.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
+    }
+
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+    image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-tiling-04121");
+}
+
+TEST_F(NegativeImage, DisjointWithoutAlias) {
+    TEST_DESCRIPTION("use VK_IMAGE_CREATE_DISJOINT_BIT without VK_IMAGE_CREATE_ALIAS_BIT.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    // some devices fail query on this image
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-format-01577");
+}
+
 TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
 
