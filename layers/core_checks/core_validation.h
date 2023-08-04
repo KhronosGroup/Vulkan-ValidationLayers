@@ -964,6 +964,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                      uint32_t attachment_index, const char* variable_name) const;
     bool ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_STATE& src_image_state,
                                           const IMAGE_STATE& dst_image_state) const;
+    bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const IMAGE_STATE& image_state) const;
     template <typename HandleT, typename RegionType>
     bool ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType* pRegions,
                                        const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type, bool from_image,

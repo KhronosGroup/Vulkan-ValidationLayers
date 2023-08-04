@@ -522,7 +522,7 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
     return copy_imagebuffermemory_vuid.at(id).at(index);
 }
 
-static bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
+bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
         if (!(FormatIsColor(format) || FormatIsMultiplane(format))) return false;
     }
@@ -2720,6 +2720,18 @@ bool CoreChecks::UsageHostTransferCheck(VkDevice device, const IMAGE_STATE &imag
 }
 
 template <typename T>
+VkImageLayout GetImageLayout(T data) {
+    return VK_IMAGE_LAYOUT_UNDEFINED;
+}
+template <>
+VkImageLayout GetImageLayout<VkCopyMemoryToImageInfoEXT>(VkCopyMemoryToImageInfoEXT data) {
+    return data.dstImageLayout;
+}
+template <>
+VkImageLayout GetImageLayout<VkCopyImageToMemoryInfoEXT>(VkCopyImageToMemoryInfoEXT data) {
+    return data.srcImageLayout;
+}
+template <typename T>
 VkImage GetImage(T data) {
     return VK_NULL_HANDLE;
 }
@@ -2736,10 +2748,15 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
     bool skip = false;
     VkImage image = GetImage(*info_ptr);
     auto image_state = Get<IMAGE_STATE>(image);
+    auto image_layout = GetImageLayout(*info_ptr);
     auto regionCount = info_ptr->regionCount;
     const char *func_name = from_image ? "vkCopyMemoryToImageEXT" : "vkCopyImageToMemoryEXT";
     const char *image_name = from_image ? "srcImage" : "dstImage";
     const char *info_type = from_image ? "pCopyImageToMemoryInfo" : "pCopyMemoryToImageInfo";
+    const char *source_or_destination = from_image ? "source" : "destination";
+    const char *image_layout_name = from_image ? "srcImageLayout" : "dstImageLayout";
+    const char *image_layout_vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09064"
+                                               : "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059";
 
     if (!(enabled_features.host_image_copy_features.hostImageCopy)) {
         const char *vuid =
@@ -2803,15 +2820,16 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                 const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-09115"
                                               : "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-09115";
                 LogObjectList objlist(device, image_state->image());
-                skip |=
-                    LogError(objlist, vuid,
-                             "%s(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
-                             "extents (w=%d, h=%d, d=%d) %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
-                             func_name, i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
-                             image_state->createInfo.extent.width, image_state->createInfo.extent.height,
-                             image_state->createInfo.extent.depth, info_type);
+                skip |= LogError(objlist, vuid,
+                                 "%s(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
+                                 "extents (w=%d, h=%d, d=%d) %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                                 func_name, i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
+                                 image_state->createInfo.extent.width, image_state->createInfo.extent.height,
+                                 image_state->createInfo.extent.depth, info_type);
             }
         }
+        skip |= ValidateHostCopyCurrentLayout(device, image_layout, region.imageSubresource, i, *image_state, func_name,
+                                              source_or_destination, image_layout_name, image_layout_vuid);
     }
 
     const char *vuid_09111 =
