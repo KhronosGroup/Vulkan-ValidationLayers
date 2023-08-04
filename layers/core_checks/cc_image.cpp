@@ -175,6 +175,18 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     image_format_info.tiling = pCreateInfo->tiling;
     image_format_info.usage = pCreateInfo->usage;
     image_format_info.flags = pCreateInfo->flags;
+
+    // These are pNext structs that can be in both vkGetPhysicalDeviceImageFormatProperties2 and vkCreateImage
+    // need to pass in or else driver might return NOT_SUPPORTED falsly
+    // TODO - Generate the full list
+    auto image_format_list = LvlInitStruct<VkImageFormatListCreateInfo>();
+    auto image_format_list_in = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+    if (image_format_list_in) {
+        image_format_list.pViewFormats = image_format_list_in->pViewFormats;
+        image_format_list.viewFormatCount = image_format_list_in->viewFormatCount;
+        image_format_info.pNext = &image_format_list;
+    }
+
     VkResult result = VK_SUCCESS;
     if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
@@ -188,7 +200,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-        image_format_info.pNext = &drm_format_modifier;
+        if (image_format_list_in) {
+            image_format_list.pNext = &drm_format_modifier;
+        } else {
+            image_format_info.pNext = &drm_format_modifier;
+        }
         drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
