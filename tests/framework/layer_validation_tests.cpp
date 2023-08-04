@@ -1697,7 +1697,12 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer_.init_as_src_and_dst(*device_obj, 256, mem_prop, families, buffer_memory);
+    auto buffer_ci = VkBufferObj::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    if (buffer_memory) {
+        buffer_.init(*device_obj, buffer_ci, mem_prop);
+    } else {
+        buffer_.init_no_mem(*device_obj, buffer_ci);
+    }
     ASSERT_TRUE(buffer_.initialized());
     buffer_barrier_ = buffer_.buffer_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
@@ -1715,7 +1720,12 @@ void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool i
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer_.init_as_src_and_dst(*device_obj, 256, mem_prop, families, buffer_memory);
+    auto buffer_ci = VkBufferObj::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    if (buffer_memory) {
+        buffer_.init(*device_obj, buffer_ci, mem_prop);
+    } else {
+        buffer_.init_no_mem(*device_obj, buffer_ci);
+    }
     ASSERT_TRUE(buffer_.initialized());
     buffer_barrier_ = buffer_.buffer_memory_barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                                     VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);

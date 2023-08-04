@@ -2614,8 +2614,8 @@ TEST_F(NegativeDynamicRendering, WithBarrier) {
 
     m_commandBuffer->BeginRendering(begin_rendering_info);
 
-    VkBufferObj buffer(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier.buffer = buffer.handle();
@@ -2773,8 +2773,8 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj buffer(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     auto buf_barrier_2 = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier_2.buffer = buffer.handle();

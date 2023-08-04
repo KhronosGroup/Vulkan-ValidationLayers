@@ -318,16 +318,15 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     buffer_import.bind_memory(memory_import, 0);
 
     // Create test buffers and fill input buffer
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj buffer_input;
-    buffer_input.init_as_src_and_dst(*m_device, buffer_size, mem_prop);
+    VkBufferObj buffer_input(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     auto input_mem = (uint8_t *)buffer_input.memory().map();
     for (uint32_t i = 0; i < buffer_size; i++) {
         input_mem[i] = (i & 0xFF);
     }
     buffer_input.memory().unmap();
-    VkBufferObj buffer_output;
-    buffer_output.init_as_src_and_dst(*m_device, buffer_size, mem_prop);
+    VkBufferObj buffer_output(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // Copy from input buffer to output buffer through the exported/imported memory
     m_commandBuffer->begin();

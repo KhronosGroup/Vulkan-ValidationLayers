@@ -24,8 +24,8 @@ TEST_F(NegativeBuffer, Extents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    VkBufferObj buffer_one(*m_device, 2048, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    VkBufferObj buffer_two(*m_device, 2048, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer_one(*m_device, 2048, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer_two(*m_device, 2048, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkBufferCopy copy_info = {4096, 256, 256};
 
@@ -112,7 +112,7 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     m_commandBuffer->begin();
     // Introduce failure by using dstOffset that is not multiple of 4
@@ -142,7 +142,7 @@ TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     TEST_DESCRIPTION("Check alignment and size parameters for vkCmdFillBuffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     m_commandBuffer->begin();
 
     // Introduce failure by using dstOffset greater than bufferSize
@@ -277,8 +277,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so use a different usage value instead to cause an error
     const VkDeviceSize resource_size = 1024;
     const VkBufferCreateInfo bad_buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VkBufferObj bad_buffer;
-    bad_buffer.init(*m_device, bad_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj bad_buffer(*m_device, bad_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Create a test buffer view
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
@@ -289,8 +288,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 
     // Create a better test buffer
     const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
     buff_view_ci.buffer = buffer.handle();
@@ -328,8 +326,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
             2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
         const VkBufferCreateInfo large_buffer_info =
             VkBufferObj::create_info(large_resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-        VkBufferObj large_buffer;
-        large_buffer.init(*m_device, large_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VkBufferObj large_buffer(*m_device, large_buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
         buff_view_ci.buffer = large_buffer.handle();
@@ -357,8 +354,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     // Create a new buffer using VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
     const VkBufferCreateInfo storage_buffer_info =
         VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-    VkBufferObj storage_buffer;
-    storage_buffer.init(*m_device, storage_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj storage_buffer(*m_device, storage_buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     buff_view_ci.buffer = storage_buffer.handle();
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-00934"});
@@ -384,8 +380,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     }
 
     const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -420,8 +415,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
     const VkDeviceSize resource_size = 1024;
     VkBufferCreateInfo buffer_info = VkBufferObj::create_info(
         resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Create a test buffer view
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
@@ -493,7 +487,7 @@ TEST_F(NegativeBuffer, FillBufferWithinRenderPass) {
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-    VkBufferObj dst_buffer(*m_device, 1024, reqs, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, reqs);
     m_commandBuffer->FillBuffer(dst_buffer.handle(), 0, 4, 0x11111111);
 
     m_errorMonitor->VerifyFound();
@@ -512,7 +506,7 @@ TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkBufferObj dst_buffer(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkDeviceSize dstOffset = 0;
     uint32_t Data[] = {1, 2, 3, 4, 5, 6, 7, 8};
@@ -571,9 +565,7 @@ TEST_F(NegativeBuffer, VertexBuffer) {
 
     {
         VkDeviceSize offset = 0;
-        VkBufferObj vertex_buffer;
-        auto info = vertex_buffer.create_info(64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        vertex_buffer.init(*m_device, info);
+        VkBufferObj vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vertex_buffer.handle(), &offset);
 
         m_commandBuffer->Draw(1, 0, 0, 0);
@@ -670,7 +662,7 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();
@@ -712,7 +704,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();
@@ -754,7 +746,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();
@@ -853,7 +845,7 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
 
     VkCommandPoolObj pool(m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     cb.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-apiVersion-07894");
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
@@ -959,7 +951,7 @@ TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
     copy_info.srcOffset = 0;
     copy_info.dstOffset = 0;
     copy_info.size = 256;
-    VkBufferObj buffer(*m_device, copy_info.size, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
     VkBufferObj buffer_shared_memory;
     buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());
@@ -996,7 +988,7 @@ TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
     copy_infos[3].dstOffset = 28;
     copy_infos[3].size = 4;
 
-    VkBufferObj buffer(*m_device, 32, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
     VkBufferObj buffer_shared_memory;
     buffer_shared_memory.init_no_mem(*m_device, buffer.create_info());

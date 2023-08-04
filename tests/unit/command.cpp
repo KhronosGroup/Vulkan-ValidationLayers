@@ -1299,10 +1299,10 @@ TEST_F(NegativeCommand, CompressedImageMipCopy) {
 
     // Allocate buffers
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer_1024(*m_device, 1024, 0, transfer_usage);
-    VkBufferObj buffer_64(*m_device, 64, 0, transfer_usage);
-    VkBufferObj buffer_16(*m_device, 16, 0, transfer_usage);
-    VkBufferObj buffer_8(*m_device, 8, 0, transfer_usage);
+    VkBufferObj buffer_1024(*m_device, 1024, transfer_usage);
+    VkBufferObj buffer_64(*m_device, 64, transfer_usage);
+    VkBufferObj buffer_16(*m_device, 16, transfer_usage);
+    VkBufferObj buffer_8(*m_device, 8, transfer_usage);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -1606,10 +1606,10 @@ TEST_F(NegativeCommand, ImageBufferCopy) {
 
     // Allocate buffers
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer_256k(*m_device, 262144, 0, transfer_usage);  // 256k
-    VkBufferObj buffer_128k(*m_device, 131072, 0, transfer_usage);  // 128k
-    VkBufferObj buffer_64k(*m_device, 65536, 0, transfer_usage);    // 64k
-    VkBufferObj buffer_16k(*m_device, 16384, 0, transfer_usage);    // 16k
+    VkBufferObj buffer_256k(*m_device, 262144, transfer_usage);  // 256k
+    VkBufferObj buffer_128k(*m_device, 131072, transfer_usage);  // 128k
+    VkBufferObj buffer_64k(*m_device, 65536, transfer_usage);    // 64k
+    VkBufferObj buffer_16k(*m_device, 16384, transfer_usage);    // 16k
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -2138,7 +2138,7 @@ TEST_F(NegativeCommand, MiscImageLayer) {
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 64bpp
-    VkBufferObj buffer(*m_device, 128 * 128 * 8, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 128 * 128 * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0);
     ASSERT_TRUE(image.initialized());
     VkBufferImageCopy region = {};
     region.bufferRowLength = 128;
@@ -2153,7 +2153,7 @@ TEST_F(NegativeCommand, MiscImageLayer) {
     VkImageObj image2(m_device);
     image2.Init(128, 128, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 16bpp
     ASSERT_TRUE(image2.initialized());
-    VkBufferObj buffer2(*m_device, 128 * 128 * 2, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, nullptr);
+    VkBufferObj buffer2(*m_device, 128 * 128 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0);
     m_commandBuffer->begin();
 
     // Image must have offset.z of 0 and extent.depth of 1
@@ -2960,7 +2960,7 @@ TEST_F(NegativeCommand, CopyImageZeroSize) {
     ASSERT_TRUE(dst_image.initialized());
 
     // large enough for image
-    VkBufferObj buffer(*m_device, 16384, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 16384, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
     m_commandBuffer->begin();
 
@@ -4372,7 +4372,7 @@ TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
     ASSERT_TRUE(ds_image.initialized());
 
     // 256k to have more then enough to copy
-    VkBufferObj buffer(*m_device, 262144, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 262144, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -4416,7 +4416,7 @@ TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
     ASSERT_TRUE(image.initialized());
 
     // 256k to have more then enough to copy
-    VkBufferObj buffer(*m_device, 262144, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 262144, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -4854,8 +4854,7 @@ TEST_F(NegativeCommand, MultiDraw) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     // New VUIDs added with multi_draw (also see GPU-AV)
-    VkBufferObj buffer;
-    buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     multi_draw_indices[2].indexCount = 511;
     m_commandBuffer->BindIndexBuffer(&buffer, 2, VK_INDEX_TYPE_UINT16);
     // This first should be fine
@@ -4933,8 +4932,7 @@ TEST_F(NegativeCommand, MultiDrawFeatures) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-04933");
     vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
-    VkBufferObj buffer;
-    buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-04937");
     vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
@@ -5035,12 +5033,10 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkBufferObj draw_buffer;
-    draw_buffer.init(*m_device, sizeof(VkDrawIndirectCommand) * 3, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj draw_buffer(*m_device, sizeof(VkDrawIndirectCommand) * 3, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -5101,8 +5097,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     VkBufferCreateInfo count_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     count_buffer_create_info.size = count_buffer_size;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, count_buffer_create_info);
+    VkBufferObj count_buffer(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-buffer-02708");
     vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
@@ -5188,21 +5183,18 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(VkDrawIndexedIndirectCommand);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    VkBufferObj draw_buffer;
-    draw_buffer.init(*m_device, buffer_create_info);
+    VkBufferObj draw_buffer(*m_device, buffer_create_info);
 
     VkDeviceSize count_buffer_size = 128;
     VkBufferCreateInfo count_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     count_buffer_create_info.size = count_buffer_size;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, count_buffer_create_info);
+    VkBufferObj count_buffer(*m_device, count_buffer_create_info);
 
     VkBufferCreateInfo index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, index_buffer_create_info);
+    VkBufferObj index_buffer(*m_device, index_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-None-07312");
     vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
@@ -5271,19 +5263,15 @@ TEST_F(NegativeCommand, DrawIndirectCountFeature) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    VkBufferObj indirect_buffer;
-    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj indexed_indirect_buffer;
-    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -5758,7 +5746,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferSize) {
 
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
-    VkBufferObj buffer(*m_device, dataSize, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferObj buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dataSize-00033");
     m_commandBuffer->begin();
@@ -5774,7 +5762,7 @@ TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
 
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkDeviceSize dataSize = sizeof(uint32_t) * 4;
-    VkBufferObj buffer(*m_device, dataSize, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferObj buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-dstOffset-00032");
     m_commandBuffer->begin();
@@ -6221,8 +6209,8 @@ TEST_F(NegativeCommand, CopyCommands2V13) {
     image2.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkBufferObj dst_buffer(*m_device, 128 * 128, 0, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    VkBufferObj src_buffer(*m_device, 128 * 128, 0, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferObj dst_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj src_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     auto copy_region = LvlInitStruct<VkImageCopy2>();
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.layerCount = 1;
@@ -7259,8 +7247,7 @@ TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
     TEST_DESCRIPTION("Bad usage flags for binding the Vertex and Index buffer");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, 64, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_commandBuffer->begin();
 
@@ -7279,8 +7266,7 @@ TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
 TEST_F(NegativeCommand, BindIndexBufferHandles) {
     TEST_DESCRIPTION("call vkCmdBindIndexBuffer with bad Handles");
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkBufferObj buffer;
-    buffer.init(*m_device, 64, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     VkBuffer bad_buffer = CastToHandle<VkBuffer, uintptr_t>(0xbaadbeef);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-buffer-parameter");

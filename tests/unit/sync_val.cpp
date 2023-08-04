@@ -26,9 +26,9 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer_a(*m_device, 256, mem_prop, transfer_usage);
-    VkBufferObj buffer_b(*m_device, 256, mem_prop, transfer_usage);
-    VkBufferObj buffer_c(*m_device, 256, mem_prop, transfer_usage);
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
     VkBufferCopy front2front = {0, 0, 128};
@@ -214,13 +214,11 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
-    VkBufferObj buffer_c;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
     VkBufferCopy front2front = {0, 0, 128};
@@ -1180,10 +1178,10 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj buffer_a, buffer_b;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 2048, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 2048, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 2048, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 2048, transfer_usage, mem_prop);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1574,12 +1572,9 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_commandBuffer->reset();
 
     // DispatchIndirect
-    VkBufferObj buffer_dispatchIndirect, buffer_dispatchIndirect2;
     buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_dispatchIndirect.init(
-        *m_device, buffer_dispatchIndirect.create_info(sizeof(VkDispatchIndirectCommand), buffer_usage, nullptr), mem_prop);
-    buffer_dispatchIndirect2.init(
-        *m_device, buffer_dispatchIndirect2.create_info(sizeof(VkDispatchIndirectCommand), buffer_usage, nullptr), mem_prop);
+    VkBufferObj buffer_dispatchIndirect(*m_device, sizeof(VkDispatchIndirectCommand), buffer_usage, mem_prop);
+    VkBufferObj buffer_dispatchIndirect2(*m_device, sizeof(VkDispatchIndirectCommand), buffer_usage, mem_prop);
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
@@ -1740,12 +1735,9 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_commandBuffer->end();
 
     // DrawIndirect
-    VkBufferObj buffer_drawIndirect, buffer_drawIndirect2;
     buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_drawIndirect.init(
-        *m_device, buffer_drawIndirect.create_info(sizeof(VkDrawIndexedIndirectCommand), buffer_usage, nullptr), mem_prop);
-    buffer_drawIndirect2.init(*m_device, buffer_drawIndirect2.create_info(sizeof(VkDrawIndirectCommand), buffer_usage, nullptr),
-                              mem_prop);
+    VkBufferObj buffer_drawIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
+    VkBufferObj buffer_drawIndirect2(*m_device, sizeof(VkDrawIndirectCommand), buffer_usage, mem_prop);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -1783,12 +1775,9 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_commandBuffer->end();
 
     // DrawIndexedIndirect
-    VkBufferObj buffer_drawIndexedIndirect, buffer_drawIndexedIndirect2;
     buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_drawIndexedIndirect.init(
-        *m_device, buffer_drawIndexedIndirect.create_info(sizeof(VkDrawIndexedIndirectCommand), buffer_usage, nullptr), mem_prop);
-    buffer_drawIndexedIndirect2.init(
-        *m_device, buffer_drawIndexedIndirect2.create_info(sizeof(VkDrawIndexedIndirectCommand), buffer_usage, nullptr), mem_prop);
+    VkBufferObj buffer_drawIndexedIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
+    VkBufferObj buffer_drawIndexedIndirect2(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -1832,11 +1821,10 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     if (has_khr_indirect) {
         // DrawIndirectCount
         {
-            VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            buffer_count.init(*m_device, buffer_count.create_info(sizeof(uint32_t), buffer_usage, nullptr), mem_prop);
-            buffer_count2.init(*m_device, buffer_count2.create_info(sizeof(uint32_t), buffer_usage, nullptr), mem_prop);
+            VkBufferObj buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+            VkBufferObj buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
 
             m_commandBuffer->reset();
             m_commandBuffer->begin();
@@ -1878,11 +1866,10 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
         // DrawIndexedIndirectCount
         {
-            VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            buffer_count.init(*m_device, buffer_count.create_info(sizeof(uint32_t), buffer_usage, nullptr), mem_prop);
-            buffer_count2.init(*m_device, buffer_count2.create_info(sizeof(uint32_t), buffer_usage, nullptr), mem_prop);
+            VkBufferObj buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+            VkBufferObj buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
 
             m_commandBuffer->reset();
             m_commandBuffer->begin();
@@ -2026,10 +2013,10 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     query_pool_create_info.queryCount = 1;
     query_pool.init(*m_device, query_pool_create_info);
 
-    VkBufferObj buffer_a, buffer_b;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
 
@@ -3321,13 +3308,11 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
-    VkBufferObj buffer_c;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
     VkBufferCopy front2front = {0, 0, 128};
@@ -3591,11 +3576,10 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
 
     // Secondary command buffer events tests
     const auto cb = m_commandBuffer->handle();
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy front2front = {0, 0, 128};
 
@@ -4405,7 +4389,6 @@ struct QSTestContext {
 
     QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0 = nullptr, VkQueueObj* force_q1 = nullptr);
     VkCommandBuffer InitFromPool(VkCommandBufferObj& cb_obj);
-    void InitBuffer(VkBufferObj& buf);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
     void Begin(VkCommandBufferObj& cb);
@@ -4516,9 +4499,11 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
 
     if (!Valid()) return;
 
-    InitBuffer(buffer_a);
-    InitBuffer(buffer_b);
-    InitBuffer(buffer_c);
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_a.init(*device, 256, transfer_usage, mem_prop);
+    buffer_b.init(*device, 256, transfer_usage, mem_prop);
+    buffer_c.init(*device, 256, transfer_usage, mem_prop);
 
     VkDeviceSize size = 256;
     VkDeviceSize half_size = size / 2;
@@ -4544,11 +4529,6 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
 VkCommandBuffer QSTestContext::InitFromPool(VkCommandBufferObj& cb_obj) {
     cb_obj.Init(dev, &pool);
     return cb_obj.handle();
-}
-
-void QSTestContext::InitBuffer(VkBufferObj& buf) {
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buf.init_as_src_and_dst(*dev, 256, mem_prop);
 }
 
 void QSTestContext::Begin(VkCommandBufferObj& cb) {
@@ -4836,8 +4816,8 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     }
 
     // Need an extra buffer and CB
-    VkBufferObj buffer_d;
-    test.InitBuffer(buffer_d);
+    VkBufferObj buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkCommandBufferObj cbd;
     test.InitFromPool(cbd);
     // This gives a noop command buffer w.r.t. buffers a, b, and c.

@@ -496,9 +496,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
+    VkBufferObj vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -649,9 +647,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
+    VkBufferObj vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();

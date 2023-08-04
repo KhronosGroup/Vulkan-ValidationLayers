@@ -1814,25 +1814,23 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
         GTEST_SKIP() << "Test requires 2 queues";
     }
 
-    auto buffer_a = std::make_unique<VkBufferObj>();
-    auto buffer_b = std::make_unique<VkBufferObj>();
-    auto buffer_c = std::make_unique<VkBufferObj>();
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a->init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b->init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c->init_as_src_and_dst(*m_device, 256, mem_prop);
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
+    VkBufferObj buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
     VkCommandPoolObj pool0(m_device, q0->get_family_index());
     VkCommandBufferObj cb0(m_device, &pool0);
     cb0.begin();
-    vk::CmdCopyBuffer(cb0.handle(), buffer_a->handle(), buffer_b->handle(), 1, &region);
+    vk::CmdCopyBuffer(cb0.handle(), buffer_a.handle(), buffer_b.handle(), 1, &region);
     cb0.end();
 
     VkCommandPoolObj pool1(m_device, q1->get_family_index());
     VkCommandBufferObj cb1(m_device, &pool1);
     cb1.begin();
-    vk::CmdCopyBuffer(cb1.handle(), buffer_c->handle(), buffer_b->handle(), 1, &region);
+    vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
     cb1.end();
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -1891,7 +1889,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &wait_info_value;
     vk::WaitSemaphoresKHR(m_device->device(), &wait_info, 1000000000);
-    buffer_a.reset();
+    buffer_a.destroy();
 
     // signal semaphore to 3 to allow q1 to proceed
     signal_info.value = kQ1Begin;
@@ -1900,8 +1898,8 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     // buffer_b is used by both q0 and q1, buffer_c is used by q1
     wait_info_value = kQ1End;
     vk::WaitSemaphoresKHR(m_device->device(), &wait_info, 1000000000);
-    buffer_b.reset();
-    buffer_c.reset();
+    buffer_b.destroy();
+    buffer_c.destroy();
 
     vk::DeviceWaitIdle(m_device->device());
 }
@@ -2212,7 +2210,7 @@ struct SemBufferRaceData {
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
             auto buffer = std::make_unique<vk_testing::Buffer>();
-            buffer->init(dev, 20, reqs, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            buffer->init(dev, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, reqs);
 
             // main thread sets up buffer
             // main thread signals 1

@@ -1780,12 +1780,7 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
     memset(&m_descriptorBufferInfo, 0, sizeof(m_descriptorBufferInfo));
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    if ((VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) == usage) {
-        init_as_src_and_dst(*m_device, allocationSize, reqs);
-    } else {
-        init(*m_device, create_info(allocationSize, usage), reqs);
-    }
+    init(*m_device, create_info(allocationSize, usage), reqs);
 
     void *pData = memory().map();
     memcpy(pData, data, static_cast<size_t>(allocationSize));
