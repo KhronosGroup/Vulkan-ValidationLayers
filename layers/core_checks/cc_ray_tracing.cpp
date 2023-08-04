@@ -300,8 +300,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
             // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
             // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
             // overlap, an error will be logged.
-// Issue 6040
-#if 0
+
             if (auto other_scratches = GetBuffersByAddress(pInfos[other_info_j].scratchData.deviceAddress);
                 !other_scratches.empty()) {
                 using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
@@ -340,7 +339,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                              }
 
                              if (const auto [memory, overlap_range] = dst_as_buffer.GetResourceMemoryOverlap(
-                                     dst_as_buffer_range, other_scratch.get(), other_scratch_range);
+                                     dst_as_buffer_range, other_scratch, other_scratch_range);
                                  memory != VK_NULL_HANDLE) {
                                  if (out_error_msg) {
                                      std::stringstream dst_as_var_name_ss;
@@ -399,7 +398,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                              }
 
                              if (const auto [memory, overlap_range] = src_as_buffer.GetResourceMemoryOverlap(
-                                     src_as_buffer_range, other_scratch.get(), other_scratch_range);
+                                     src_as_buffer_range, other_scratch, other_scratch_range);
                                  memory != VK_NULL_HANDLE) {
                                  if (out_error_msg) {
                                      std::stringstream src_as_var_name_ss;
@@ -436,7 +435,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                              [this,
                              commandBuffer,
                              info_i,
-                             report_data = report_data,
                              scratch_address = pInfos[info_i].scratchData.deviceAddress,
                              assumed_scratch_size = rt::ComputeScratchSize(device, pInfos[info_i], ppBuildRangeInfos[info_i]),
                              &scratches,
@@ -461,7 +459,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                  BufferAddressValidation<1> scratch_and_other_scratch_overlap_validator = {
                                      {{{"No-VUID", LogObjectList(commandBuffer),
                                         // clang-format off
-                                        [report_data,
+                                        [this,
                                         scratch_address,
                                         assumed_scratch_size,
                                         &other_scratch,
@@ -469,21 +467,18 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                         parent_out_error_msg = out_error_msg]
                                         // clang-format on
                                         (const BUFFER_STATE_PTR &scratch, std::string *) -> bool {
-                                            if (scratch == other_scratch) {
-                                                return false;
-                                            }
-
                                             const VkDeviceSize scratch_offset = scratch_address - scratch->deviceAddress;
                                             const range<VkDeviceSize> scratch_range(
                                                 scratch_offset,
                                                 std::min(scratch_offset + assumed_scratch_size, scratch->createInfo.size));
+
+                                            // Do not validate this VU if range is invalid
                                             if (scratch_range.invalid()) {
-                                                // Do not validate this VU if range is invalid
                                                 return true;
                                             }
 
                                             if (const auto [memory, overlap_range] = scratch->GetResourceMemoryOverlap(
-                                                    scratch_range, other_scratch.get(), other_scratch_range);
+                                                    scratch_range, other_scratch, other_scratch_range);
                                                 memory != VK_NULL_HANDLE) {
                                                 if (parent_out_error_msg) {
                                                     std::stringstream scratch_error_msg_ss;
@@ -534,7 +529,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     *this, other_scratches, "vkCmdBuildAccelerationStructuresKHR()", address_name_ss.str(),
                     pInfos[other_info_j].scratchData.deviceAddress);
             }
-#endif
 
             // skip comparing to self pInfos[info_i]
             if (other_info_j != info_i) {

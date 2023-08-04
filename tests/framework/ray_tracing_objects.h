@@ -154,7 +154,7 @@ class BuildGeometryInfoKHR {
     // Using the same pointers for src and dst is supported
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);
-    BuildGeometryInfoKHR& SetScratchBuffer(vk_testing::Buffer&& scratch_buffer);
+    BuildGeometryInfoKHR& SetScratchBuffer(std::shared_ptr<vk_testing::Buffer> scratch_buffer);
     BuildGeometryInfoKHR& SetDeviceScratchOffset(VkDeviceAddress offset);
     BuildGeometryInfoKHR& SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as);
     // Should be 0 or 1
@@ -195,7 +195,7 @@ class BuildGeometryInfoKHR {
     std::vector<GeometryKHR> geometries_;
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
     VkDeviceAddress device_scratch_offset_ = 0;
-    vk_testing::Buffer device_scratch_;
+    std::shared_ptr<vk_testing::Buffer> device_scratch_;
     std::unique_ptr<uint8_t[]> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
 };

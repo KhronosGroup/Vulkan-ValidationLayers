@@ -278,7 +278,7 @@ BuildGeometryInfoKHR::BuildGeometryInfoKHR(APIVersion vk_api_version)
       geometries_(),
       src_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
       dst_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
-      device_scratch_() {}
+      device_scratch_(std::make_shared<vk_testing::Buffer>()) {}
 
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetGeometries(std::vector<GeometryKHR> &&geometries) {
     geometries_ = std::move(geometries);
@@ -319,7 +319,7 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDstAS(std::shared_ptr<Acceleratio
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(vk_testing::Buffer &&scratch_buffer) {
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(std::shared_ptr<vk_testing::Buffer> scratch_buffer) {
     device_scratch_ = std::move(scratch_buffer);
     return *this;
 }
@@ -537,19 +537,20 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
         auto phys_dev_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&as_props);
         vk::GetPhysicalDeviceProperties2(device.phy(), &phys_dev_props);
 
-        if (!device_scratch_.initialized()) {
+        assert(device_scratch_);  // So far null pointers are not supported
+        if (!device_scratch_->initialized()) {
             auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
             alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 
             if (scratch_size > 0) {
-                device_scratch_.init(device, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
-                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+                device_scratch_->init(device, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
+                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
             }
         }
-        if (device_scratch_.create_info().size != 0 &&
-            device_scratch_.create_info().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-            const VkDeviceAddress scratch_address = device_scratch_.address(vk_api_version_);
+        if (device_scratch_->create_info().size != 0 &&
+            device_scratch_->create_info().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+            const VkDeviceAddress scratch_address = device_scratch_->address(vk_api_version_);
             const auto aligned_scratch_address =
                 Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
             assert(aligned_scratch_address >= scratch_address);
@@ -557,7 +558,7 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
             vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
             assert(vk_info_.scratchData.deviceAddress <
                    (scratch_address +
-                    device_scratch_.create_info().size));  // Note: This assert may prove overly conservative in the future
+                    device_scratch_->create_info().size));  // Note: This assert may prove overly conservative in the future
         } else {
             vk_info_.scratchData.deviceAddress = 0;
         }
