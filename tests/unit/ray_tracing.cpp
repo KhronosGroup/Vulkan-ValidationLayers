@@ -2865,8 +2865,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        VkBufferObj bad_scratch(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                &alloc_flags);
+        auto bad_scratch = std::make_shared<VkBufferObj>(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
         auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
@@ -2879,9 +2879,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
         // no VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT => scratch address will be set to 0
-        VkBufferObj bad_scratch(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                &alloc_flags);
-
+        auto bad_scratch = std::make_shared<VkBufferObj>(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
         auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
@@ -2892,8 +2891,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     m_commandBuffer->end();
 }
 
-// Issue 6040
-TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
+TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
 
@@ -2929,11 +2927,12 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-        std::vector<VkBufferObj> scratch_buffers(build_info_count);
+        std::vector<std::shared_ptr<VkBufferObj>> scratch_buffers(build_info_count);
         std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
         for (auto &scratch_buffer : scratch_buffers) {
-            scratch_buffer.init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), scratch_buffer.handle(), buffer_memory.handle(), 0);
+            scratch_buffer = std::make_shared<VkBufferObj>();
+            scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
+            vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
 
             auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
             build_info.SetScratchBuffer(std::move(scratch_buffer));
@@ -2997,13 +2996,14 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         std::vector<VkBufferObj> dst_blas_buffers(build_info_count);
-        std::vector<VkBufferObj> scratch_buffers(build_info_count);
+        std::vector<std::shared_ptr<VkBufferObj>> scratch_buffers(build_info_count);
         std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
         for (size_t i = 0; i < build_info_count; ++i) {
             dst_blas_buffers[i].init_no_mem(*m_device, dst_blas_buffer_ci);
             vk::BindBufferMemory(m_device->device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
-            scratch_buffers[i].init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), scratch_buffers[i].handle(), buffer_memory.handle(), 0);
+            scratch_buffers[i] = std::make_shared<VkBufferObj>();
+            scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
+            vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
             auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
             build_info.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffers[i]));
@@ -3098,14 +3098,15 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         std::vector<VkBufferObj> src_blas_buffers(build_info_count);
-        std::vector<VkBufferObj> scratch_buffers(build_info_count);
+        std::vector<std::shared_ptr<VkBufferObj>> scratch_buffers(build_info_count);
         std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
         for (size_t i = 0; i < build_info_count; ++i) {
             src_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
             vk::BindBufferMemory(m_device->device(), src_blas_buffers[i].handle(), buffer_memory.handle(), 0);
 
-            scratch_buffers[i].init_no_mem(*m_device, scratch_buffer_ci);
-            vk::BindBufferMemory(m_device->device(), scratch_buffers[i].handle(), buffer_memory.handle(), 0);
+            scratch_buffers[i] = std::make_shared<VkBufferObj>();
+            scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
+            vk::BindBufferMemory(m_device->device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
 
             // 1st step: build destination acceleration struct
             auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
@@ -3184,7 +3185,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
     vk::DestroyBuffer(m_device->handle(), build_geometry_info.GetDstAS()->GetBuffer().handle(), nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyBuffer-buffer-00922");
-    vk::DestroyBuffer(m_device->handle(), build_geometry_info.GetScratchBuffer().handle(), nullptr);
+    vk::DestroyBuffer(m_device->handle(), build_geometry_info.GetScratchBuffer()->handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);

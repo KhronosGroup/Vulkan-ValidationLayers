@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 #include "generated/vk_extension_helper.h"
+#include "../layers/utils/vk_layer_utils.h"
 
 bool RayTracingTest::InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr,
                                                     VkPhysicalDeviceFeatures2KHR *features2,
@@ -473,4 +474,69 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
 
     rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
     m_commandBuffer->end();
+}
+
+TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
+    TEST_DESCRIPTION(
+        "Validate acceleration structure building when source/destination acceleration structures and scratch buffers may "
+        "overlap.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery feature is not supported";
+    }
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature is not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    constexpr size_t build_info_count = 3;
+
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+    alloc_info.allocationSize = 8192 * 3;
+    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    // Test using non overlapping memory chunks from the same buffer in multiple builds
+    // The scratch buffer is used in multiple builds but bound at different offsets, so no validation error should be issued
+    {
+        auto scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        scratch_buffer_ci.size = 8192 * 3;
+        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+        auto scratch_buffer = std::make_shared<VkBufferObj>();
+        scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
+        vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
+        std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
+        for (size_t i = 0; i < build_info_count; ++i) {
+            auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            build_info.SetScratchBuffer(scratch_buffer);
+            build_info.SetDeviceScratchOffset(i * 8192);
+            build_infos.emplace_back(std::move(build_info));
+        }
+
+        m_commandBuffer->begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+        m_commandBuffer->end();
+        m_errorMonitor->VerifyFound();
+    }
 }
