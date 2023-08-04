@@ -369,6 +369,47 @@ TEST_F(PositiveImage, FormatCompatibility) {
     vk::DestroyImage(m_device->device(), image, nullptr);
 }
 
+TEST_F(PositiveImage, MultpilePNext) {
+    TEST_DESCRIPTION(
+        "Use VkImageFormatListCreateInfo and VkImageCompressionControlEXT to make sure internal "
+        "DispatchGetPhysicalDeviceImageFormatProperties2 pass them along");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkFormat view_format = VK_FORMAT_R8G8B8A8_UINT;
+
+    VkImageFormatListCreateInfo format_list = LvlInitStruct<VkImageFormatListCreateInfo>();
+    format_list.viewFormatCount = 1;
+    format_list.pViewFormats = &view_format;
+
+    VkImageCompressionControlEXT image_compression = LvlInitStruct<VkImageCompressionControlEXT>(&format_list);
+    image_compression.compressionControlPlaneCount = 0;
+    image_compression.flags = VK_IMAGE_COMPRESSION_DEFAULT_EXT;
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&image_compression);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.flags = 0;
+
+    vk_testing::Image(*m_device, image_create_info);
+}
+
 TEST_F(PositiveImage, FramebufferFrom3DImage) {
     TEST_DESCRIPTION("Validate creating a framebuffer from a 3D image.");
 
