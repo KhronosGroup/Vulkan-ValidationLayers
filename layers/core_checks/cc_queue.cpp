@@ -58,7 +58,7 @@ struct CommandBufferSubmitState {
                 std::vector<uint32_t> dynamic_offsets;
                 std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
 
-                std::string function = loc.StringFunc();
+                std::string function = std::string(loc.StringFunc());
                 function += ", ";
                 function += CommandTypeString(cmd_info.cmd_type);
                 CoreChecks::DescriptorContext context{function.c_str(),
@@ -563,7 +563,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                                             sub_cb->primaryCommandBuffer);
                 skip |= LogError(objlist, finished_cb_vuid,
                                  "%s: Secondary command buffer %s is not in a valid (pending or executable) state.",
-                                 loc.StringFunc().c_str(), FormatHandle(sub_cb->commandBuffer()).c_str());
+                                 loc.StringFunc(), FormatHandle(sub_cb->commandBuffer()).c_str());
             }
         }
     }
@@ -575,7 +575,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 
     const char *const vuid = (loc.function == Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pCommandBuffers-00070"
                                                                    : "VUID-vkQueueSubmit2-commandBuffer-03874";
-    skip |= ValidateCommandBufferState(cb_state, loc.StringFunc().c_str(), current_submit_count, vuid);
+    skip |= ValidateCommandBufferState(cb_state, loc.StringFunc(), current_submit_count, vuid);
     return skip;
 }
 

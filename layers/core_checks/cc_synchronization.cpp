@@ -720,7 +720,7 @@ struct RenderPassDepState {
         return core->LogError(rp_handle, vuid,
                               "%s: %s (%s) and %s (%s) is not a subset of subpass dependency's srcStageMask and dstStageMask for "
                               "any self-dependency of subpass %d of %s.",
-                              loc.StringFunc().c_str(), loc.dot(Field::srcStageMask).Fields().c_str(),
+                              loc.StringFunc(), loc.dot(Field::srcStageMask).Fields().c_str(),
                               string_VkPipelineStageFlags2(src_stage_mask).c_str(), loc.dot(Field::dstStageMask).Fields().c_str(),
                               string_VkPipelineStageFlags2(dst_stage_mask).c_str(), active_subpass,
                               core->FormatHandle(rp_handle).c_str());
@@ -737,9 +737,9 @@ struct RenderPassDepState {
         return core->LogError(
             rp_handle, vuid,
             "%s: %s (%s) and %s (%s) is not a subset of subpass dependency's srcAccessMask and dstAccessMask of subpass %d of %s.",
-            loc.StringFunc().c_str(), loc.dot(Field::srcAccessMask).Fields().c_str(),
-            string_VkAccessFlags2(src_access_mask).c_str(), loc.dot(Field::dstAccessMask).Fields().c_str(),
-            string_VkAccessFlags2(dst_access_mask).c_str(), active_subpass, core->FormatHandle(rp_handle).c_str());
+            loc.StringFunc(), loc.dot(Field::srcAccessMask).Fields().c_str(), string_VkAccessFlags2(src_access_mask).c_str(),
+            loc.dot(Field::dstAccessMask).Fields().c_str(), string_VkAccessFlags2(dst_access_mask).c_str(), active_subpass,
+            core->FormatHandle(rp_handle).c_str());
     }
 
     bool ValidateDependencyFlag(VkDependencyFlags dependency_flags) const {
@@ -767,9 +767,9 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     const auto &rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-None-07889",
-                             cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
-                             rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
+    RenderPassDepState state(this, outer_loc.StringFunc(), "VUID-vkCmdPipelineBarrier-None-07889", cb_state->GetActiveSubpass(),
+                             rp_state->renderPass(), enabled_features, rp_state->self_dependencies[cb_state->GetActiveSubpass()],
+                             rp_state->createInfo.pDependencies);
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier-None-07889",
                          "%s Barriers cannot be set during subpass %d of %s with no self-dependency specified.",
@@ -820,9 +820,9 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     if (rp_state->UsesDynamicRendering()) {
         return skip;
     }
-    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-None-07889",
-                             cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
-                             rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
+    RenderPassDepState state(this, outer_loc.StringFunc(), "VUID-vkCmdPipelineBarrier2-None-07889", cb_state->GetActiveSubpass(),
+                             rp_state->renderPass(), enabled_features, rp_state->self_dependencies[cb_state->GetActiveSubpass()],
+                             rp_state->createInfo.pDependencies);
 
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.rp_handle, state.vuid,
@@ -2228,7 +2228,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
     if (buffer_state) {
         auto buf_loc = loc.dot(Field::buffer);
         const auto &mem_vuid = GetBufferBarrierVUID(buf_loc, BufferError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToBuffer(cb_state->commandBuffer(), *buffer_state, loc.StringFunc().c_str(), mem_vuid.c_str());
+        skip |= ValidateMemoryIsBoundToBuffer(cb_state->commandBuffer(), *buffer_state, loc.StringFunc(), mem_vuid.c_str());
 
         skip |= ValidateBarrierQueueFamilies(buf_loc, cb_state, mem_barrier, buffer_state.get());
 
@@ -2329,7 +2329,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateBarrierQueueFamilies(image_loc, cb_state, mem_barrier, image_data.get());
 
         skip |= ValidateImageAspectMask(image_data->image(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
-                                        image_data->disjoint, loc.StringFunc().c_str());
+                                        image_data->disjoint, loc.StringFunc());
 
         skip |= ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), *image_data, mem_barrier.subresourceRange);
     }
@@ -2441,7 +2441,7 @@ bool CoreChecks::ValidateBarriersForShaderTileImage(const LogObjectList &objlist
     if (!features_enabled) {
         const auto &vuid = GetShaderTileImageVUID(outer_loc, ShaderTileImageError::kShaderTileImageFeatureError);
         skip |= LogError(objlist, vuid, "%s can not be used if none of the features of tile image read is enabled.",
-                         outer_loc.StringFunc().c_str());
+                         outer_loc.StringFunc());
         return skip;
     }
 
@@ -2453,7 +2453,7 @@ bool CoreChecks::ValidateBarriersForShaderTileImage(const LogObjectList &objlist
     }
 
     if (bufferBarrierCount != 0 || imageMemBarrierCount != 0) {
-        skip |= LogError(objlist, vuid, "%s can only include memory barriers.", outer_loc.StringFunc().c_str());
+        skip |= LogError(objlist, vuid, "%s can only include memory barriers.", outer_loc.StringFunc());
     }
 
     constexpr bool mem_barrier2 = std::is_same_v<Barrier, VkMemoryBarrier2>;

@@ -63,6 +63,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
+    from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -126,6 +127,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
             'generator' : ObjectTrackerOutputGenerator,
             'genCombined': True,
             'options' : [valid_usage_file],
+        },
+        'error_location_helper.h' : {
+            'generator' : ErrorLocationHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'error_location_helper.cpp' : {
+            'generator' : ErrorLocationHelperOutputGenerator,
+            'genCombined': True,
         },
         'vk_dispatch_table_helper.h' : {
             'generator' : DispatchTableHelperOutputGenerator,
