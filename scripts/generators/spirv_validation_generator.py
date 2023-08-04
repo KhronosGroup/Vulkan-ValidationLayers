@@ -183,6 +183,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
         out.append('''
 #include <string>
+#include <string_view>
 #include <functional>
 #include <spirv/unified1/spirv.hpp>
 #include "vk_extension_helper.h"
@@ -228,9 +229,7 @@ struct RequiredSpirvInfo {
         out.append('// clang-format off\n')
         out.append('static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilities = {\n')
         for spirv in [x for x in self.vk.spirv if x.capability]:
-            for enable in spirv.enable:
-                if enable.struct is not None and enable.struct in self.promotedFeatures:
-                    continue
+            for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
                 if spirv.name in self.capabilityExcludeList:
                     out.append('    // Not found in current SPIR-V Headers\n    //')
                 out.append(f'    {{spv::Capability{spirv.name}, {self.createMapValue(spirv.name, enable, False)}}},\n')
@@ -241,7 +240,7 @@ struct RequiredSpirvInfo {
         #
         # Build the struct with all the requirments for the spirv extensions
         out.append('// clang-format off\n')
-        out.append('static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtensions = {\n')
+        out.append('static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirvExtensions = {\n')
         for spirv in [x for x in self.vk.spirv if x.extension]:
             for enable in spirv.enable:
                 out.append(f'    {{"{spirv.name}", {self.createMapValue(spirv.name, enable, True)}}},\n')
@@ -278,6 +277,57 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
         out.append('            return VK_FORMAT_UNDEFINED;\n')
         out.append('    };\n')
         out.append('};\n')
+
+
+        out.append('''
+static inline const char* SpvCapabilityRequirments(uint32_t capability) {
+    static const vvl::unordered_map<uint32_t, std::string_view> table {
+''')
+        for spirv in [x for x in self.vk.spirv if x.capability and x.name not in self.capabilityExcludeList]:
+            requirment = ''
+            for index, enable in enumerate([x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]):
+                requirment += ' OR ' if (index != 0) else ''
+                if enable.version is not None:
+                    requirment += enable.version
+                elif enable.feature is not None:
+                    requirment += f'{enable.struct}::{enable.feature}'
+                elif enable.extension is not None:
+                    requirment += enable.extension
+                elif enable.property is not None:
+                    requirment += f'({enable.property}::{enable.member} == {enable.value})'
+            out.append(f'    {{spv::Capability{spirv.name}, "{requirment}"}},\n')
+        out.append('''    };
+
+    // VUs before catch unknown capabilities
+    const auto entry = table.find(capability);
+    return entry->second.data();
+}
+''')
+
+        out.append('''
+static inline const char* SpvExtensionRequirments(std::string_view extension) {
+    static const vvl::unordered_map<std::string_view, std::string_view> table {
+''')
+        for spirv in [x for x in self.vk.spirv if x.extension]:
+            requirment = ''
+            for index, enable in enumerate(spirv.enable):
+                requirment += ' OR ' if (index != 0) else ''
+                if enable.version is not None:
+                    requirment += enable.version
+                elif enable.feature is not None:
+                    requirment += f'{enable.struct}::{enable.feature}'
+                elif enable.extension is not None:
+                    requirment += enable.extension
+                elif enable.property is not None:
+                    requirment += f'({enable.property}::{enable.member} == {enable.value})'
+            out.append(f'    {{"{spirv.name}", "{requirment}"}},\n')
+        out.append('''    };
+
+    // VUs before catch unknown extensions
+    const auto entry = table.find(extension);
+    return entry->second.data();
+}
+''')
 
         # The chance of an SPIR-V extension having a property as a requirement is low
         # Instead of writting complex (and more confusing) code, just go back match what
@@ -350,7 +400,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
 
         if (has_support == false) {
             skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-08740",
-                "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but none of the requirements were met to use it.", string_SpvCapability(insn.Word(1)));
+                "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but the one of the following requirements is required (%s).", string_SpvCapability(insn.Word(1)), SpvCapabilityRequirments(insn.Word(1)));
         }
 
         // Portability checks
@@ -403,7 +453,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
 
         if (has_support == false) {
             skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                "vkCreateShaderModule(): The SPIR-V Extension (%s) was declared, but none of the requirements were met to use it.", extension_name.c_str());
+                "vkCreateShaderModule(): The SPIR-V Extension (%s) was declared, but the one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirments(extension_name));
         }
     } //spv::OpExtension
     return skip;
