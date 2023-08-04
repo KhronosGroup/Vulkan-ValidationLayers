@@ -1237,13 +1237,12 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                              func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(),
                              FormatHandle(image_state).c_str());
         } else {
-            skip |= LogError(
-                objlist, vuid,
-                "In %s, VkFormatFeatureFlags (0x%" PRIxLEAST64 ") does not support required feature %s for format %" PRIu32
-                " used by %s "
-                "with tiling %s.",
-                func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(), image_state.createInfo.format,
-                FormatHandle(image_state).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
+            skip |= LogError(objlist, vuid,
+                             "In %s, VkFormatFeatureFlags (%s) does not support required feature %s for format %s used by %s "
+                             "with tiling %s.",
+                             func_name, string_VkFormatFeatureFlags2(image_format_features).c_str(),
+                             string_VkFormatFeatureFlags2(desired).c_str(), string_VkFormat(image_state.createInfo.format),
+                             FormatHandle(image_state).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
         }
     }
     return skip;
