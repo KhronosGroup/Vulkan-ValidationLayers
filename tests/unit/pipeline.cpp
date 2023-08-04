@@ -309,8 +309,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->BindIndexBuffer(&index_buffer, 2, VK_INDEX_TYPE_UINT16);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-08606");

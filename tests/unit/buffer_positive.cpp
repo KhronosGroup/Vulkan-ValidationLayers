@@ -83,8 +83,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
 
     const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkBufferObj buffer(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -204,7 +203,7 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj buffer(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, nullptr);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     m_commandBuffer->begin();

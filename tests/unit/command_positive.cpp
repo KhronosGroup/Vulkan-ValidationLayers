@@ -357,19 +357,15 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    VkBufferObj indirect_buffer;
-    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj indexed_indirect_buffer;
-    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -406,19 +402,15 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj indirect_buffer;
-    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj indexed_indirect_buffer;
-    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -460,19 +452,15 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj indirect_buffer;
-    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj indexed_indirect_buffer;
-    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -925,7 +913,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
 
     VkCommandPoolObj pool(m_device, transfer.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-    VkBufferObj buffer(*m_device, 20, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     cb.begin();
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);

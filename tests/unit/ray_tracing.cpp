@@ -99,8 +99,9 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     const VkDeviceSize aabb_buffer_size = sizeof(VkAabbPositionsKHR) * aabbs.size();
     VkBufferObj aabb_buffer;
-    aabb_buffer.init(*m_device, aabb_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
+    aabb_buffer.init(*m_device, aabb_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
+                     {ray_tracing_queue_family_index});
 
     uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.memory().map();
     std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
@@ -149,9 +150,9 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkDeviceSize instance_buffer_size = sizeof(instances[0]) * instances.size();
     VkBufferObj instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
+    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
+                         {ray_tracing_queue_family_index});
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
@@ -169,8 +170,8 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkDeviceSize scratch_buffer_size = std::max(bot_level_as.build_scratch_memory_requirements().memoryRequirements.size,
                                                 top_level_as.build_scratch_memory_requirements().memoryRequirements.size);
-    VkBufferObj scratch_buffer;
-    scratch_buffer.init(*m_device, scratch_buffer_size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+    VkBufferObj scratch_buffer(*m_device, scratch_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     ray_tracing_command_buffer.begin();
 
@@ -201,14 +202,15 @@ void RayTracingTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkDeviceSize storage_buffer_size = 1024;
     VkBufferObj storage_buffer;
-    storage_buffer.init(*m_device, storage_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {ray_tracing_queue_family_index});
+    storage_buffer.init(*m_device, storage_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
+                        {ray_tracing_queue_family_index});
 
     VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupBaseAlignment * 4ull;
     VkBufferObj shader_binding_table_buffer;
-    shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
+    shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
+                                     {ray_tracing_queue_family_index});
 
     // Setup descriptors!
     const VkShaderStageFlags kAllRayTracingStages = VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV |
@@ -1842,8 +1844,8 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj src_buffer;
-    src_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
+    src_buffer.init(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
     VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 1024;
@@ -2070,8 +2072,8 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
+    buffer.init(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
     as_create_info.offset = 0;
@@ -2083,8 +2085,8 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     VkDeviceAddress device_address = vk::GetBufferDeviceAddressKHR(device(), &device_address_info);
     // invalid buffer;
     {
-        VkBufferObj invalid_buffer;
-        invalid_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR);
+        VkBufferObj invalid_buffer(*m_device, 4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR,
+                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         VkAccelerationStructureCreateInfoKHR invalid_as_create_info = as_create_info;
         invalid_as_create_info.buffer = invalid_buffer.handle();
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -2157,9 +2159,9 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
 
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
+    VkBufferObj buffer(*m_device, 4096,
+                       VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
     VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     device_address_info.buffer = buffer.handle();
@@ -2851,8 +2853,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         VkBufferObj bad_usage_buffer;
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        bad_usage_buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
+        bad_usage_buffer.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
         auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.GetGeometries()[0].SetTrianglesDeviceVertexBuffer(std::move(bad_usage_buffer), 3);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673");
@@ -2863,9 +2865,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        VkBufferObj bad_scratch;
-        bad_scratch.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                         &alloc_flags);
+        VkBufferObj bad_scratch(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                &alloc_flags);
 
         auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
@@ -2877,9 +2878,9 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        VkBufferObj bad_scratch;
         // no VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT => scratch address will be set to 0
-        bad_scratch.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &alloc_flags);
+        VkBufferObj bad_scratch(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                &alloc_flags);
 
         auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(std::move(bad_scratch));
@@ -3670,20 +3671,20 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkBufferObj vbo;
-    vbo.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-             VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+    vbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkBufferObj ibo;
-    ibo.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-             VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+    ibo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkBufferObj tbo;
-    tbo.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-             VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+    tbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkBufferObj aabbbo;
-    aabbbo.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+    aabbbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkBufferCreateInfo unbound_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     unbound_buffer_ci.size = 1024;

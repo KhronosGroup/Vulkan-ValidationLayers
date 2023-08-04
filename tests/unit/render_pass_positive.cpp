@@ -1184,8 +1184,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     vk_testing::Framebuffer fb;
     fb.init(*m_device, fci);
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, 256, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;

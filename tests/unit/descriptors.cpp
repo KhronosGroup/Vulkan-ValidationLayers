@@ -2567,8 +2567,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
     TEST_DESCRIPTION("Try to update a descriptor that has yet to be allocated");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, sizeof(uint32_t)};
 
@@ -2601,8 +2600,7 @@ TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, 32, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;

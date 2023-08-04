@@ -340,7 +340,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             buffCI.queueFamilyIndexCount = 1;
             buffCI.pQueueFamilyIndices = &qfi;
 
-            vk_testing::Buffer as_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0U);
+            vk_testing::Buffer as_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
             VkAccelerationStructureKHR as;
             auto asci = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
@@ -380,7 +380,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         buffCI.queueFamilyIndexCount = 1;
         buffCI.pQueueFamilyIndices = &qfi;
 
-        vk_testing::Buffer temp_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0U);
+        vk_testing::Buffer temp_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         auto bcddi = LvlInitStruct<VkBufferCaptureDescriptorDataInfoEXT>();
         bcddi.buffer = temp_buffer.handle();

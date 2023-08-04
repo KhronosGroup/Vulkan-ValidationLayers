@@ -1284,8 +1284,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
 
     vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, 64, 0, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer.handle();

@@ -548,8 +548,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj uniform_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    VkBufferObj storage_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferObj uniform_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    VkBufferObj storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
     OneOffDescriptorSet descriptor_set(m_device, {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -643,8 +643,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferObj offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    VkBufferObj write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;
@@ -764,8 +764,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
         multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
 
-        VkBufferObj buffer;
-        buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         m_commandBuffer->begin(&begin_info);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1429,8 +1428,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
     count_buffer.memory().unmap();
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
@@ -2066,19 +2064,15 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
-    VkBufferObj indirect_buffer;
-    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj indexed_indirect_buffer;
-    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    VkBufferObj count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -2242,8 +2236,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferObj offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    VkBufferObj write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;
@@ -2423,8 +2417,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     VkBufferObj uniform_texel_buffer;
     VkBufferObj storage_texel_buffer;
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj offset_buffer(*m_device, 4, reqs, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    VkBufferObj write_buffer(*m_device, 16, reqs, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferObj offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
+    VkBufferObj write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     uint32_t queue_family_index = 0;

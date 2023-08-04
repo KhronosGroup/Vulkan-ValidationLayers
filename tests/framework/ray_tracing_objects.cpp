@@ -146,9 +146,9 @@ GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vk_testing::Devi
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     instance_.buffer.init(
-        device, sizeof(VkAccelerationStructureInstanceKHR), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device, sizeof(VkAccelerationStructureInstanceKHR),
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        &alloc_flags);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
     vk_obj_.geometry.instances.arrayOfPointers = VK_FALSE;
     vk_obj_.geometry.instances.data.deviceAddress = instance_.buffer.address(vk_api_version_);
@@ -241,13 +241,13 @@ void AccelerationStructureKHR::Build(const vk_testing::Device &device) {
     if (!device_buffer_.initialized() && (buffer_usage_flags_ != 0)) {
         auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = buffer_memory_allocate_flags_;
+        auto ci = LvlInitStruct<VkBufferCreateInfo>();
+        ci.size = vk_info_.size;
+        ci.usage = buffer_usage_flags_;
         if (buffer_init_no_mem_) {
-            auto ci = LvlInitStruct<VkBufferCreateInfo>();
-            ci.size = vk_info_.size;
-            ci.usage = buffer_usage_flags_;
             device_buffer_.init_no_mem(device, ci);
         } else {
-            device_buffer_.init(device, vk_info_.size, buffer_memory_property_flags_, buffer_usage_flags_, &alloc_flags);
+            device_buffer_.init(device, ci, buffer_memory_property_flags_, &alloc_flags);
         }
     }
     vk_info_.buffer = device_buffer_.handle();
@@ -543,8 +543,8 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
 
             if (scratch_size > 0) {
                 device_scratch_.init(device, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
-                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &alloc_flags);
+                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
             }
         }
         if (device_scratch_.create_info().size != 0 &&
@@ -575,7 +575,7 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
 void BuildAccelerationStructuresKHR(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
                                     std::vector<BuildGeometryInfoKHR> &infos) {
     size_t total_geomertry_count = 0;
-    
+
     for (auto &build_info : infos) {
         total_geomertry_count += build_info.geometries_.size();
     }
@@ -641,10 +641,10 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(APIVersion vk_api_version, const 
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    vk_testing::Buffer vertex_buffer(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     buffer_usage, &alloc_flags);
-    vk_testing::Buffer index_buffer(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                    buffer_usage, &alloc_flags);
+    vk_testing::Buffer vertex_buffer(device, 1024, buffer_usage,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vk_testing::Buffer index_buffer(device, 1024, buffer_usage,
+                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
     triangle_geometry.SetPrimitiveCount(1);
@@ -705,8 +705,8 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(APIVersion vk_api_version, const vk_t
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    aabb_buffer.init(device, aabb_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     buffer_usage, &alloc_flags);
+    aabb_buffer.init(device, aabb_buffer_size, buffer_usage,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
     // Fill buffer with one AABB
     aabb_geometry.SetPrimitiveCount(static_cast<uint32_t>(aabbs.size()));
