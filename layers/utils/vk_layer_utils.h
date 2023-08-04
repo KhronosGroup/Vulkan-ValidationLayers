@@ -798,6 +798,18 @@ static inline void ToUpper(std::string &str) {
               [](char c) { return static_cast<char>(std::toupper(c)); });
 }
 
+// The standard does not specify the value of data() for zero-sized contatiners as being null or non-null,
+// only that it is not dereferenceable.
+//
+// Vulkan VUID's OTOH frequently require NULLs for zero-sized entries, or for option entries with non-zero counts
+template <typename T>
+const typename T::value_type *DataOrNull(const T &container) {
+    if (!container.empty()) {
+        return container.data();
+    }
+    return nullptr;
+}
+
 }  // namespace vvl
 
 #endif

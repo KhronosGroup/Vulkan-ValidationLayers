@@ -14,6 +14,7 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include <utils/vk_layer_utils.h>
 
 class NegativeSyncVal : public VkSyncValTest {};
 
@@ -2385,31 +2386,37 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
 }
 
 struct CreateRenderPassHelper {
-    struct SubpassDescriptionStore {
-        const std::vector<VkAttachmentReference>& input_store;
-        const std::vector<VkAttachmentReference>& color_store;
-        VkSubpassDescription desc;
-        SubpassDescriptionStore(const std::vector<VkAttachmentReference>& input, const std::vector<VkAttachmentReference>& color)
-            : input_store(input), color_store(color) {
-            desc = {
-                0u,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                static_cast<uint32_t>(input_store.size()),
-                input_store.data(),
-                static_cast<uint32_t>(color_store.size()),
-                color_store.data(),
-                nullptr,
-                nullptr,
-                0u,
-                nullptr,
-            };
-            if (desc.inputAttachmentCount == 0) {
-                desc.pInputAttachments = nullptr;
-            }
-            if (desc.colorAttachmentCount == 0) {
-                desc.pColorAttachments = nullptr;
-            }
+    class SubpassDescriptionStore {
+      public:
+        using AttachRefVec = std::vector<VkAttachmentReference>;
+        using PreserveVec = std::vector<uint32_t>;
+
+        SubpassDescriptionStore() = default;
+        SubpassDescriptionStore(const AttachRefVec& input, const AttachRefVec& color) : input_store(input), color_store(color) {}
+        void SetResolve(const AttachRefVec& resolve) { resolve_store = resolve; }
+        void SetDepthStencil(const AttachRefVec& ds) { ds_store = ds; }
+        void SetPreserve(const PreserveVec& preserve) { preserve_store = preserve; }
+
+        VkSubpassDescription operator*() const {
+            VkSubpassDescription desc = {0u,
+                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                         static_cast<uint32_t>(input_store.size()),
+                                         vvl::DataOrNull(input_store),
+                                         static_cast<uint32_t>(color_store.size()),
+                                         vvl::DataOrNull(color_store),
+                                         vvl::DataOrNull(resolve_store),
+                                         vvl::DataOrNull(ds_store),
+                                         static_cast<uint32_t>(preserve_store.size()),
+                                         vvl::DataOrNull(preserve_store)};
+            return desc;
         }
+
+      private:
+        AttachRefVec input_store;
+        AttachRefVec color_store;
+        AttachRefVec resolve_store;
+        AttachRefVec ds_store;
+        PreserveVec preserve_store;
     };
 
     VkImageUsageFlags usage_color =
@@ -2556,12 +2563,27 @@ struct CreateRenderPassHelper {
     }
 
     // Capture the current input and color attachements, which can then be modified
-    void AddSubpassDescription() { subpass_description_store.emplace_back(input_attachments, color_attachments); }
+    void AddInputColorSubpassDescription() { subpass_description_store.emplace_back(input_attachments, color_attachments); }
+
+    // Create a subpass description with all the attachments preserved
+    void AddPreserveInputColorSubpassDescription() {
+        std::vector<uint32_t> preserve;
+        preserve.reserve(input_attachments.size() + color_attachments.size());
+        for (const auto& att : input_attachments) {
+            preserve.push_back(att.attachment);
+        }
+        for (const auto& att : color_attachments) {
+            preserve.push_back(att.attachment);
+        }
+        subpass_description_store.emplace_back();
+        subpass_description_store.back().SetPreserve(preserve);
+    }
 
     // This is the default for a single subpass renderpass, don't call if you want to change that
     void InitSubpassDescription() {
         if (subpass_description_store.empty()) {
-            AddSubpassDescription();
+            // The default subpass has input and color attachments
+            AddInputColorSubpassDescription();
         }
     }
 
@@ -2569,7 +2591,7 @@ struct CreateRenderPassHelper {
         if (subpasses.empty()) {
             subpasses.reserve(subpass_description_store.size());
             for (const auto& desc_store : subpass_description_store) {
-                subpasses.emplace_back(desc_store.desc);
+                subpasses.emplace_back(*desc_store);
             }
         }
     }
@@ -4428,6 +4450,9 @@ struct QSTestContext {
         event.cmd_wait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
                        std::vector<VkImageMemoryBarrier>());
     }
+
+    void ResetEvent(VkPipelineStageFlags src_mask) { event.cmd_reset(*current_cb, src_mask); }
+
     void QueueWait(VkQueue q) { vk::QueueWaitIdle(q); }
     void QueueWait0() { QueueWait(q0); }
     void QueueWait1() { QueueWait(q1); }
@@ -4902,11 +4927,23 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.CopyCToA();
     test.End();
 
+    // Ensure this would work on one queue (sanity check)
+    VkCommandBufferObj reset(test.dev, &test.pool);
+    test.Begin(reset);
+    test.ResetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
+    test.End();
+
+    // Reset the event s.t. I reuse it
+    test.Submit0(reset);
+    m_device->wait();
+
     test.Submit0(test.cba);
     test.Submit0(test.cbb);
 
     // Ensure that the wait doesn't apply to async queues
+    test.Submit0(reset);
     m_device->wait();
+
     test.Submit0(test.cba);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
     test.Submit1(test.cbb);
@@ -4935,12 +4972,20 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.CopyCToA();
     test.End();
 
+    // Sanity check that same queue works
+    test.Submit0(reset);
+    m_device->wait();
+    test.Submit0(test.cba);
+    test.Submit0(test.cbb);
+
+    // Reset the signal
+    test.Submit0(reset);
+    m_device->wait();
+
     test.Submit0Signal(test.cba);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
     test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
-
-    m_device->wait();
 }
 
 TEST_F(NegativeSyncVal, QSOBarrierHazard) {
@@ -5016,9 +5061,14 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     m_device->wait();                   // and quiesce the system
 
     // The  dependency protects the input attachment but not the color attachment
-    rp_helper.subpass_dep.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, 0U});
+    VkSubpassDependency protect_input_subpass_0 = {VK_SUBPASS_EXTERNAL,
+                                                   0,
+                                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                   VK_ACCESS_TRANSFER_WRITE_BIT,
+                                                   VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+                                                   0U};
+    rp_helper.subpass_dep.push_back(protect_input_subpass_0);
 
     rp_helper.InitRenderPass();
     rp_helper.InitFramebuffer();
@@ -5027,9 +5077,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     VkCommandBufferObj cb0(m_device, m_commandPool);
     VkCommandBufferObj cb1(m_device, m_commandPool);
 
-    auto do_begin_rp = [&rp_helper](VkCommandBufferObj& cb_obj) { cb_obj.BeginRenderPass(rp_helper.render_pass_begin); };
-
-    auto do_clear = [&rp_helper](VkCommandBufferObj& cb_obj) {
+    auto do_clear = [](VkCommandBufferObj& cb_obj, CreateRenderPassHelper& rp_helper) {
         VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
         vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_input->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
                                &full_subresource_range);
@@ -5039,9 +5087,9 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
 
     // Single renderpass barrier  (sanity check)
     cb0.begin();
-    do_clear(cb0);
+    do_clear(cb0, rp_helper);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-    do_begin_rp(cb0);
+    cb0.BeginRenderPass(rp_helper.render_pass_begin);
     m_errorMonitor->VerifyFound();
     // No "end render pass" as the begin fails
 
@@ -5050,11 +5098,11 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
 
     // Inter CB detection (dual cb), load is safe, clear errors at submit time
     cb0.begin();
-    do_clear(cb0);
+    do_clear(cb0, rp_helper);
     cb0.end();
 
     cb1.begin();
-    do_begin_rp(cb1);
+    cb1.BeginRenderPass(rp_helper.render_pass_begin);
     cb1.EndRenderPass();
     cb1.end();
 
@@ -5065,6 +5113,57 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    m_device->wait();  // quiesce the system for the next subtest
+
+    CreateRenderPassHelper rp_helper2(m_device);
+    rp_helper2.InitAllAttachmentsToLayoutGeneral();
+
+    rp_helper2.InitState();
+    rp_helper2.InitAttachmentLayouts();  // Quiet any CoreChecks ImageLayout complaints
+    m_device->wait();                    // and quiesce the system
+
+    // The  dependency protects the input attachment but not the color attachment
+    VkSubpassDependency protect_input_subpass_1 = protect_input_subpass_0;
+    protect_input_subpass_1.dstSubpass = 1;
+    rp_helper2.subpass_dep.push_back(protect_input_subpass_1);
+
+    // Two subpasses to ensure that the "next subpass" error checks work
+    rp_helper2.InitAttachmentArrays();
+    rp_helper2.AddPreserveInputColorSubpassDescription();
+    rp_helper2.AddInputColorSubpassDescription();
+
+    rp_helper2.InitRenderPass();
+    rp_helper2.InitFramebuffer();
+    rp_helper2.InitBeginInfo();
+
+    // Single CB sanity check
+    cb0.reset();
+    cb0.begin();
+    do_clear(cb0, rp_helper2);
+    cb0.BeginRenderPass(rp_helper2.render_pass_begin);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    cb0.NextSubpass();
+    m_errorMonitor->VerifyFound();
+    cb0.end();
+
+    cb0.reset();
+    cb0.begin();
+    do_clear(cb0, rp_helper2);
+    cb0.end();
+
+    cb1.reset();
+    cb1.begin();
+    cb1.BeginRenderPass(rp_helper2.render_pass_begin);
+    cb1.NextSubpass();
+    cb1.EndRenderPass();
+    cb1.end();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_device->wait();  // and quiesce the system
 }
 
 // Wrap FAIL:
