@@ -248,6 +248,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/valid_enum_values.h
     ${API_TYPE}/generated/command_validation.cpp
     ${API_TYPE}/generated/dynamic_state_helper.cpp
+    ${API_TYPE}/generated/error_location_helper.cpp
+    ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/layer_chassis_dispatch.cpp
     layer_chassis_dispatch_manual.cpp

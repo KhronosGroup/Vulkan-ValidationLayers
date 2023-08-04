@@ -74,6 +74,9 @@ class Handle:
 
     dispatchable: bool
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 @dataclass
 class Param:
     """<command/param>"""
@@ -100,6 +103,9 @@ class Param:
     #   - VkFormat format
     #   - VkStructureType sType
     cDeclaration: str
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 class Queues(IntFlag):
     TRANSFER       = auto() # VK_QUEUE_TRANSFER_BIT
@@ -162,6 +168,9 @@ class Command:
     #   (const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
     cFunctionPointer: str
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 @dataclass
 class Member:
     """<member>"""
@@ -188,6 +197,9 @@ class Member:
     #   - VkStructureType sType
     cDeclaration: str
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 @dataclass
 class Struct:
     """<type category="struct"> or <type category="union">"""
@@ -209,6 +221,9 @@ class Struct:
     extends: list[str] # Struct names that this struct extends
     extendedBy: list[str] # Struct names that can be extended by this struct
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 @dataclass
 class EnumField:
     """<enum> of type enum"""
@@ -218,6 +233,9 @@ class EnumField:
 
     # some fields are enabled from 2 extensions (ex) VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
     extensions: list[Extension] # None if part of 1.0 core
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 @dataclass
 class Enum:
@@ -234,6 +252,9 @@ class Enum:
     # Unique list of all extension that are involved in 'fields' (superset of 'extensions')
     fieldExtensions: list[Extension]
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 @dataclass
 class Flag:
     """<enum> of type bitmask"""
@@ -246,6 +267,9 @@ class Flag:
 
     # some fields are enabled from 2 extensions (ex) VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
     extensions: list[str] # None if part of 1.0 core
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 @dataclass
 class Bitmask:
@@ -260,6 +284,9 @@ class Bitmask:
     extensions: list[Extension] # None if part of 1.0 core
     # Unique list of all extension that are involved in 'flag' (superset of 'extensions')
     flagExtensions: list[Extension]
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 @dataclass
 class FormatComponent:

@@ -1469,7 +1469,7 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE &image_
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const IMAGE_STATE &image_state,
                                                       const VkImageSubresourceRange &subresourceRange) const {
     return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         loc.StringFunc().c_str(), loc.StringField().c_str(), "arrayLayers", image_state.image(),
+                                         loc.StringFunc(), loc.StringField(), "arrayLayers", image_state.image(),
                                          sync_vuid_maps::GetSubResourceVUIDs(loc));
 }
 
