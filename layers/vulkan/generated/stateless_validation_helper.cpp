@@ -19174,7 +19174,7 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
     VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands_compute)) skip |= OutputExtensionError("vkGetPipelineIndirectMemoryRequirementsNV", "VK_NV_device_generated_commands_compute");
-    skip |= ValidateStructType("vkGetPipelineIndirectMemoryRequirementsNV", "pCreateInfo", "VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO, true, kVUIDUndefined, "VUID-VkComputePipelineCreateInfo-sType-sType");
+    skip |= ValidateStructType("vkGetPipelineIndirectMemoryRequirementsNV", "pCreateInfo", "VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO, true, "VUID-vkGetPipelineIndirectMemoryRequirementsNV-pCreateInfo-parameter", "VUID-VkComputePipelineCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
     {
         constexpr std::array allowed_structs_VkComputePipelineCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD, VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO, VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI };
@@ -19212,7 +19212,7 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
 
         skip |= ValidateRequiredHandle("vkGetPipelineIndirectMemoryRequirementsNV", "pCreateInfo->layout", pCreateInfo->layout);
     }
-    skip |= ValidateStructType("vkGetPipelineIndirectMemoryRequirementsNV", "pMemoryRequirements", "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2", pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true, kVUIDUndefined, "VUID-VkMemoryRequirements2-sType-sType");
+    skip |= ValidateStructType("vkGetPipelineIndirectMemoryRequirementsNV", "pMemoryRequirements", "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2", pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true, "VUID-vkGetPipelineIndirectMemoryRequirementsNV-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
     if (pMemoryRequirements != nullptr)
     {
         constexpr std::array allowed_structs_VkMemoryRequirements2 = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS };
