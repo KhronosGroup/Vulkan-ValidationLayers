@@ -8079,7 +8079,7 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(
     const VkComputePipelineCreateInfo*          pCreateInfo,
     VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined, "vkGetPipelineIndirectMemoryRequirementsNV");
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetPipelineIndirectMemoryRequirementsNV-device-parameter", kVUIDUndefined, "vkGetPipelineIndirectMemoryRequirementsNV");
     if (pCreateInfo) {
         skip |= ValidateObject(pCreateInfo->stage.module, kVulkanObjectTypeShaderModule, true, "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined, "VkPipelineShaderStageCreateInfo");
         skip |= ValidateObject(pCreateInfo->layout, kVulkanObjectTypePipelineLayout, false, "VUID-VkComputePipelineCreateInfo-layout-parameter", "VUID-VkComputePipelineCreateInfo-commonparent", "VkComputePipelineCreateInfo");
