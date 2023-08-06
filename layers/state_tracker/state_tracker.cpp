@@ -5069,7 +5069,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
                                                               void *csm_state_data) {
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    Add(std::make_shared<SHADER_MODULE_STATE>(*pShaderModule, std::move(csm_state->module_state), csm_state->unique_shader_id));
+    Add(std::make_shared<SHADER_MODULE_STATE>(*pShaderModule, csm_state->module_state, csm_state->unique_shader_id));
 }
 
 void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,

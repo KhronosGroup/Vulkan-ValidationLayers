@@ -83,7 +83,7 @@ struct create_shader_module_api_state {
     // We build a SPIRV_MODULE_STATE at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
     // if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be used at Pipeline
     // creation time where the rest of the information is needed to do the remaining SPIR-V validation.
-    std::unique_ptr<SPIRV_MODULE_STATE> module_state;  // contains SPIR-V to validate
+    std::shared_ptr<SPIRV_MODULE_STATE> module_state;  // contains SPIR-V to validate
     uint32_t unique_shader_id = 0;
     bool valid_spirv = true;
 

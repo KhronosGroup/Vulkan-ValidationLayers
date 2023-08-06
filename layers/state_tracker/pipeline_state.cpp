@@ -52,9 +52,8 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                     const uint32_t unique_shader_id = (csm_states) ? (*csm_states)[stage].unique_shader_id : 0;
                     if (shader_ci) {
                         // don't need to worry about GroupDecoration in GPL
-                        auto spirv_module = std::make_unique<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
-                        module_state =
-                            std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, std::move(spirv_module), unique_shader_id);
+                        auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
+                        module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, unique_shader_id);
                     } else {
                         // VK_EXT_shader_module_identifier could legally provide a null module handle
                         module_state = std::make_shared<SHADER_MODULE_STATE>(unique_shader_id);
