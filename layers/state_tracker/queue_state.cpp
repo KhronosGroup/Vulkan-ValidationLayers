@@ -264,7 +264,7 @@ void FENCE_STATE::NotifyAndWait() {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
             dev_data_.LogError(Handle(), "UNASSIGNED-VkFence-state-timeout",
-                               "Timeout waiting for fence state to update. This is most likley a validation bug.");
+                               "Timeout waiting for fence state to update. This is most likely a validation bug.");
         }
     }
 }
