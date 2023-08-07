@@ -161,7 +161,9 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
-                   "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers");
+                   "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
+                   "No descriptor checking will be attempted");
+        validate_descriptors = false;
     }
 
     output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
