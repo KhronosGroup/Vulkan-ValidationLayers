@@ -1019,6 +1019,7 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
     {"SPV_EXT_opacity_micromap", "VK_EXT_opacity_micromap"},
     {"SPV_KHR_cooperative_matrix", "VK_KHR_cooperative_matrix"},
     {"SPV_ARM_core_builtins", "VK_ARM_shader_core_builtins"},
+    {"SPV_AMDX_shader_enqueue", "VK_AMDX_shader_enqueue"},
     };
 
     // VUs before catch unknown extensions
