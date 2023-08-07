@@ -4982,3 +4982,71 @@ TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, ShadingRateImageEnableNotSet) {
+    TEST_DESCRIPTION("Create pipeline with VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV but dont set the dynamic state.");
+
+    AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state_features.extendedDynamicState3ShadingRateImageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3ShadingRateImageEnable";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07647");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, CoverageReductionModeNotSet) {
+    TEST_DESCRIPTION("Create pipeline with VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV but dont set the dynamic state.");
+
+    AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state_features.extendedDynamicState3CoverageReductionMode) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3CoverageReductionMode";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07649");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
