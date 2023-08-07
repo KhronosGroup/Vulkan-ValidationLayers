@@ -156,9 +156,9 @@ struct DrawDispatchVuid {
     const char* dynamic_coverage_modulation_mode_07644 = kVUIDUndefined;
     const char* dynamic_coverage_modulation_table_enable_07645 = kVUIDUndefined;
     const char* dynamic_coverage_modulation_table_07646 = kVUIDUndefined;
-    const char* dynamic_coverage_reduction_mode_07647 = kVUIDUndefined;
+    const char* dynamic_shading_rate_image_enable_07647 = kVUIDUndefined;
     const char* dynamic_representative_fragment_test_enable_07648 = kVUIDUndefined;
-    const char* dynamic_shading_rate_image_enable_07649 = kVUIDUndefined;
+    const char* dynamic_coverage_reduction_mode_07649 = kVUIDUndefined;
     const char* dynamic_viewport_07831 = kVUIDUndefined;
     const char* dynamic_scissor_07832 = kVUIDUndefined;
     const char* dynamic_depth_bias_07834 = kVUIDUndefined;

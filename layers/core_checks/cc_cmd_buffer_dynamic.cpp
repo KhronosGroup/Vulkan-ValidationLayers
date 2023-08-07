@@ -141,11 +141,11 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE &last_boun
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV, objlist, cmd_type,
                                           vuid.dynamic_coverage_modulation_table_07646);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, objlist, cmd_type,
-                                          vuid.dynamic_shading_rate_image_enable_07649);
+                                          vuid.dynamic_shading_rate_image_enable_07647);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, objlist,
                                           cmd_type, vuid.dynamic_representative_fragment_test_enable_07648);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV, objlist, cmd_type,
-                                          vuid.dynamic_coverage_reduction_mode_07647);
+                                          vuid.dynamic_coverage_reduction_mode_07649);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, objlist, cmd_type,
                                           vuid.dynamic_sample_locations_06666);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, objlist, cmd_type,
