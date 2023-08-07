@@ -1070,7 +1070,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, PipelineFlags) {
+TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
