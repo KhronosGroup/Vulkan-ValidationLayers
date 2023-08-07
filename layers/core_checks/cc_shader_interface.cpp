@@ -139,7 +139,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
                     const uint32_t attribute_components = FormatComponentCount(attribute_format);
                     const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
                     if (attribute_components < input_components) {
-                        skip |= LogError(module_state.handle(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Component-64bit",
+                        skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
                                          " is a %" PRIu32 "-wide 64-bit format (%s) but vertex shader input is %" PRIu32
                                          "-wide 64-bit type (%s), 64-bit vertex input don't have default values and require "
