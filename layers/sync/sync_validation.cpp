@@ -1013,7 +1013,7 @@ void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, Barrier
         const auto current_range = current->range & range;
         if (current->pos_B->valid) {
             const auto &src_pos = current->pos_B->lower_bound;
-            auto access = src_pos->second;  // intentional copy
+            ResourceAccessState access(src_pos->second);  // intentional copy
             barrier_action(&access);
             if (current->pos_A->valid) {
                 const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
@@ -1589,7 +1589,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrie
 
 template <typename Flags, typename Map>
 SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
-    SyncStageAccessFlags scope = 0;
+    SyncStageAccessFlags scope;
     for (const auto &bit_scope : map) {
         if (flag_mask < bit_scope.first) break;
 
@@ -2731,7 +2731,7 @@ static VkImageAspectFlags GetAspectsToClear(VkImageAspectFlags clear_aspect_mask
     }
 
     // Collect aspects that should be cleared.
-    VkImageAspectFlags aspects_to_clear = 0;
+    VkImageAspectFlags aspects_to_clear = VK_IMAGE_ASPECT_NONE;
     if (clear_color && (view_aspect_mask & kColorAspects) != 0) {
         assert(GetBitSetCount(view_aspect_mask) == 1);
         aspects_to_clear |= view_aspect_mask;
@@ -3209,8 +3209,8 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
     HazardResult hazard;
     const auto usage_bit = FlagBit(usage_index);
     const auto usage_stage = PipelineStageBit(usage_index);
-    const bool input_attachment_ordering = (ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT).any();
-    const bool last_write_is_ordered = (last_write & ordering.access_scope).any() && (write_queue == queue_id);
+    const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
+    const bool last_write_is_ordered = (write_queue == queue_id) && (last_write & ordering.access_scope).any();
     if (IsRead(usage_bit)) {
         // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
         bool is_raw_hazard = IsRAWHazard(usage_stage, usage_bit);
@@ -3238,7 +3238,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
         const bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
         if (last_reads.size()) {
             // Look for any WAR hazards outside the ordered set of stages
-            VkPipelineStageFlags2KHR ordered_stages = 0;
+            VkPipelineStageFlags2KHR ordered_stages = VK_PIPELINE_STAGE_2_NONE;
             if (usage_write_is_ordered) {
                 // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
                 ordered_stages = GetOrderedStages(queue_id, ordering);
@@ -3691,8 +3691,8 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
     write_dependency_chain |= pending_write_dep_chain;
     write_barriers |= pending_write_barriers;
-    pending_write_dep_chain = 0;
-    pending_write_barriers = 0;
+    pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
+    pending_write_barriers.reset();
 }
 
 // Assumes signal queue != wait queue
@@ -3824,26 +3824,28 @@ void ResourceAccessState::OffsetTag(ResourceUsageTag offset) {
     }
 }
 
+static const SyncStageAccessFlags kAllSyncStageAccessBits = ~SyncStageAccessFlags(0);
 ResourceAccessState::ResourceAccessState()
-    : write_barriers(~SyncStageAccessFlags(0)),
-      write_dependency_chain(0),
+    : write_barriers(kAllSyncStageAccessBits),
+      write_dependency_chain(VK_PIPELINE_STAGE_2_NONE),
       write_tag(),
       write_queue(QueueSyncState::kQueueIdInvalid),
-      last_write(0),
+      last_write(),
       input_attachment_read(false),
       last_read_stages(0),
-      read_execution_barriers(0),
-      pending_write_dep_chain(0),
+      read_execution_barriers(VK_PIPELINE_STAGE_2_NONE),
+      last_reads(),
+      pending_write_dep_chain(VK_PIPELINE_STAGE_2_NONE),
       pending_layout_transition(false),
-      pending_write_barriers(0),
+      pending_write_barriers(),
       pending_layout_ordering_(),
       first_accesses_(),
-      first_read_stages_(0U),
+      first_read_stages_(VK_PIPELINE_STAGE_2_NONE),
       first_write_layout_ordering_() {}
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
 VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
-    VkPipelineStageFlags2KHR barriers = 0U;
+    VkPipelineStageFlags2KHR barriers = VK_PIPELINE_STAGE_2_NONE;
 
     for (const auto &read_access : last_reads) {
         if ((read_access.access & usage_bit).any()) {
@@ -3958,7 +3960,7 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
     const VkPipelineStageFlags2 read_stages_in_qso = last_read_stages & ~non_qso_stages;
     VkPipelineStageFlags2 ordered_stages = read_stages_in_qso & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
-    const bool input_attachment_ordering = (ordering.access_scope & SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT).any();
+    const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
     if (input_attachment_ordering && input_attachment_read) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
         ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
@@ -4023,7 +4025,7 @@ bool ResourceAccessState::ReadState::ReadInQueueScopeOrChain(QueueId scope_queue
 
 VkPipelineStageFlags2 ResourceAccessState::ReadState::ApplyPendingBarriers() {
     barriers |= pending_dep_chain;
-    pending_dep_chain = 0;
+    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;
     return barriers;
 }
 
