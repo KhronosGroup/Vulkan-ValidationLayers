@@ -525,6 +525,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->instance = instance_interceptor->instance;
     device_interceptor->report_data = instance_interceptor->report_data;
 
+    instance_interceptor->report_data->device_created++;
+
     InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
 
     // Initialize all of the objects with the appropriate data
@@ -577,6 +579,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDevice(device, pAllocator);
     }
+
+    auto instance_interceptor = GetLayerDataPtr(get_dispatch_key(layer_data->physical_device), layer_data_map);
+    instance_interceptor->report_data->device_created--;
 
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
