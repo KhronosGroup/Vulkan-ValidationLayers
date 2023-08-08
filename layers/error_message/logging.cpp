@@ -91,13 +91,18 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
     // stability for pushed strings.
     object_labels.reserve(objects.object_list.size());
 
-    std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_info;
-    object_name_info.resize(objects.object_list.size());
+    std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_infos;
+    object_name_infos.reserve(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
-        object_name_info[i] = LvlInitStruct<VkDebugUtilsObjectNameInfoEXT>();
-        object_name_info[i].objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
-        object_name_info[i].objectHandle = objects.object_list[i].handle;
-        object_name_info[i].pObjectName = NULL;
+        // If only one VkDevice was created, it is just noise to print it out in the error message
+        if (objects.object_list[i].type == kVulkanObjectTypeDevice && debug_data->device_created <= 1) {
+            continue;
+        }
+
+        auto object_name_info = LvlInitStruct<VkDebugUtilsObjectNameInfoEXT>();
+        object_name_info.objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
+        object_name_info.objectHandle = objects.object_list[i].handle;
+        object_name_info.pObjectName = nullptr;
 
         std::string object_label = {};
         // Look for any debug utils or marker names to use for this object
@@ -107,25 +112,27 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         }
         if (!object_label.empty()) {
             object_labels.push_back(std::move(object_label));
-            object_name_info[i].pObjectName = object_labels.back().c_str();
+            object_name_info.pObjectName = object_labels.back().c_str();
         }
 
         // If this is a queue, add any queue labels to the callback data.
-        if (VK_OBJECT_TYPE_QUEUE == object_name_info[i].objectType) {
-            auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(object_name_info[i].objectHandle));
+        if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
+            auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(object_name_info.objectHandle));
             if (label_iter != debug_data->debugUtilsQueueLabels.end()) {
                 auto found_queue_labels = label_iter->second->Export();
                 queue_labels.insert(queue_labels.end(), found_queue_labels.begin(), found_queue_labels.end());
             }
             // If this is a command buffer, add any command buffer labels to the callback data.
-        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info[i].objectType) {
+        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
             auto label_iter =
-                debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(object_name_info[i].objectHandle));
+                debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(object_name_info.objectHandle));
             if (label_iter != debug_data->debugUtilsCmdBufLabels.end()) {
                 auto found_cmd_buf_labels = label_iter->second->Export();
                 cmd_buf_labels.insert(cmd_buf_labels.end(), found_cmd_buf_labels.begin(), found_cmd_buf_labels.end());
             }
         }
+
+        object_name_infos.push_back(object_name_info);
     }
 
     const uint32_t message_id_number = text_vuid ? vvl_vuid_hash(text_vuid) : 0U;
@@ -139,8 +146,8 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
     callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
     callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
     callback_data.pCmdBufLabels = cmd_buf_labels.empty() ? nullptr : cmd_buf_labels.data();
-    callback_data.objectCount = static_cast<uint32_t>(object_name_info.size());
-    callback_data.pObjects = object_name_info.data();
+    callback_data.objectCount = static_cast<uint32_t>(object_name_infos.size());
+    callback_data.pObjects = object_name_infos.data();
 
     std::ostringstream oss;
     if (msg_flags & kErrorBit) {
@@ -158,7 +165,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         oss << "[ " << text_vuid << " ] ";
     }
     uint32_t index = 0;
-    for (const auto &src_object : object_name_info) {
+    for (const auto &src_object : object_name_infos) {
         if (0 != src_object.objectHandle) {
             oss << "Object " << index++ << ": handle = 0x" << std::hex << src_object.objectHandle;
             if (src_object.pObjectName) {
@@ -202,8 +209,8 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         } else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
             // VK_EXT_debug_report callback (deprecated)
             if (current_callback.debug_report_callback_function_ptr(
-                    msg_flags, convertCoreObjectToDebugReportObject(object_name_info[0].objectType),
-                    object_name_info[0].objectHandle, message_id_number, 0, layer_prefix, composite.c_str(),
+                    msg_flags, convertCoreObjectToDebugReportObject(object_name_infos[0].objectType),
+                    object_name_infos[0].objectHandle, message_id_number, 0, layer_prefix, composite.c_str(),
                     current_callback.pUserData)) {
                 bail = true;
             }
