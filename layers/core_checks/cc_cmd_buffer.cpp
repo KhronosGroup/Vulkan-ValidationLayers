@@ -933,20 +933,19 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     if (sub_cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
                         const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
                         const auto inheritance_rendering_info = sub_cb_state.activeRenderPass->inheritance_rendering_info;
-                        if (inheritance_rendering_info.flags !=
+                        if ((inheritance_rendering_info.flags & ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) !=
                             (rendering_info.flags & ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
                             skip |=
                                 LogError(objlist, "VUID-vkCmdExecuteCommands-flags-06026",
                                          "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                          "] %s is executed within a dynamic renderpass instance scope begun "
-                                         "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%" PRIu32
-                                         ") does "
-                                         "not match VkRenderingInfo::flags (%" PRIu32
-                                         "), excluding "
-                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
-                                         i, FormatHandle(pCommandBuffers[i]).c_str(), inheritance_rendering_info.flags,
-                                         rendering_info.flags);
+                                         "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
+                                         "not match VkRenderingInfo::flags (%s) (excluding "
+                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR).",
+                                         i, FormatHandle(pCommandBuffers[i]).c_str(),
+                                         string_VkRenderingFlags(inheritance_rendering_info.flags).c_str(),
+                                         string_VkRenderingFlags(rendering_info.flags).c_str());
                         }
 
                         if (inheritance_rendering_info.colorAttachmentCount != rendering_info.colorAttachmentCount) {
