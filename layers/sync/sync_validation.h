@@ -96,11 +96,11 @@ enum class SyncOrdering : uint8_t {
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
+    static inline const SyncStageAccessInfoType &UsageInfo(SyncStageAccessIndex stage_access_index) {
+        return syncStageAccessInfoByStageAccessIndex()[stage_access_index];
+    }
     static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access].stage_access_bit;
-    }
-    static inline SyncStageAccessFlags Flags(SyncStageAccessIndex stage_access) {
-        return static_cast<SyncStageAccessFlags>(FlagBit(stage_access));
     }
 
     static bool IsRead(const SyncStageAccessFlags &stage_access_bit) { return (stage_access_bit & syncStageAccessReadMask).any(); }
@@ -499,22 +499,23 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2 ApplyPendingBarriers();
     };
 
-    HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
-    HazardResult DetectHazard(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, QueueId queue_id) const;
-    HazardResult DetectHazard(SyncStageAccessIndex usage_index, const OrderingBarrier &ordering, QueueId queue_id) const;
+    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info) const;
+    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, QueueId queue_id) const;
+    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, const OrderingBarrier &ordering, QueueId queue_id) const;
     HazardResult DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
 
-    HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index, ResourceUsageTag start_tag) const;
+    HazardResult DetectAsyncHazard(const SyncStageAccessInfoType &usage_info, ResourceUsageTag start_tag) const;
     HazardResult DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
                                    ResourceUsageTag start_tag) const;
 
-    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, QueueId queue_id, VkPipelineStageFlags2KHR source_exec_scope,
+    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, QueueId queue_id,
+                                     VkPipelineStageFlags2KHR source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, const ResourceAccessState &scope_state,
+    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, const ResourceAccessState &scope_state,
                                      VkPipelineStageFlags2KHR source_exec_scope, const SyncStageAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
-    void Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, ResourceUsageTag tag);
+    void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTag tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, ResourceUsageTag tag);
     void ClearWrite();
     void ClearRead();
