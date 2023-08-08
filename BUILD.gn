@@ -296,6 +296,9 @@ debug_printf_sources = [
 chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
+  "$vulkan_layer_settings_dir/include/vulkan/layer/vk_layer_settings_ext.h",
+  "$vulkan_layer_settings_dir/include/vulkan/layer/vk_layer_settings.h",
+  "$vulkan_layer_settings_dir/include/vulkan/layer/vk_layer_settings.hpp",
   "layers/vulkan/generated/chassis.cpp",
   "layers/vulkan/generated/valid_enum_values.cpp",
   "layers/vulkan/generated/valid_enum_values.h",
@@ -470,7 +473,10 @@ foreach(layer_info, layers) {
     configs -= vulkan_undefine_configs
     configs += [ ":generated_layers_config" ]
     public_configs = [ ":vulkan_layer_config" ]
-    deps = [ ":vulkan_layer_utils" ]
+    deps = [
+        ":vulkan_layer_utils",
+        "$vulkan_layer_settings_dir:vulkan_layer_settings",
+    ]
     if (!is_fuchsia) {
       deps += [
         # Make sure the cleanup of old layers happen before the new ones are compiled.
