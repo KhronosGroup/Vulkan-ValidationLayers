@@ -1368,6 +1368,8 @@ TEST_F(NegativeDescriptorBuffer, Various) {
         vk_testing::DeviceMemory mem(*m_device, mem_alloc_info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemory-bufferDeviceAddressCaptureReplay-09200");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemory-buffer-09201");
         vk::BindBufferMemory(m_device->device(), d_buffer.handle(), mem.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
@@ -1395,6 +1397,7 @@ TEST_F(NegativeDescriptorBuffer, Various) {
         vk_testing::DeviceMemory mem(*m_device, mem_alloc_info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemory-image-09202");
         vk::BindImageMemory(m_device->device(), temp_image.handle(), mem.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
