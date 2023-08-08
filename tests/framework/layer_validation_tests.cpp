@@ -394,6 +394,24 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
     return return_format;
 }
 
+VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features) {
+    const VkFormat first_compressed_format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;  // avoid compressed/feature protected, otherwise 184
+    const VkFormat first_vk_format = VK_FORMAT_R4G4_UNORM_PACK8;
+    VkFormat return_format = VK_FORMAT_UNDEFINED;
+    for (VkFormat format = first_vk_format; format < first_compressed_format; format = static_cast<VkFormat>(format + 1)) {
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        vk::GetPhysicalDeviceFormatProperties2(gpu, format, &fmt_props_2);
+        auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? fmt_props_3.linearTilingFeatures : fmt_props_3.optimalTilingFeatures;
+        if ((features & undesired_features) == 0) {
+            return_format = format;
+            break;
+        }
+    }
+
+    return return_format;
+}
+
 bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     constexpr auto export_import_flags =
         VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
