@@ -1273,3 +1273,45 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
+    TEST_DESCRIPTION("Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has same flags");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
+
+    constexpr VkFormat color_formats = {VK_FORMAT_UNDEFINED};  // undefined because no image view will be used
+
+    auto color_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto inheritance_rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfo>();
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    inheritance_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    auto cb_inheritance_info = LvlInitStruct<VkCommandBufferInheritanceInfo>(&inheritance_rendering_info);
+    cb_inheritance_info.renderPass = VK_NULL_HANDLE;
+    cb_inheritance_info.subpass = 0;
+    cb_inheritance_info.framebuffer = VK_NULL_HANDLE;
+
+    auto cb_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cb_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cb_begin_info.pInheritanceInfo = &cb_inheritance_info;
+    secondary.begin(&cb_begin_info);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
