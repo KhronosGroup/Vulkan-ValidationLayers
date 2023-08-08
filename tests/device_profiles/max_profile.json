@@ -133,7 +133,7 @@
                 "VkPhysicalDeviceMaintenance4Features": {
                     "maintenance4": true
                 },
-                "VkPhysicalDeviceMaintenance5Features": {
+                "VkPhysicalDeviceMaintenance5FeaturesKHR": {
                     "maintenance5": true
                 },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {

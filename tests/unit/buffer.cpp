@@ -525,21 +525,15 @@ TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t const indices[] = {0};
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.size = 1024;
     buf_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     buf_info.queueFamilyIndexCount = 1;
     buf_info.pQueueFamilyIndices = indices;
-
-    VkBufferObj buffer;
-    buffer.init(*m_device, buf_info);
+    VkBufferObj buffer(*m_device, buf_info);
 
     m_commandBuffer->begin();
-
-    // vk::CmdBindPipeline(m_commandBuffer->handle(),
-    // VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    // Should error before calling to driver so don't care about actual data
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdBindIndexBuffer() offset (0x7) does not fall on ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-08783");
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 7, VK_INDEX_TYPE_UINT16);
     m_errorMonitor->VerifyFound();
 }

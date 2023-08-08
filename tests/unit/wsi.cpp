@@ -370,13 +370,10 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {test_extent_value, test_extent_value, 1};

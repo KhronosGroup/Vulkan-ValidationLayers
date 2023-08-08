@@ -244,6 +244,32 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) {
+    TEST_DESCRIPTION("VK_KHR_maintenance5 lets you use VK_WHOLE_SIZE with VK_EXT_extended_dynamic_state");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+
+    m_commandBuffer->begin();
+    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize size = VK_WHOLE_SIZE;
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, &size, nullptr);
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     TEST_DESCRIPTION("Don't check discard rectangles if dynamic state is not set");
 

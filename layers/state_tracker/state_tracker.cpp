@@ -3312,6 +3312,18 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     }
 }
 
+void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                 VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+
+    cb_state->index_buffer_binding = IndexBufferBinding(Get<BUFFER_STATE>(buffer), size, offset, indexType);
+
+    // Add binding for this index buffer to this commandbuffer
+    if (!disabled[command_buffer_state]) {
+        cb_state->AddChild(cb_state->index_buffer_binding.buffer_state);
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                const VkDeviceSize *pOffsets) {

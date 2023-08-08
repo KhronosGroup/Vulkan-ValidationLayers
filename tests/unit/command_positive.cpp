@@ -1005,3 +1005,214 @@ TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
     }
     cb.end();
 }
+
+TEST_F(PositiveCommand, CopyImageRemainingLayersMaintenance5) {
+    TEST_DESCRIPTION(
+        "Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS using VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 8;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // 2D images
+    VkImageObj image_a(m_device);
+    VkImageObj image_b(m_device);
+
+    // Copy from a to b
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_a.init(&ci);
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_b.init(&ci);
+
+    m_commandBuffer->begin();
+    image_a.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image_b.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy copy_region{};
+    copy_region.extent = ci.extent;
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.baseArrayLayer = 7;
+    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    copy_region.dstSubresource = copy_region.srcSubresource;
+
+    m_commandBuffer->CopyImage(image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveCommand, CopyImageTypeExtentMismatchMaintenance5) {
+    TEST_DESCRIPTION("Test copying an image with extent mistmatch using VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_1D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 1, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Create 1D image
+    VkImageObj image_1D(m_device);
+    image_1D.init(&ci);
+    ASSERT_TRUE(image_1D.initialized());
+
+    // 2D image
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.extent = {32, 32, 1};
+    VkImageObj image_2D(m_device);
+    image_2D.init(&ci);
+    ASSERT_TRUE(image_2D.initialized());
+
+    VkImageCopy copy_region;
+    copy_region.extent = {32, 1, 1};
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->CopyImage(image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveCommand, MultiDrawMaintenance5) {
+    TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // New VUIDs added with multi_draw (also see GPU-AV)
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 511, 0};
+
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, 1024, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, 1022, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+
+    multi_draw_indices.firstIndex = 16;
+    multi_draw_indices.indexCount = 128;
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 32, 288, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+}
+
+TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
+    TEST_DESCRIPTION("Test vkCmdBindIndexBuffer2KHR with vkCmdBindIndexBuffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // New VUIDs added with multi_draw (also see GPU-AV)
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 511, 0};
+
+    // too small
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, 1000, VK_INDEX_TYPE_UINT16);
+    // should be overwritten
+    m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+}

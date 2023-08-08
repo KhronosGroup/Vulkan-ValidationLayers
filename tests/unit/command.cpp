@@ -2266,13 +2266,10 @@ TEST_F(NegativeCommand, CopyImageTypeExtentMismatch) {
     VkImageCopy copy_region;
     copy_region.extent = {32, 1, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -2556,13 +2553,10 @@ TEST_F(NegativeCommand, CopyImageTypeExtentMismatchMaintenance1) {
     VkImageCopy copy_region;
     copy_region.extent = {32, 1, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -2676,13 +2670,10 @@ TEST_F(NegativeCommand, CopyImageCompressedBlockAlignment) {
     VkImageCopy copy_region;
     copy_region.extent = {48, 48, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -2798,13 +2789,10 @@ TEST_F(NegativeCommand, CopyImageSrcSizeExceeded) {
     VkImageCopy copy_region;
     copy_region.extent = {32, 32, 8};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -2883,13 +2871,10 @@ TEST_F(NegativeCommand, CopyImageDstSizeExceeded) {
     VkImageCopy copy_region;
     copy_region.extent = {32, 32, 8};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -2966,13 +2951,10 @@ TEST_F(NegativeCommand, CopyImageZeroSize) {
 
     VkImageCopy copy_region;
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.mipLevel = 0;
-    copy_region.dstSubresource.mipLevel = 0;
     copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
@@ -4817,9 +4799,7 @@ TEST_F(NegativeCommand, MultiDraw) {
 
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
     GetPhysicalDeviceFeatures2(multi_draw_features);
-    if (!multi_draw_features.multiDraw) {
-        GTEST_SKIP() << "Test requires (unsupported) multiDraw";
-    }
+
     auto multi_draw_properties = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
     GetPhysicalDeviceProperties2(multi_draw_properties);
 
@@ -4899,6 +4879,145 @@ TEST_F(NegativeCommand, MultiDraw) {
                                    sizeof(VkMultiDrawIndexedInfoEXT), 0);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeCommand, MultiDrawMaintenance5) {
+    TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // Use non-power-of-2 size to
+    VkBufferObj buffer(*m_device, 2048, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 514, 0};  // overflow
+
+    // same as calling vkCmdBindIndexBuffer (size of the buffer creation)
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, 1024, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+
+    multi_draw_indices.indexCount = 256;  // only uses [0 - 512]
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, 508, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
+    TEST_DESCRIPTION("Test validation of multi_draw extension with VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // Use non-power-of-2 size to
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 514, 0};  // overflow
+
+    // VK_WHOLE_SIZE also full size of the buffer
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 2, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
+    TEST_DESCRIPTION("Test vkCmdBindIndexBuffer2KHR with vkCmdBindIndexBuffer");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Try existing VUID checks
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    // New VUIDs added with multi_draw (also see GPU-AV)
+    VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 511, 0};
+
+    // valid
+    m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+    // should be overwritten with smaller size
+    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, 1000, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeCommand, MultiDrawFeatures) {
@@ -6501,11 +6620,9 @@ TEST_F(NegativeCommand, CopyImageRemainingLayers) {
     VkImageCopy copy_region{};
     copy_region.extent = ci.extent;
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.baseArrayLayer = 7;
-    copy_region.dstSubresource.baseArrayLayer = 7;
-    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayers
-    copy_region.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayer
+    copy_region.dstSubresource = copy_region.srcSubresource;
 
     // These vuids will trigger a special message stating that VK_REMAINING_ARRAY_LAYERS is unsupported
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcSubresource-07968");

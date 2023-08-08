@@ -464,10 +464,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
-    if (!extended_dynamic_state_features.extendedDynamicState) {
-        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -539,6 +535,28 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
         vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffersWholeSize) {
+    TEST_DESCRIPTION("Test VK_WHOLE_SIZE with VK_EXT_extended_dynamic_state");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+
+    m_commandBuffer->begin();
+    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize size = VK_WHOLE_SIZE;
+    VkDeviceSize offset = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pSizes-03358");
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, &size, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
