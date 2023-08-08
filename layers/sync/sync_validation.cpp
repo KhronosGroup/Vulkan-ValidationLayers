@@ -1357,28 +1357,29 @@ void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageT
 }
 
 class HazardDetector {
-    SyncStageAccessIndex usage_index_;
+    const SyncStageAccessInfoType &usage_info_;
 
   public:
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_index_); }
+    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_info_); }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
     }
-    explicit HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
+    explicit HazardDetector(SyncStageAccessIndex usage_index) : usage_info_(SyncStageAccess::UsageInfo(usage_index)) {}
 };
 
 class HazardDetectorWithOrdering {
-    const SyncStageAccessIndex usage_index_;
+    const SyncStageAccessInfoType &usage_info_;
     const SyncOrdering ordering_rule_;
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectHazard(usage_index_, ordering_rule_, QueueSyncState::kQueueIdInvalid);
+        return pos->second.DetectHazard(usage_info_, ordering_rule_, QueueSyncState::kQueueIdInvalid);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
-        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
     }
-    HazardDetectorWithOrdering(SyncStageAccessIndex usage, SyncOrdering ordering) : usage_index_(usage), ordering_rule_(ordering) {}
+    HazardDetectorWithOrdering(SyncStageAccessIndex usage_index, SyncOrdering ordering)
+        : usage_info_(SyncStageAccess::UsageInfo(usage_index)), ordering_rule_(ordering) {}
 };
 
 HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index,
@@ -1453,18 +1454,20 @@ class BarrierHazardDetector {
   public:
     BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                           SyncStageAccessFlags src_access_scope)
-        : usage_index_(usage_index), src_exec_scope_(src_exec_scope), src_access_scope_(src_access_scope) {}
+        : usage_info_(SyncStageAccess::UsageInfo(usage_index)),
+          src_exec_scope_(src_exec_scope),
+          src_access_scope_(src_access_scope) {}
 
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectBarrierHazard(usage_index_, QueueSyncState::kQueueIdInvalid, src_exec_scope_, src_access_scope_);
+        return pos->second.DetectBarrierHazard(usage_info_, QueueSyncState::kQueueIdInvalid, src_exec_scope_, src_access_scope_);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
     }
 
   private:
-    SyncStageAccessIndex usage_index_;
+    const SyncStageAccessInfoType &usage_info_;
     VkPipelineStageFlags2KHR src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
 };
@@ -1474,7 +1477,7 @@ class EventBarrierHazardDetector {
     EventBarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR src_exec_scope,
                                SyncStageAccessFlags src_access_scope, const SyncEventState::ScopeMap &event_scope, QueueId queue_id,
                                ResourceUsageTag scope_tag)
-        : usage_index_(usage_index),
+        : usage_info_(SyncStageAccess::UsageInfo(usage_index)),
           src_exec_scope_(src_exec_scope),
           src_access_scope_(src_access_scope),
           event_scope_(event_scope),
@@ -1496,13 +1499,13 @@ class EventBarrierHazardDetector {
             if (range.begin < ScopeBegin()) {
                 if (!unscoped_tested) {
                     unscoped_tested = true;
-                    hazard = access.DetectHazard(usage_index_);
+                    hazard = access.DetectHazard(usage_info_);
                 }
                 // Note: don't need to check for in_scope as AdvanceScope true means range and ScopeRange intersect.
                 // Thus a [ ScopeBegin, range.end ) will be non-empty.
                 range.begin = ScopeBegin();
             } else {  // in_scope implied that ScopeRange and range intersect
-                hazard = access.DetectBarrierHazard(usage_index_, ScopeState(), src_exec_scope_, src_access_scope_, scope_queue_id_,
+                hazard = access.DetectBarrierHazard(usage_info_, ScopeState(), src_exec_scope_, src_access_scope_, scope_queue_id_,
                                                     scope_tag_);
                 if (!hazard.IsHazard()) {
                     range.begin = ScopeEnd();
@@ -1511,14 +1514,14 @@ class EventBarrierHazardDetector {
             }
         }
         if (range.non_empty() && !hazard.IsHazard() && !unscoped_tested) {
-            hazard = access.DetectHazard(usage_index_);
+            hazard = access.DetectHazard(usage_info_);
         }
         return hazard;
     }
 
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(usage_index_, start_tag);
+        return pos->second.DetectAsyncHazard(usage_info_, start_tag);
     }
 
   private:
@@ -1544,7 +1547,7 @@ class EventBarrierHazardDetector {
         return ScopeValid() && ScopeRange().intersects(range);
     }
 
-    SyncStageAccessIndex usage_index_;
+    const SyncStageAccessInfoType usage_info_;
     VkPipelineStageFlags2KHR src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
     const SyncEventState::ScopeMap &event_scope_;
@@ -1681,14 +1684,14 @@ struct UpdateMemoryAccessStateFunctor {
 
     void operator()(const Iterator &pos) const {
         auto &access_state = pos->second;
-        access_state.Update(usage, ordering_rule, tag);
+        access_state.Update(usage_info, ordering_rule, tag);
     }
 
     UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncStageAccessIndex usage_, SyncOrdering ordering_rule_,
                                    ResourceUsageTag tag_)
-        : context(context_), usage(usage_), ordering_rule(ordering_rule_), tag(tag_) {}
+        : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag(tag_) {}
     const AccessContext &context;
-    const SyncStageAccessIndex usage;
+    const SyncStageAccessInfoType &usage_info;
     const SyncOrdering ordering_rule;
     const ResourceUsageTag tag;
 };
@@ -3164,10 +3167,11 @@ void ResourceAccessState::ApplyBarriersImmediate(const std::vector<SyncBarrier> 
     }
     ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
 }
-HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index) const {
+HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &usage_info) const {
     HazardResult hazard;
-    auto usage = FlagBit(usage_index);
-    const auto usage_stage = PipelineStageBit(usage_index);
+    const auto &usage = usage_info.stage_access_bit;
+    const auto &usage_stage = usage_info.stage_mask;
+    const auto &usage_index = usage_info.stage_access_index;
     if (IsRead(usage)) {
         if (IsRAWHazard(usage_stage, usage)) {
             hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
@@ -3197,18 +3201,19 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const SyncOrdering ordering_rule,
+HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &usage_info, const SyncOrdering ordering_rule,
                                                QueueId queue_id) const {
     const auto &ordering = GetOrderingRules(ordering_rule);
-    return DetectHazard(usage_index, ordering, queue_id);
+    return DetectHazard(usage_info, ordering, queue_id);
 }
 
-HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const OrderingBarrier &ordering,
+HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &usage_info, const OrderingBarrier &ordering,
                                                QueueId queue_id) const {
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
     HazardResult hazard;
-    const auto usage_bit = FlagBit(usage_index);
-    const auto usage_stage = PipelineStageBit(usage_index);
+    const auto &usage_bit = usage_info.stage_access_bit;
+    const auto &usage_stage = usage_info.stage_mask;
+    const auto &usage_index = usage_info.stage_access_index;
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
     const bool last_write_is_ordered = (write_queue == queue_id) && (last_write & ordering.access_scope).any();
     if (IsRead(usage_bit)) {
@@ -3232,7 +3237,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
         }
     } else if (usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
         // For Image layout transitions, the barrier represents the first synchronization/access scope of the layout transition
-        return DetectBarrierHazard(usage_index, queue_id, ordering.exec_scope, ordering.access_scope);
+        return DetectBarrierHazard(usage_info, queue_id, ordering.exec_scope, ordering.access_scope);
     } else {
         // Only check for WAW if there are no reads since last_write
         const bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
@@ -3288,7 +3293,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 break;
             }
 
-            hazard = DetectHazard(first.usage_index, first.ordering_rule, queue_id);
+            hazard = DetectHazard(UsageInfo(first.usage_index), first.ordering_rule, queue_id);
             if (hazard.hazard) {
                 hazard.AddRecordedAccess(first);
                 break;
@@ -3315,7 +3320,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
                 barrier.access_scope |= FlagBit(last_access.usage_index);
             }
-            hazard = DetectHazard(last_access.usage_index, barrier, queue_id);
+            hazard = DetectHazard(UsageInfo(last_access.usage_index), barrier, queue_id);
             if (hazard.hazard) {
                 hazard.AddRecordedAccess(last_access);
             }
@@ -3325,9 +3330,11 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
 }
 
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
-HazardResult ResourceAccessState::DetectAsyncHazard(SyncStageAccessIndex usage_index, const ResourceUsageTag start_tag) const {
+HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoType &usage_info,
+                                                    const ResourceUsageTag start_tag) const {
     HazardResult hazard;
-    auto usage = FlagBit(usage_index);
+    const auto &usage = usage_info.stage_access_bit;
+    const auto &usage_index = usage_info.stage_access_index;
     // Async checks need to not go back further than the start of the subpass, as we only want to find hazards between the async
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
@@ -3359,7 +3366,7 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &r
         if (first.tag < tag_range.begin) continue;
         if (first.tag >= tag_range.end) break;
 
-        hazard = DetectAsyncHazard(first.usage_index, start_tag);
+        hazard = DetectAsyncHazard(UsageInfo(first.usage_index), start_tag);
         if (hazard.hazard) {
             hazard.AddRecordedAccess(first);
             break;
@@ -3368,10 +3375,11 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &r
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, QueueId queue_id,
+HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, QueueId queue_id,
                                                       VkPipelineStageFlags2KHR src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope) const {
     // Only supporting image layout transitions for now
+    const auto &usage_index = usage_info.stage_access_index;
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
     // only test for WAW if there no intervening read operations.
@@ -3391,11 +3399,13 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, const ResourceAccessState &scope_state,
+HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoType &usage_info,
+                                                      const ResourceAccessState &scope_state,
                                                       VkPipelineStageFlags2KHR src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope, QueueId event_queue,
                                                       ResourceUsageTag event_tag) const {
     // Only supporting image layout transitions for now
+    const auto &usage_index = usage_info.stage_access_index;
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
 
@@ -3540,13 +3550,15 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     }
 }
 
-void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
+void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule,
+                                 const ResourceUsageTag tag) {
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
-    const auto usage_bit = FlagBit(usage_index);
+    const auto &usage_bit = usage_info.stage_access_bit;
+    const auto &usage_stage = usage_info.stage_mask;
+    const auto &usage_index = usage_info.stage_access_index;
     if (IsRead(usage_index)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
-        const auto usage_stage = PipelineStageBit(usage_index);
         if (usage_stage & last_read_stages) {
             const auto not_usage_stage = ~usage_stage;
             for (auto &read_access : last_reads) {
