@@ -1,0 +1,5 @@
+# Copyright 2023-2023 LunarG, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+vulkan_headers_dir = "//external/Vulkan-Headers"
