@@ -140,6 +140,11 @@ struct IndexBufferBinding : BufferBinding {
     IndexBufferBinding() : BufferBinding(), index_type(static_cast<VkIndexType>(0)) {}
     IndexBufferBinding(const std::shared_ptr<BUFFER_STATE> &buffer_state_, VkDeviceSize offset_, VkIndexType index_type_)
         : BufferBinding(buffer_state_, offset_), index_type(index_type_) {}
+    // TODO - We could clean up the BufferBinding interface now we have 2 ways to bind both the Vertex and Index buffer
+    IndexBufferBinding(const std::shared_ptr<BUFFER_STATE> &buffer_state_, VkDeviceSize size_, VkDeviceSize offset_,
+                       VkIndexType index_type_)
+        : BufferBinding(buffer_state_, BUFFER_STATE::ComputeSize(buffer_state_, offset_, size_), offset_, 0U),
+          index_type(index_type_) {}
     virtual ~IndexBufferBinding() {}
 
     virtual void reset() override { *this = IndexBufferBinding(); }

@@ -250,12 +250,15 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE &cb_state, 
     if (base_layer >= img.createInfo.arrayLayers || layer_count > img.createInfo.arrayLayers ||
         (base_layer + layer_count) > img.createInfo.arrayLayers) {
         if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
-            const LogObjectList objlist(cb_state.Handle(), img.Handle());
-            skip |= LogError(objlist, vuid,
-                             "In %s, pRegions[%" PRIu32
-                             "].%s.layerCount is VK_REMAINING_ARRAY_LAYERS, "
-                             "but this special value is not supported here.",
-                             function, i, member);
+            if (!enabled_features.maintenance5_features.maintenance5) {
+                const LogObjectList objlist(cb_state.Handle(), img.Handle());
+                skip |= LogError(objlist, vuid,
+                                 "In %s, pRegions[%" PRIu32
+                                 "].%s.layerCount is VK_REMAINING_ARRAY_LAYERS, "
+                                 "but this special value is not supported here unless you enable the "
+                                 "VkPhysicalDeviceMaintenance5FeaturesKHR::maintenance5 feature.",
+                                 function, i, member);
+            }
         } else {
             const LogObjectList objlist(cb_state.Handle(), img.Handle());
             skip |= LogError(objlist, vuid,
@@ -1306,7 +1309,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
             if (src_image_type != dst_image_type) {
                 // if different, one must be 3D and the other 2D
-                bool valid = (src_is_2d && dst_is_3d) || (src_is_3d && dst_is_2d);
+                const bool valid =
+                    (src_is_2d && dst_is_3d) || (src_is_3d && dst_is_2d) || enabled_features.maintenance5_features.maintenance5;
                 if (!valid) {
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07743" : "VUID-vkCmdCopyImage-srcImage-07743";
