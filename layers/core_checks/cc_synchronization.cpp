@@ -2440,7 +2440,9 @@ bool CoreChecks::ValidateBarriersForShaderTileImage(const LogObjectList &objlist
 
     if (!features_enabled) {
         const auto &vuid = GetShaderTileImageVUID(outer_loc, ShaderTileImageError::kShaderTileImageFeatureError);
-        skip |= LogError(objlist, vuid, "%s can not be used if none of the features of tile image read is enabled.",
+        skip |= LogError(objlist, vuid,
+                         "%s can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
+                         "VK_EXT_shader_tile_image features.",
                          outer_loc.StringFunc());
         return skip;
     }
