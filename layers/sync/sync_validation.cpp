@@ -784,7 +784,7 @@ void HazardResult::Set(const ResourceAccessState *access_state_, SyncStageAccess
 
     // Touchup the hazard to reflect "present as release" semantics
     // NOTE: For implementing QFO release/acquire semantics... touch up here as well
-    if (access_state->LastWriteOp() == SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL) {
+    if (access_state->IsLastWriteOp(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL)) {
         if (hazard == SyncHazard::READ_AFTER_WRITE) {
             hazard = SyncHazard::READ_AFTER_PRESENT;
         } else if (hazard == SyncHazard::WRITE_AFTER_WRITE) {
@@ -3169,12 +3169,11 @@ void ResourceAccessState::ApplyBarriersImmediate(const std::vector<SyncBarrier> 
 }
 HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &usage_info) const {
     HazardResult hazard;
-    const auto &usage = usage_info.stage_access_bit;
     const auto &usage_stage = usage_info.stage_mask;
     const auto &usage_index = usage_info.stage_access_index;
     if (IsRead(usage_info)) {
-        if (IsRAWHazard(usage_stage, usage)) {
-            hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
+        if (IsRAWHazard(usage_info)) {
+            hazard.Set(this, usage_info, READ_AFTER_WRITE, *last_write, write_tag);
         }
     } else {
         // Write operation:
@@ -3193,9 +3192,9 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
                     break;
                 }
             }
-        } else if (last_write.any() && IsWriteHazard(usage)) {
+        } else if (last_write && IsWriteHazard(usage_info)) {
             // Write-After-Write check -- if we have a previous write to test against
-            hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
+            hazard.Set(this, usage_info, WRITE_AFTER_WRITE, *last_write, write_tag);
         }
     }
     return hazard;
@@ -3215,11 +3214,12 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
     const auto &usage_stage = usage_info.stage_mask;
     const auto &usage_index = usage_info.stage_access_index;
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
-    const bool last_write_is_ordered = (write_queue == queue_id) && (last_write & ordering.access_scope).any();
+    const bool last_write_is_ordered =
+        last_write && (write_queue == queue_id) && ordering.access_scope[last_write->stage_access_index];
 
     if (IsRead(usage_info)) {
         // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
-        bool is_raw_hazard = IsRAWHazard(usage_stage, usage_bit);
+        bool is_raw_hazard = IsRAWHazard(usage_info);
         if (is_raw_hazard) {
             // NOTE: we know last_write is non-zero
             // See if the ordering rules save us from the simple RAW check above
@@ -3234,7 +3234,7 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
             }
         }
         if (is_raw_hazard) {
-            hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
+            hazard.Set(this, usage_info, READ_AFTER_WRITE, *last_write, write_tag);
         }
     } else if (usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
         // For Image layout transitions, the barrier represents the first synchronization/access scope of the layout transition
@@ -3259,15 +3259,15 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
                     }
                 }
             }
-        } else if (last_write.any() && !(last_write_is_ordered && usage_write_is_ordered)) {
+        } else if (last_write && !(last_write_is_ordered && usage_write_is_ordered)) {
             bool ilt_ilt_hazard = false;
-            if ((usage_index == SYNC_IMAGE_LAYOUT_TRANSITION) && (usage_bit == last_write)) {
+            if ((usage_index == SYNC_IMAGE_LAYOUT_TRANSITION) && (last_write->stage_access_index == SYNC_IMAGE_LAYOUT_TRANSITION)) {
                 // ILT after ILT is a special case where we check the 2nd access scope of the first ILT against the first access
                 // scope of the second ILT, which has been passed (smuggled?) in the ordering barrier
                 ilt_ilt_hazard = !(write_barriers & ordering.access_scope).any();
             }
-            if (ilt_ilt_hazard || IsWriteHazard(usage_bit)) {
-                hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
+            if (ilt_ilt_hazard || IsWriteHazard(usage_info)) {
+                hazard.Set(this, usage_info, WRITE_AFTER_WRITE, *last_write, write_tag);
             }
         }
     }
@@ -3339,12 +3339,12 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoTyp
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
     if (IsRead(usage_info)) {
-        if (last_write.any() && (write_tag >= start_tag)) {
-            hazard.Set(this, usage_index, READ_RACING_WRITE, last_write, write_tag);
+        if (last_write && (write_tag >= start_tag)) {
+            hazard.Set(this, usage_info, READ_RACING_WRITE, *last_write, write_tag);
         }
     } else {
-        if (last_write.any() && (write_tag >= start_tag)) {
-            hazard.Set(this, usage_index, WRITE_RACING_WRITE, last_write, write_tag);
+        if (last_write && (write_tag >= start_tag)) {
+            hazard.Set(this, usage_info, WRITE_RACING_WRITE, *last_write, write_tag);
         } else if (last_reads.size() > 0) {
             // Any reads during the other subpass will conflict with this write, so we need to check them all.
             for (const auto &read_access : last_reads) {
@@ -3392,8 +3392,8 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
                 break;
             }
         }
-    } else if (last_write.any() && IsWriteBarrierHazard(queue_id, src_exec_scope, src_access_scope)) {
-        hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
+    } else if (last_write && IsWriteBarrierHazard(queue_id, src_exec_scope, src_access_scope)) {
+        hazard.Set(this, usage_info, WRITE_AFTER_WRITE, *last_write, write_tag);
     }
 
     return hazard;
@@ -3409,9 +3409,9 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
 
-    if ((write_tag >= event_tag) && last_write.any()) {
+    if ((write_tag >= event_tag) && last_write) {
         // Any write after the event precludes the possibility of being in the first access scope for the layout transition
-        hazard.Set(this, usage_index, WRITE_AFTER_WRITE, last_write, write_tag);
+        hazard.Set(this, usage_info, WRITE_AFTER_WRITE, *last_write, write_tag);
     } else {
         // only test for WAW if there no intervening read operations.
         // See DetectHazard(SyncStagetAccessIndex) above for more details.
@@ -3446,12 +3446,12 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
                 const ReadState &current_read = last_reads[scope_read_count];
                 hazard.Set(this, usage_index, WRITE_AFTER_READ, current_read.access, current_read.tag);
             }
-        } else if (last_write.any()) {
+        } else if (last_write) {
             // if there are no reads, the write is either the reason the access is in the event scope... they are a hazard
             // The write is in the first sync scope of the event (sync their aren't any reads to be the reason)
             // So do a normal barrier hazard check
             if (scope_state.IsWriteBarrierHazard(event_queue, src_exec_scope, src_access_scope)) {
-                hazard.Set(&scope_state, usage_index, WRITE_AFTER_WRITE, scope_state.last_write, scope_state.write_tag);
+                hazard.Set(&scope_state, usage_info, WRITE_AFTER_WRITE, *scope_state.last_write, scope_state.write_tag);
             }
         }
     }
@@ -3592,7 +3592,7 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
     } else {
         // Assume write
         // TODO determine what to do with READ-WRITE operations if any
-        SetWrite(usage_bit, tag);
+        SetWrite(usage_info, tag);
     }
     UpdateFirst(tag, usage_index, ordering_rule);
 }
@@ -3602,11 +3602,11 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
 // We can overwrite them as *this* write is now after them.
 //
 // Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
-void ResourceAccessState::SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag tag) {
+void ResourceAccessState::SetWrite(const SyncStageAccessInfoType &usage_info, const ResourceUsageTag tag) {
     ClearRead();
     ClearWrite();
     write_tag = tag;
-    last_write = usage_bit;
+    last_write = &usage_info;
 }
 
 void ResourceAccessState::ClearWrite() {
@@ -3614,7 +3614,7 @@ void ResourceAccessState::ClearWrite() {
     input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
     write_barriers.reset();
     write_dependency_chain = VK_PIPELINE_STAGE_2_NONE;
-    last_write.reset();
+    last_write = nullptr;
 
     write_tag = 0;
     write_queue = QueueSyncState::kQueueIdInvalid;
@@ -3687,7 +3687,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
 void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
-        SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION_BIT, tag);  // Side effect notes below
+        SetWrite(UsageInfo(SYNC_IMAGE_LAYOUT_TRANSITION), tag);  // Side effect notes below
         UpdateFirst(tag, SYNC_IMAGE_LAYOUT_TRANSITION, SyncOrdering::kNonAttachment);
         TouchupFirstForLayoutTransition(tag, pending_layout_ordering_);
         pending_layout_ordering_ = OrderingBarrier();
@@ -3739,7 +3739,7 @@ bool ResourceAccessState::WaitQueueTagPredicate::operator()(const ResourceAccess
 }
 bool ResourceAccessState::WaitQueueTagPredicate::operator()(const ResourceAccessState &access) const {
     return (access.write_queue == queue) && (access.write_tag <= tag) &&
-           (access.last_write != SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL);
+           !access.IsLastWriteOp(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
 }
 
 // Read access predicate for queue wait
@@ -3747,7 +3747,7 @@ bool ResourceAccessState::WaitTagPredicate::operator()(const ResourceAccessState
     return (read_access.tag <= tag) && (read_access.stage != VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL);
 }
 bool ResourceAccessState::WaitTagPredicate::operator()(const ResourceAccessState &access) const {
-    return (access.write_tag <= tag) && (access.last_write != SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL);
+    return (access.write_tag <= tag) && !access.IsLastWriteOp(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
 }
 
 // Present operations only matching only the *exactly* tagged present and acquire operations
@@ -3755,8 +3755,7 @@ bool ResourceAccessState::WaitAcquirePredicate::operator()(const ResourceAccessS
     return (read_access.tag == acquire_tag) && (read_access.stage == VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL);
 }
 bool ResourceAccessState::WaitAcquirePredicate::operator()(const ResourceAccessState &access) const {
-    return (access.write_tag == present_tag) &&
-           (access.last_write == SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL);
+    return (access.write_tag == present_tag) && access.IsLastWriteOp(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
 }
 
 // Return if the resulting state is "empty"
@@ -3806,7 +3805,7 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
     }
 
     bool all_clear = last_reads.size() == 0;
-    if (last_write.any()) {
+    if (last_write) {
         if (predicate(*this) || sync_reads) {
             // Clear any predicated write, or any the write from any any access with synchronized reads.
             // This could drop RAW detection, but only if the synchronized reads were RAW hazards, and given
@@ -3827,7 +3826,7 @@ bool ResourceAccessState::FirstAccessInTagRange(const ResourceUsageRange &tag_ra
 }
 
 void ResourceAccessState::OffsetTag(ResourceUsageTag offset) {
-    if (last_write.any()) write_tag += offset;
+    if (last_write) write_tag += offset;
     for (auto &read_access : last_reads) {
         read_access.tag += offset;
     }
@@ -3875,7 +3874,7 @@ void ResourceAccessState::SetQueueId(QueueId id) {
             read_access.queue = id;
         }
     }
-    if (last_write.any() && (write_queue == QueueSyncState::kQueueIdInvalid)) {
+    if (last_write && (write_queue == QueueSyncState::kQueueIdInvalid)) {
         write_queue = id;
     }
 }
@@ -3885,7 +3884,7 @@ bool ResourceAccessState::WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) 
 }
 
 bool ResourceAccessState::WriteInScope(const SyncStageAccessFlags &src_access_scope) const {
-    return (src_access_scope & last_write).any();
+    return last_write && src_access_scope[last_write->stage_access_index];
 }
 
 bool ResourceAccessState::WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const {
@@ -3894,12 +3893,12 @@ bool ResourceAccessState::WriteBarrierInScope(const SyncStageAccessFlags &src_ac
 
 bool ResourceAccessState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
                                                     SyncStageAccessFlags src_access_scope) const {
-    return WriteInChain(src_exec_scope) || WriteInScope(src_access_scope);
+    return last_write && (WriteInChain(src_exec_scope) || WriteInScope(src_access_scope));
 }
 
 bool ResourceAccessState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
                                                          SyncStageAccessFlags src_access_scope) const {
-    return WriteInChain(src_exec_scope) || ((queue == write_queue) && WriteInScope(src_access_scope));
+    return last_write && (WriteInChain(src_exec_scope) || ((queue == write_queue) && WriteInScope(src_access_scope)));
 }
 
 bool ResourceAccessState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
@@ -3921,7 +3920,7 @@ bool operator<(const ResourceAccessState::ReadState &lhs, const ResourceAccessSt
 }
 
 void ResourceAccessState::Normalize() {
-    if (!last_write.any()) {
+    if (!last_write) {
         ClearWrite();
     }
     if (!last_reads.size()) {
@@ -3939,7 +3938,7 @@ void ResourceAccessState::Normalize() {
 }
 
 void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const {
-    if (last_write.any()) {
+    if (last_write) {
         used.insert(write_tag);
     }
 
@@ -3948,13 +3947,14 @@ void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const 
     }
 }
 
-bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
+bool ResourceAccessState::IsRAWHazard(const SyncStageAccessInfoType &usage_info) const {
+    assert(IsRead(usage_info));
     // Only RAW vs. last_write if it doesn't happen-after any other read because either:
     //    * the previous reads are not hazards, and thus last_write must be visible and available to
     //      any reads that happen after.
     //    * the previous reads *are* hazards to last_write, have been reported, and if that hazard is fixed
     //      the current read will be also not be a hazard, thus reporting a hazard here adds no needed information.
-    return last_write.any() && (0 == (read_execution_barriers & usage_stage)) && IsWriteHazard(usage);
+    return last_write && (0 == (read_execution_barriers & usage_info.stage_mask)) && IsWriteHazard(usage_info);
 }
 
 VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const {

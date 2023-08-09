@@ -275,6 +275,10 @@ struct HazardResult {
     SyncHazard hazard = NONE;
     SyncStageAccessFlags prior_access = 0U;  // TODO -- change to a NONE enum in ...Bits
     ResourceUsageTag tag = ResourceUsageTag();
+    void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
+             const SyncStageAccessInfoType &prior_, ResourceUsageTag tag_) {
+        Set(access_state_, usage_info_.stage_access_index, hazard_, prior_.stage_access_bit, tag_);
+    }
     void Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
              const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
@@ -514,7 +518,7 @@ class ResourceAccessState : public SyncStageAccess {
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
     void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void SetWrite(const SyncStageAccessFlags &usage_bit, ResourceUsageTag tag);
+    void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
     void ClearWrite();
     void ClearRead();
     void ClearPending();
@@ -561,8 +565,9 @@ class ResourceAccessState : public SyncStageAccess {
     bool HasPendingState() const {
         return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
     }
-    bool HasWriteOp() const { return last_write != 0; }
-    const SyncStageAccessFlags &LastWriteOp() const { return last_write; }
+    bool HasWriteOp() const { return last_write != nullptr; }
+    SyncStageAccessIndex LastWriteOp() const { return last_write ? last_write->stage_access_index : SYNC_ACCESS_INDEX_NONE; }
+    bool IsLastWriteOp(SyncStageAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
     ResourceUsageTag LastWriteTag() const { return write_tag; }
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
@@ -587,7 +592,6 @@ class ResourceAccessState : public SyncStageAccess {
     void SetQueueId(QueueId id);
 
     bool WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const;
-    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
     bool WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const;
     bool WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const;
     bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
@@ -633,9 +637,10 @@ class ResourceAccessState : public SyncStageAccess {
 
   private:
     static constexpr VkPipelineStageFlags2KHR kInvalidAttachmentStage = ~VkPipelineStageFlags2KHR(0);
-    bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
-    bool IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const;
+    bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const { return !write_barriers[usage_info.stage_access_index]; }
+    bool IsRAWHazard(const SyncStageAccessInfoType &usage_info) const;
 
+    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
     // Apply ordering scope to write hazard detection
     bool IsOrderedWriteHazard(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const {
         // Must be neither in the access scope, nor in the chained access scope
@@ -645,7 +650,7 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const {
         // Special rules for sequential ILT's
-        if (last_write == SYNC_IMAGE_LAYOUT_TRANSITION_BIT) {
+        if (IsLastWriteOp(SYNC_IMAGE_LAYOUT_TRANSITION)) {
             if (queue_id == write_queue) {
                 // In queue, they are implicitly ordered
                 return false;
@@ -686,7 +691,7 @@ class ResourceAccessState : public SyncStageAccess {
     VkPipelineStageFlags2KHR write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they chain.
     ResourceUsageTag write_tag;
     QueueId write_queue;
-    SyncStageAccessFlags last_write;  // only the most recent write
+    const SyncStageAccessInfoType *last_write;  // only the most recent write
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
     // Tracks whether the fragment shader read is input attachment read
