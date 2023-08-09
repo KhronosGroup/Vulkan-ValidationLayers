@@ -1431,7 +1431,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                              cmd_name, i, pOffsets[i], i, buffer_state->createInfo.size);
         }
 
-        if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(commandBuffer, pBuffers[i]);
             skip |= LogError(objlist, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02360",
                              "%s: pBuffers[%" PRIu32
@@ -1520,7 +1520,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                                      cmd_name, i, i, pCounterBufferOffsets[i]);
                 }
 
-                if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                     const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                     skip |= LogError(objlist, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372",
                                      "%s: pCounterBuffers[%" PRIu32
@@ -1573,7 +1573,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                      cmd_name, i, i, pCounterBufferOffsets[i]);
                 }
 
-                if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                     const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                     skip |= LogError(objlist, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380",
                                      "%s: pCounterBuffers[%" PRIu32
@@ -1668,7 +1668,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     if (pConditionalRenderingBegin) {
         auto buffer_state = Get<BUFFER_STATE>(pConditionalRenderingBegin->buffer);
         if (buffer_state) {
-            if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
+            if ((buffer_state->usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, buffer_state->buffer());
                 skip |= LogError(commandBuffer, "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982",
                                  "vkCmdBeginConditionalRenderingEXT(): pConditionalRenderingBegin->buffer (%s) was not create with "

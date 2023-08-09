@@ -524,7 +524,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         if (mem_info->IsExport()) {
             auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
             external_info.flags = buffer_state->createInfo.flags;
-            external_info.usage = buffer_state->createInfo.usage;
+            // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
+            external_info.usage = VkBufferUsageFlags(buffer_state->usage);
             auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
             bool export_supported = true;
 
@@ -608,8 +609,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         }
 
         auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
-        if (enabled_features.core12.bufferDeviceAddress &&
-            (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
+        if (enabled_features.core12.bufferDeviceAddress && (buffer_state->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
             (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
             const LogObjectList objlist(buffer, mem);
             skip |= LogError(objlist, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",

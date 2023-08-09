@@ -1191,7 +1191,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const LogObjectList &objlist,
+bool CoreChecks::ValidateUsageFlags(VkFlags64 actual, VkFlags64 desired, VkBool32 strict, const LogObjectList &objlist,
                                     const VulkanTypedHandle &typed_handle, const char *msgCode, char const *func_name,
                                     char const *usage_str) const {
     bool correct_usage = false;

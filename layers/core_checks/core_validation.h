@@ -943,7 +943,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& src_image_state,
                                                           const IMAGE_STATE& dst_image_state, const RegionType* region,
                                                           const uint32_t i, const char* function, CMD_TYPE cmd_type) const;
-    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const LogObjectList& objlist,
+    bool ValidateUsageFlags(VkFlags64 actual, VkFlags64 desired, VkBool32 strict, const LogObjectList& objlist,
                             const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
                             char const* usage_str) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
