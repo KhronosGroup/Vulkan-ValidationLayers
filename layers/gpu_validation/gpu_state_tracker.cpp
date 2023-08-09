@@ -910,8 +910,8 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         }
                         const VkShaderStageFlagBits stage = stage_state.create_info->stage;
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
-                        const auto pass =
-                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
+                        const auto pass = InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv,
+                                                           &csm_state.unique_shader_id);
                         if (pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
@@ -924,7 +924,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                                     LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
-                                sm_ci->SetCode(csm_state.instrumented_pgm);
+                                sm_ci->SetCode(csm_state.instrumented_spirv);
                             }
                         }
                     }

@@ -3142,8 +3142,9 @@ void BestPractices::PostCallRecordCreateShadersEXT(
     const VkShaderCreateInfoEXT*                pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkShaderEXT*                                pShaders,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result);
+    VkResult                                    result,
+    void*                                       state_data) {
+    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result, state_data);
     if (result < VK_SUCCESS) {
         LogErrorCode("vkCreateShadersEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT
     }

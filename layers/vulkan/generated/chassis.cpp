@@ -799,7 +799,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-    create_shader_module_api_state csm_state{};
+    create_shader_object_api_state csm_state(createInfoCount, pCreateInfos);
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
@@ -814,7 +814,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
     // Special extra check if SPIR-V itself fails runtime validation in PreCallRecord
     if (!csm_state.valid_spirv) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+    VkResult result = DispatchCreateShadersEXT(device, createInfoCount, csm_state.instrumented_create_info, pAllocator, pShaders);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result, &csm_state);

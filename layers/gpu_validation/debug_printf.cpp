@@ -66,11 +66,6 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         aborted = true;
         return;
     }
-
-    if (IsExtEnabled(device_extensions.vk_ext_shader_object)) {
-        ReportSetupProblem(
-            device, "VK_EXT_shader_object is enabled, but Debug Printf does not currently support printing from shader_objects");
-    }
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
@@ -132,17 +127,28 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, &csm_state->unique_shader_id);
     if (pass) {
-        csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
-        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
+        csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
+        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
     }
 }
 
 void DebugPrintf::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, void *csm_state_data) {
-    // TODO - Add VK_EXT_shader_object support
+    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders,
+                                                          csm_state_data);
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        const bool pass = InstrumentShader(
+            vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
+            csm_state->instrumented_spirv[i], &csm_state->unique_shader_ids[0]);
+        if (pass) {
+            csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv.data();
+            csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
+        }
+    }
 }
 
 vartype vartype_lookup(char intype) {

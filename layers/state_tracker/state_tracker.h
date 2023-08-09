@@ -89,7 +89,25 @@ struct create_shader_module_api_state {
 
     // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
     VkShaderModuleCreateInfo instrumented_create_info;
-    std::vector<uint32_t> instrumented_pgm;
+    std::vector<uint32_t> instrumented_spirv;
+};
+
+// same idea as create_shader_module_api_state but for VkShaderEXT (VK_EXT_shader_object)
+struct create_shader_object_api_state {
+    std::vector<std::shared_ptr<SPIRV_MODULE_STATE>> module_states;  // contains SPIR-V to validate
+    std::vector<uint32_t> unique_shader_ids;
+    bool valid_spirv = true;
+
+    // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
+    VkShaderCreateInfoEXT* instrumented_create_info;
+    std::vector<std::vector<uint32_t>> instrumented_spirv;
+
+    create_shader_object_api_state(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos) {
+        instrumented_create_info = const_cast<VkShaderCreateInfoEXT*>(pCreateInfos);
+        module_states.resize(createInfoCount);
+        unique_shader_ids.resize(createInfoCount);
+        instrumented_spirv.resize(createInfoCount);
+    }
 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
@@ -864,11 +882,12 @@ class ValidationStateTracker : public ValidationObject {
 
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
-                                          void* csm_state) override;
+                                          void* csm_state_data) override;
     void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                           const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders, VkResult result) override;
+                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders, VkResult result,
+                                        void* csm_state_data) override;
     void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) override;
     void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                         const VkAllocationCallbacks* pAllocator) override;

@@ -1685,7 +1685,8 @@ void PostCallRecordCreateShadersEXT(
     const VkShaderCreateInfoEXT*                pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkShaderEXT*                                pShaders,
-    VkResult                                    result) override;
+    VkResult                                    result,
+    void*                                       state_data) override;
 
 void PostCallRecordGetShaderBinaryDataEXT(
     VkDevice                                    device,

@@ -596,6 +596,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
           gpu_validation_shader_id(unique_shader_id) {}
 
     // If null, means this is a empty object and no shader backing it
+    // TODO - This (and SHADER_OBJECT_STATE) could be unique, but need handle multiple ValidationObjects
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6265/files
     std::shared_ptr<SPIRV_MODULE_STATE> spirv;
 
     // Used as way to match instrumented GPU-AV shader to a VkShaderModule handle
@@ -604,12 +606,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct SHADER_OBJECT_STATE : public BASE_NODE {
-    SHADER_OBJECT_STATE(const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object, uint32_t unique_shader_id = 0)
-        : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT),
-          spirv(std::make_unique<SPIRV_MODULE_STATE>(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode))),
-          gpu_validation_shader_id(unique_shader_id) {}
+    SHADER_OBJECT_STATE(VkShaderEXT shader_object, std::shared_ptr<SPIRV_MODULE_STATE> &spirv_module, uint32_t unique_shader_id)
+        : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT), spirv(spirv_module), gpu_validation_shader_id(unique_shader_id) {
+        spirv->handle_ = handle_;
+    }
 
-    std::unique_ptr<SPIRV_MODULE_STATE> spirv;
+    std::shared_ptr<SPIRV_MODULE_STATE> spirv;
 
     // Used as way to match instrumented GPU-AV shader to a VkShaderEXT handle
     uint32_t gpu_validation_shader_id = 0;
