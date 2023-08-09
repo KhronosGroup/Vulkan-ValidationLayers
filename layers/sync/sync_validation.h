@@ -103,13 +103,11 @@ struct SyncStageAccess {
         return syncStageAccessInfoByStageAccessIndex()[stage_access].stage_access_bit;
     }
 
-    static bool IsRead(const SyncStageAccessFlags &stage_access_bit) { return (stage_access_bit & syncStageAccessReadMask).any(); }
-    static bool IsRead(SyncStageAccessIndex stage_access_index) { return IsRead(FlagBit(stage_access_index)); }
+    static bool IsRead(SyncStageAccessIndex stage_access_index) { return syncStageAccessReadMask[stage_access_index]; }
+    static bool IsRead(const SyncStageAccessInfoType &info) { return IsRead(info.stage_access_index); }
+    static bool IsWrite(SyncStageAccessIndex stage_access_index) { return syncStageAccessWriteMask[stage_access_index]; }
+    static bool IsWrite(const SyncStageAccessInfoType &info) { return IsWrite(info.stage_access_index); }
 
-    static bool IsWrite(const SyncStageAccessFlags &stage_access_bit) {
-        return (stage_access_bit & syncStageAccessWriteMask).any();
-    }
-    static bool IsWrite(SyncStageAccessIndex stage_access_index) { return IsWrite(FlagBit(stage_access_index)); }
     static VkPipelineStageFlags2KHR PipelineStageBit(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access_index].stage_mask;
     }
