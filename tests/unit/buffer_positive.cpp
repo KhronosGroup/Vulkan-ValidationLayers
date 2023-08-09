@@ -217,8 +217,8 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveBuffer, BufferUsageFlags2) {
-    TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with bad flags.");
+TEST_F(PositiveBuffer, BufferViewUsageBasic) {
+    TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with good flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -245,4 +245,91 @@ TEST_F(PositiveBuffer, BufferUsageFlags2) {
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
     CreateBufferViewTest(*this, &buffer_view_ci, {});
+}
+
+TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
+    TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are a subset of the Buffer.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    VkBufferObj buffer(*m_device, buffer_ci);
+
+    auto buffer_usage_flags = LvlInitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;
+
+    auto buffer_view_ci = LvlInitStruct<VkBufferViewCreateInfo>(&buffer_usage_flags);
+    buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buffer_view_ci.range = VK_WHOLE_SIZE;
+    buffer_view_ci.buffer = buffer.handle();
+    CreateBufferViewTest(*this, &buffer_view_ci, {});
+}
+
+TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
+    TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    auto buffer_usage_flags = LvlInitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+    CreateBufferTest(*this, &buffer_ci, {});
+
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                      VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT;
+    CreateBufferTest(*this, &buffer_ci, {});
+}
+
+// Need to get VkBufferCreateInfo::usage removed from auto code generation
+// https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6066
+TEST_F(PositiveBuffer, DISABLED_BufferUsageFlags2BadUsage) {
+    TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    auto buffer_usage_flags = LvlInitStruct<VkBufferUsageFlags2CreateInfoKHR>();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
+    buffer_ci.size = 32;
+    buffer_ci.usage = 0;
+    CreateBufferTest(*this, &buffer_ci, {});
+
+    buffer_ci.usage = 0xBAD0000;
+    CreateBufferTest(*this, &buffer_ci, {});
 }
