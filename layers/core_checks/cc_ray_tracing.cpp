@@ -55,7 +55,7 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
     if (pCreateInfo) {
         auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
         if (buffer_state) {
-            if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
+            if (!(buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
                 skip |=
                     LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-buffer-03614",
                              "VkAccelerationStructureCreateInfoKHR(): buffer must have been created with a usage value containing "
@@ -606,10 +606,10 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
         const auto buffer_states = GetBuffersByAddress(address.deviceAddress);
         const bool no_valid_buffer_found =
             !buffer_states.empty() &&
-            std::none_of(
-                buffer_states.begin(), buffer_states.end(), [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
-                    return buffer_state->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-                });
+            std::none_of(buffer_states.begin(), buffer_states.end(),
+                         [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
+                             return buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                         });
         if (no_valid_buffer_found) {
             LogObjectList objlist(device);
             for (const auto &buffer_state : buffer_states) {
@@ -666,10 +666,10 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
                          "].scratchData.deviceAddress (0x%" PRIx64 ").",
                          info_index, info.scratchData.deviceAddress);
     } else {
-        const bool no_valid_buffer_found = std::none_of(
-            buffer_states.begin(), buffer_states.end(), [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
-                return buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            });
+        const bool no_valid_buffer_found = std::none_of(buffer_states.begin(), buffer_states.end(),
+                                                        [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
+                                                            return buffer_state->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+                                                        });
         if (no_valid_buffer_found) {
             LogObjectList objlist(device);
             for (const auto &buffer_state : buffer_states) {
@@ -1498,9 +1498,9 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
             {vuid_binding_table_flag, LogObjectList(commandBuffer),
              [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                 if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
+                 if (!(static_cast<uint32_t>(buffer_state->usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
                      if (out_error_msg) {
-                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage) + '\n';
+                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage) + '\n';
                      }
                      return false;
                  }

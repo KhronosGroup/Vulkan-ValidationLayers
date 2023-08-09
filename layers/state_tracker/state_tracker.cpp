@@ -368,13 +368,13 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
         const VkBufferUsageFlags descriptor_buffer_usages =
             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-        if ((pCreateInfo->usage & descriptor_buffer_usages) != 0) {
+        if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
             descriptorBufferAddressSpaceSize += pCreateInfo->size;
 
-            if ((pCreateInfo->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+            if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
                 resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
 
-            if ((pCreateInfo->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+            if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
                 samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
         }
     }
@@ -478,13 +478,13 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
         const VkBufferUsageFlags descriptor_buffer_usages =
             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-        if ((buffer_state->createInfo.usage & descriptor_buffer_usages) != 0) {
+        if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
             descriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
 
-            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)
+            if (buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)
                 resourceDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
 
-            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
+            if (buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
                 samplerDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
         }
 

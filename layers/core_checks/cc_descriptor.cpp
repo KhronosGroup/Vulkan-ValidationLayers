@@ -2522,7 +2522,7 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, ui
 static bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
                                 std::string *error_code, std::string *error_msg) {
     // Verify that usage bits set correctly for given type
-    auto usage = buffer_node->createInfo.usage;
+    auto usage = buffer_node->usage;
     const char *error_usage_bit = nullptr;
     switch (type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -3561,14 +3561,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
                 {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055", LogObjectList(device),
                  [binding_usage = bindingInfo.usage](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                     if ((buffer_state->createInfo.usage &
+                     if ((buffer_state->usage &
                           (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
                          (binding_usage &
                           (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT))) {
                          if (out_error_msg) {
-                             *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                             *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
                          }
                          return false;
                      }
@@ -3576,7 +3576,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  },
                  [binding_usage = bindingInfo.usage, i]() {
                      return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
-                            "].usage (" + string_VkBufferUsageFlags(binding_usage) + "):\n";
+                            "].usage (" + string_VkBufferUsageFlags2KHR(binding_usage) + "):\n";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122", LogObjectList(device),
@@ -3584,9 +3584,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                                            std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
                          ++num_sampler_buffers;
-                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                         if (!(buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                                 *out_error_msg += "has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
                              }
                              return false;
                          }
@@ -3602,9 +3602,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                                             std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
                          ++num_resource_buffers;
-                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                         if (!(buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
                              }
                              return false;
                          }
@@ -3620,9 +3620,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                                                    std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
                          ++num_push_descriptor_buffers;
-                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                         if (!(buffer_state->usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
                              }
                              return false;
                          }

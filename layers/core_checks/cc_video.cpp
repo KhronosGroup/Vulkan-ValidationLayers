@@ -1458,7 +1458,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                           "VUID-vkCmdDecodeVideoKHR-commandBuffer-07137", where);
     }
 
-    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
+    if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
         LogObjectList objlist(commandBuffer);
         objlist.add(vs_state->videoSession());
         objlist.add(pDecodeInfo->srcBuffer);
