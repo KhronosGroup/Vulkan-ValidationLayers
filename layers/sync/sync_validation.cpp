@@ -3172,7 +3172,7 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
     const auto &usage = usage_info.stage_access_bit;
     const auto &usage_stage = usage_info.stage_mask;
     const auto &usage_index = usage_info.stage_access_index;
-    if (IsRead(usage)) {
+    if (IsRead(usage_info)) {
         if (IsRAWHazard(usage_stage, usage)) {
             hazard.Set(this, usage_index, READ_AFTER_WRITE, last_write, write_tag);
         }
@@ -3216,7 +3216,8 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
     const auto &usage_index = usage_info.stage_access_index;
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
     const bool last_write_is_ordered = (write_queue == queue_id) && (last_write & ordering.access_scope).any();
-    if (IsRead(usage_bit)) {
+
+    if (IsRead(usage_info)) {
         // Exclude RAW if no write, or write not most "most recent" operation w.r.t. usage;
         bool is_raw_hazard = IsRAWHazard(usage_stage, usage_bit);
         if (is_raw_hazard) {
@@ -3333,12 +3334,11 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
 HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoType &usage_info,
                                                     const ResourceUsageTag start_tag) const {
     HazardResult hazard;
-    const auto &usage = usage_info.stage_access_bit;
     const auto &usage_index = usage_info.stage_access_index;
     // Async checks need to not go back further than the start of the subpass, as we only want to find hazards between the async
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
-    if (IsRead(usage)) {
+    if (IsRead(usage_info)) {
         if (last_write.any() && (write_tag >= start_tag)) {
             hazard.Set(this, usage_index, READ_RACING_WRITE, last_write, write_tag);
         }
@@ -3556,7 +3556,7 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
     const auto &usage_bit = usage_info.stage_access_bit;
     const auto &usage_stage = usage_info.stage_mask;
     const auto &usage_index = usage_info.stage_access_index;
-    if (IsRead(usage_index)) {
+    if (IsRead(usage_info)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
         if (usage_stage & last_read_stages) {
@@ -3949,7 +3949,6 @@ void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const 
 }
 
 bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
-    assert(IsRead(usage));
     // Only RAW vs. last_write if it doesn't happen-after any other read because either:
     //    * the previous reads are not hazards, and thus last_write must be visible and available to
     //      any reads that happen after.
@@ -3983,8 +3982,9 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
 
 void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
     // Only record until we record a write.
+    const SyncStageAccessInfoType &usage_info = SyncStageAccess::UsageInfo(usage_index);
     if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
-        const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_index) ? PipelineStageBit(usage_index) : 0U;
+        const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_info) ? usage_info.stage_mask : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
             // We always need to know what stages were found prior to write
