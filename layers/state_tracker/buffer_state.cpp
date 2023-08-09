@@ -62,11 +62,6 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 }
 #endif
 
-static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferViewCreateInfo &create_info) {
-    const auto *usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(create_info.pNext);
-    return usage_flags2 ? usage_flags2->usage : 0;
-}
-
 BUFFER_VIEW_STATE::BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                                      VkFormatFeatureFlags2KHR buf_ff)
     : BASE_NODE(bv, kVulkanObjectTypeBufferView),
@@ -75,6 +70,5 @@ BUFFER_VIEW_STATE::BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, Vk
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_bufferview_export(GetMetalExport(ci)),
 #endif
-      buf_format_features(buf_ff),
-      usage(GetBufferUsageFlags(create_info)) {
+      buf_format_features(buf_ff) {
 }

@@ -70,7 +70,6 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     // Format features that matter when accessing the buffer
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
     const VkFormatFeatureFlags2KHR buf_format_features;
-    const VkBufferUsageFlags2KHR usage;
 
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                       VkFormatFeatureFlags2KHR buf_ff);
