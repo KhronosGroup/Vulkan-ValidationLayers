@@ -21,7 +21,10 @@ bool copy_layout_supported(std::vector<VkImageLayout> &copy_src_layouts, std::ve
             (std::find(copy_dst_layouts.begin(), copy_dst_layouts.end(), layout) != copy_dst_layouts.end()));
 }
 
-void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format, bool separate_depth_stencil) {
+void NegativeHostImageCopy::InitHostImageCopyTest(const VkImageCreateInfo image_ci,
+                                                  std::vector<VkImageLayout> &copy_src_layouts,
+                                                  std::vector<VkImageLayout> &copy_dst_layouts, VkFormat &compressed_format,
+                                                  bool &separate_depth_stencil) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -37,7 +40,7 @@ void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format, b
     auto host_copy_features = LvlInitStruct<VkPhysicalDeviceHostImageCopyFeaturesEXT>(&separate_depth_stencil_layouts_features);
     GetPhysicalDeviceFeatures2(host_copy_features);
     if (!host_copy_features.hostImageCopy) {
-        GTEST_SKIP() << "Test requires (unsupported) multiDraw";
+        GTEST_SKIP() << "Test requires (unsupported) hostImageCopy";
     }
     separate_depth_stencil = separate_depth_stencil_layouts_features.separateDepthStencilLayouts;
     VkPhysicalDeviceFeatures device_features = {};
@@ -52,23 +55,6 @@ void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format, b
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_copy_features));
-}
-
-TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
-    TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from images to memory and vice versa");
-    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
-    InitHostImageCopyTest(compressed_format);
-    if (::testing::Test::IsSkipped()) return;
-
-    uint32_t width = 32;
-    uint32_t height = 32;
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    auto image_ci = VkImageObj::ImageCreateInfo2D(
-        width, height, 1, 1, format,
-        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_TILING_OPTIMAL);
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
                                                                  image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
@@ -77,8 +63,6 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
 
     auto host_image_copy_props = LvlInitStruct<VkPhysicalDeviceHostImageCopyPropertiesEXT>();
     GetPhysicalDeviceProperties2(host_image_copy_props);
-    std::vector<VkImageLayout> copy_src_layouts;
-    std::vector<VkImageLayout> copy_dst_layouts;
     copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
     copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
     host_image_copy_props.pCopySrcLayouts = copy_src_layouts.data();
@@ -88,7 +72,26 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
         !copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_GENERAL)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
+}
 
+TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
+    TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from images to memory and vice versa");
+    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
+    bool separate_depth_stencil = false;
+    std::vector<VkImageLayout> copy_src_layouts;
+    std::vector<VkImageLayout> copy_dst_layouts;
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 1, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_IMAGE_TILING_OPTIMAL);
+    InitHostImageCopyTest(image_ci, copy_src_layouts, copy_dst_layouts, compressed_format, separate_depth_stencil);
+    if (::testing::Test::IsSkipped()) return;
+
+    VkImageFormatProperties img_prop = {};
+    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkImageObj image(m_device);
     image.Init(image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
@@ -725,38 +728,21 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from an image to another image");
 
     VkFormat compressed_format = VK_FORMAT_UNDEFINED;
-    InitHostImageCopyTest(compressed_format);
-    if (::testing::Test::IsSkipped()) return;
-
+    bool separate_depth_stencil = false;
+    std::vector<VkImageLayout> copy_src_layouts;
+    std::vector<VkImageLayout> copy_dst_layouts;
     uint32_t width = 32;
     uint32_t height = 32;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
+    InitHostImageCopyTest(image_ci, copy_src_layouts, copy_dst_layouts, compressed_format, separate_depth_stencil);
+    if (::testing::Test::IsSkipped()) return;
+
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
-                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
-    auto host_image_copy_props = LvlInitStruct<VkPhysicalDeviceHostImageCopyPropertiesEXT>();
-    GetPhysicalDeviceProperties2(host_image_copy_props);
-    std::vector<VkImageLayout> copy_src_layouts;
-    std::vector<VkImageLayout> copy_dst_layouts;
-    copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
-    copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
-    host_image_copy_props.pCopySrcLayouts = copy_src_layouts.data();
-    host_image_copy_props.pCopyDstLayouts = copy_dst_layouts.data();
-    GetPhysicalDeviceProperties2(host_image_copy_props);
-    if (!copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) ||
-        !copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_GENERAL)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
+    VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     auto image_copy_2 = LvlInitStruct<VkImageCopy2>();
     image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1272,40 +1258,22 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
 }
 
 TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
-    TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from images to memory and vice versa");
+    TEST_DESCRIPTION("Use VK_EXT_host_image_copy to transition image layouts");
     VkFormat compressed_format = VK_FORMAT_UNDEFINED;
     bool separate_depth_stencil = false;
-    InitHostImageCopyTest(compressed_format, separate_depth_stencil);
-    if (::testing::Test::IsSkipped()) return;
-
+    std::vector<VkImageLayout> copy_src_layouts;
+    std::vector<VkImageLayout> copy_dst_layouts;
     uint32_t width = 32;
     uint32_t height = 32;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-
     auto image_ci = VkImageObj::ImageCreateInfo2D(
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         VK_IMAGE_TILING_OPTIMAL);
+    InitHostImageCopyTest(image_ci, copy_src_layouts, copy_dst_layouts, compressed_format, separate_depth_stencil);
+    if (::testing::Test::IsSkipped()) return;
+
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
-                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
-    auto host_image_copy_props = LvlInitStruct<VkPhysicalDeviceHostImageCopyPropertiesEXT>();
-    GetPhysicalDeviceProperties2(host_image_copy_props);
-    std::vector<VkImageLayout> copy_src_layouts;
-    std::vector<VkImageLayout> copy_dst_layouts;
-    copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
-    copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
-    host_image_copy_props.pCopySrcLayouts = copy_src_layouts.data();
-    host_image_copy_props.pCopyDstLayouts = copy_dst_layouts.data();
-    GetPhysicalDeviceProperties2(host_image_copy_props);
-    if (!copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) ||
-        !copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_GENERAL)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkImageSubresourceRange range = {};
     range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     range.layerCount = 1;
