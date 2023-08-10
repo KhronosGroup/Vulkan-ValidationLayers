@@ -1378,3 +1378,62 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
+    TEST_DESCRIPTION("Draw with multiview enabled and instance index too high.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(features11);
+    if (!features11.multiview) {
+        GTEST_SKIP() << "multiview not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11));
+
+    VkPhysicalDeviceMultiviewProperties multiview_properties = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    GetPhysicalDeviceProperties2(multiview_properties);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pipeline_rendering_info.viewMask = 0x1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
+
+    VkImageObj img(m_device);
+    img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    VkImageView view = img.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingAttachmentInfo color_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    color_attachment.imageView = view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    VkRenderingInfoKHR renderingInfo = LvlInitStruct<VkRenderingInfoKHR>();
+    renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
+    renderingInfo.layerCount = 1u;
+    renderingInfo.colorAttachmentCount = 1u;
+    renderingInfo.pColorAttachments = &color_attachment;
+    renderingInfo.viewMask = 0x1;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(renderingInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, multiview_properties.maxMultiviewInstanceIndex);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
