@@ -21,7 +21,7 @@ bool copy_layout_supported(std::vector<VkImageLayout> &copy_src_layouts, std::ve
             (std::find(copy_dst_layouts.begin(), copy_dst_layouts.end(), layout) != copy_dst_layouts.end()));
 }
 
-void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format) {
+void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format, bool separate_depth_stencil) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -33,12 +33,13 @@ void NegativeHostImageCopy::InitHostImageCopyTest(VkFormat &compressed_format) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto host_copy_features = LvlInitStruct<VkPhysicalDeviceHostImageCopyFeaturesEXT>();
+    auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
+    auto host_copy_features = LvlInitStruct<VkPhysicalDeviceHostImageCopyFeaturesEXT>(&separate_depth_stencil_layouts_features);
     GetPhysicalDeviceFeatures2(host_copy_features);
     if (!host_copy_features.hostImageCopy) {
         GTEST_SKIP() << "Test requires (unsupported) multiDraw";
     }
-
+    separate_depth_stencil = separate_depth_stencil_layouts_features.separateDepthStencilLayouts;
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     compressed_format = VK_FORMAT_UNDEFINED;
@@ -1268,4 +1269,246 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.layerCount = 1;
+}
+
+TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
+    TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from images to memory and vice versa");
+    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
+    bool separate_depth_stencil = false;
+    InitHostImageCopyTest(compressed_format, separate_depth_stencil);
+    if (::testing::Test::IsSkipped()) return;
+
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 1, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_IMAGE_TILING_OPTIMAL);
+    VkImageFormatProperties img_prop = {};
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto host_image_copy_props = LvlInitStruct<VkPhysicalDeviceHostImageCopyPropertiesEXT>();
+    GetPhysicalDeviceProperties2(host_image_copy_props);
+    std::vector<VkImageLayout> copy_src_layouts;
+    std::vector<VkImageLayout> copy_dst_layouts;
+    copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
+    copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
+    host_image_copy_props.pCopySrcLayouts = copy_src_layouts.data();
+    host_image_copy_props.pCopyDstLayouts = copy_dst_layouts.data();
+    GetPhysicalDeviceProperties2(host_image_copy_props);
+    if (!copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) ||
+        !copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_GENERAL)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    VkImageSubresourceRange range = {};
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.layerCount = 1;
+    range.levelCount = 1;
+    auto transition_info = LvlInitStruct<VkHostImageLayoutTransitionInfoEXT>();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.subresourceRange = range;
+
+    {
+        auto image_ci_no_transfer = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                                  VK_IMAGE_TILING_OPTIMAL);
+        // Missing transfer usage
+        VkImageObj image_no_transfer(m_device);
+        image_no_transfer.Init(image_ci_no_transfer);
+        image_no_transfer.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        transition_info.image = image_no_transfer;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-09055");
+        vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    transition_info.image = image;
+
+    // Bad baseMipLevel
+    transition_info.subresourceRange.baseMipLevel = 1;
+    transition_info.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01486");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.subresourceRange.baseMipLevel = 0;
+
+    // Bad baseMipLevel + levelCount
+    transition_info.subresourceRange.levelCount = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01724");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.subresourceRange.levelCount = 1;
+
+    // Bad baseArrayLayer
+    // Also has to get baseArrayLayer + layerCount > arrayLayers, so test both
+    transition_info.subresourceRange.baseArrayLayer = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01725");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01488");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.subresourceRange.baseArrayLayer = 0;
+
+    {
+        // No image memory
+        VkImageObj image_no_mem(m_device);
+        image_no_mem.init_no_mem(*m_device, image_ci);
+        transition_info.image = image_no_mem;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
+        vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Bad aspectMask
+    transition_info.image = image;
+    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
+                          m_device->phy().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_CREATE_DISJOINT_BIT,
+                          &img_prop)) {
+        // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT or
+        // VK_IMAGE_ASPECT_COLOR_BIT
+        VkImageObj image_multi_planar(m_device);
+        VkDeviceMemory plane_0_memory;
+        VkDeviceMemory plane_1_memory;
+        auto image_ci_multi_planar = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+        // Need a multi planar, disjoint image
+        image_ci_multi_planar.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        image_ci_multi_planar.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+        image_multi_planar.init_no_mem(*m_device, image_ci_multi_planar);
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        mem_req_info2.image = image_multi_planar;
+        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_req2);
+        // Find a valid memory type index to memory to be allocated from
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        alloc_info.allocationSize = mem_req2.memoryRequirements.size;
+        m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
+        vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory);
+
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_req2);
+        alloc_info.allocationSize = mem_req2.memoryRequirements.size;
+        m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
+        vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory);
+
+        VkBindImagePlaneMemoryInfo plane_0_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        plane_0_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        VkBindImagePlaneMemoryInfo plane_1_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        plane_1_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+        VkBindImageMemoryInfo bind_image_info[2]{};
+        bind_image_info[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_0_memory_info);
+        bind_image_info[0].image = image_multi_planar;
+        bind_image_info[0].memory = plane_0_memory;
+        bind_image_info[0].memoryOffset = 0;
+        bind_image_info[1] = bind_image_info[0];
+        bind_image_info[1].pNext = &plane_1_memory_info;
+        bind_image_info[1].memory = plane_1_memory;
+        vk::BindImageMemory2(device(), 2, bind_image_info);
+
+        // Now transition the layout
+        image_multi_planar.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        transition_info.image = image_multi_planar;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-01672");
+        vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+        m_errorMonitor->VerifyFound();
+        vk::FreeMemory(device(), plane_0_memory, nullptr);
+        vk::FreeMemory(device(), plane_1_memory, nullptr);
+        transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        transition_info.image = image;
+    }
+
+    if (copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
+        copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) &&
+        copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)) {
+        auto stencil_format = FindSupportedDepthStencilFormat(gpu());
+        if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
+                              m_device->phy().handle(), stencil_format, image_ci.imageType, image_ci.tiling,
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, image_ci.flags,
+                              &img_prop)) {
+            VkImageObj image_stencil(m_device);
+            image_ci.format = stencil_format;
+            image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
+            image_stencil.Init(image_ci);
+            image_stencil.SetLayout((VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT),
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+            transition_info.image = image_stencil;
+            transition_info.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            if (separate_depth_stencil) {
+                transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+                // Will also get error for aspect != color
+                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-03319");
+            } else {
+                transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                // Will also get error for aspect != color
+                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-03320");
+            }
+            vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+            m_errorMonitor->VerifyFound();
+
+            // subresourceRange includes VK_IMAGE_ASPECT_DEPTH_BIT, oldLayout and newLayout must not be one of
+            // VK_IMAGE_LAYOUT_STENCIL_*_OPTIMAL
+            transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
+            transition_info.newLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+            // Will also get error for aspect != color
+            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08702");
+            vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+            m_errorMonitor->VerifyFound();
+
+            // subresourceRange includes VK_IMAGE_ASPECT_STENCIL_BIT, oldLayout and newLayout must not be one of
+            // VK_IMAGE_LAYOUT_DEPTH_*_OPTIMAL
+            transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
+            transition_info.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+            // Will also get error for aspect != color
+            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08703");
+            vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+            m_errorMonitor->VerifyFound();
+
+            image_ci.format = format;
+            image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            transition_info.image = image;
+            transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+    }
+
+    if (!copy_layout_supported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)) {
+        // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopySrcLayouts
+        image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        transition_info.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09056");
+        vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+        m_errorMonitor->VerifyFound();
+        transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+        // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopyDstLayouts
+        transition_info.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-newLayout-09057");
+        vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+        m_errorMonitor->VerifyFound();
+        transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
 }
