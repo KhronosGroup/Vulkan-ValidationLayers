@@ -64,12 +64,6 @@ config("vulkan_internal_config") {
     "VK_ENABLE_BETA_EXTENSIONS",
   ]
 
-  if (!is_win) {
-    cflags_cc = [ "-std=c++17" ]
-  } else {
-    cflags_cc = [ "/std:c++17" ]
-  }
-
   cflags = []
   if (is_clang || !is_win) {
     cflags += [ "-Wno-unused-function" ]
