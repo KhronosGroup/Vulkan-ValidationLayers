@@ -417,7 +417,7 @@ class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
 
 class NegativeHostImageCopy : public virtual VkLayerTest {
   protected:
-    void InitHostImageCopyTest(VkFormat &compressed_format);
+    void InitHostImageCopyTest(VkFormat &compressed_format, bool separate_depth_stencil = false);
 };
 ;
 
