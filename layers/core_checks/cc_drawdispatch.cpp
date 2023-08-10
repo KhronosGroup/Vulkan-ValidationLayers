@@ -2711,14 +2711,14 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint3
     const char *caller = CommandTypeString(cmd_type);
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_state.activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
-        ((instanceCount + firstInstance) > phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
+    if (cb_state.activeRenderPass && enabled_features.core11.multiview &&
+        ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
+         static_cast<uint64_t>(phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex))) {
         const LogObjectList objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
         skip |= LogError(objlist, vuid.max_multiview_instance_index_02688,
-                         "%s: renderpass %s multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32
+                         "%s: renderpass instance has multiview enabled, and maxMultiviewInstanceIndex: %" PRIu32
                          ", but instanceCount: %" PRIu32 "and firstInstance: %" PRIu32 ".",
-                         caller, FormatHandle(cb_state.activeRenderPass->Handle()).c_str(),
-                         phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
+                         caller, phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
     return skip;
 }
