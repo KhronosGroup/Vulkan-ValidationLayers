@@ -64,6 +64,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
     from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
     from generators.error_location_helper_generator import ErrorLocationHelperOutputGenerator
+    from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -265,6 +266,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         },
         'vk_format_utils.cpp' : {
             'generator' : FormatUtilsOutputGenerator,
+            'genCombined': True,
+        },
+        'pnext_chain_extraction.h' : {
+            'generator' : PnextChainExtractionGenerator,
+            'genCombined': True,
+        },
+        'pnext_chain_extraction.cpp' : {
+            'generator' : PnextChainExtractionGenerator,
             'genCombined': True,
         },
     }

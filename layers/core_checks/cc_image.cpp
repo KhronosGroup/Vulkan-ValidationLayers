@@ -20,10 +20,11 @@
  */
 
 #include <string>
-
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
+
 #include "core_validation.h"
+#include "generated/chassis.h"
+#include "generated/pnext_chain_extraction.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo, const Location &loc) const {
     bool skip = false;
@@ -183,16 +184,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     image_format_info.usage = pCreateInfo->usage;
     image_format_info.flags = pCreateInfo->flags;
 
-    // These are pNext structs that can be in both vkGetPhysicalDeviceImageFormatProperties2 and vkCreateImage
-    // need to pass in or else driver might return NOT_SUPPORTED falsly
-    // TODO - Generate the full list
-    auto image_format_list = LvlInitStruct<VkImageFormatListCreateInfo>();
-    auto image_format_list_in = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
-    if (image_format_list_in) {
-        image_format_list.pViewFormats = image_format_list_in->pViewFormats;
-        image_format_list.viewFormatCount = image_format_list_in->viewFormatCount;
-        image_format_info.pNext = &image_format_list;
-    }
+    vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 image_format_info_pnext_chain{};
+    image_format_info.pNext = vvl::PnextChainExtract(pCreateInfo->pNext, image_format_info_pnext_chain);
 
     VkResult result = VK_SUCCESS;
     if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
@@ -204,17 +197,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                                                     &image_format_properties.imageFormatProperties);
         }
     } else {
-        auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        auto *modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+        auto *explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-        if (image_format_list_in) {
-            image_format_list.pNext = &drm_format_modifier;
-        } else {
-            image_format_info.pNext = &drm_format_modifier;
-        }
         drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
+        vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
+
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                 drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
@@ -464,38 +454,35 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
         auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
         external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
-        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
-        image_info.format = pCreateInfo->format;
-        image_info.type = pCreateInfo->imageType;
-        image_info.tiling = pCreateInfo->tiling;
-        image_info.usage = pCreateInfo->usage;
-        image_info.flags = pCreateInfo->flags;
+        vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
 
         auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
         auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
         VkExternalMemoryHandleTypeFlags compatible_types = 0;
         if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
+            result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
             compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
         } else {
             auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
             auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
             auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-            external_image_info.pNext = &drm_format_modifier;
             drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
             drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
             drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
+            vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
+
             if (modifier_list) {
                 for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                     drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                    result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
+                    result =
+                        DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
                     compatible_types |= external_image_properties.externalMemoryProperties.compatibleHandleTypes;
                     if (result != VK_SUCCESS)
                         break;
                 }
             } else if (explicit_modifier) {
                 drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-                result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
+                result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
                 compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
             }
         }
@@ -505,10 +492,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 "VUID-VkImageCreateInfo-pNext-00990", device, create_info_loc,
                 "The handle type (%s), format (%s), type (%s), tiling (%s), usage (%s), flags (%s) "
                 "is not supported combination of parameters and vkGetPhysicalDeviceImageFormatProperties2 returned back %s.",
-                string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType), string_VkFormat(image_info.format),
-                string_VkImageType(image_info.type), string_VkImageTiling(image_info.tiling),
-                string_VkImageUsageFlags(image_info.usage).c_str(), string_VkImageCreateFlags(image_info.flags).c_str(),
-                string_VkResult(result));
+                string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType),
+                string_VkFormat(image_format_info.format), string_VkImageType(image_format_info.type),
+                string_VkImageTiling(image_format_info.tiling), string_VkImageUsageFlags(image_format_info.usage).c_str(),
+                string_VkImageCreateFlags(image_format_info.flags).c_str(), string_VkResult(result));
         } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-00990", device,
                              create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),

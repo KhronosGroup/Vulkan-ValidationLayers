@@ -32,6 +32,8 @@ target_sources(VkLayer_utils PRIVATE
     external/xxhash.cpp
     ${API_TYPE}/generated/error_location_helper.cpp
     ${API_TYPE}/generated/error_location_helper.h
+    ${API_TYPE}/generated/pnext_chain_extraction.cpp
+    ${API_TYPE}/generated/pnext_chain_extraction.h
     ${API_TYPE}/generated/vk_function_pointers.cpp
     ${API_TYPE}/generated/vk_function_pointers.h
     ${API_TYPE}/generated/vk_format_utils.h
