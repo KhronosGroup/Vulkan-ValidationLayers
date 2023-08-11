@@ -68,8 +68,6 @@ else()
     endif()
 endif()
 
-find_package(VulkanUtilityLibraries REQUIRED CONFIG QUIET)
-
 if (ANNOTATED_SPEC_LINK)
     message("ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
     add_compile_definitions(ANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
