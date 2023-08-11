@@ -25,10 +25,10 @@
 #include "generated/error_location_helper.h"
 #include "logging.h"
 #include "containers/custom_containers.h"
+#include "generated/command_validation.h"
 
-// Holds the Location of where in a function/struct we are
-// the goal is to allow a system that we can pass around this information
-// and the string is generated when we actually have to log an error message
+// Holds the 'Location' of where the code is inside a function/struct/etc
+// see docs/error_object.md for more details
 struct Location {
     static const uint32_t kNoIndex = vvl::kU32Max;
 
@@ -38,7 +38,7 @@ struct Location {
     const vvl::Struct structure;
     const vvl::Field field;
     const uint32_t index;  // optional index if checking an array.
-    const bool pNext;      // will print out it is from a pNext chain
+    const bool pNext;      // will print the struct is from a 'pNext` chain
     const Location* prev;
 
     Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
@@ -75,11 +75,12 @@ struct Location {
 // Contains the base information needed for errors to be logged out
 // Created for each function as a starting point to build off of
 struct ErrorObject {
-    const Location location;   // starting location
+    const Location location;   // starting location (Always the function entrypoint)
     VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
     LogObjectList objlist;
-
-    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_) : location(Location(command_)), handle(handle_), objlist(handle) {}
+    const CMD_TYPE cmd_type;  // for vkCmd* functions
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, CMD_TYPE cmd_type_ = CMD_NONE)
+        : location(Location(command_)), handle(handle_), objlist(handle), cmd_type(cmd_type_) {}
 };
 
 namespace vvl {

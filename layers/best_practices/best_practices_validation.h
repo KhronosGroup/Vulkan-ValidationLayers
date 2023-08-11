@@ -401,7 +401,8 @@ class BestPractices : public ValidationStateTracker {
                                          ErrorObject& errorObj) const override;
     bool ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount, const VkImageView* image_views) const;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const override;
+                                          const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
+                                          ErrorObject& errorObj) const override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, void* ads_state_data) const override;
     void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
@@ -542,17 +543,19 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer) override;
 
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                           VkSubpassContents contents) const override;
+                                           VkSubpassContents contents, ErrorObject& errorObj) const override;
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
+                                               const VkSubpassBeginInfo* pSubpassBeginInfo, ErrorObject& errorObj) const override;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                            const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
-    bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
-    bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
+                                            const VkSubpassBeginInfo* pSubpassBeginInfo, ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
+                                          ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
+                                             ErrorObject& errorObj) const override;
     void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, VkPipelineBindPoint bind_point,
                                      const char* function_name);
-    bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const override;
-    bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
+    bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, ErrorObject& errorObj) const override;
 
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                   const VkRenderPassBeginInfo* pRenderPassBegin);
@@ -650,9 +653,11 @@ class BestPractices : public ValidationStateTracker {
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                     uint32_t groupCountZ) const override;
-    bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) const override;
-    bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) const override;
-    bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) const override;
+    bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                          ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                             ErrorObject& errorObj) const override;
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance) override;
     void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,

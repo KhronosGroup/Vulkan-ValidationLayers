@@ -34,6 +34,10 @@ extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
 
 class StatelessValidation : public ValidationObject {
+    using Func = vvl::Func;
+    using Struct = vvl::Struct;
+    using Field = vvl::Field;
+
   public:
     VkPhysicalDeviceLimits device_limits = {};
     safe_VkPhysicalDeviceFeatures2 physical_device_features2;
@@ -527,13 +531,12 @@ class StatelessValidation : public ValidationObject {
 
     enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
-    bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
-                                      const char *target, const char *func_name) const;
+    bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
+                                      VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
 
     bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                  RenderPassCreateVersion rp_version) const;
+                                  RenderPassCreateVersion rp_version, ErrorObject &errorObj) const;
 
     void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
 
@@ -884,7 +887,8 @@ class StatelessValidation : public ValidationObject {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) const;
+                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
+                                                 ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                     uint16_t lineStipplePattern) const;
@@ -1085,16 +1089,18 @@ class StatelessValidation : public ValidationObject {
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges) const;
 
-    bool ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, CMD_TYPE cmd_type) const;
-    bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                  VkSubpassContents) const;
+    bool ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, ErrorObject &errorObj) const;
+    bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
+                                                  ErrorObject &errorObj) const;
     bool manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      const VkSubpassBeginInfo *) const;
+                                                      const VkSubpassBeginInfo *, ErrorObject &errorObj) const;
     bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                   const VkSubpassBeginInfo *) const;
+                                                   const VkSubpassBeginInfo *, ErrorObject &errorObj) const;
     bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo, CMD_TYPE cmd_type) const;
-    bool manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo) const;
-    bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo) const;
+    bool manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                    ErrorObject &errorObj) const;
+    bool manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                 ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                          uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) const;

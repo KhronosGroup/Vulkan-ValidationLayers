@@ -19,20 +19,21 @@ inside `chassis.cpp` we generate the starting `Location` for `ErrorObject`. From
 
 bool PreCallValidateQueueBindSparse(/*..*/ ErrorObject &errorObj) const {
     // automatically has Func::vkQueueBindSparse
+    // note: errorObj.location is used if just want to print the function
     LogError("VUID-A", errorObj.location);
 
     for (uint32_t i = 0; i < bindInfoCount; ++i) {
-        const Location bind_info_loc(Field::pBindInfo, i);
-        LogError("VUID-B", bind_info_loc); // i == 3
+        const Location loc = errorObj.location.dot(Field::pBindInfo, i);
+        LogError("VUID-B", loc); // i == 3
 
         for (uint32_t j = 0; j < bufferBindCount; ++j) {
-            const Location buffer_loc(Field::pBufferBinds, j);
+            const Location buffer_loc = loc.dot(Field::pBufferBinds, j);
             LogError("VUID-C", buffer_loc); // j == 2
         }
 
         if (pNext == VkTimelineSemaphoreSubmitInfo) {
             // the |true| tells it this field is part of a pNext chain
-            const Location pnext_loc(Struct::VkTimelineSemaphoreSubmitInfo, Field::waitSemaphoreValueCount, true);
+            const Location pnext_loc = loc.dot(Struct::VkTimelineSemaphoreSubmitInfo, Field::waitSemaphoreValueCount, true);
             LogError("VUID-D", pnext_loc);
         }
     }
@@ -49,6 +50,44 @@ will produce the following location in the error message
 ```
 
 > We generate the `Func`/`Struct`/`Field` for all possible items from the XML
+
+### Using fields in the  error messages
+
+using the `Location::Fields()` you can print the location, minus the function, as a string
+
+```cpp
+const Location loc = errorObj.location.dot(Field::pBindInfo, i); // vkQueueBindSparse(): pBindInfo[3]
+
+// prints "pBindInfo[3]"
+LogError(/*..*/, "%s". loc.Fields().c_str());
+```
+
+### Limitations
+
+When using the `.dot()` operation, it returns a new copy of `Location`. If you chain two `.dot().dot()` you need to be mindful.
+
+The following will produce a `stack-use-after-scope` runtime error
+
+```cpp
+const Location layout_loc = loc.dot(Field::attachment).dot(Field::layout);
+LogError(/*..*/, layout_loc, "error");
+```
+
+The 2 ways around the are:
+
+```cpp
+// Create 2nd variable
+const Location attachment_loc = loc.dot(Field::attachment)
+const Location layout_loc     = attachment_loc.dot(Field::layout);
+LogError(/*..*/, layout_loc, "good");
+```
+
+or
+
+```cpp
+// Pass an argument
+LogError(/*..*/, loc.dot(Field::attachment).dot(Field::layout), "good");
+```
 
 ### Using stack and making copies
 
