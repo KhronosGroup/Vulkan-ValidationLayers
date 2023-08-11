@@ -1199,6 +1199,11 @@ TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
             result != VK_SUCCESS) {
             GTEST_SKIP() << "Unable to create image. VkResult = " << string_VkResult(result);
         }
+
+        if ((external_image_properties.externalMemoryProperties.compatibleHandleTypes & external_info.handleTypes) !=
+            external_info.handleTypes) {
+            GTEST_SKIP() << "Unable to create image, VkExternalMemoryImageCreateInfo::handleTypes not supported";
+        }
     }
 
     CreateImageTest(*this, &ci);

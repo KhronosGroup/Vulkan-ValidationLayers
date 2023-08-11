@@ -90,6 +90,17 @@ template <typename T> const T *LvlFindInChain(const void *next) {
     return found;
 }
 
+// Find last element of pNext chain
+inline VkBaseOutStructure *LvlFindLastInChain(void *next) {
+    auto *current = reinterpret_cast<VkBaseOutStructure *>(next);
+    auto *prev = current;
+    while (current) {
+        prev = current;
+        current = reinterpret_cast<VkBaseOutStructure *>(current->pNext);
+    }
+    return prev;
+}
+
 // Find an entry of the given type in the pNext chain
 template <typename T> T *LvlFindModInChain(void *next) {
     VkBaseOutStructure *current = reinterpret_cast<VkBaseOutStructure *>(next);
