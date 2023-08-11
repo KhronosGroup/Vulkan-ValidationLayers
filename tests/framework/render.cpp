@@ -996,6 +996,38 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 }
 
+void VkRenderFramework::InitDynamicRenderTarget(VkFormat format) {
+    if (format != VK_FORMAT_UNDEFINED) {
+        m_render_target_fmt = format;
+    }
+
+    m_renderPassClearValues.clear();
+    VkClearValue clear = {};
+    clear.color = m_clear_color;
+
+    std::unique_ptr<VkImageObj> img(new VkImageObj(m_device));
+
+    VkFormatProperties props;
+
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), m_render_target_fmt, &props);
+
+    if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
+        img->Init(m_width, m_height, 1, m_render_target_fmt,
+                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                  VK_IMAGE_TILING_OPTIMAL);
+    } else {
+        FAIL() << "Optimal tiling not allowed for render target";
+    }
+
+    m_framebuffer_attachments.push_back(img->targetView(m_render_target_fmt));
+    m_renderTargets.push_back(std::move(img));
+}
+
+VkImageView VkRenderFramework::GetDynamicRenderTarget() const {
+    assert(m_framebuffer_attachments.size() == 1);
+    return m_framebuffer_attachments[0];
+}
+
 void VkRenderFramework::DestroyRenderTarget() {
     vk::DestroyRenderPass(device(), m_renderPass, nullptr);
     m_renderPass = VK_NULL_HANDLE;
@@ -2247,6 +2279,19 @@ void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo)
     } else {
         vk::CmdBeginRendering(handle(), &renderingInfo);
     }
+}
+
+void VkCommandBufferObj::BeginRenderingColor(const VkImageView imageView) {
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageView = imageView;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfoKHR renderingInfo = LvlInitStruct<VkRenderingInfoKHR>();
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &color_attachment;
+    renderingInfo.layerCount = 1;
+
+    BeginRendering(renderingInfo);
 }
 
 void VkCommandBufferObj::EndRendering() {
