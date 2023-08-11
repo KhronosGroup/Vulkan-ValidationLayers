@@ -316,6 +316,8 @@ target_sources(vvl PRIVATE
     state_tracker/shader_instruction.h
     state_tracker/shader_module.cpp
     state_tracker/shader_module.h
+    state_tracker/shader_object_state.cpp
+    state_tracker/shader_object_state.h
     state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
     state_tracker/video_session_state.cpp

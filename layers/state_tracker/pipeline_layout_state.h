@@ -64,6 +64,8 @@ struct PipelineLayoutCompatDef {
 using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, hash_util::HasHashMember<PipelineLayoutCompatDef>>;
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
+PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges);
+
 // Store layouts and pushconstants for PipelineLayout
 class PIPELINE_LAYOUT_STATE : public BASE_NODE {
   public:
@@ -94,3 +96,7 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
 
     VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
 };
+
+std::vector<PipelineLayoutCompatId> GetCompatForSet(
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
+    const PushConstantRangesId &push_constant_ranges);

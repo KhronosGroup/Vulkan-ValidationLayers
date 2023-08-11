@@ -83,16 +83,16 @@ struct PushConstantRangeCompare {
     }
 };
 
-static PushConstantRangesId GetCanonicalId(const VkPipelineLayoutCreateInfo *info) {
-    if (!info->pPushConstantRanges) {
+PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges) {
+    if (!pPushConstantRanges) {
         // Hand back the empty entry (creating as needed)...
         return push_constant_ranges_dict.look_up(PushConstantRanges());
     }
 
     // Sort the input ranges to ensure equivalent ranges map to the same id
     std::set<const VkPushConstantRange *, PushConstantRangeCompare> sorted;
-    for (uint32_t i = 0; i < info->pushConstantRangeCount; i++) {
-        sorted.insert(info->pPushConstantRanges + i);
+    for (uint32_t i = 0; i < pushConstantRangeCount; i++) {
+        sorted.insert(pPushConstantRanges + i);
     }
 
     PushConstantRanges ranges;
@@ -163,8 +163,9 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const vvl::span<cons
     return set_layouts;
 }
 
-static std::vector<PipelineLayoutCompatId> GetCompatForSet(const PIPELINE_LAYOUT_STATE::SetLayoutVector &set_layouts,
-                                                           const PushConstantRangesId &push_constant_ranges) {
+std::vector<PipelineLayoutCompatId> GetCompatForSet(
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
+    const PushConstantRangesId &push_constant_ranges) {
     PipelineLayoutSetLayoutsDef set_layout_ids(set_layouts.size());
     for (size_t i = 0; i < set_layouts.size(); i++) {
         if (set_layouts[i]) {
@@ -196,7 +197,7 @@ PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, V
                                              const VkPipelineLayoutCreateInfo *pCreateInfo)
     : BASE_NODE(l, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
-      push_constant_ranges(GetCanonicalId(pCreateInfo)),
+      push_constant_ranges(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),
       create_flags(pCreateInfo->flags) {}
 

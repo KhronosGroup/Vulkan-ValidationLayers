@@ -20,18 +20,27 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/enum_flag_bits.h"
+#include "state_tracker/shader_object_state.h"
 
-PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
-    : module_state(module_state),
-      create_info(create_info),
-      entrypoint(module_state->spirv ? module_state->spirv->FindEntrypoint(create_info->pName, create_info->stage) : nullptr) {}
+std::vector<VkPushConstantRange> const *StageCreateInfo::GetPushConstantRanges() const {
+    if (pipeline) {
+        return pipeline->PipelineLayoutState()->push_constant_ranges.get();
+    }
+    return shader_object_const_ranges.get();
+}
+
+StageCreateInfo::StageCreateInfo(const std::string &name, const PIPELINE_STATE *pipeline)
+    : func_name(name), create_index(pipeline->create_index), pipeline(pipeline) {}
+StageCreateInfo::StageCreateInfo(const std::string &name, uint32_t create_index, const VkShaderCreateInfoEXT &create_info)
+    : func_name(name),
+      create_index(create_index),
+      pipeline(nullptr),
+      shader_object_const_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)) {}
 
 // static
-PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
-                                                             const PIPELINE_STATE &pipe_state,
-                                                             CreateShaderModuleStates *csm_states) {
-    PIPELINE_STATE::StageStateVec stage_states;
+StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state,
+                                             CreateShaderModuleStates *csm_states) {
+    StageStateVec stage_states;
 
     // stages such as VK_SHADER_STAGE_ALL are find as this code is only looking for exact matches, not bool logic
     for (const auto &stage : AllVkShaderStageFlags) {
@@ -60,7 +69,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                     }
                 }
 
-                stage_states.emplace_back(&stage_ci, module_state);
+                stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
                 stage_found = true;
             }
         }
@@ -119,66 +128,10 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                 continue;
             }
 
-            stage_states.emplace_back(stage_ci, module_state);
+            stage_states.emplace_back(stage_ci, nullptr, module_state, module_state->spirv);
         }
     }
     return stage_states;
-}
-
-// static
-PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec &stage_states) {
-    PIPELINE_STATE::ActiveSlotMap active_slots;
-    for (const auto &stage : stage_states) {
-        if (!stage.entrypoint) {
-            continue;
-        }
-        // Capture descriptor uses for the pipeline
-        for (const auto &variable : stage.entrypoint->resource_interface_variables) {
-            // While validating shaders capture which slots are used by the pipeline
-            auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
-            entry.variable = &variable;
-
-            auto &reqs = entry.reqs;
-            if (variable.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
-            if (variable.is_sampler_sampled) reqs |= DESCRIPTOR_REQ_SAMPLER_SAMPLED;
-            if (variable.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
-            if (variable.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
-            if (variable.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
-            if (variable.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
-            if (variable.is_dref) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
-
-            if (variable.image_format_type == NumericTypeFloat) reqs |= DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-            if (variable.image_format_type == NumericTypeSint) reqs |= DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-            if (variable.image_format_type == NumericTypeUint) reqs |= DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-
-            if (variable.image_dim == spv::Dim1D) {
-                reqs |= (variable.is_image_array) ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
-            }
-
-            if (variable.image_dim == spv::Dim2D) {
-                reqs |= (variable.is_multisampled) ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                reqs |= (variable.is_image_array) ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D;
-            }
-
-            if (variable.image_dim == spv::Dim3D) reqs |= DESCRIPTOR_REQ_VIEW_TYPE_3D;
-
-            if (variable.image_dim == spv::DimCube) {
-                reqs |= (variable.is_image_array) ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
-            }
-            if (variable.image_dim == spv::DimSubpassData) {
-                reqs |= (variable.is_multisampled) ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-            }
-        }
-    }
-    return active_slots;
-}
-
-static uint32_t GetMaxActiveSlot(const PIPELINE_STATE::ActiveSlotMap &active_slots) {
-    uint32_t max_active_slot = 0;
-    for (const auto &entry : active_slots) {
-        max_active_slot = std::max(max_active_slot, entry.first);
-    }
-    return max_active_slot;
 }
 
 static uint32_t GetCreateInfoShaders(const PIPELINE_STATE &pipe_state) {
@@ -427,13 +380,13 @@ static bool UsesShaderModuleId(const PIPELINE_STATE &pipe_state) {
     return false;
 }
 
-static vvl::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
+static vvl::unordered_set<uint32_t> GetFSOutputLocations(const StageStateVec &stage_states) {
     vvl::unordered_set<uint32_t> result;
     for (const auto &stage_state : stage_states) {
         if (!stage_state.entrypoint) {
             continue;
         }
-        if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
             for (const auto *variable : stage_state.entrypoint->user_defined_interface_variables) {
                 if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
                     continue;  // not an output interface
@@ -456,7 +409,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE &pipelin
         if (!stage.entrypoint) {
             continue;
         }
-        auto stage_topo = stage.module_state->spirv->GetTopology(*stage.entrypoint);
+        auto stage_topo = stage.spirv_state->GetTopology(*stage.entrypoint);
         if (stage_topo) {
             result = *stage_topo;
         }
@@ -923,4 +876,62 @@ bool LAST_BOUND_STATE::IsRasterizationDisabled() const {
     return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                ? cb_state.dynamic_state_value.rasterizer_discard_enable
                : pipeline_state->RasterizationDisabled();
+}
+
+bool LAST_BOUND_STATE::ValidShaderObjectCombination(const VkPipelineBindPoint bind_point,
+                                                    const DeviceFeatures &device_features) const {
+    if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        if (!IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE) ||
+            !IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE))
+            return false;
+    } else {
+        if (!IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) return false;
+        if (device_features.core.tessellationShader &&
+            !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL))
+            return false;
+        if (device_features.core.tessellationShader &&
+            !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION))
+            return false;
+        if (device_features.core.geometryShader && !IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY))
+            return false;
+        if (!IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) return false;
+        if (device_features.mesh_shader_features.taskShader && !IsValidShaderOrNullBound(ShaderObjectStage::TASK))
+            return false;
+        if (device_features.mesh_shader_features.meshShader && !IsValidShaderOrNullBound(ShaderObjectStage::MESH))
+            return false;
+        if (GetShader(ShaderObjectStage::VERTEX) == VK_NULL_HANDLE &&
+            (!device_features.mesh_shader_features.meshShader ||
+             GetShader(ShaderObjectStage::MESH) == VK_NULL_HANDLE))
+            return false;
+    }
+    return true;
+}
+
+VkShaderEXT LAST_BOUND_STATE::GetShader(ShaderObjectStage stage) const {
+    if (!IsValidShaderBound(stage) || GetShaderState(stage) == nullptr) return VK_NULL_HANDLE;
+    return shader_object_states[static_cast<uint32_t>(stage)]->shader();
+}
+
+SHADER_OBJECT_STATE *LAST_BOUND_STATE::GetShaderState(ShaderObjectStage stage) const {
+    return shader_object_states[static_cast<uint32_t>(stage)];
+}
+
+bool LAST_BOUND_STATE::HasShaderObjects() const {
+    for (uint32_t i = 0; i < SHADER_OBJECT_STAGE_COUNT; ++i) {
+        if (GetShader(static_cast<ShaderObjectStage>(i)) != VK_NULL_HANDLE) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool LAST_BOUND_STATE::IsValidShaderBound(ShaderObjectStage stage) const {
+    if (!shader_object_bound[static_cast<uint32_t>(stage)]) {
+        return false;
+    }
+    return shader_object_states[static_cast<uint32_t>(stage)] != nullptr;
+}
+
+bool LAST_BOUND_STATE::IsValidShaderOrNullBound(ShaderObjectStage stage) const {
+    return shader_object_bound[static_cast<uint32_t>(stage)];
 }

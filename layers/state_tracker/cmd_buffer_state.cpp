@@ -1073,7 +1073,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
             // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
             // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
             cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
-            const auto &binding_req_map = reduced_map.FilteredMap(*this, *pipe);
+            const auto &binding_req_map = reduced_map.FilteredMap(*this, pipe);
 
             if (reduced_map.IsManyDescriptors()) {
                 // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
