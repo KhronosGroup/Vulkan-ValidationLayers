@@ -19,10 +19,9 @@
 #include "stateless/stateless_validation.h"
 #include "utils/convert_utils.h"
 
-bool StatelessValidation::ValidateSubpassGraphicsFlags(const debug_report_data *report_data,
-                                                       const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t dependency_index,
+bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                        uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
-                                                       const char *target, const char *func_name) const {
+                                                       const Location &loc) const {
     bool skip = false;
     // make sure we consider all of the expanded and un-expanded graphics bits to be valid
     const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
@@ -43,12 +42,10 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(const debug_report_data *
 
     const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
     if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
-        skip |= LogError(VkRenderPass(0), vuid,
-                         "%s: Dependency pDependencies[%" PRIu32
-                         "] specifies a %sStageMask that contains stages (%s) that are not part "
-                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                         func_name, dependency_index, target,
-                         sync_utils::StringPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+        skip |= LogError(vuid, device, loc,
+                         "dependency contains a stage mask (%s) that are not part "
+                         "of the Graphics pipeline",
+                         sync_utils::StringPipelineStageFlags(stages & ~kGraphicsStages).c_str());
     }
 
     return skip;
@@ -56,12 +53,12 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(const debug_report_data *
 
 bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                   RenderPassCreateVersion rp_version) const {
+                                                   RenderPassCreateVersion rp_version, ErrorObject &errorObj) const {
     bool skip = false;
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
-    const char *func_name = (use_rp2) ? "vkCreateRenderPass2" : "vkCreateRenderPass";
     const char *vuid = nullptr;
+    const Location &loc = errorObj.location.dot(Field::pCreateInfo);
     VkBool32 separate_depth_stencil_layouts = false;
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
     if (vulkan_12_features) {
@@ -92,6 +89,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         }
     }
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+        const Location &attachment_loc = loc.dot(Field::pAttachments, i);
         // if not null, also confirms rp2 is being used
         const auto *attachment_description_stencil_layout =
             (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(
@@ -103,57 +101,40 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         const VkImageLayout final_layout = pCreateInfo->pAttachments[i].finalLayout;
         if (attachment_format == VK_FORMAT_UNDEFINED) {
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06698" : "VUID-VkAttachmentDescription-format-06698";
-            skip |=
-                LogError(device, vuid, "%s: pCreateInfo->pAttachments[%" PRIu32 "].format is VK_FORMAT_UNDEFINED.", func_name, i);
+            skip |= LogError(vuid, device, attachment_loc.dot(Field::format), "is VK_FORMAT_UNDEFINED.");
         }
         if (final_layout == VK_IMAGE_LAYOUT_UNDEFINED || final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-00843" : "VUID-VkAttachmentDescription-finalLayout-00843";
-            skip |= LogError(device, vuid,
-                             "%s: pCreateInfo->pAttachments[%" PRIu32
-                             "].finalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or "
-                             "VK_IMAGE_LAYOUT_PREINITIALIZED.",
-                             func_name, i);
+            skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
         }
         if (!separate_depth_stencil_layouts) {
             if (IsImageLayoutDepthOnly(initial_layout) || IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                                 string_VkImageLayout(initial_layout));
             }
             if (IsImageLayoutDepthOnly(final_layout) || IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
         }
         if (!attachment_feedback_loop_layout) {
             if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07309"
                                : "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07309";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
-                                 "attachmentFeedbackLoopLayout feature is not enabled.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                 "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                 "attachmentFeedbackLoopLayout feature is not enabled.");
             }
             if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07310"
                                : "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07310";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
-                                 "attachmentFeedbackLoopLayout feature is not enabled.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                 "attachmentFeedbackLoopLayout feature is not enabled.");
             }
         }
         if (!synchronization2) {
@@ -161,122 +142,74 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 initial_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06908"
                                : "VUID-VkAttachmentDescription-synchronization2-06908";
-                skip |= LogError(
-                    device, vuid,
-                    "%s: pCreateInfo->pAttachments[%" PRIu32
-                    "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
-                    "synchronization2 feature is not enabled.",
-                    func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                 "is %s but the synchronization2 feature is not enabled.", string_VkImageLayout(initial_layout));
             }
             if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR || final_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06909"
                                : "VUID-VkAttachmentDescription-synchronization2-06909";
-                skip |= LogError(
-                    device, vuid,
-                    "%s: pCreateInfo->pAttachments[%" PRIu32
-                    "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
-                    "synchronization2 feature is not enabled.",
-                    func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "is %s but the synchronization2 feature is not enabled.", string_VkImageLayout(final_layout));
             }
         }
         if (!FormatIsDepthOrStencil(attachment_format)) {  // color format
             if (IsImageLayoutDepthOnly(initial_layout) || IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03286" : "VUID-VkAttachmentDescription-format-03286";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                                 string_VkImageLayout(initial_layout));
             }
             if (IsImageLayoutDepthOnly(final_layout) || IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03287" : "VUID-VkAttachmentDescription-format-03287";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
         } else if (FormatIsDepthAndStencil(attachment_format)) {
             if (IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06906" : "VUID-VkAttachmentDescription-format-06906";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                                 string_VkImageLayout(initial_layout));
             }
             if (IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06907" : "VUID-VkAttachmentDescription-format-06907";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
 
             if (!attachment_description_stencil_layout) {
                 if (IsImageLayoutDepthOnly(initial_layout)) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06249" : "VUID-VkAttachmentDescription-format-06242";
-                    skip |=
-                        LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided.",
-                                 func_name, i);
+                    skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                     "is %s but no VkAttachmentDescriptionStencilLayout provided.",
+                                     string_VkImageLayout(initial_layout));
                 }
                 if (IsImageLayoutDepthOnly(final_layout)) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06250" : "VUID-VkAttachmentDescription-format-06243";
                     skip |=
-                        LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided.",
-                                 func_name, i);
+                        LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "is %s but no VkAttachmentDescriptionStencilLayout provided.", string_VkImageLayout(final_layout));
                 }
             }
         } else if (FormatIsDepthOnly(attachment_format)) {
             if (IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03290" : "VUID-VkAttachmentDescription-format-03290";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or"
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                                 string_VkImageLayout(initial_layout));
             }
             if (IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03291" : "VUID-VkAttachmentDescription-format-03291";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
         } else if (FormatIsStencilOnly(attachment_format) && !attachment_description_stencil_layout) {
             if (IsImageLayoutDepthOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06247" : "VUID-VkAttachmentDescription-format-03292";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or"
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                                 string_VkImageLayout(initial_layout));
             }
             if (IsImageLayoutDepthOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06248" : "VUID-VkAttachmentDescription-format-03293";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
             }
         }
         if (attachment_description_stencil_layout) {
@@ -290,16 +223,10 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                skip |= LogError(device, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308",
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "] VkAttachmentDescriptionStencilLayout.stencilInitialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.",
-                                 func_name, i);
+                skip |=
+                    LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308", device,
+                             attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilInitialLayout, true),
+                             "is %s.", string_VkImageLayout(stencil_initial_layout));
             }
             if (stencil_final_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
@@ -308,114 +235,81 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                skip |= LogError(device, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309",
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "] VkAttachmentDescriptionStencilLayout.stencilFinalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.",
-                                 func_name, i);
+                skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309", device,
+                                 attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout, true),
+                                 "is %s.", string_VkImageLayout(stencil_final_layout));
             }
             if (stencil_final_layout == VK_IMAGE_LAYOUT_UNDEFINED || stencil_final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
-                skip |=
-                    LogError(device, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310",
-                             "%s: pCreateInfo->pAttachments[%" PRIu32
-                             "] VkAttachmentDescriptionStencilLayout.stencilFinalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED, or "
-                             "VK_IMAGE_LAYOUT_PREINITIALIZED.",
-                             func_name, i);
+                skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310", device,
+                                 attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout, true),
+                                 "is %s.", string_VkImageLayout(stencil_final_layout));
             }
         }
 
         if (FormatIsDepthOrStencil(attachment_format)) {
             if (initial_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03281" : "VUID-VkAttachmentDescription-format-03281";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL when using a Depth or Stencil format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                 "must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL when using a Depth or Stencil format (%s)",
+                                 string_VkFormat(attachment_format));
             }
             if (final_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03283" : "VUID-VkAttachmentDescription-format-03283";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL when using a Depth or Stencil format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL when using a Depth or Stencil format (%s)",
+                                 string_VkFormat(attachment_format));
             }
         }
         if (FormatIsColor(attachment_format)) {
             if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
                 initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03280" : "VUID-VkAttachmentDescription-format-03280";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL when using a Color format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s, but using a Color format (%s)",
+                                 string_VkImageLayout(initial_layout), string_VkFormat(attachment_format));
 
             } else if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                        initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06487" : "VUID-VkAttachmentDescription-format-06487";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].initialLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL when using a Color format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s, but using a Color format (%s)",
+                                 string_VkImageLayout(initial_layout), string_VkFormat(attachment_format));
             }
             if (final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
                 final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03282" : "VUID-VkAttachmentDescription-format-03282";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL when using a Color format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s, but using a Color format (%s)",
+                                 string_VkImageLayout(final_layout), string_VkFormat(attachment_format));
             } else if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                        final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06488" : "VUID-VkAttachmentDescription-format-06488";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "].finalLayout must not be "
-                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL when using a Color format",
-                                 func_name, i);
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s, but using a Color format (%s)",
+                                 string_VkImageLayout(final_layout), string_VkFormat(attachment_format));
             }
         }
         if (FormatIsColor(attachment_format) || FormatHasDepth(attachment_format)) {
             if (pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD && initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06699" : "VUID-VkAttachmentDescription-format-06699";
                 skip |= LogError(
-                    device, vuid,
-                    "%s: pCreateInfo->pAttachments[%" PRIu32
-                    "] format is %s and loadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                    func_name, i, string_VkFormat(attachment_format));
+                    vuid, device, attachment_loc,
+                    "format is %s and loadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                    string_VkFormat(attachment_format));
             }
         }
         if (FormatHasStencil(attachment_format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
             if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-pNext-06704" : "VUID-VkAttachmentDescription-format-06700";
-                skip |= LogError(device, vuid,
-                                 "%s: pCreateInfo->pAttachments[%" PRIu32
-                                 "] format (%s) includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                skip |= LogError(vuid, device, attachment_loc,
+                                 "format (%s) includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
                                  "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                                 func_name, i, string_VkFormat(attachment_format));
+                                 string_VkFormat(attachment_format));
             }
 
             // rp2 can have seperate depth/stencil layout and need to look in pNext
             if (attachment_description_stencil_layout) {
                 if (attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                    skip |= LogError(device, "VUID-VkAttachmentDescription2-pNext-06705",
-                                     "%s: pCreateInfo->pAttachments[%" PRIu32
-                                     "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
-                                     "the VkAttachmentDescriptionStencilLayout::stencilInitialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                                     func_name, i);
+                    skip |=
+                        LogError("VUID-VkAttachmentDescription2-pNext-06705", device, attachment_loc,
+                                 "format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                 "the VkAttachmentDescriptionStencilLayout::stencilInitialLayout is VK_IMAGE_LAYOUT_UNDEFINED.");
                 }
             }
         }
@@ -425,9 +319,8 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
-            skip |= LogError(device, vuid,
-                             "%s: Cannot create a render pass with %d color attachments in pCreateInfo->pSubpasses[%u]. Max is %d.",
-                             func_name, pCreateInfo->pSubpasses[i].colorAttachmentCount, i, max_color_attachments);
+            skip |= LogError(vuid, device, loc.dot(Field::pSubpasses, i),
+                             "cannot be used to create a render pass. maxColorAttachments is %d.", max_color_attachments);
         }
     }
 
@@ -438,17 +331,17 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         // src subpass bound check
         if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-pDependencies-06866";
-            skip |= LogError(device, vuid,
-                             "%s: pCreateInfo->pDependencies[%u].srcSubpass index (%u) has to be less than subpassCount (%u)",
-                             func_name, i, dependency.srcSubpass, pCreateInfo->subpassCount);
+            skip |= LogError(vuid, device, loc.dot(Field::pDependencies, i).dot(Field::srcSubpass),
+                             "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.srcSubpass,
+                             pCreateInfo->subpassCount);
         }
 
         // dst subpass bound check
         if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-pDependencies-06867";
-            skip |= LogError(device, vuid,
-                             "%s: pCreateInfo->pDependencies[%u].dstSubpass index (%u) has to be less than subpassCount (%u)",
-                             func_name, i, dependency.dstSubpass, pCreateInfo->subpassCount);
+            skip |= LogError(vuid, device, loc.dot(Field::pDependencies, i).dot(Field::dstSubpass),
+                             "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.dstSubpass,
+                             pCreateInfo->subpassCount);
         }
 
         VkPipelineStageFlags2 srcStageMask = dependency.srcStageMask;
@@ -460,12 +353,12 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 
         // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
-        skip |=
-            ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, srcStageMask, vuid, "src", func_name);
+        skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.srcSubpass, srcStageMask, vuid,
+                                             loc.dot(Field::pDependencies, i).dot(Field::srcSubpass));
 
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
-        skip |=
-            ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dstStageMask, vuid, "dst", func_name);
+        skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.dstSubpass, dstStageMask, vuid,
+                                             loc.dot(Field::pDependencies, i).dot(Field::dstSubpass));
     }
 
     return skip;
@@ -475,21 +368,21 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                                  ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkRenderPass *pRenderPass, ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass, ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2, errorObj);
 }
 
 void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {

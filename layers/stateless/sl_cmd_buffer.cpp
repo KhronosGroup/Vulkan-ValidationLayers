@@ -358,33 +358,32 @@ bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, CMD_TYPE cmd_type) const {
+bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, ErrorObject &errorObj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
-        skip |= LogError(rp_begin->renderPass, "VUID-VkRenderPassBeginInfo-clearValueCount-04962",
-                         "%s: VkRenderPassBeginInfo::clearValueCount != 0 (%" PRIu32
-                         "), but VkRenderPassBeginInfo::pClearValues is null.",
-                         CommandTypeString(cmd_type), rp_begin->clearValueCount);
+        skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", rp_begin->renderPass,
+                         errorObj.location.dot(Field::pRenderPassBegin).dot(Field::clearValueCount),
+                         "(%" PRIu32 ") is not zero, but pRenderPassBegin->pClearValues is null.", rp_begin->clearValueCount);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                   VkSubpassContents) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS);
+                                                                   VkSubpassContents, ErrorObject &errorObj) const {
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer,
                                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                       const VkSubpassBeginInfo *) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS2KHR);
+                                                                       const VkSubpassBeginInfo *, ErrorObject &errorObj) const {
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                    const VkSubpassBeginInfo *) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS2);
+                                                                    const VkSubpassBeginInfo *, ErrorObject &errorObj) const {
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
 
@@ -726,13 +725,15 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
-                                                                     const VkRenderingInfo *pRenderingInfo) const {
+                                                                     const VkRenderingInfo *pRenderingInfo,
+                                                                     ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERINGKHR);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
-                                                                  const VkRenderingInfo *pRenderingInfo) const {
+                                                                  const VkRenderingInfo *pRenderingInfo,
+                                                                  ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERING);
     return skip;
 }

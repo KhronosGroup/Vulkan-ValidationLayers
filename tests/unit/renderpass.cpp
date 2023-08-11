@@ -124,8 +124,8 @@ TEST_F(NegativeRenderPass, AttachmentMismatchingLayoutsColor) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "subpass 0 already uses attachment 0 with a different image layout",
-                         "subpass 0 already uses attachment 0 with a different image layout");
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkSubpassDescription-layout-02519",
+                         "VUID-VkSubpassDescription2-layout-02528");
 }
 
 TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {

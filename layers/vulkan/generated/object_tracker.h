@@ -576,7 +576,8 @@ bool PreCallValidateCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer) const override;
+    VkFramebuffer*                              pFramebuffer,
+    ErrorObject&                                errorObj) const override;
 void PostCallRecordCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
@@ -586,7 +587,8 @@ void PostCallRecordCreateFramebuffer(
 bool PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator) const override;
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const override;
 void PreCallRecordDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
@@ -606,7 +608,8 @@ void PostCallRecordCreateRenderPass(
 bool PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator) const override;
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const override;
 void PreCallRecordDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
@@ -902,12 +905,15 @@ bool PreCallValidateCmdPushConstants(
 bool PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents) const override;
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents) const override;
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer) const override;
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
@@ -1087,14 +1093,17 @@ void PostCallRecordCreateRenderPass2(
 bool PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const override;
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const override;
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const override;
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
@@ -1202,9 +1211,11 @@ bool PreCallValidateCmdResolveImage2(
     const VkResolveImageInfo2*                  pResolveImageInfo) const override;
 bool PreCallValidateCmdBeginRendering(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const override;
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdEndRendering(
-    VkCommandBuffer                             commandBuffer) const override;
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdSetCullMode(
     VkCommandBuffer                             commandBuffer,
     VkCullModeFlags                             cullMode) const override;
@@ -1588,9 +1599,11 @@ bool PreCallValidateCmdDecodeVideoKHR(
     const VkVideoDecodeInfoKHR*                 pDecodeInfo) const override;
 bool PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const override;
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdEndRenderingKHR(
-    VkCommandBuffer                             commandBuffer) const override;
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkPhysicalDeviceFeatures2*                  pFeatures) const override;
@@ -1747,14 +1760,17 @@ void PostCallRecordCreateRenderPass2KHR(
 bool PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const override;
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const override;
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const override;
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateGetSwapchainStatusKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) const override;

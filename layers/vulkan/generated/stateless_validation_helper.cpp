@@ -7595,7 +7595,8 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer) const {
+    VkFramebuffer*                              pFramebuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateFramebuffer", "pCreateInfo", "VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, true, "VUID-vkCreateFramebuffer-pCreateInfo-parameter", "VUID-VkFramebufferCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -7629,14 +7630,15 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateFramebuffer", "pFramebuffer", pFramebuffer, "VUID-vkCreateFramebuffer-pFramebuffer-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
+    if (!skip) skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator) const {
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (pAllocator != nullptr)
     {
@@ -7796,7 +7798,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
 bool StatelessValidation::PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator) const {
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (pAllocator != nullptr)
     {
@@ -8675,7 +8678,8 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
 bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents) const {
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRenderPass", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
     if (pRenderPassBegin != nullptr)
@@ -8693,20 +8697,22 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
         // No xml-driven validation
     }
     skip |= ValidateRangedEnum("vkCmdBeginRenderPass", "contents", "VkSubpassContents", contents, "VUID-vkCmdBeginRenderPass-contents-parameter");
-    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents) const {
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateRangedEnum("vkCmdNextSubpass", "contents", "VkSubpassContents", contents, "VUID-vkCmdNextSubpass-contents-parameter");
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -9542,7 +9548,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
 bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRenderPass2", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
     if (pRenderPassBegin != nullptr)
@@ -9566,14 +9573,15 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
 
         skip |= ValidateRangedEnum("vkCmdBeginRenderPass2", "pSubpassBeginInfo->contents", "VkSubpassContents", pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
-    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdNextSubpass2", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != nullptr)
@@ -9594,7 +9602,8 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdEndRenderPass2", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != nullptr)
@@ -10364,7 +10373,8 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2(
 
 bool StatelessValidation::PreCallValidateCmdBeginRendering(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const {
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRendering", "pRenderingInfo", "VK_STRUCTURE_TYPE_RENDERING_INFO", pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true, "VUID-vkCmdBeginRendering-pRenderingInfo-parameter", "VUID-VkRenderingInfo-sType-sType");
     if (pRenderingInfo != nullptr)
@@ -10439,12 +10449,13 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdEndRendering(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -11943,7 +11954,8 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
 
 bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const {
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) skip |= OutputExtensionError("vkCmdBeginRenderingKHR", "VK_KHR_dynamic_rendering");
     skip |= ValidateStructType("vkCmdBeginRenderingKHR", "pRenderingInfo", "VK_STRUCTURE_TYPE_RENDERING_INFO", pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true, "VUID-vkCmdBeginRendering-pRenderingInfo-parameter", "VUID-VkRenderingInfo-sType-sType");
@@ -12019,12 +12031,13 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdEndRenderingKHR(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) skip |= OutputExtensionError("vkCmdEndRenderingKHR", "VK_KHR_dynamic_rendering");
     // No xml-driven validation
@@ -12761,7 +12774,8 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
 bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdBeginRenderPass2KHR", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
@@ -12786,14 +12800,15 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
 
         skip |= ValidateRangedEnum("vkCmdBeginRenderPass2KHR", "pSubpassBeginInfo->contents", "VkSubpassContents", pSubpassBeginInfo->contents, "VUID-VkSubpassBeginInfo-contents-parameter");
     }
-    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdNextSubpass2KHR", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
@@ -12815,7 +12830,8 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdEndRenderPass2KHR", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");

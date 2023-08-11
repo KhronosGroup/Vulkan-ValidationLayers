@@ -1308,7 +1308,8 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorPool(
 bool ObjectLifetimes::PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator) const {
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyFramebuffer-device-parameter", kVUIDUndefined, "vkDestroyFramebuffer");
     skip |= ValidateObject(framebuffer, kVulkanObjectTypeFramebuffer, true, "VUID-vkDestroyFramebuffer-framebuffer-parameter", "VUID-vkDestroyFramebuffer-framebuffer-parent", "vkDestroyFramebuffer");
@@ -1351,7 +1352,8 @@ void ObjectLifetimes::PostCallRecordCreateRenderPass(
 bool ObjectLifetimes::PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator) const {
+    const VkAllocationCallbacks*                pAllocator,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyRenderPass-device-parameter", kVUIDUndefined, "vkDestroyRenderPass");
     skip |= ValidateObject(renderPass, kVulkanObjectTypeRenderPass, true, "VUID-vkDestroyRenderPass-renderPass-parameter", "VUID-vkDestroyRenderPass-renderPass-parent", "vkDestroyRenderPass");
@@ -1977,7 +1979,8 @@ bool ObjectLifetimes::PreCallValidateCmdPushConstants(
 bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents) const {
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginRenderPass-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginRenderPass");
     if (pRenderPassBegin) {
@@ -1990,7 +1993,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(
 
 bool ObjectLifetimes::PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents) const {
+    VkSubpassContents                           contents,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdNextSubpass-commandBuffer-parameter", kVUIDUndefined, "vkCmdNextSubpass");
 
@@ -1998,7 +2002,8 @@ bool ObjectLifetimes::PreCallValidateCmdNextSubpass(
 }
 
 bool ObjectLifetimes::PreCallValidateCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndRenderPass-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndRenderPass");
 
@@ -2383,7 +2388,8 @@ void ObjectLifetimes::PostCallRecordCreateRenderPass2(
 bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginRenderPass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginRenderPass2");
     if (pRenderPassBegin) {
@@ -2397,7 +2403,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(
 bool ObjectLifetimes::PreCallValidateCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdNextSubpass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdNextSubpass2");
 
@@ -2406,7 +2413,8 @@ bool ObjectLifetimes::PreCallValidateCmdNextSubpass2(
 
 bool ObjectLifetimes::PreCallValidateCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndRenderPass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndRenderPass2");
 
@@ -2779,7 +2787,8 @@ bool ObjectLifetimes::PreCallValidateCmdResolveImage2(
 
 bool ObjectLifetimes::PreCallValidateCmdBeginRendering(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const {
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginRendering-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginRendering");
     if (pRenderingInfo) {
@@ -2803,7 +2812,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRendering(
 }
 
 bool ObjectLifetimes::PreCallValidateCmdEndRendering(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndRendering-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndRendering");
 
@@ -3684,7 +3694,8 @@ bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(
 
 bool ObjectLifetimes::PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkRenderingInfo*                      pRenderingInfo) const {
+    const VkRenderingInfo*                      pRenderingInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginRendering-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginRenderingKHR");
     if (pRenderingInfo) {
@@ -3708,7 +3719,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderingKHR(
 }
 
 bool ObjectLifetimes::PreCallValidateCmdEndRenderingKHR(
-    VkCommandBuffer                             commandBuffer) const {
+    VkCommandBuffer                             commandBuffer,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndRendering-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndRenderingKHR");
 
@@ -4042,7 +4054,8 @@ void ObjectLifetimes::PostCallRecordCreateRenderPass2KHR(
 bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginRenderPass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginRenderPass2KHR");
     if (pRenderPassBegin) {
@@ -4056,7 +4069,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2KHR(
 bool ObjectLifetimes::PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdNextSubpass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdNextSubpass2KHR");
 
@@ -4065,7 +4079,8 @@ bool ObjectLifetimes::PreCallValidateCmdNextSubpass2KHR(
 
 bool ObjectLifetimes::PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const {
+    const VkSubpassEndInfo*                     pSubpassEndInfo,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndRenderPass2-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndRenderPass2KHR");
 
