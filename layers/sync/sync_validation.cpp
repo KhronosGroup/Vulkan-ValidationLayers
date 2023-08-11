@@ -1984,7 +1984,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
     for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();
-        if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
+        if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
             raster_state->rasterizerDiscardEnable) {
             continue;
         } else if (!stage_state.entrypoint) {
@@ -2000,7 +2000,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.create_info->stage);
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.getStage());
 
             for (uint32_t index = 0; index < binding->count; index++) {
                 const auto *descriptor = binding->GetDescriptor(index);
@@ -2126,7 +2126,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 
     for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();
-        if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
+        if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
             raster_state->rasterizerDiscardEnable) {
             continue;
         } else if (!stage_state.entrypoint) {
@@ -2142,7 +2142,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.create_info->stage);
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.getStage());
 
             for (uint32_t i = 0; i < binding->count; i++) {
                 const auto *descriptor = binding->GetDescriptor(i);

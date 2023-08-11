@@ -33,6 +33,13 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_NoEndCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-NoEndCommandBuffer";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_TessellationDomainOrigin = "UNASSIGNED-CoreValidation-DrawState-TessellationDomainOrigin";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_FragmentShadingRate = "UNASSIGNED-CoreValidation-DrawState-FragmentShadingRate";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_DiscardRectangle = "UNASSIGNED-CoreValidation-DrawState-DiscardRectangle";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_ViewportWScaling = "UNASSIGNED-CoreValidation-DrawState-ViewportWScaling";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_ViewportCoarseSampleOrder = "UNASSIGNED-CoreValidation-DrawState-ViewportCoarseSampleOrder";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_ViewportShadingRatePalette = "UNASSIGNED-CoreValidation-DrawState-ViewportShadingRatePalette";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_ExclusiveScissorEnableNV = "UNASSIGNED-CoreValidation-DrawState-ExclusiveScissorEnableNV";
 
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 

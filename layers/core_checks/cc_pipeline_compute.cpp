@@ -23,7 +23,8 @@
 #include "core_validation.h"
 
 bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline) const {
-    return ValidatePipelineShaderStage(pipeline, pipeline.stage_states[0]);
+    StageCreateInfo stage_create_info("vkCreateComputePipelines", &pipeline);
+    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0]);
 }
 
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,

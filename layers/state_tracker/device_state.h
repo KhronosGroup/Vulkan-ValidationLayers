@@ -110,6 +110,8 @@ struct DeviceFeatures {
     VkPhysicalDeviceCooperativeMatrixFeaturesKHR cooperative_matrix_features_khr;
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features;
     VkPhysicalDeviceHostImageCopyFeaturesEXT host_image_copy_features;
+    VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representative_fragment_test_features_nv;
+    VkPhysicalDeviceCoverageReductionModeFeaturesNV coverage_reduction_mode_features_nv;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

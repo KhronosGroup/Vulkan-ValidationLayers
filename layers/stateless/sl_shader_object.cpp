@@ -22,10 +22,9 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                                                                  VkShaderEXT *pShaders) const {
     bool skip = false;
 
-    // offset needs to be a multiple of 4.
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const VkShaderCreateInfoEXT &createInfo = pCreateInfos[i];
-        if (SafeModulo(createInfo.codeSize, 4) != 0) {
+        if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT && SafeModulo(createInfo.codeSize, 4) != 0) {
             skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-codeSize-08735",
                              "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].codeSize (%" PRIu64 ") is not a multiple of 4.", i,
                              static_cast<uint64_t>(createInfo.codeSize));
@@ -61,14 +60,6 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                 "].flags (%s) contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT bit, but pCreateInfos[%" PRIu32 "].stage is %s.",
                 i, string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
         }
-        if (((createInfo.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) &&
-            ((createInfo.stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) ==
-             0)) {
-            skip |= LogError(
-                device, "VUID-VkShaderCreateInfoEXT-flags-08992",
-                "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].flags (%s), but pCreateInfos[%" PRIu32 "].stage is %s.", i,
-                string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
-        }
         if ((createInfo.stage != VK_SHADER_STAGE_COMPUTE_BIT) &&
             ((createInfo.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) != 0)) {
             skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-flags-08485",
@@ -95,8 +86,7 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
             }
         }
 
-        if (createInfo.stage != VK_SHADER_STAGE_MESH_BIT_EXT &&
-            (createInfo.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0) {
+        if (createInfo.stage != VK_SHADER_STAGE_MESH_BIT_EXT && (createInfo.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0) {
             skip |= LogError(
                 device, "VUID-VkShaderCreateInfoEXT-flags-08414",
                 "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].flags are %s, but pCreateInfos[%" PRIu32 "].stage is %s.", i,
@@ -167,6 +157,15 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
             skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-stage-08426",
                              "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].stage is %s.", i,
                              string_VkShaderStageFlagBits(createInfo.stage));
+        }
+
+        if (((createInfo.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) &&
+            ((createInfo.stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) ==
+             0)) {
+            skip |= LogError(
+                device, "VUID-VkShaderCreateInfoEXT-flags-08992",
+                "vkCreateShadersEXT(): pCreateInfos[%" PRIu32 "].flags (%s), but pCreateInfos[%" PRIu32 "].stage is %s.", i,
+                string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(), i, string_VkShaderStageFlagBits(createInfo.stage));
         }
     }
 

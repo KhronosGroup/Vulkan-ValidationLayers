@@ -186,7 +186,8 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address, VmaAllocator *pAllocator) {
+VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address,
+                           VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
@@ -316,7 +317,7 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
                 }
             }
             if (!found_ext) {
-                const char ** ext_names = new const char*[modified_create_info->enabledExtensionCount + 1];
+                const char **ext_names = new const char *[modified_create_info->enabledExtensionCount + 1];
                 // Copy the existing pointer table
                 std::copy(modified_create_info->ppEnabledExtensionNames,
                           modified_create_info->ppEnabledExtensionNames + modified_create_info->enabledExtensionCount, ext_names);
@@ -326,7 +327,7 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
                 bda_ext_copy[bda_ext.size()] = '\0';
                 ext_names[modified_create_info->enabledExtensionCount] = bda_ext_copy;
                 // Patch up the safe struct
-                delete [] modified_create_info->ppEnabledExtensionNames;
+                delete[] modified_create_info->ppEnabledExtensionNames;
                 modified_create_info->ppEnabledExtensionNames = ext_names;
                 modified_create_info->enabledExtensionCount++;
             }
@@ -881,15 +882,15 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
         if (replace_shaders) {
             for (uint32_t i = 0; i < static_cast<uint32_t>(pipe->stage_states.size()); ++i) {
                 const auto &stage = pipe->stage_states[i];
-                const auto &module_state = stage.module_state;
+                const auto &spirv_state = stage.spirv_state;
 
                 VkShaderModule shader_module;
                 auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-                create_info.pCode = module_state->spirv->words_.data();
-                create_info.codeSize = module_state->spirv->words_.size() * sizeof(uint32_t);
+                create_info.pCode = spirv_state->words_.data();
+                create_info.codeSize = spirv_state->words_.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
-                    SetShaderModule(new_pipeline_ci, *stage.create_info, shader_module, i);
+                    SetShaderModule(new_pipeline_ci, *stage.pipeline_create_info, shader_module, i);
                 } else {
                     ReportSetupProblem(device,
                                        "Unable to replace instrumented shader with non-instrumented one.  "
@@ -908,7 +909,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         if (cgpl_state.shader_states.size() <= pipeline) {
                             cgpl_state.shader_states.resize(pipeline + 1);
                         }
-                        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
+                        const VkShaderStageFlagBits stage = stage_state.getStage();
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         const auto pass =
                             InstrumentShader(module_state->spirv->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
@@ -962,7 +963,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
                 if (pipeline_state->active_slots.find(desc_set_bind_index) != pipeline_state->active_slots.end() ||
                     (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
-                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.create_info->stage);
+                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.getStage());
                     assert(uninstrumented_module != shader_module.Cast<VkShaderModule>());
                     DispatchDestroyShaderModule(device, uninstrumented_module, pAllocator);
                 }

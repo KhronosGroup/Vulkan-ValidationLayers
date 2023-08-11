@@ -28,11 +28,13 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/video_session_state.h"
+#include "state_tracker/shader_object_state.h"
 #include "sync/sync_vuid_maps.h"
 
 // Set of VUID that need to go between drawdispatch_validation.cpp and rest of CoreChecks
 struct DrawDispatchVuid {
     const char* pipeline_bound_08606 = kVUIDUndefined;
+    const char* pipeline_or_shaders_bound_08607 = kVUIDUndefined;
     const char* index_binding_07312 = kVUIDUndefined;
     const char* vertex_binding_04007 = kVUIDUndefined;
     const char* vertex_binding_null_04008 = kVUIDUndefined;
@@ -195,6 +197,98 @@ struct DrawDispatchVuid {
     const char* stippled_bresenham_lines_07496 = kVUIDUndefined;
     const char* stippled_smooth_lines_07497 = kVUIDUndefined;
     const char* stippled_default_strict_07498 = kVUIDUndefined;
+    const char* viewport_and_scissor_with_count_08635 = kVUIDUndefined;
+    const char* viewport_w_scaling_08636 = kVUIDUndefined;
+    const char* shading_rate_palette_08637 = kVUIDUndefined;
+    const char* exclusive_scissor_08638 = kVUIDUndefined;
+    const char* set_rasterizer_discard_enable_08639 = kVUIDUndefined;
+    const char* set_depth_bias_enable_08640 = kVUIDUndefined;
+    const char* set_logic_op_08641 = kVUIDUndefined;
+    const char* set_color_blend_enable_08643 = kVUIDUndefined;
+    const char* set_rasterization_samples_08644 = kVUIDUndefined;
+    const char* set_color_write_enable_08646 = kVUIDUndefined;
+    const char* set_color_write_enable_08647 = kVUIDUndefined;
+    const char* set_discard_rectangles_enable_08648 = kVUIDUndefined;
+    const char* set_discard_rectangles_mode_08649 = kVUIDUndefined;
+    const char* set_depth_clamp_enable_08650 = kVUIDUndefined;
+    const char* set_polygon_mode_08651 = kVUIDUndefined;
+    const char* set_rasterization_samples_08652 = kVUIDUndefined;
+    const char* set_sample_mask_08653 = kVUIDUndefined;
+    const char* set_alpha_to_coverage_enable_08654 = kVUIDUndefined;
+    const char* set_alpha_to_one_enable_08655 = kVUIDUndefined;
+    const char* set_logic_op_enable_08656 = kVUIDUndefined;
+    const char* set_color_blend_enable_08657 = kVUIDUndefined;
+    const char* set_color_blend_equation_08658 = kVUIDUndefined;
+    const char* set_color_write_mask_08659 = kVUIDUndefined;
+    const char* set_rasterization_streams_08660 = kVUIDUndefined;
+    const char* set_conservative_rasterization_mode_08661 = kVUIDUndefined;
+    const char* set_extra_primitive_overestimation_size_08662 = kVUIDUndefined;
+    const char* set_depth_clip_enable_08663 = kVUIDUndefined;
+    const char* set_sample_locations_enable_08664 = kVUIDUndefined;
+    const char* set_provoking_vertex_mode_08665 = kVUIDUndefined;
+    const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
+    const char* set_line_rasterization_mode_08667 = kVUIDUndefined;
+    const char* set_line_rasterization_mode_08668 = kVUIDUndefined;
+    const char* set_line_stipple_enable_08669 = kVUIDUndefined;
+    const char* set_line_stipple_enable_08670 = kVUIDUndefined;
+    const char* set_line_stipple_enable_08671 = kVUIDUndefined;
+    const char* set_line_stipple_08672 = kVUIDUndefined;
+    const char* set_depth_clip_negative_one_to_one_08673 = kVUIDUndefined;
+    const char* set_viewport_w_scaling_enable_08674 = kVUIDUndefined;
+    const char* set_viewport_swizzle_08675 = kVUIDUndefined;
+    const char* set_coverage_to_color_enable_08676 = kVUIDUndefined;
+    const char* set_coverage_to_color_location_08677 = kVUIDUndefined;
+    const char* set_coverage_modulation_mode_08678 = kVUIDUndefined;
+    const char* set_coverage_modulation_table_enable_08679 = kVUIDUndefined;
+    const char* set_coverage_modulation_table_08680 = kVUIDUndefined;
+    const char* set_shading_rate_image_enable_08681 = kVUIDUndefined;
+    const char* set_representative_fragment_test_enable_08682 = kVUIDUndefined;
+    const char* set_coverage_reduction_mode_08683 = kVUIDUndefined;
+    const char* vertex_shader_08684 = kVUIDUndefined;
+    const char* tessellation_control_shader_08685 = kVUIDUndefined;
+    const char* tessellation_evaluation_shader_08686 = kVUIDUndefined;
+    const char* geometry_shader_08687 = kVUIDUndefined;
+    const char* fragment_shader_08688 = kVUIDUndefined;
+    const char* task_shader_08689 = kVUIDUndefined;
+    const char* mesh_shader_08690 = kVUIDUndefined;
+    const char* vert_mesh_shader_08693 = kVUIDUndefined;
+    const char* task_mesh_shader_08694 = kVUIDUndefined;
+    const char* task_mesh_shader_08695 = kVUIDUndefined;
+    const char* vert_task_mesh_shader_08696 = kVUIDUndefined;
+    const char* linked_shaders_08698 = kVUIDUndefined;
+    const char* linked_shaders_08699 = kVUIDUndefined;
+    const char* shaders_push_constants_08878 = kVUIDUndefined;
+    const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
+    const char* set_attachment_feedback_loop_enable_08880 = kVUIDUndefined;
+    const char* set_primitive_topology_08881 = kVUIDUndefined;
+    const char* set_vertex_input_08882 = kVUIDUndefined;
+    const char* set_patch_control_points_08883 = kVUIDUndefined;
+    const char* set_primitive_restart_enable_08884 = kVUIDUndefined;
+    const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
+    const char* set_line_width_08617 = kVUIDUndefined;
+    const char* set_line_width_08618 = kVUIDUndefined;
+    const char* set_depth_bias_08620 = kVUIDUndefined;
+    const char* set_blend_constants_08621 = kVUIDUndefined;
+    const char* set_depth_bounds_08622 = kVUIDUndefined;
+    const char* set_stencil_compare_mask_08623 = kVUIDUndefined;
+    const char* set_stencil_write_mask_08624 = kVUIDUndefined;
+    const char* set_stencil_reference_08625 = kVUIDUndefined;
+    const char* set_sample_locations_08626 = kVUIDUndefined;
+    const char* set_cull_mode_08627 = kVUIDUndefined;
+    const char* set_front_face_08628 = kVUIDUndefined;
+    const char* set_depth_test_enable_08629 = kVUIDUndefined;
+    const char* set_depth_write_enable_08630 = kVUIDUndefined;
+    const char* set_depth_comapre_op_08631 = kVUIDUndefined;
+    const char* set_depth_bounds_test_enable_08632 = kVUIDUndefined;
+    const char* set_stencil_test_enable_08633 = kVUIDUndefined;
+    const char* set_stencil_op_08634 = kVUIDUndefined;
+    const char* set_line_width_08619 = kVUIDUndefined;
+    const char* set_viewport_with_count_08642 = kVUIDUndefined;
+    const char* alpha_component_word_08920 = kVUIDUndefined;
+    const char* color_write_mask_09116 = kVUIDUndefined;
+    const char* vertex_input_format_08936 = kVUIDUndefined;
+    const char* vertex_input_format_08937 = kVUIDUndefined;
+    const char* vertex_input_format_09203 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -407,6 +501,8 @@ class CoreChecks : public ValidationStateTracker {
                                    CMD_TYPE cmd_type, const char* msg_code) const;
     bool ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
@@ -743,7 +839,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
-    bool ValidateActionState(const CMD_BUFFER_STATE& cb_state,const VkPipelineBindPoint bind_point,  CMD_TYPE cmd_type) const;
+    bool ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidateActionState(const CMD_BUFFER_STATE& cb_state, const VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
     bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, const VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
     static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
                                        VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
@@ -766,8 +864,8 @@ class CoreChecks : public ValidationStateTracker {
                                       const cvdescriptorset::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
 
     bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet& descriptor_set,
-                                      const PIPELINE_LAYOUT_STATE& pipeline_layout, const uint32_t layoutIndex,
-                                      std::string& errorMsg) const;
+                                      const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>& set_layouts,
+                                      const std::string& handle, const uint32_t layoutIndex, std::string& errorMsg) const;
 
     bool VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE& layout_a, const PIPELINE_LAYOUT_STATE& layout_b,
                                       std::string& errorMsg) const;
@@ -877,38 +975,37 @@ class CoreChecks : public ValidationStateTracker {
                                        void* csm_state_data) override;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
-    bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;
-    bool ValidatePointSizeShaderState(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
+    bool ValidatePipelineShaderStage(const StageCreateInfo& stage_create_info, const PipelineStageState& stage_state) const;
+    bool ValidatePointSizeShaderState(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
                                       const EntryPoint& entrypoint, VkShaderStageFlagBits stage) const;
-    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
+    bool ValidatePrimitiveRateShaderState(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
                                           const EntryPoint& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE& module_state, const Instruction& insn) const;
 
     // Auto-generated helper functions
-    bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn) const;
+    bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn, const bool pipeline) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
     bool ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                              const PIPELINE_STATE& pipeline, const EntryPoint& entrypoint) const;
+                                              const StageCreateInfo& create_info, const EntryPoint& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_STATE& module_state, const Instruction* insn) const;
-    bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE& pipeline) const;
+    bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo& create_info) const;
     bool ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage) const;
     bool ValidateMemoryScope(const SPIRV_MODULE_STATE& module_state, const Instruction& insn) const;
-    bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state,
-                                   safe_VkPipelineShaderStageCreateInfo const* create_info) const;
-    bool ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE& module_state,
-                                      safe_VkPipelineShaderStageCreateInfo const* create_info, const uint32_t local_size_x) const;
+    bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state, const PipelineStageState& stage_state) const;
+    bool ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE& module_state, const PipelineStageState& stage_state,
+                                      const uint32_t local_size_x) const;
     bool ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                   const PIPELINE_STATE& pipeline) const;
-    bool ValidateShaderSubgroupSizeControl(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stage,
-                                           VkPipelineShaderStageCreateFlags flags) const;
+                                   const StageCreateInfo& create_info) const;
+    bool ValidateShaderSubgroupSizeControl(const StageCreateInfo& stage_create_info, VkShaderStageFlagBits stage,
+                                           const PipelineStageState& stage_state) const;
     bool ValidateWorkgroupSharedMemory(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory) const;
     bool ValidateShaderTileImage(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                 const PIPELINE_STATE& pipeline, const VkShaderStageFlagBits stage) const;
+                                 const StageCreateInfo& create_info, const VkShaderStageFlagBits stage) const;
     bool ValidateAtomicsTypes(const SPIRV_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
-                                const PIPELINE_STATE& pipeline) const;
+                                const StageCreateInfo& create_info) const;
     bool ValidateInterfaceVertexInput(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
                                       const EntryPoint& entrypoint) const;
     bool ValidateInterfaceFragmentOutput(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
@@ -916,25 +1013,24 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderInputAttachment(const SPIRV_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable) const;
     bool ValidateConservativeRasterization(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                           const PIPELINE_STATE& pipeline) const;
-    bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
+                                           const StageCreateInfo& stage_create_info) const;
+    bool ValidatePushConstantUsage(const StageCreateInfo& create_info, const SPIRV_MODULE_STATE& module_state,
                                    const EntryPoint& entrypoint) const;
     bool ValidateBuiltinLimits(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                               const PIPELINE_STATE& pipeline) const;
-    bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const PIPELINE_STATE& pipeline) const;
+                               const StageCreateInfo& create_info) const;
+    bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info) const;
     bool RequirePropertyFlag(const SPIRV_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
                              const char* vuid) const;
-    bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name,
-                        const char* vuid) const;
+    bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name, const char* vuid) const;
     bool ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE& producer, const EntryPoint& producer_entrypoint,
                                         const SPIRV_MODULE_STATE& consumer, const EntryPoint& consumer_entrypoint,
                                         uint32_t pipe_index) const;
     bool ValidateVariables(const SPIRV_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                          const PIPELINE_STATE& pipeline, const EntryPoint& entrypoint) const;
+                                          const StageCreateInfo& stage_create_info, const EntryPoint& entrypoint) const;
     bool ValidateTransformFeedback(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                   const PIPELINE_STATE& pipeline) const;
-    bool ValidateTransformFeedbackDecorations(const SPIRV_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
+                                   const StageCreateInfo& create_info) const;
+    bool ValidateTransformFeedbackDecorations(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& create_info) const;
     virtual bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderClock(const SPIRV_MODULE_STATE& module_state) const;
     bool ValidateImageWrite(const SPIRV_MODULE_STATE& module_state) const;
@@ -1393,7 +1489,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
         VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
         VkPipelineExecutableInternalRepresentationKHR* pStatistics) const override;
-    bool PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData) const override;
+    bool PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) const override;
     bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) const override;
     bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator,
@@ -2383,7 +2479,7 @@ class CoreChecks : public ValidationStateTracker {
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                       struct _screen_window* window) const override;
+                                                                      struct _screen_window* window) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) override {

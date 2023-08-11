@@ -175,7 +175,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline,
 }
 
 bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint,
-                                       const PIPELINE_STATE &pipeline) const {
+                                       const StageCreateInfo &create_info) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
@@ -188,12 +188,14 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
         // Handles both the input and output sampleMask
         if (variable->decorations.builtin == spv::BuiltInSampleMask &&
             variable->array_size > phys_dev_props.limits.maxSampleMaskWords) {
-            skip |= LogError(module_state.handle(), "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+            const char *vuid = create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
+                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08451";
+            skip |= LogError(module_state.handle(), vuid,
+                             "%s(): pCreateInfos[%" PRIu32
                              "] The BuiltIns SampleMask array sizes is %u which exceeds "
                              "maxSampleMaskWords of %u in %s.",
-                             pipeline.create_index, variable->array_size, phys_dev_props.limits.maxSampleMaskWords,
-                             FormatHandle(module_state.handle()).c_str());
+                             create_info.func_name.c_str(), create_info.create_index, variable->array_size,
+                             phys_dev_props.limits.maxSampleMaskWords, FormatHandle(module_state.handle()).c_str());
             break;
         }
     }
@@ -202,7 +204,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
 }
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                      const PIPELINE_STATE &pipeline, const EntryPoint &entrypoint) const {
+                                                      const StageCreateInfo &create_info, const EntryPoint &entrypoint) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
@@ -216,13 +218,16 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
     const bool is_point_mode = entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit);
     const bool is_xfb_execution_mode = entrypoint.execution_mode.Has(ExecutionModeSet::xfb_bit);
 
-    if (is_xfb_execution_mode &&
-        ((pipeline.create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0)) {
-        skip |= LogError(pipeline.pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
+    if (create_info.pipeline) {
+        if (is_xfb_execution_mode &&
+            ((create_info.pipeline->create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0)) {
+            skip |=
+                LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                          "] If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
                          "stages in the pipeline there must not be any shader stage in the pipeline with a Xfb execution mode",
-                         pipeline.create_index);
+                         create_info.pipeline->create_index);
+        }
     }
 
     // The max is a combiniation of both the user defined variables largest values
@@ -240,12 +245,11 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
         case VK_SHADER_STAGE_VERTEX_BIT:
             if (total_output_components >= limits.maxVertexOutputComponents) {
                 skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Vertex shader output variable (%s) along with %" PRIu32
+                                 "%s(): pCreateInfos[%" PRIu32 "] Vertex shader output variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%" PRIu32 ")",
-                                 pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                                 limits.maxVertexOutputComponents);
+                                 create_info.func_name.c_str(), create_info.create_index, max_output_slot.Describe().c_str(),
+                                 entrypoint.builtin_output_components, limits.maxVertexOutputComponents);
             }
             break;
 
@@ -253,37 +257,34 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
             if (total_input_components >= limits.maxTessellationControlPerVertexInputComponents) {
                 skip |= LogError(
                     module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "] Tessellation control shader input variable (%s) along with %" PRIu32
+                    "%s(): pCreateInfos[%" PRIu32 "] Tessellation control shader input variable (%s) along with %" PRIu32
                     " built-in components,  "
                     "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents (%" PRIu32 ")",
-                    pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                    limits.maxTessellationControlPerVertexInputComponents);
+                    create_info.func_name.c_str(), create_info.create_index, max_input_slot.Describe().c_str(),
+                    entrypoint.builtin_input_components, limits.maxTessellationControlPerVertexInputComponents);
             }
             if (entrypoint.max_input_slot_variable) {
                 if (entrypoint.max_input_slot_variable->is_patch &&
                     total_output_components >= limits.maxTessellationControlPerPatchOutputComponents) {
                     skip |= LogError(
                         module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                        "] Tessellation control shader output variable (%s) along with %" PRIu32
+                        "%s(): pCreateInfos[%" PRIu32 "] Tessellation control shader output variable (%s) along with %" PRIu32
                         " built-in components,  "
                         "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerPatchOutputComponents (%" PRIu32
                         ")",
-                        pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                        limits.maxTessellationControlPerPatchOutputComponents);
+                        create_info.func_name.c_str(), create_info.create_index, max_output_slot.Describe().c_str(),
+                        entrypoint.builtin_output_components, limits.maxTessellationControlPerPatchOutputComponents);
                 }
                 if (!entrypoint.max_input_slot_variable->is_patch &&
                     total_output_components >= limits.maxTessellationControlPerVertexOutputComponents) {
                     skip |= LogError(
                         module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                        "] Tessellation control shader output variable (%s) along with %" PRIu32
+                        "%s(): pCreateInfos[%" PRIu32 "] Tessellation control shader output variable (%s) along with %" PRIu32
                         " built-in components,  "
                         "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents (%" PRIu32
                         ")",
-                        pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                        limits.maxTessellationControlPerVertexOutputComponents);
+                        create_info.func_name.c_str(), create_info.create_index, max_output_slot.Describe().c_str(),
+                        entrypoint.builtin_output_components, limits.maxTessellationControlPerVertexOutputComponents);
                 }
             }
             break;
@@ -292,38 +293,36 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
             if (total_input_components >= limits.maxTessellationEvaluationInputComponents) {
                 skip |= LogError(
                     module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "] Tessellation evaluation shader input variable (%s) along with %" PRIu32
+                    "%s(): pCreateInfos[%" PRIu32 "] Tessellation evaluation shader input variable (%s) along with %" PRIu32
                     " built-in components,  "
                     "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents (%" PRIu32 ")",
-                    pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                    limits.maxTessellationEvaluationInputComponents);
+                    create_info.func_name.c_str(), create_info.create_index, max_input_slot.Describe().c_str(),
+                    entrypoint.builtin_input_components, limits.maxTessellationEvaluationInputComponents);
             }
             if (total_output_components >= limits.maxTessellationEvaluationOutputComponents) {
                 skip |= LogError(
                     module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "] Tessellation evaluation shader output variable (%s) along with %" PRIu32
+                    "%s(): pCreateInfos[%" PRIu32 "] Tessellation evaluation shader output variable (%s) along with %" PRIu32
                     " built-in components,  "
                     "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents (%" PRIu32 ")",
-                    pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                    limits.maxTessellationEvaluationOutputComponents);
+                    create_info.func_name.c_str(), create_info.create_index, max_output_slot.Describe().c_str(),
+                    entrypoint.builtin_output_components, limits.maxTessellationEvaluationOutputComponents);
             }
             // Portability validation
             if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
                 if (is_iso_lines && (VK_FALSE == enabled_features.portability_subset_features.tessellationIsolines)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-tessellationShader-06326",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "](portability error): Tessellation evaluation shader"
                                      " is using abstract patch type IsoLines, but this is not supported on this platform",
-                                     pipeline.create_index);
+                                     create_info.func_name.c_str(), create_info.create_index);
                 }
                 if (is_point_mode && (VK_FALSE == enabled_features.portability_subset_features.tessellationPointMode)) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-tessellationShader-06327",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "](portability error): Tessellation evaluation shader"
                                      " is using abstract patch type PointMode, but this is not supported on this platform",
-                                     pipeline.create_index);
+                                     create_info.func_name.c_str(), create_info.create_index);
                 }
             }
             break;
@@ -331,33 +330,30 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
         case VK_SHADER_STAGE_GEOMETRY_BIT:
             if (total_input_components >= limits.maxGeometryInputComponents) {
                 skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Geometry shader input variable (%s) along with %" PRIu32
+                                 "%s(): pCreateInfos[%" PRIu32 "] Geometry shader input variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%" PRIu32 ")",
-                                 pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                                 limits.maxGeometryInputComponents);
+                                 create_info.func_name.c_str(), create_info.create_index, max_input_slot.Describe().c_str(),
+                                 entrypoint.builtin_input_components, limits.maxGeometryInputComponents);
             }
             if (total_output_components >= limits.maxGeometryOutputComponents) {
                 skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Geometry shader output variable (%s) along with %" PRIu32
+                                 "%s(): pCreateInfos[%" PRIu32 "] Geometry shader output variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%" PRIu32 ")",
-                                 pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
-                                 limits.maxGeometryOutputComponents);
+                                 create_info.func_name.c_str(), create_info.create_index, max_output_slot.Describe().c_str(),
+                                 entrypoint.builtin_output_components, limits.maxGeometryOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
             if (total_input_components >= limits.maxFragmentInputComponents) {
                 skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-Location-06272",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Fragment shader input variable (%s) along with %" PRIu32
+                                 "%s(): pCreateInfos[%" PRIu32 "] Fragment shader input variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%" PRIu32 ")",
-                                 pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
-                                 limits.maxFragmentInputComponents);
+                                 create_info.func_name.c_str(), create_info.create_index, max_input_slot.Describe().c_str(),
+                                 entrypoint.builtin_input_components, limits.maxFragmentInputComponents);
             }
             break;
 
@@ -375,35 +371,39 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
             if (entrypoint.execution_model == spv::ExecutionModelMeshNV) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-MeshNV-07113",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "] Mesh shader output vertices count exceeds the "
                                      "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
-                                     pipeline.create_index, phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices,
+                                     create_info.func_name.c_str(), create_info.create_index,
+                                     phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices,
                                      num_vertices - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices);
                 }
                 if (num_primitives > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-MeshNV-07114",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "] Mesh shader output primitives count exceeds the "
                                      "maxMeshOutputPrimitives of %" PRIu32 " by %" PRIu32,
-                                     pipeline.create_index, phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives,
+                                     create_info.func_name.c_str(), create_info.create_index,
+                                     phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives);
                 }
             } else if (entrypoint.execution_model == spv::ExecutionModelMeshEXT) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-MeshEXT-07115",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "] Mesh shader output vertices count exceeds the "
                                      "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
-                                     pipeline.create_index, phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices,
+                                     create_info.func_name.c_str(), create_info.create_index,
+                                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices,
                                      num_vertices - phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices);
                 }
                 if (num_primitives > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives) {
                     skip |= LogError(module_state.handle(), "VUID-RuntimeSpirv-MeshEXT-07116",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "%s(): pCreateInfos[%" PRIu32
                                      "] Mesh shader output primitives count exceeds the "
                                      "maxMeshOutputPrimitives of %u by %u ",
-                                     pipeline.create_index, phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives,
+                                     create_info.func_name.c_str(), create_info.create_index,
+                                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives);
                 }
             }
@@ -618,10 +618,11 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
     for (auto &stage_state : pipeline.stage_states) {
-        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
+        const VkShaderStageFlagBits stage = stage_state.getStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
-            skip |= ValidatePipelineShaderStage(pipeline, stage_state);
+            StageCreateInfo stage_create_info("vkCreateGraphicsPipelines", &pipeline);
+            skip |= ValidatePipelineShaderStage(stage_create_info, stage_state);
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;
@@ -634,28 +635,25 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->spirv &&
+    if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->spirv_state &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateInterfaceVertexInput(pipeline, *vertex_stage->module_state->spirv.get(), *vertex_stage->entrypoint);
+        skip |= ValidateInterfaceVertexInput(pipeline, *vertex_stage->spirv_state.get(), *vertex_stage->entrypoint);
     }
 
-    if (pipeline.fragment_shader_state && fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->spirv) {
-        skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->module_state->spirv.get(), *fragment_stage->entrypoint);
+    if (pipeline.fragment_shader_state && fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state) {
+        skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->spirv_state.get(), *fragment_stage->entrypoint);
     }
 
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
         const auto &producer = pipeline.stage_states[i - 1];
         const auto &consumer = pipeline.stage_states[i];
-        assert(producer.module_state);
+        assert(producer.spirv_state);
         if (&producer == fragment_stage) {
             break;
         }
-        if (consumer.module_state) {
-            if (consumer.module_state->spirv && producer.module_state->spirv && consumer.entrypoint && producer.entrypoint) {
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state->spirv.get(), *producer.entrypoint,
-                                                       *consumer.module_state->spirv.get(), *consumer.entrypoint,
-                                                       pipeline.create_index);
-            }
+        if (consumer.spirv_state && producer.spirv_state && consumer.entrypoint && producer.entrypoint) {
+            skip |= ValidateInterfaceBetweenStages(*producer.spirv_state.get(), *producer.entrypoint, *consumer.spirv_state.get(),
+                                                   *consumer.entrypoint, pipeline.create_index);
         }
     }
     return skip;
