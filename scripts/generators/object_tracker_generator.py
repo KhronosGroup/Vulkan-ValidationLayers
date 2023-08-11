@@ -172,6 +172,8 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "VkAccelerationStructureKHR-accelerationStructure-nullalloc": "\"VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02444\"",
             "VkAccelerationStructureNV-accelerationStructure-compatalloc": "\"VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03753\"",
             "VkAccelerationStructureNV-accelerationStructure-nullalloc": "\"VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03754\"",
+            "shader-compatalloc": "\"VUID-vkDestroyShaderEXT-pAllocator-08483\"",
+            "shader-nullalloc": "\"VUID-vkDestroyShaderEXT-pAllocator-08484\"",
            }
 
     # Work up Handle's parents to see if it VkDevice
@@ -345,6 +347,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                     # VK_INCOMPLETE is considered a success
                     if 'EnumeratePhysicalDeviceGroups' in command.name:
                         failureCondition += ' && result != VK_INCOMPLETE'
+                    if 'CreateShadersEXT' in command.name:
+                        failureCondition += ' && result != VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT'
                     # The two createpipelines APIs may create on failure -- skip the success result check
                     if 'CreateGraphicsPipelines' not in command.name and 'CreateComputePipelines' not in command.name and 'CreateRayTracingPipelines' not in command.name:
                         postPrototype = postPrototype.replace('{', f'{{\n    if ({failureCondition}) return;')
@@ -516,6 +520,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
         if isCreate:
             handle_type = command.params[-1].type
             isCreatePipelines = 'CreateGraphicsPipelines' in command.name or 'CreateComputePipelines' in command.name or 'CreateRayTracingPipelines' in command.name
+            isCreateShaders = 'CreateShaders' in command.name
 
             if handle_type in self.vk.handles:
                 # Check for special case where multiple handles are returned
@@ -533,6 +538,9 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
 
                 if isCreatePipelines:
                     post_call_record += f'{indent}if (!pPipelines[index]) continue;\n'
+
+                if isCreateShaders:
+                    post_call_record += f'{indent}if (!pShaders[index]) break;\n'
 
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
                 objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'

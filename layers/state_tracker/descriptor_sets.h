@@ -877,7 +877,7 @@ class DescriptorSet : public BASE_NODE {
     typedef vvl::unordered_set<uint32_t> TrackedBindings;
     static void FilterOneBindingReq(const BindingVariableMap::value_type &binding_req_pair, BindingVariableMap *out_req,
                                     const TrackedBindings &set, uint32_t limit);
-    void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &, const BindingVariableMap &in_req,
+    void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *, const BindingVariableMap &in_req,
                            BindingVariableMap *out_req) const;
     void UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
                                const BindingVariableMap &updated_bindings);
@@ -952,11 +952,10 @@ class DescriptorSet : public BASE_NODE {
     typedef vvl::unordered_map<uint32_t, uint64_t> VersionedBindings;
     // this structure is stored in a map in CMD_BUFFER_STATE, with an entry for every descriptor set.
     struct CachedValidation {
-        TrackedBindings command_binding_and_usage;  // Persistent for the life of the recording
-        TrackedBindings non_dynamic_buffers;        // Persistent for the life of the recording
-        TrackedBindings dynamic_buffers;            // Dirtied (flushed) each BindDescriptorSet
-        vvl::unordered_map<const PIPELINE_STATE *, VersionedBindings>
-            image_samplers;  // Tested vs. changes to CB's ImageLayout
+        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
+        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
+        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
+        vvl::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
     };
     const DescriptorSetLayout &Layout() const { return *layout_; }
 
@@ -1090,7 +1089,7 @@ class PrefilterBindRequestMap {
 
     PrefilterBindRequestMap(const DescriptorSet &ds, const BindingVariableMap &in_map)
         : filtered_map_(), orig_map_(in_map), descriptor_set_(ds) {}
-    const BindingVariableMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &);
+    const BindingVariableMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *);
     bool IsManyDescriptors() const { return descriptor_set_.GetTotalDescriptorCount() > kManyDescriptors_; }
 };
 }  // namespace cvdescriptorset

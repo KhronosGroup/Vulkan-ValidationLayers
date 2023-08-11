@@ -85,7 +85,8 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
     const auto *groups = create_info.ptr()->pGroups;
 
     for (auto &stage_state : pipeline.stage_states) {
-        skip |= ValidatePipelineShaderStage(pipeline, stage_state);
+        StageCreateInfo stage_create_info("vkCreateRayTracingPipelinesKHR", &pipeline);
+        skip |= ValidatePipelineShaderStage(stage_create_info, stage_state);
     }
 
     if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(create_info.pNext);

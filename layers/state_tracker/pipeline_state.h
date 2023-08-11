@@ -26,6 +26,7 @@
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_sub_state.h"
 #include "generated/dynamic_state_helper.h"
+#include "utils/shader_utils.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
@@ -42,58 +43,6 @@ class RENDER_PASS_STATE;
 struct SHADER_MODULE_STATE;
 class PIPELINE_STATE;
 
-enum DescriptorReqBits {
-    DESCRIPTOR_REQ_VIEW_TYPE_1D = 1 << VK_IMAGE_VIEW_TYPE_1D,
-    DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_1D_ARRAY,
-    DESCRIPTOR_REQ_VIEW_TYPE_2D = 1 << VK_IMAGE_VIEW_TYPE_2D,
-    DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-    DESCRIPTOR_REQ_VIEW_TYPE_3D = 1 << VK_IMAGE_VIEW_TYPE_3D,
-    DESCRIPTOR_REQ_VIEW_TYPE_CUBE = 1 << VK_IMAGE_VIEW_TYPE_CUBE,
-    DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
-
-    DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS = (1 << (VK_IMAGE_VIEW_TYPE_CUBE_ARRAY + 1)) - 1,
-
-    DESCRIPTOR_REQ_SINGLE_SAMPLE = 2 << VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
-    DESCRIPTOR_REQ_MULTI_SAMPLE = DESCRIPTOR_REQ_SINGLE_SAMPLE << 1,
-
-    DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT = DESCRIPTOR_REQ_MULTI_SAMPLE << 1,
-    DESCRIPTOR_REQ_COMPONENT_TYPE_SINT = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT << 1,
-    DESCRIPTOR_REQ_COMPONENT_TYPE_UINT = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT << 1,
-
-    DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT << 1,
-    DESCRIPTOR_REQ_SAMPLER_SAMPLED = DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION << 1,
-    DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ = DESCRIPTOR_REQ_SAMPLER_SAMPLED << 1,
-    DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET = DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ << 1,
-    DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT = DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET << 1,
-    DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT = DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT << 1,
-    DESCRIPTOR_REQ_IMAGE_DREF = DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT << 1,
-};
-typedef uint32_t DescriptorReqFlags;
-
-struct DescriptorRequirement {
-    DescriptorReqFlags reqs;
-    const ResourceInterfaceVariable *variable;
-    DescriptorRequirement() : reqs(0) {}
-};
-
-inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs == b.reqs; }
-
-inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs < b.reqs; }
-
-// < binding index (of descriptor set) : meta data >
-typedef std::map<uint32_t, DescriptorRequirement> BindingVariableMap;
-
-struct PipelineStageState {
-    // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
-    std::shared_ptr<const SHADER_MODULE_STATE> module_state;
-    const safe_VkPipelineShaderStageCreateInfo *create_info;
-    // If null, means it is an empty object, no SPIR-V backing it
-    std::shared_ptr<const EntryPoint> entrypoint;
-
-    PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
-};
-
 class PIPELINE_CACHE_STATE : public BASE_NODE {
   public:
     PIPELINE_CACHE_STATE(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
@@ -102,6 +51,19 @@ class PIPELINE_CACHE_STATE : public BASE_NODE {
     VkPipelineCache pipelineCache() const { return handle_.Cast<VkPipelineCache>(); }
 
     const safe_VkPipelineCacheCreateInfo create_info;
+};
+
+struct StageCreateInfo {
+    std::string func_name;
+    uint32_t create_index;
+    const PIPELINE_STATE *pipeline;
+
+    const PushConstantRangesId shader_object_const_ranges;
+
+    std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
+
+    StageCreateInfo(const std::string &name, const PIPELINE_STATE *pipeline);
+    StageCreateInfo(const std::string &name, uint32_t create_index, const VkShaderCreateInfoEXT &create_info);
 };
 
 class PIPELINE_STATE : public BASE_NODE {
@@ -191,7 +153,6 @@ class PIPELINE_STATE : public BASE_NODE {
         fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
 
     // Additional metadata needed by pipeline_state initialization and validation
-    using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_states;
 
     // Shaders from the pipeline create info
@@ -205,8 +166,6 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
-    // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
-    using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
@@ -498,7 +457,6 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const void *PNext() const { return create_info.graphics.pNext; }
 
-    static ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
     static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state,
                                         CreateShaderModuleStates *csm_states);
 
@@ -789,6 +747,10 @@ struct LAST_BOUND_STATE {
 
     CMD_BUFFER_STATE &cb_state;
     PIPELINE_STATE *pipeline_state{nullptr};
+    // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
+    // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used
+    bool shader_object_bound[SHADER_OBJECT_STAGE_COUNT]{false};
+    SHADER_OBJECT_STATE *shader_object_states[SHADER_OBJECT_STAGE_COUNT]{nullptr};
     VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
     std::shared_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
 
@@ -834,6 +796,13 @@ struct LAST_BOUND_STATE {
     VkStencilOpState GetStencilOpStateBack() const;
     VkSampleCountFlagBits GetRasterizationSamples() const;
     bool IsRasterizationDisabled() const;
+
+    bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
+    VkShaderEXT GetShader(ShaderObjectStage stage) const;
+    SHADER_OBJECT_STATE *GetShaderState(ShaderObjectStage stage) const;
+    bool HasShaderObjects() const;
+    bool IsValidShaderBound(ShaderObjectStage stage) const;
+    bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,
@@ -915,4 +884,19 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
             return static_cast<LvlBindPoint>(stage);
     }
     return BindPoint_Count;
+}
+
+static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
+    if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) return ShaderObjectStage::TESSELLATION_EVALUATION;
+    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT) return ShaderObjectStage::GEOMETRY;
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) return ShaderObjectStage::FRAGMENT;
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) return ShaderObjectStage::COMPUTE;
+    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) return ShaderObjectStage::TASK;
+    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) return ShaderObjectStage::MESH;
+
+    assert(false);
+
+    return ShaderObjectStage::LAST;
 }
