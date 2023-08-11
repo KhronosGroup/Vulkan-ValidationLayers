@@ -32,6 +32,120 @@ struct DeviceFeatures;
 struct DeviceExtensions;
 class APIVersion;
 
+enum DescriptorReqBits {
+    DESCRIPTOR_REQ_VIEW_TYPE_1D = 1 << VK_IMAGE_VIEW_TYPE_1D,
+    DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_1D_ARRAY,
+    DESCRIPTOR_REQ_VIEW_TYPE_2D = 1 << VK_IMAGE_VIEW_TYPE_2D,
+    DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+    DESCRIPTOR_REQ_VIEW_TYPE_3D = 1 << VK_IMAGE_VIEW_TYPE_3D,
+    DESCRIPTOR_REQ_VIEW_TYPE_CUBE = 1 << VK_IMAGE_VIEW_TYPE_CUBE,
+    DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY = 1 << VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
+
+    DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS = (1 << (VK_IMAGE_VIEW_TYPE_CUBE_ARRAY + 1)) - 1,
+
+    DESCRIPTOR_REQ_SINGLE_SAMPLE = 2 << VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
+    DESCRIPTOR_REQ_MULTI_SAMPLE = DESCRIPTOR_REQ_SINGLE_SAMPLE << 1,
+
+    DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT = DESCRIPTOR_REQ_MULTI_SAMPLE << 1,
+    DESCRIPTOR_REQ_COMPONENT_TYPE_SINT = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT << 1,
+    DESCRIPTOR_REQ_COMPONENT_TYPE_UINT = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT << 1,
+
+    DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT << 1,
+    DESCRIPTOR_REQ_SAMPLER_SAMPLED = DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION << 1,
+    DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ = DESCRIPTOR_REQ_SAMPLER_SAMPLED << 1,
+    DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET = DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ << 1,
+    DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT = DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET << 1,
+    DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT = DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT << 1,
+    DESCRIPTOR_REQ_IMAGE_DREF = DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT << 1,
+};
+typedef uint32_t DescriptorReqFlags;
+
+struct ResourceInterfaceVariable;
+
+struct DescriptorRequirement {
+    DescriptorReqFlags reqs;
+    const ResourceInterfaceVariable *variable;
+    DescriptorRequirement() : reqs(0) {}
+};
+
+enum class ShaderObjectStage : uint32_t {
+    VERTEX = 0u,
+    TESSELLATION_CONTROL,
+    TESSELLATION_EVALUATION,
+    GEOMETRY,
+    FRAGMENT,
+    COMPUTE,
+    TASK,
+    MESH,
+
+    LAST = 8u,
+};
+
+constexpr uint32_t SHADER_OBJECT_STAGE_COUNT = 8u;
+
+inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits stage) {
+    switch (stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return ShaderObjectStage::VERTEX;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return ShaderObjectStage::TESSELLATION_CONTROL;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return ShaderObjectStage::TESSELLATION_EVALUATION;
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return ShaderObjectStage::GEOMETRY;
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            return ShaderObjectStage::FRAGMENT;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return ShaderObjectStage::COMPUTE;
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return ShaderObjectStage::TASK;
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return ShaderObjectStage::MESH;
+        default:
+            break;
+    }
+    return ShaderObjectStage::LAST;
+}
+
+inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs == b.reqs; }
+
+inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs < b.reqs; }
+
+// < binding index (of descriptor set) : meta data >
+typedef std::map<uint32_t, DescriptorRequirement> BindingVariableMap;
+
+// Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
+using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
+
+struct EntryPoint;
+struct SHADER_MODULE_STATE;
+struct SPIRV_MODULE_STATE;
+struct safe_VkPipelineShaderStageCreateInfo;
+struct safe_VkShaderCreateInfoEXT;
+struct safe_VkSpecializationInfo;
+
+struct PipelineStageState {
+    // We use this over a SPIRV_MODULE_STATE because there are times we need to create empty objects
+    std::shared_ptr<const SHADER_MODULE_STATE> module_state;
+    std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state;
+    const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
+    const safe_VkShaderCreateInfoEXT *shader_object_create_info;
+    // If null, means it is an empty object, no SPIR-V backing it
+    std::shared_ptr<const EntryPoint> entrypoint;
+
+    PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                       const safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                       std::shared_ptr<const SHADER_MODULE_STATE> module_state,
+                       std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state);
+
+    const char *getPName() const;
+    VkShaderStageFlagBits getStage() const;
+    safe_VkSpecializationInfo *getSpecializationInfo() const;
+    const void *getPNext() const;
+};
+
+using StageStateVec = std::vector<PipelineStageState>;
+
 class ValidationCache {
   public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
@@ -147,8 +261,13 @@ class ValidationCache {
     mutable std::shared_mutex lock_;
 };
 
-spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);
 
+void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const EntryPoint> &entrypoint);
+ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
+ActiveSlotMap GetActiveSlots(const std::shared_ptr<const EntryPoint> &entrypoint);
+
+uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots);

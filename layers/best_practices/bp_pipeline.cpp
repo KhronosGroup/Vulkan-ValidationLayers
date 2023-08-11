@@ -138,7 +138,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         const PipelineStageState* fragment_stage = nullptr;
         for (auto& stage_state : pipeline.stage_states) {
-            if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
                 fragment_stage = &stage_state;
                 break;
             }
@@ -146,14 +146,14 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         // Only validate pipelines that contain shader stages
         if (pipeline.pre_raster_state && pipeline.fragment_shader_state) {
-            if (fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->spirv) {
+            if (fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state) {
                 const auto& rp_state = pipeline.RenderPassState();
                 if (rp_state && rp_state->UsesDynamicRendering()) {
-                    skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state->spirv.get(),
+                    skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->spirv_state.get(),
                                                                                *fragment_stage->entrypoint, pipeline);
                 } else {
-                    skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state->spirv.get(),
-                                                               *fragment_stage->entrypoint, pipeline, pipeline.Subpass());
+                    skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->spirv_state.get(), *fragment_stage->entrypoint,
+                                                               pipeline, pipeline.Subpass());
                 }
             }
         }

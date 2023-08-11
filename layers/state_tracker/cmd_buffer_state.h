@@ -179,9 +179,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool has_trace_rays_cmd;
     bool has_build_as_cmd;
 
-    CbState state;                // Track cmd buffer update state
-    uint64_t command_count;       // Number of commands recorded. Currently only used with VK_KHR_performance_query
-    uint64_t submitCount;         // Number of times CB has been submitted
+    CbState state;           // Track cmd buffer update state
+    uint64_t command_count;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
+    uint64_t submitCount;    // Number of times CB has been submitted
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
 
@@ -200,6 +200,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         bool depth_write_enable;
         // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
         bool depth_test_enable;
+        // VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE
+        bool depth_bounds_test_enable;
         // VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE
         bool stencil_test_enable;
         // VK_DYNAMIC_STATE_STENCIL_OP
@@ -209,29 +211,58 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkStencilOp fail_op_back;
         VkStencilOp pass_op_back;
         VkStencilOp depth_fail_op_back;
+        // VK_DYNAMIC_STATE_CULL_MODE
+        VkCullModeFlags cull_mode;
         // VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
         VkPrimitiveTopology primitive_topology;
+        // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT
+        bool discard_rectangle_enable;
         // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT
         // maxDiscardRectangles is at max 8 on all known implementations currently
         std::bitset<32> discard_rectangles;
+        // VK_DYNAMIC_STATE_POLYGON_MODE_EXT
+        VkPolygonMode polygon_mode;
         // VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT
         VkSampleCountFlagBits rasterization_samples;
         // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT
         VkLineRasterizationModeEXT line_rasterization_mode;
         // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
         bool stippled_line_enable;
+        // VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV
+        bool coverage_to_color_enable;
+        // VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV
+        VkCoverageModulationModeNV coverage_modulation_mode;
+        // VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV
+        bool coverage_modulation_table_enable;
+        // VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV
+        bool shading_rate_image_enable;
         // VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE
         bool rasterizer_discard_enable;
+        // VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE
+        bool depth_bias_enable = false;
         // VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT
         bool alpha_to_coverage_enable;
+        // VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT
+        bool logic_op_enable;
 
         uint32_t color_write_enable_attachment_count;
 
         // maxColorAttachments is at max 8 on all known implementations currently
-        std::bitset<32> color_blend_enable_attachments;    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT
-        std::bitset<32> color_blend_equation_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
-        std::bitset<32> color_write_mask_attachments;      // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
-        std::bitset<32> color_blend_advanced_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
+        std::bitset<32> color_blend_enable_attachments;              // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT
+        std::bitset<32> color_blend_enabled;                         // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT
+        std::bitset<32> color_blend_equation_attachments;            // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
+        std::bitset<32> color_write_mask_attachments;                // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
+        std::bitset<32> color_blend_advanced_attachments;            // VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
+        std::vector<VkColorBlendEquationEXT> color_blend_equations;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
+        std::vector<VkColorComponentFlags> color_write_masks;        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
+
+        // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT
+        std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descriptions;
+
+        // VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT
+        VkConservativeRasterizationModeEXT conservative_rasterization_mode;
+        // VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT
+        bool sample_locations_enable;
 
         // VK_DYNAMIC_STATE_VIEWPORT
         std::vector<VkViewport> viewports;
@@ -239,14 +270,31 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         uint32_t viewport_count;
         // VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
         uint32_t scissor_count;
-
+        // VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV
+        std::vector<VkViewportWScalingNV> viewport_w_scalings;
+        uint32_t viewport_w_scaling_first;
+        uint32_t viewport_w_scaling_count;
+        // VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE
+        bool viewport_w_scaling_enable;
+        // VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV
+        uint32_t shading_rate_palette_count;
+        // VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV
+        uint32_t exclusive_scissor_enable_first;
+        uint32_t exclusive_scissor_enable_count;
+        std::vector<VkBool32> exclusive_scissor_enables;
+        // VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV
+        uint32_t exclusive_scissor_first;
+        uint32_t exclusive_scissor_count;
+        std::vector<VkRect2D> exclusive_scissors;
         // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
         // setting the state, it will fail in ValidateDynamicStateIsSet() for us. Some values (ex. the bitset) are tracking in
         // replacement for static_status/dynamic_status so this needs to reset along with those
         void reset() {
             // There are special because the Secondary CB Inheritance is tracking these defaults
-            viewport_count = 0;
-            scissor_count = 0;
+            viewport_count = 0u;
+            scissor_count = 0u;
+
+            depth_bias_enable = false;
 
             viewports.clear();
             discard_rectangles.reset();
@@ -254,6 +302,14 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
             color_blend_equation_attachments.reset();
             color_write_mask_attachments.reset();
             color_blend_advanced_attachments.reset();
+            color_blend_equations.clear();
+            color_write_masks.clear();
+            vertex_attribute_descriptions.clear();
+            viewport_w_scalings.clear();
+            exclusive_scissor_enables.clear();
+            exclusive_scissors.clear();
+
+            color_write_enable_attachment_count = 0u;
         }
     } dynamic_state_value;
 
@@ -584,9 +640,31 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         }
         return false;
     }
+    bool HasDynamicDualSourceBlend(uint32_t attachmentCount) const {
+        if (dynamic_state_value.color_blend_enabled.any()) {
+            if (dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT]) {
+                for (uint32_t i = 0; i < dynamic_state_value.color_blend_equations.size() && i < attachmentCount; ++i) {
+                    const auto &color_blend_equation = dynamic_state_value.color_blend_equations[i];
+                    if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
+                        IsSecondaryColorInputBlendFactor(color_blend_equation.dstColorBlendFactor) ||
+                        IsSecondaryColorInputBlendFactor(color_blend_equation.srcAlphaBlendFactor) ||
+                        IsSecondaryColorInputBlendFactor(color_blend_equation.dstAlphaBlendFactor)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
+    }
+    void BindShader(VkShaderStageFlagBits shader_stage, SHADER_OBJECT_STATE *shader_object_state) {
+        auto &lastBoundState = lastBound[ConvertToPipelineBindPoint(shader_stage)];
+        const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
+        lastBoundState.shader_object_bound[stage_index] = true;
+        lastBoundState.shader_object_states[stage_index] = shader_object_state;
     }
 
     bool IsPrimary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }

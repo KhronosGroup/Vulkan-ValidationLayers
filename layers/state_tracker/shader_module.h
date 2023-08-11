@@ -601,16 +601,3 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Used as way to match instrumented GPU-AV shader to a VkShaderModule handle
     uint32_t gpu_validation_shader_id = 0;
 };
-
-// Represents a VkShaderEXT (VK_EXT_shader_object) handle
-struct SHADER_OBJECT_STATE : public BASE_NODE {
-    SHADER_OBJECT_STATE(const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object, uint32_t unique_shader_id = 0)
-        : BASE_NODE(shader_object, kVulkanObjectTypeShaderEXT),
-          spirv(std::make_unique<SPIRV_MODULE_STATE>(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode))),
-          gpu_validation_shader_id(unique_shader_id) {}
-
-    std::unique_ptr<SPIRV_MODULE_STATE> spirv;
-
-    // Used as way to match instrumented GPU-AV shader to a VkShaderEXT handle
-    uint32_t gpu_validation_shader_id = 0;
-};

@@ -627,7 +627,7 @@ void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingVariableMa
     }
 }
 
-void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *pipeline,
                                                        const BindingVariableMap &in_req, BindingVariableMap *out_req) const {
     // For const cleanliness we have to find in the maps...
     const auto validated_it = cb_state.descriptorset_cache.find(this);
@@ -640,7 +640,7 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
     }
     const auto &validated = validated_it->second;
 
-    const auto image_sample_version_it = validated.image_samplers.find(&pipeline);
+    const auto image_sample_version_it = validated.image_samplers.find(pipeline);
     const VersionedBindings *image_sample_version = nullptr;
     if (image_sample_version_it != validated.image_samplers.cend()) {
         image_sample_version = &(image_sample_version_it->second);
@@ -1162,7 +1162,7 @@ bool cvdescriptorset::MutableDescriptor::Invalid() const {
 }
 
 const BindingVariableMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
-                                                                                const PIPELINE_STATE &pipeline) {
+                                                                                const PIPELINE_STATE *pipeline) {
     if (IsManyDescriptors()) {
         filtered_map_.reset(new BindingVariableMap);
         descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());

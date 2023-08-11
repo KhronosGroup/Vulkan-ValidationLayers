@@ -8528,9 +8528,10 @@ void ObjectLifetimes::PostCallRecordCreateShadersEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkShaderEXT*                                pShaders,
     VkResult                                    result) {
-    if (result != VK_SUCCESS) return;
+    if (result != VK_SUCCESS && result != VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT) return;
     if (pShaders) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pShaders[index]) break;
             CreateObject(pShaders[index], kVulkanObjectTypeShaderEXT, pAllocator);
         }
     }
@@ -8544,7 +8545,7 @@ bool ObjectLifetimes::PreCallValidateDestroyShaderEXT(
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyShaderEXT-device-parameter", kVUIDUndefined, "vkDestroyShaderEXT");
     skip |= ValidateObject(shader, kVulkanObjectTypeShaderEXT, false, "VUID-vkDestroyShaderEXT-shader-parameter", "VUID-vkDestroyShaderEXT-shader-parent", "vkDestroyShaderEXT");
-    skip |= ValidateDestroyObject(shader, kVulkanObjectTypeShaderEXT, pAllocator, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateDestroyObject(shader, kVulkanObjectTypeShaderEXT, pAllocator, "VUID-vkDestroyShaderEXT-pAllocator-08483", "VUID-vkDestroyShaderEXT-pAllocator-08484");
 
     return skip;
 }

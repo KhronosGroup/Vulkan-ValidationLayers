@@ -462,34 +462,51 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
     return skip;
 }
 
-bool CoreChecks::ValidateShaderSubgroupSizeControl(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stage,
-                                                   VkPipelineShaderStageCreateFlags flags) const {
+bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_create_info, VkShaderStageFlagBits stage,
+                                                   const PipelineStageState &stage_state) const {
     bool skip = false;
 
-    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
-        !enabled_features.core13.subgroupSizeControl) {
-        skip |= LogError(
-            device, "VUID-VkPipelineShaderStageCreateInfo-flags-02784",
-            "%s(): pCreateInfos[%" PRIu32
-            "] VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
-            "but the subgroupSizeControl feature is not enabled.",
-            pipeline.GetCreateFunctionName(), pipeline.create_index);
-    }
+    if (stage_create_info.pipeline) {
+        const auto flags = stage_state.pipeline_create_info->flags;
 
-    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
-        if (!enabled_features.core13.computeFullSubgroups) {
-            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
+        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
+            !enabled_features.core13.subgroupSizeControl) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-flags-02784",
+                             "%s(): pCreateInfos[%" PRIu32
+                             "] VkPipelineShaderStageCreateInfo flags contain "
+                             "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
+                             "but the subgroupSizeControl feature is not enabled.",
+                             stage_create_info.func_name.c_str(), stage_create_info.create_index);
+        }
+
+        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
+            if (!enabled_features.core13.computeFullSubgroups) {
+                skip |=
+                    LogError(device, "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
                              "%s(): pCreateInfos[%" PRIu32
                              "] VkPipelineShaderStageCreateInfo flags contain "
                              "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the computeFullSubgroups feature "
                              "is not enabled",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index);
-        } else if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
-            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-flags-08988",
-                             "%s(): pCreateInfos[%" PRIu32
-                             "] VkPipelineShaderStageCreateInfo flags contain "
-                             "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index, string_VkShaderStageFlagBits(stage));
+                             stage_create_info.func_name.c_str(), stage_create_info.create_index);
+            } else if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
+                skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-flags-08988",
+                                 "%s(): pCreateInfos[%" PRIu32
+                                 "] VkPipelineShaderStageCreateInfo flags contain "
+                                 "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
+                                 stage_create_info.func_name.c_str(), stage_create_info.create_index,
+                                 string_VkShaderStageFlagBits(stage));
+            }
+        }
+    } else {
+        const auto flags = stage_state.shader_object_create_info->flags;
+        if ((flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
+            if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
+                skip |= LogError(
+                    device, "VUID-VkShaderCreateInfoEXT-flags-08992",
+                    "%s(): pCreateInfos[%" PRIu32
+                    "].flags contains VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
+                    stage_create_info.func_name.c_str(), stage_create_info.create_index, string_VkShaderStageFlagBits(stage));
+            }
         }
     }
 
@@ -497,26 +514,26 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const PIPELINE_STATE &pipelin
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, const StageCreateInfo &create_info) const {
     bool skip = false;
     if (spec) {
         for (auto i = 0u; i < spec->mapEntryCount; i++) {
             if (spec->pMapEntries[i].offset >= spec->dataSize) {
                 skip |= LogError(device, "VUID-VkSpecializationInfo-offset-00773",
-                                 "%s(): pCreateInfos[%" PRIu32
-                                 "] Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u..%zu; %zu bytes provided).",
-                                 pipeline.GetCreateFunctionName(), pipeline.create_index, i, spec->pMapEntries[i].constantID,
+                                 "%s(): pCreateInfos[%" PRIu32 "] Specialization entry %" PRIu32 " (for constant id %" PRIu32
+                                 ") references memory outside provided specialization "
+                                 "data (bytes %" PRIu32 "..%zu; %zu bytes provided).",
+                                 create_info.func_name.c_str(), create_info.create_index, i, spec->pMapEntries[i].constantID,
                                  spec->pMapEntries[i].offset, spec->pMapEntries[i].offset + spec->dataSize - 1, spec->dataSize);
 
                 continue;
             }
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= LogError(device, "VUID-VkSpecializationInfo-pMapEntries-00774",
-                                 "%s(): pCreateInfos[%" PRIu32
-                                 "] Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u..%zu; %zu bytes provided).",
-                                 pipeline.GetCreateFunctionName(), pipeline.create_index, i, spec->pMapEntries[i].constantID,
+                                 "%s(): pCreateInfos[%" PRIu32 "] Specialization entry %" PRIu32 " (for constant id %" PRIu32
+                                 ") references memory outside provided specialization "
+                                 "data (bytes %" PRIu32 "..%zu; %zu bytes provided).",
+                                 create_info.func_name.c_str(), create_info.create_index, i, spec->pMapEntries[i].constantID,
                                  spec->pMapEntries[i].offset, spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1,
                                  spec->dataSize);
             }
@@ -526,7 +543,7 @@ bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, 
                         LogError(device, "VUID-VkSpecializationInfo-constantID-04911",
                                  "%s(): pCreateInfos[%" PRIu32 "] Specialization entry %" PRIu32 " and %" PRIu32
                                  " have the same constantID (%" PRIu32 ").",
-                                 pipeline.GetCreateFunctionName(), pipeline.create_index, i, j, spec->pMapEntries[i].constantID);
+                                 create_info.func_name.c_str(), create_info.create_index, i, j, spec->pMapEntries[i].constantID);
                 }
             }
         }
@@ -535,10 +552,15 @@ bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, 
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo &create_info) const {
     bool skip = false;
     uint32_t total_resources = 0;
 
+    if (!create_info.pipeline) {
+        return skip;
+    }
+
+    const auto &pipeline = *create_info.pipeline;
     const auto &rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->UsesDynamicRendering()) {
