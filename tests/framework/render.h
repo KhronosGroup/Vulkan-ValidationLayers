@@ -157,6 +157,8 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
+    void InitDynamicRenderTarget(VkFormat format = VK_FORMAT_UNDEFINED);
+    VkImageView GetDynamicRenderTarget() const;
     void DestroyRenderTarget();
 
     static bool IgnoreDisableChecks();
@@ -333,6 +335,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
     void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
+    void BeginRenderingColor(const VkImageView imageView);
     void EndRendering();
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);

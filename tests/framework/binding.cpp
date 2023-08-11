@@ -909,6 +909,56 @@ VkResult Shader::init_try(const Device &dev, const VkShaderCreateInfoEXT &info) 
     return err;
 }
 
+Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
+               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange* pushConstRange) {
+    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfo.stage = stage;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+    if (descriptorSetLayout) {
+        createInfo.setLayoutCount = 1u;
+        createInfo.pSetLayouts = descriptorSetLayout;
+    }
+    if (pushConstRange) {
+        createInfo.pushConstantRangeCount = 1u;
+        createInfo.pPushConstantRanges = pushConstRange;
+    }
+    init(dev, createInfo);
+}
+
+Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
+               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
+    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfo.stage = stage;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
+    createInfo.codeSize = binary.size();
+    createInfo.pCode = binary.data();
+    createInfo.pName = "main";
+    if (descriptorSetLayout) {
+        createInfo.setLayoutCount = 1u;
+        createInfo.pSetLayouts = descriptorSetLayout;
+    }
+    if (pushConstRange) {
+        createInfo.pushConstantRangeCount = 1u;
+        createInfo.pPushConstantRanges = pushConstRange;
+    }
+    init(dev, createInfo);
+}
+
+Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
+               VkShaderCreateFlagsEXT flags) {
+    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfo.flags = flags;
+    createInfo.stage = stage;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+    init(dev, createInfo);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
 void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
