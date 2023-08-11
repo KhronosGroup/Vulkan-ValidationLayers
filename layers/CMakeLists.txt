@@ -255,6 +255,8 @@ target_sources(vvl PRIVATE
     layer_chassis_dispatch_manual.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker.h
+    ${API_TYPE}/generated/pnext_chain_extraction.cpp
+    ${API_TYPE}/generated/pnext_chain_extraction.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
     ${API_TYPE}/generated/stateless_validation_helper.cpp
