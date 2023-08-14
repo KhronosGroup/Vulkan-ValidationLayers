@@ -1139,7 +1139,11 @@ uint32_t SPIRV_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
     // or unhandled specialization constants
     // Caller needs to call GetConstantDef() and check if null
-    assert(value);
+    if (!value) {
+        // TODO - still not fixed
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
+        return 1;
+    }
 
     return value->GetConstantValue();
 }
