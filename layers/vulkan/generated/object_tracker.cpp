@@ -2231,7 +2231,8 @@ bool ObjectLifetimes::PreCallValidateCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateSamplerYcbcrConversion-device-parameter", kVUIDUndefined, "vkCreateSamplerYcbcrConversion");
 
@@ -4297,7 +4298,8 @@ bool ObjectLifetimes::PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateSamplerYcbcrConversion-device-parameter", kVUIDUndefined, "vkCreateSamplerYcbcrConversionKHR");
 

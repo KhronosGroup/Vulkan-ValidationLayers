@@ -9062,7 +9062,8 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateSamplerYcbcrConversion", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -9114,7 +9115,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateSamplerYcbcrConversion", "pYcbcrConversion", pYcbcrConversion, "VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
     return skip;
 }
 
@@ -13227,7 +13228,8 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion");
     skip |= ValidateStructType("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
@@ -13280,7 +13282,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateSamplerYcbcrConversionKHR", "pYcbcrConversion", pYcbcrConversion, "VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
+    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
     return skip;
 }
 
