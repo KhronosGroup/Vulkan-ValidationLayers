@@ -94,7 +94,8 @@ bool PreCallValidateQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence) const override;
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateQueueWaitIdle(
     VkQueue                                     queue) const override;
 bool PreCallValidateDeviceWaitIdle(
@@ -687,7 +688,8 @@ bool PreCallValidateCmdEndRenderPass(
 bool PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) const override;
+    const VkCommandBuffer*                      pCommandBuffers,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
@@ -915,7 +917,8 @@ bool PreCallValidateQueueSubmit2(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const override;
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdCopyBuffer2(
     VkCommandBuffer                             commandBuffer,
     const VkCopyBufferInfo2*                    pCopyBufferInfo) const override;
@@ -1612,7 +1615,8 @@ bool PreCallValidateQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const override;
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const override;
 bool PreCallValidateCmdWriteBufferMarker2AMD(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,

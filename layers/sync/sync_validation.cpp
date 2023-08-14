@@ -2366,7 +2366,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE 
 void CommandBufferAccessContext::RecordDestroyEvent(EVENT_STATE *event_state) { GetCurrentEventsContext()->Destroy(event_state); }
 
 // The is the recorded cb context
-bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, const char *func_name,
+bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, ErrorObject &errorObj,
                                                   uint32_t index) const {
     if (!exec_context.ValidForSyncOps()) return false;
 
@@ -2379,12 +2379,12 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
     HazardResult hazard;
     ReplayGuard replay_guard(exec_context, *this);
 
-    auto log_msg = [this](const HazardResult &hazard, const CommandExecutionContext &exec_context, const char *func_name,
+    auto log_msg = [this](const HazardResult &hazard, const CommandExecutionContext &exec_context, ErrorObject &errorObj,
                           uint32_t index) {
         const auto handle = exec_context.Handle();
         const auto recorded_handle = cb_state_->commandBuffer();
-        return sync_state_->LogError(handle, string_SyncHazardVUID(hazard.hazard),
-                                     "%s: Hazard %s for entry %" PRIu32 ", %s, Recorded access info %s. Access info %s.", func_name,
+        return sync_state_->LogError(string_SyncHazardVUID(hazard.hazard), handle, errorObj.location,
+                                     "Hazard %s for entry %" PRIu32 ", %s, Recorded access info %s. Access info %s.",
                                      string_SyncHazard(hazard.hazard), index, sync_state_->FormatHandle(recorded_handle).c_str(),
                                      FormatUsage(*hazard.recorded_access).c_str(), exec_context.FormatHazard(hazard).c_str());
     };
@@ -2398,7 +2398,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
         // we need to fetch the current access context each time
         hazard = exec_context.DetectFirstUseHazard(tag_range);
         if (hazard.hazard) {
-            skip |= log_msg(hazard, exec_context, func_name, index);
+            skip |= log_msg(hazard, exec_context, errorObj, index);
         }
         // NOTE: Add call to replay validate here when we add support for syncop with non-trivial replay
         // Record the barrier into the proxy context.
@@ -2410,7 +2410,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
     tag_range.end = ResourceUsageRecord::kMaxIndex;
     hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *exec_context.GetCurrentAccessContext());
     if (hazard.hazard) {
-        skip |= log_msg(hazard, exec_context, func_name, index);
+        skip |= log_msg(hazard, exec_context, errorObj, index);
     }
 
     return skip;
@@ -4182,10 +4182,10 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
 struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
     std::shared_ptr<QueueBatchContext> last_batch;
-    std::string submit_func_name;
+    ErrorObject &errorObj;
     SignaledSemaphores signaled;
-    QueueSubmitCmdState(const char *func_name, const SignaledSemaphores &parent_semaphores)
-        : submit_func_name(func_name), signaled(parent_semaphores) {}
+    QueueSubmitCmdState(ErrorObject &errorObj, const SignaledSemaphores &parent_semaphores)
+        : errorObj(errorObj), signaled(parent_semaphores) {}
 };
 
 bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state,
@@ -4199,7 +4199,7 @@ bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, Q
             batch_.cb_index++;
             continue;  // Skip empty CB's but also skip the unused index for correct reporting
         }
-        skip |= cb_access_context.ValidateFirstUse(*this, cmd_state.submit_func_name.c_str(), cb.index);
+        skip |= cb_access_context.ValidateFirstUse(*this, cmd_state.errorObj, cb.index);
 
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = ImportRecordedAccessLog(cb_access_context);
@@ -7636,8 +7636,8 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
 }
 
 bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer *pCommandBuffers) const {
-    bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+                                                      const VkCommandBuffer *pCommandBuffers, ErrorObject &errorObj) const {
+    bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, errorObj);
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return skip;
@@ -7648,7 +7648,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        proxy_cb_context.NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
+        proxy_cb_context.NextIndexedCommandTag(errorObj.cmd_type, cb_index);
 
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
@@ -7656,7 +7656,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         const auto *recorded_context = recorded_cb_context->GetCurrentAccessContext();
         assert(recorded_context);
-        skip |= recorded_cb_context->ValidateFirstUse(proxy_cb_context, "vkCmdExecuteCommands", cb_index);
+        skip |= recorded_cb_context->ValidateFirstUse(proxy_cb_context, errorObj, cb_index);
 
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
@@ -7875,22 +7875,22 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     }
 }
 
-bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                                               VkFence fence) const {
+bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                               ErrorObject &errorObj) const {
     auto queue_state = GetQueueSyncStateShared(queue);
     if (!bool(queue_state)) return false;
     SubmitInfoConverter submit_info(submitCount, pSubmits, queue_state->GetQueueFlags());
-    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, "vkQueueSubmit");
+    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, errorObj);
 }
 
 bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                        const char *func_name) const {
+                                        ErrorObject &errorObj) const {
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!enabled[sync_validation_queue_submit]) return skip;
 
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, signaled_semaphores_);
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, errorObj, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -7965,12 +7965,12 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                   VkFence fence) const {
-    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "vkQueueSubmit2KHR");
+                                                   VkFence fence, ErrorObject &errorObj) const {
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, errorObj);
 }
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence) const {
-    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "vkQueueSubmit2");
+                                                VkFence fence, ErrorObject &errorObj) const {
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, errorObj);
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,

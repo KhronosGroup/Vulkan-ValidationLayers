@@ -984,8 +984,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
                 if (swapchain_present_fence_info->pFences[i]) {
                     const auto fence_state = Get<FENCE_STATE>(swapchain_present_fence_info->pFences[i]);
+                    const LogObjectList objlist(queue, swapchain_present_fence_info->pFences[i]);
                     skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
-                                                   "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", "vkQueueSubmit()");
+                                                   "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", objlist,
+                                                   outer_loc.dot(Struct::VkSwapchainPresentFenceInfoEXT, Field::pFences, i, true));
                 }
             }
         }
@@ -1107,8 +1109,10 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
 
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
+        const LogObjectList objlist(device, fence);
+        const Location loc(Func::vkAcquireNextImageKHR);
         skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-vkAcquireNextImageKHR-fence-01287",
-                                       "VUID-vkAcquireNextImageKHR-fence-01287", "vkAcquireNextImageKHR()");
+                                       "VUID-vkAcquireNextImageKHR-fence-01287", objlist, loc);
     }
 
     auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
