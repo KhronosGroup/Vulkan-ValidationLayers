@@ -72,6 +72,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/graphics_library.cpp
     unit/graphics_library_positive.cpp
     unit/host_image_copy.cpp
+    unit/host_image_copy_positive.cpp
     unit/image.cpp
     unit/image_positive.cpp
     unit/imageless_framebuffer.cpp
