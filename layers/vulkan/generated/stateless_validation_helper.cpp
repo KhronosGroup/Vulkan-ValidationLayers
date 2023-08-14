@@ -5854,7 +5854,8 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueSubmit", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO, false, true, "VUID-VkSubmitInfo-sType-sType", "VUID-vkQueueSubmit-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr)
@@ -8721,7 +8722,8 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass(
 bool StatelessValidation::PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) const {
+    const VkCommandBuffer*                      pCommandBuffers,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateHandleArray("vkCmdExecuteCommands", "commandBufferCount", "pCommandBuffers", commandBufferCount, pCommandBuffers, true, true, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
     return skip;
@@ -10097,7 +10099,8 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueSubmit2", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO_2", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType", "VUID-vkQueueSubmit2-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr)
@@ -14182,7 +14185,8 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkQueueSubmit2KHR", "VK_KHR_synchronization2");
     skip |= ValidateStructTypeArray("vkQueueSubmit2KHR", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO_2", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType", "VUID-vkQueueSubmit2-pSubmits-parameter", kVUIDUndefined);

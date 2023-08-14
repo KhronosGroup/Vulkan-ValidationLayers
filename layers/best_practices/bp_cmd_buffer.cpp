@@ -169,7 +169,7 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer comman
 }
 
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer* pCommandBuffers) const {
+                                                      const VkCommandBuffer* pCommandBuffers, ErrorObject& errorObj) const {
     bool skip = false;
     const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < commandBufferCount; i++) {

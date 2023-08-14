@@ -460,12 +460,12 @@ class BestPractices : public ValidationStateTracker {
     bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags flags) const;
     bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags2KHR flags) const;
     bool CheckDependencyInfo(const std::string& api_name, const VkDependencyInfoKHR& dep_info) const;
-    bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
-                                    VkFence fence) const override;
-    bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                        VkFence fence) const override;
-    bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
-                                     VkFence fence) const override;
+    bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                    ErrorObject& errorObj) const override;
+    bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                        ErrorObject& errorObj) const override;
+    bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                     ErrorObject& errorObj) const override;
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
@@ -879,7 +879,7 @@ class BestPractices : public ValidationStateTracker {
                                           const VkClearRect* pRects) override;
 
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                           const VkCommandBuffer* pCommandBuffers) const override;
+                                           const VkCommandBuffer* pCommandBuffers, ErrorObject& errorObj) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer* pCommandBuffers) override;
 

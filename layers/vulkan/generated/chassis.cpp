@@ -1189,9 +1189,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(
     VkFence                                     fence) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkQueueSubmit, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueueSubmit]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateQueueSubmit(queue, submitCount, pSubmits, fence);
+        skip |= intercept->PreCallValidateQueueSubmit(queue, submitCount, pSubmits, fence, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit]) {
@@ -3805,9 +3806,10 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(
     const VkCommandBuffer*                      pCommandBuffers) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkCmdExecuteCommands, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_EXECUTECOMMANDS);
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdExecuteCommands]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+        skip |= intercept->PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdExecuteCommands]) {
@@ -4967,9 +4969,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(
     VkFence                                     fence) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkQueueSubmit2, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueueSubmit2]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence);
+        skip |= intercept->PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit2]) {
@@ -8574,9 +8577,10 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
     VkFence                                     fence) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkQueueSubmit2KHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueueSubmit2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+        skip |= intercept->PreCallValidateQueueSubmit2KHR(queue, submitCount, pSubmits, fence, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueueSubmit2KHR]) {

@@ -67,18 +67,18 @@ bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags
 }
 
 bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *fence_state, const char *inflight_vuid, const char *retired_vuid,
-                                        const char *func_name) const {
+                                        const LogObjectList &objlist, const Location &loc) const {
     bool skip = false;
 
     if (fence_state && fence_state->Scope() == kSyncScopeInternal) {
         switch (fence_state->State()) {
             case FENCE_INFLIGHT:
-                skip |= LogError(fence_state->fence(), inflight_vuid, "%s: %s is already in use by another submission.", func_name,
+                skip |= LogError(inflight_vuid, objlist, loc, "(%s) is already in use by another submission.",
                                  FormatHandle(fence_state->fence()).c_str());
                 break;
             case FENCE_RETIRED:
-                skip |= LogError(fence_state->fence(), retired_vuid,
-                                 "%s: %s submitted in SIGNALED state.  Fences must be reset before being submitted", func_name,
+                skip |= LogError(retired_vuid, objlist, loc,
+                                 "(%s) submitted in SIGNALED state.  Fences must be reset before being submitted",
                                  FormatHandle(fence_state->fence()).c_str());
                 break;
             default:

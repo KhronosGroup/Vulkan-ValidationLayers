@@ -230,7 +230,8 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSubmit-queue-parameter", kVUIDUndefined, "vkQueueSubmit");
     if (pSubmits) {
@@ -2013,7 +2014,8 @@ bool ObjectLifetimes::PreCallValidateCmdEndRenderPass(
 bool ObjectLifetimes::PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) const {
+    const VkCommandBuffer*                      pCommandBuffers,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdExecuteCommands-commandBuffer-parameter", kVUIDUndefined, "vkCmdExecuteCommands");
     if ((commandBufferCount > 0) && (pCommandBuffers)) {
@@ -2680,7 +2682,8 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSubmit2-queue-parameter", kVUIDUndefined, "vkQueueSubmit2");
     if (pSubmits) {
@@ -4790,7 +4793,8 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
-    VkFence                                     fence) const {
+    VkFence                                     fence,
+    ErrorObject&                                errorObj) const {
     bool skip = false;
     skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSubmit2-queue-parameter", kVUIDUndefined, "vkQueueSubmit2KHR");
     if (pSubmits) {
