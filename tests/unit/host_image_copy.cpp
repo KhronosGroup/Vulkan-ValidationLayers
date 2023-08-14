@@ -1480,3 +1480,85 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
         transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
 }
+
+TEST_F(NegativeHostImageCopy, Features) {
+    TEST_DESCRIPTION("Use VK_EXT_host_image_copy routines without enabling the hostImageCopy feature");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "Need 1.2 api version";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto host_copy_features = LvlInitStruct<VkPhysicalDeviceHostImageCopyFeaturesEXT>();
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &host_copy_features));
+    auto image_ci = VkImageObj::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+    VkImageFormatProperties img_prop = {};
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    std::vector<uint8_t> pixels(32 * 32 * 4);
+    auto region_to_image = LvlInitStruct<VkMemoryToImageCopyEXT>();
+    region_to_image.pHostPointer = pixels.data();
+    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region_to_image.imageSubresource.layerCount = 1;
+    region_to_image.imageExtent.width = 32;
+    region_to_image.imageExtent.height = 32;
+    region_to_image.imageExtent.depth = 1;
+
+    auto copy_to_image = LvlInitStruct<VkCopyMemoryToImageInfoEXT>();
+    copy_to_image.flags = 0;
+    copy_to_image.dstImage = image;
+    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image.regionCount = 1;
+    copy_to_image.pRegions = &region_to_image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyMemoryToImageEXT-hostImageCopy-09058");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
+    m_errorMonitor->VerifyFound();
+
+    auto region_from_image = LvlInitStruct<VkImageToMemoryCopyEXT>();
+    region_from_image.pHostPointer = pixels.data();
+    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region_from_image.imageSubresource.layerCount = 1;
+    region_from_image.imageExtent.width = 32;
+    region_from_image.imageExtent.height = 32;
+    region_from_image.imageExtent.depth = 1;
+
+    auto copy_from_image = LvlInitStruct<VkCopyImageToMemoryInfoEXT>();
+    copy_from_image.flags = 0;
+    copy_from_image.srcImage = image;
+    copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_from_image.regionCount = 1;
+    copy_from_image.pRegions = &region_from_image;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyImageToMemoryEXT-hostImageCopy-09063");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
+    m_errorMonitor->VerifyFound();
+
+    VkImageObj image2(m_device);
+    image2.Init(image_ci);
+    image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    auto image_copy_2 = LvlInitStruct<VkImageCopy2>();
+    image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy_2.extent = {32, 32, 1};
+    auto copy_image_to_image = LvlInitStruct<VkCopyImageToImageInfoEXT>();
+    copy_image_to_image.regionCount = 1;
+    copy_image_to_image.pRegions = &image_copy_2;
+    copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.srcImage = image;
+    copy_image_to_image.dstImage = image2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyImageToImageEXT-hostImageCopy-09068");
+    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
+    m_errorMonitor->VerifyFound();
+}
