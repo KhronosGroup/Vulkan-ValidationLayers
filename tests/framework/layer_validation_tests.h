@@ -415,12 +415,18 @@ class GraphicsLibraryTest : public VkLayerTest {
 class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
 class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
 
-class NegativeHostImageCopy : public virtual VkLayerTest {
-  protected:
-    void InitHostImageCopyTest(const VkImageCreateInfo image_ci, std::vector<VkImageLayout> &copy_src_layouts,
-                               std::vector<VkImageLayout> &copy_dst_layouts, VkFormat &compressed_format,
-                               bool &separate_depth_stencil);
+class HostImageCopyTest : public VkLayerTest {
+  public:
+    void InitHostImageCopyTest(const VkImageCreateInfo &image_ci);
+    bool CopyLayoutSupported(const std::vector<VkImageLayout> &copy_src_layouts, const std::vector<VkImageLayout> &copy_dst_layouts,
+                             VkImageLayout layout);
+    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
+    bool separate_depth_stencil = false;
+    std::vector<VkImageLayout> copy_src_layouts;
+    std::vector<VkImageLayout> copy_dst_layouts;
 };
+class NegativeHostImageCopy : public HostImageCopyTest {};
+class PositiveHostImageCopy : public HostImageCopyTest {};
 
 class ImageTest : public VkLayerTest {
   public:
