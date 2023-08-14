@@ -590,7 +590,7 @@ class StatelessValidation : public ValidationObject {
                                              const char *func_nam, bool is_cmd) const;
     bool ValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkSamplerYcbcrConversion *pYcbcrConversion,
-                                              const char *apiName) const;
+                                              ErrorObject &errorObj) const;
     bool ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
                                       CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
@@ -931,11 +931,13 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
-                                                            VkSamplerYcbcrConversion *pYcbcrConversion) const;
+                                                            VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                            ErrorObject &errorObj) const;
     bool manual_PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
-                                                               VkSamplerYcbcrConversion *pYcbcrConversion) const;
+                                                               VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                               ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd) const;
     bool manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,

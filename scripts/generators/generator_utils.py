@@ -46,6 +46,8 @@ error_object_functions = [
     'vkQueueSubmit',
     'vkQueueSubmit2',
     'vkQueueSubmit2KHR',
+    'vkCreateSamplerYcbcrConversion',
+    'vkCreateSamplerYcbcrConversionKHR',
     'vkCmdExecuteCommands',
     'vkGetBufferDeviceAddress',
     'vkGetBufferDeviceAddressEXT',

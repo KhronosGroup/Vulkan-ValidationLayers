@@ -1065,7 +1065,7 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                               const char *apiName) const {
+                                                               ErrorObject &errorObj) const {
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
@@ -1073,8 +1073,8 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
     if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
         const auto *vulkan_11_features = LvlFindInChain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
         if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
-            skip |= LogError(device, "VUID-vkCreateSamplerYcbcrConversion-None-01648",
-                             "%s: samplerYcbcrConversion must be enabled.", apiName);
+            skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, errorObj.location,
+                             "samplerYcbcrConversion feature must be enabled.");
         }
     }
 
@@ -1086,6 +1086,7 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
 #endif
 
     const VkFormat format = pCreateInfo->format;
+    const Location loc = errorObj.location.dot(Field::pCreateInfo);
 
     // If there is a VkExternalFormatANDROID with externalFormat != 0, the value of components is ignored.
     if (!is_external_format) {
@@ -1093,50 +1094,46 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
         // XChroma Subsampled is same as "the format has a _422 or _420 suffix" from spec
         if (FormatIsXChromaSubsampled(format) == true) {
             if ((components.g != VK_COMPONENT_SWIZZLE_G) && (components.g != VK_COMPONENT_SWIZZLE_IDENTITY)) {
-                skip |=
-                    LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02581",
-                             "%s: When using a XChroma subsampled format (%s) the components.g needs to be VK_COMPONENT_SWIZZLE_G "
-                             "or VK_COMPONENT_SWIZZLE_IDENTITY, but is %s.",
-                             apiName, string_VkFormat(format), string_VkComponentSwizzle(components.g));
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581", device, loc,
+                                 "When using a XChroma subsampled format (%s) the components.g needs to be VK_COMPONENT_SWIZZLE_G "
+                                 "or VK_COMPONENT_SWIZZLE_IDENTITY, but is %s.",
+                                 string_VkFormat(format), string_VkComponentSwizzle(components.g));
             }
 
             if ((components.a != VK_COMPONENT_SWIZZLE_A) && (components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
                 (components.a != VK_COMPONENT_SWIZZLE_ONE) && (components.a != VK_COMPONENT_SWIZZLE_ZERO)) {
-                skip |= LogError(
-                    device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02582",
-                    "%s: When using a XChroma subsampled format (%s) the components.a needs to be VK_COMPONENT_SWIZZLE_A or "
-                    "VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_ONE or VK_COMPONENT_SWIZZLE_ZERO, but is %s.",
-                    apiName, string_VkFormat(format), string_VkComponentSwizzle(components.a));
+                skip |=
+                    LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02582", device, loc,
+                             " When using a XChroma subsampled format (%s) the components.a needs to be VK_COMPONENT_SWIZZLE_A or "
+                             "VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_ONE or VK_COMPONENT_SWIZZLE_ZERO, but is %s.",
+                             string_VkFormat(format), string_VkComponentSwizzle(components.a));
             }
 
             if ((components.r != VK_COMPONENT_SWIZZLE_R) && (components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
                 (components.r != VK_COMPONENT_SWIZZLE_B)) {
-                skip |=
-                    LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02583",
-                             "%s: When using a XChroma subsampled format (%s) the components.r needs to be VK_COMPONENT_SWIZZLE_R "
-                             "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_B, but is %s.",
-                             apiName, string_VkFormat(format), string_VkComponentSwizzle(components.r));
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02583", device, loc,
+                                 "When using a XChroma subsampled format (%s) the components.r needs to be VK_COMPONENT_SWIZZLE_R "
+                                 "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_B, but is %s.",
+                                 string_VkFormat(format), string_VkComponentSwizzle(components.r));
             }
 
             if ((components.b != VK_COMPONENT_SWIZZLE_B) && (components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
                 (components.b != VK_COMPONENT_SWIZZLE_R)) {
-                skip |=
-                    LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02584",
-                             "%s: When using a XChroma subsampled format (%s) the components.b needs to be VK_COMPONENT_SWIZZLE_B "
-                             "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_R, but is %s.",
-                             apiName, string_VkFormat(format), string_VkComponentSwizzle(components.b));
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02584", device, loc,
+                                 "When using a XChroma subsampled format (%s) the components.b needs to be VK_COMPONENT_SWIZZLE_B "
+                                 "or VK_COMPONENT_SWIZZLE_IDENTITY or VK_COMPONENT_SWIZZLE_R, but is %s.",
+                                 string_VkFormat(format), string_VkComponentSwizzle(components.b));
             }
 
             // If one is identity, both need to be
             const bool r_identity = ((components.r == VK_COMPONENT_SWIZZLE_R) || (components.r == VK_COMPONENT_SWIZZLE_IDENTITY));
             const bool b_identity = ((components.b == VK_COMPONENT_SWIZZLE_B) || (components.b == VK_COMPONENT_SWIZZLE_IDENTITY));
             if ((r_identity != b_identity) && ((r_identity == true) || (b_identity == true))) {
-                skip |=
-                    LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-components-02585",
-                             "%s: When using a XChroma subsampled format (%s) if either the components.r (%s) or components.b (%s) "
-                             "are an identity swizzle, then both need to be an identity swizzle.",
-                             apiName, string_VkFormat(format), string_VkComponentSwizzle(components.r),
-                             string_VkComponentSwizzle(components.b));
+                skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02585", device, loc,
+                                 "When using a XChroma subsampled format (%s) if either the components.r (%s) or components.b (%s) "
+                                 "are an identity swizzle, then both need to be an identity swizzle.",
+                                 string_VkFormat(format), string_VkComponentSwizzle(components.r),
+                                 string_VkComponentSwizzle(components.b));
             }
         }
 
@@ -1147,11 +1144,11 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
                 (components.g == VK_COMPONENT_SWIZZLE_ONE) || (components.g == VK_COMPONENT_SWIZZLE_ZERO) ||
                 (components.b == VK_COMPONENT_SWIZZLE_ONE) || (components.b == VK_COMPONENT_SWIZZLE_ZERO)) {
                 skip |= LogError(
-                    device, vuid,
-                    "%s: The ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
+                    vuid, device, loc,
+                    "The ycbcrModel (%s) is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
                     "components.g (%s), nor components.b (%s) can't be VK_COMPONENT_SWIZZLE_ZERO or VK_COMPONENT_SWIZZLE_ONE.",
-                    apiName, string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                    string_VkComponentSwizzle(components.b));
+                    string_VkSamplerYcbcrModelConversion(pCreateInfo->ycbcrModel), string_VkComponentSwizzle(components.r),
+                    string_VkComponentSwizzle(components.g), string_VkComponentSwizzle(components.b));
             }
 
             // "must not correspond to a component which contains zero or one as a consequence of conversion to RGBA"
@@ -1164,29 +1161,32 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
 
             if ((component_count < 4) && ((components.r == VK_COMPONENT_SWIZZLE_A) || (components.g == VK_COMPONENT_SWIZZLE_A) ||
                                           (components.b == VK_COMPONENT_SWIZZLE_A))) {
-                skip |= LogError(device, vuid,
-                                 "%s: The ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
-                                 "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_A.",
-                                 apiName, string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b));
+                skip |=
+                    LogError(vuid, device, loc,
+                             "The ycbcrModel (%s) is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
+                             "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_A.",
+                             string_VkSamplerYcbcrModelConversion(pCreateInfo->ycbcrModel), string_VkComponentSwizzle(components.r),
+                             string_VkComponentSwizzle(components.g), string_VkComponentSwizzle(components.b));
             } else if ((component_count < 3) &&
                        ((components.r == VK_COMPONENT_SWIZZLE_B) || (components.g == VK_COMPONENT_SWIZZLE_B) ||
                         (components.b == VK_COMPONENT_SWIZZLE_B) || (components.b == VK_COMPONENT_SWIZZLE_IDENTITY))) {
-                skip |= LogError(device, vuid,
-                                 "%s: The ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
-                                 "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_B "
-                                 "(components.b also can't be VK_COMPONENT_SWIZZLE_IDENTITY).",
-                                 apiName, string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b));
+                skip |=
+                    LogError(vuid, device, loc,
+                             "The ycbcrModel (%s) is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
+                             "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_B "
+                             "(components.b also can't be VK_COMPONENT_SWIZZLE_IDENTITY).",
+                             string_VkSamplerYcbcrModelConversion(pCreateInfo->ycbcrModel), string_VkComponentSwizzle(components.r),
+                             string_VkComponentSwizzle(components.g), string_VkComponentSwizzle(components.b));
             } else if ((component_count < 2) &&
                        ((components.r == VK_COMPONENT_SWIZZLE_G) || (components.g == VK_COMPONENT_SWIZZLE_G) ||
                         (components.g == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.b == VK_COMPONENT_SWIZZLE_G))) {
-                skip |= LogError(device, vuid,
-                                 "%s: The ycbcrModel is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
-                                 "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_G "
-                                 "(components.g also can't be VK_COMPONENT_SWIZZLE_IDENTITY).",
-                                 apiName, string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b));
+                skip |=
+                    LogError(vuid, device, loc,
+                             "The ycbcrModel (%s) is not VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY so components.r (%s), "
+                             "components.g (%s), or components.b (%s) can't be VK_COMPONENT_SWIZZLE_G "
+                             "(components.g also can't be VK_COMPONENT_SWIZZLE_IDENTITY).",
+                             string_VkSamplerYcbcrModelConversion(pCreateInfo->ycbcrModel), string_VkComponentSwizzle(components.r),
+                             string_VkComponentSwizzle(components.g), string_VkComponentSwizzle(components.b));
             }
         }
     }
@@ -1197,14 +1197,13 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
                                                                              const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                              const VkAllocationCallbacks *pAllocator,
-                                                                             VkSamplerYcbcrConversion *pYcbcrConversion) const {
-    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
-                                                "vkCreateSamplerYcbcrConversion");
+                                                                             VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                                             ErrorObject &errorObj) const {
+    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkSamplerYcbcrConversion *pYcbcrConversion) const {
-    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
-                                                "vkCreateSamplerYcbcrConversionKHR");
+    VkSamplerYcbcrConversion *pYcbcrConversion, ErrorObject &errorObj) const {
+    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
 }
