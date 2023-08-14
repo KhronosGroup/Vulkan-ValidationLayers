@@ -214,7 +214,6 @@ export ANDROID_SDK_ROOT=$HOME/Android/Sdk
 export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/X.Y.Z
 
 # Modify path
-export PATH=$ANDROID_NDK_HOME:$PATH
 export PATH=$ANDROID_SDK_ROOT/build-tools/X.Y.Z:$PATH
 
 # (Optional if you have new enough version of CMake + Ninja)
@@ -222,9 +221,6 @@ export PATH=$ANDROID_SDK_ROOT/cmake/3.22.1/bin:$PATH
 
 # Verify SDK build-tools is set correctly
 which aapt
-
-# Verify NDK path is set correctly
-which ndk-build
 
 # Verify CMake/Ninja are in the path
 which cmake
