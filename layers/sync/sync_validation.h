@@ -465,7 +465,6 @@ class ResourceAccessWriteState {
     ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_);
     ResourceAccessWriteState() = default;
 
-    bool HasValue() const { return last_write != nullptr; }
     SyncStageAccessIndex Index() const { return last_write->stage_access_index; }
     bool IsIndex(SyncStageAccessIndex usage_index) const { return Index() == usage_index; }
     bool IsQueue(QueueId other_queue) const { return write_queue == other_queue; }
@@ -481,7 +480,6 @@ class ResourceAccessWriteState {
                               const SyncStageAccessFlags &src_access_scope) const;
 
     void SetQueueId(QueueId id);
-    void Reset();
     void Set(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_);
     void MergeBarriers(const ResourceAccessWriteState &other);
     void OffsetTag(ResourceUsageTag offset) { write_tag += offset; }
@@ -622,10 +620,10 @@ class ResourceAccessState : public SyncStageAccess {
     bool HasPendingState() const {
         return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
     }
-    bool HasWriteOp() const { return last_write.HasValue(); }
-    SyncStageAccessIndex LastWriteOp() const { return last_write.HasValue() ? last_write.Index() : SYNC_ACCESS_INDEX_NONE; }
+    bool HasWriteOp() const { return last_write.has_value(); }
+    SyncStageAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
     bool IsLastWriteOp(SyncStageAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
-    ResourceUsageTag LastWriteTag() const { return last_write.HasValue() ? last_write.Tag() : ResourceUsageTag(0); }
+    ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
                                 (input_attachment_read == rhs.input_attachment_read) && (last_write == rhs.last_write);
@@ -640,7 +638,9 @@ class ResourceAccessState : public SyncStageAccess {
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
     VkPipelineStageFlags2KHR GetReadBarriers(const SyncStageAccessFlags &usage) const;
-    SyncStageAccessFlags GetWriteBarriers() const { return last_write.HasValue() ? last_write.Barriers() : SyncStageAccessFlags(); }
+    SyncStageAccessFlags GetWriteBarriers() const {
+        return last_write.has_value() ? last_write->Barriers() : SyncStageAccessFlags();
+    }
     void SetQueueId(QueueId id);
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
@@ -723,7 +723,7 @@ class ResourceAccessState : public SyncStageAccess {
     // SyncStageAccessFlags write_barriers;              // union of applicable barrier masks since last write
     // VkPipelineStageFlags2KHR write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they
     // chain. ResourceUsageTag write_tag; QueueId write_queue;
-    ResourceAccessWriteState last_write;  // only the most recent write
+    std::optional<ResourceAccessWriteState> last_write;  // only the most recent write
 
     VkPipelineStageFlags2KHR last_read_stages;
     VkPipelineStageFlags2KHR read_execution_barriers;
