@@ -47,12 +47,7 @@
 #undef Bool
 #endif
 
-// Use the NDK's header on Android
-#ifndef __ANDROID__
-#include "gtest/gtest.h"
-#else
-#include "gtest/gtest.h"
-#endif
+#include <gtest/gtest.h>
 
 // Redefine Xlib definitions
 #ifdef VK_USE_PLATFORM_XLIB_KHR
