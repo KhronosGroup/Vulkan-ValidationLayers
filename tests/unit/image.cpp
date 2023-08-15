@@ -1807,8 +1807,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci,
-                        "vkCreateImageView(): pCreateInfo->viewType VK_IMAGE_VIEW_TYPE_2D is not compatible with image");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_2D
     imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1842,8 +1841,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci,
-                        "vkCreateImageView(): pCreateInfo->viewType VK_IMAGE_VIEW_TYPE_3D is not compatible with image");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Change VkImageViewCreateInfo to different mismatched viewType
     ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
@@ -1884,8 +1882,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci,
-                        "vkCreateImageView(): pCreateInfo->viewType VK_IMAGE_VIEW_TYPE_1D is not compatible with image");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Change VkImageViewCreateInfo to different mismatched viewType
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1946,9 +1943,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci,
-                        " when the VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or "
-                        "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT flags are enabled.");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04971");
 
     // Clean up
     vk::DestroyImage(m_device->device(), imageSparse, nullptr);

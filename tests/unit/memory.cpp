@@ -1321,8 +1321,7 @@ TEST_F(NegativeMemory, AllocationCount) {
         fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Number of currently valid memory objects is not less than the maximum allowed");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     mem_alloc.memoryTypeIndex = 0;

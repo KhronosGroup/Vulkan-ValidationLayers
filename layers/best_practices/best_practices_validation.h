@@ -387,9 +387,10 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const override;
+                                     const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                     const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkImage* pImage) const override;
+                                    VkImage* pImage, const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,

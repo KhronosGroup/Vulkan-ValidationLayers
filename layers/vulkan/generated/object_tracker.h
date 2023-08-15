@@ -320,7 +320,8 @@ bool PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) const override;
+    VkBuffer*                                   pBuffer,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
@@ -339,7 +340,8 @@ bool PreCallValidateCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView) const override;
+    VkBufferView*                               pView,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
@@ -358,7 +360,8 @@ bool PreCallValidateCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage) const override;
+    VkImage*                                    pImage,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
@@ -382,7 +385,8 @@ bool PreCallValidateCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView) const override;
+    VkImageView*                                pView,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
@@ -817,7 +821,8 @@ bool PreCallValidateCmdFillBuffer(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data) const override;
+    uint32_t                                    data,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdClearColorImage(
     VkCommandBuffer                             commandBuffer,
     VkImage                                     image,

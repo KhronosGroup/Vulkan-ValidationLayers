@@ -1093,13 +1093,14 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
                                     bool is_src) const;
     bool ValidateBufferViewRange(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
-                                 const VkPhysicalDeviceLimits* device_limits) const;
-    bool ValidateBufferViewBuffer(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
+                                 const VkPhysicalDeviceLimits* device_limits, const Location& loc) const;
+    bool ValidateBufferViewBuffer(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
+                                  const Location& loc) const;
 
-    bool ValidateImageFormatFeatures(const VkImageCreateInfo* pCreateInfo) const;
+    bool ValidateImageFormatFeatures(const VkImageCreateInfo* pCreateInfo, const Location& loc) const;
 
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkImage* pImage) const override;
+                                    VkImage* pImage, const ErrorObject& errorObj) const override;
 
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, VkResult result) override;
@@ -1312,10 +1313,12 @@ class CoreChecks : public ValidationStateTracker {
                                   const char* msgCode, char const* func_name, char const* usage_string) const;
 
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const override;
+                                     const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                     const ErrorObject& errorObj) const override;
 
     bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView) const override;
+                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                         const ErrorObject& errorObj) const override;
 
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, bool is_image_disjoint,
                                  const char* func_name, const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
@@ -1336,7 +1339,8 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkImageUsageFlags image_usage) const;
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView) const override;
+                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView,
+                                        const ErrorObject& errorObj) const override;
     template <typename RegionType>
     bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const BUFFER_STATE& src_buffer_state, const BUFFER_STATE& dst_buffer_state,
                                      uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
@@ -1400,7 +1404,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const VkAllocationCallbacks* pAllocator) const override;
 
     bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                      uint32_t data) const override;
+                                      uint32_t data, const ErrorObject& errorObj) const override;
 
     template <typename RegionType>
     bool ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,

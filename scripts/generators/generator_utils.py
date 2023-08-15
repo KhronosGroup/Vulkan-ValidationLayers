@@ -76,6 +76,11 @@ error_object_functions = [
     'vkBindImageMemory',
     'vkBindImageMemory2',
     'vkBindImageMemory2KHR',
+    'vkCreateImage',
+    'vkCreateImageView',
+    'vkCreateBuffer',
+    'vkCreateBufferView',
+    'vkCmdFillBuffer',
 ]
 
 # Build a set of all vuid text strings found in validusage.json

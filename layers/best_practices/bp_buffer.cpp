@@ -21,7 +21,8 @@
 #include "best_practices/best_practices_error_enums.h"
 
 bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const {
+                                                const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                                const ErrorObject& errorObj) const {
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {

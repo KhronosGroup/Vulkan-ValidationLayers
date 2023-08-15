@@ -316,13 +316,13 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
                 (imported_ahb == false)) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist, loc.dot(Field::allocationSize),
-                                 "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ")",
+                                 "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
                                  pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(),
                                  FormatHandle(dedicated_allocate_info->buffer).c_str(), buffer_state->requirements.size);
             }
             if ((buffer_state->createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436", objlist, buffer_loc,
-                                 "(%s) was created with VK_BUFFER_CREATE_SPARSE_BINDING_BIT",
+                                 "(%s) was created with VK_BUFFER_CREATE_SPARSE_BINDING_BIT.",
                                  FormatHandle(dedicated_allocate_info->buffer).c_str());
             }
         }
@@ -357,20 +357,21 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
                 if (pAllocateInfo->allocationSize != payload_info->allocationSize) {
                     skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01743", device, loc.dot(Field::allocationSize),
-                                     "allocationSize (%" PRIu64 ") does not match %s (%d) of type %s allocationSize (%" PRIu64 ").",
+                                     "allocationSize (%" PRIu64 ") does not match %s (0x%" PRIxPTR
+                                     ") of type %s allocationSize (%" PRIu64 ").",
                                      pAllocateInfo->allocationSize, import_loc.Fields().c_str(),
                                      reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
                                      string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
                                      payload_info->allocationSize);
                 }
                 if (pAllocateInfo->memoryTypeIndex != payload_info->memoryTypeIndex) {
-                    skip |=
-                        LogError("VUID-VkMemoryAllocateInfo-allocationSize-01743", device, loc.dot(Field::memoryTypeIndex),
-                                 "memoryTypeIndex (%" PRIu32 ") does not match %s (%d) of type %s memoryTypeIndex (%" PRIu32 ").",
-                                 pAllocateInfo->memoryTypeIndex, import_loc.Fields().c_str(),
-                                 reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
-                                 string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
-                                 payload_info->memoryTypeIndex);
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01743", device, loc.dot(Field::memoryTypeIndex),
+                                     "memoryTypeIndex (%" PRIu32 ") does not match %s (0x%" PRIxPTR
+                                     ") of type %s memoryTypeIndex (%" PRIu32 ").",
+                                     pAllocateInfo->memoryTypeIndex, import_loc.Fields().c_str(),
+                                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                     string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                                     payload_info->memoryTypeIndex);
                 }
             }
         }

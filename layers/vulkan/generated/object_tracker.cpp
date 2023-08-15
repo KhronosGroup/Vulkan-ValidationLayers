@@ -783,7 +783,8 @@ bool ObjectLifetimes::PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) const {
+    VkBuffer*                                   pBuffer,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateBuffer-device-parameter", kVUIDUndefined, "vkCreateBuffer");
 
@@ -825,7 +826,8 @@ bool ObjectLifetimes::PreCallValidateCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView) const {
+    VkBufferView*                               pView,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateBufferView-device-parameter", kVUIDUndefined, "vkCreateBufferView");
     if (pCreateInfo) {
@@ -870,7 +872,8 @@ bool ObjectLifetimes::PreCallValidateCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage) const {
+    VkImage*                                    pImage,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateImage-device-parameter", kVUIDUndefined, "vkCreateImage");
 
@@ -924,7 +927,8 @@ bool ObjectLifetimes::PreCallValidateCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView) const {
+    VkImageView*                                pView,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateImageView-device-parameter", kVUIDUndefined, "vkCreateImageView");
     if (pCreateInfo) {
@@ -1762,7 +1766,8 @@ bool ObjectLifetimes::PreCallValidateCmdFillBuffer(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data) const {
+    uint32_t                                    data,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdFillBuffer-commandBuffer-parameter", kVUIDUndefined, "vkCmdFillBuffer");
     skip |= ValidateObject(dstBuffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdFillBuffer-dstBuffer-parameter", "VUID-vkCmdFillBuffer-commonparent", "vkCmdFillBuffer");

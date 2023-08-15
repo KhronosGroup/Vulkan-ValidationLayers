@@ -21,7 +21,8 @@
 #include "best_practices/best_practices_error_enums.h"
 
 bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator, VkImage* pImage) const {
+                                               const VkAllocationCallbacks* pAllocator, VkImage* pImage,
+                                               const ErrorObject& errorObj) const {
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
