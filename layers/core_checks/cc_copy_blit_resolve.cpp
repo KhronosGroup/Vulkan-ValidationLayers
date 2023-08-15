@@ -790,9 +790,9 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         if (test_value > two_to_31_minus_1) {
             const LogObjectList objlist(handle, image_state.image());
             skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("09108", from_image, is_2, is_memory),
-                             "%s: pRegion[%d] *RowLength (%" PRIu32
-                             ") divided by the texel block extent width (%d) then multiplied by the "
-                             "texel block size of image (%d) is (%" PRIu64 ") which is greater than 2^31 - 1",
+                             "%s: pRegion[%d] *RowLength (%" PRIu32 ") divided by the texel block extent width (%" PRIu32
+                             ") then multiplied by the "
+                             "texel block size of image (%" PRIu32 ") is (%" PRIu64 ") which is greater than 2^31 - 1",
                              function, i, row_length, block_size.width, element_size, static_cast<uint64_t>(test_value));
         }
 
@@ -802,7 +802,8 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
             if ((FormatPlaneCount(image_format) < 3) && (region_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                 const LogObjectList objlist(handle, image_state.image());
                 skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("07981", from_image, is_2, is_memory),
-                                 "%s: pRegion[%d] subresource aspectMask cannot be VK_IMAGE_ASPECT_PLANE_2_BIT unless image "
+                                 "%s: pRegion[%" PRIu32
+                                 "] subresource aspectMask cannot be VK_IMAGE_ASPECT_PLANE_2_BIT unless image "
                                  "format has three planes.",
                                  function, i);
             }
@@ -810,7 +811,8 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
                 (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
                 const LogObjectList objlist(handle, image_state.image());
                 skip |= LogError(objlist, GetBufferMemoryImageCopyCommandVUID("07982", from_image, is_2, is_memory),
-                                 "%s: pRegion[%d] subresource aspectMask for multi-plane image formats must have a "
+                                 "%s: pRegion[%" PRIu32
+                                 "] subresource aspectMask for multi-plane image formats must have a "
                                  "VK_IMAGE_ASPECT_PLANE_*_BIT when copying to or from.",
                                  function, i);
             }
@@ -2287,7 +2289,7 @@ bool CoreChecks::ValidateImageBounds(const HandleT handle, const IMAGE_STATE &im
 
         if (0 != ExceedsBounds(&offset, &extent, &image_extent)) {
             const LogObjectList objlist(handle, image_state.Handle());
-            skip |= LogError(objlist, msg_code, "%s: pRegion[%d] exceeds image bounds.", func_name, i);
+            skip |= LogError(objlist, msg_code, "%s: pRegion[%" PRIu32 "] exceeds image bounds.", func_name, i);
         }
     }
 
@@ -2813,7 +2815,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                 LogObjectList objlist(device);
                 LogError(objlist, vuid,
                          "%s(): %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
-                         "means that pRegions[%d].imageOffset x(%u), y(%u) and z(%u) must all be zero",
+                         "means that pRegions[%" PRIu32 "].imageOffset x(%" PRIu32 "), y(%" PRIu32 ") and z(%" PRIu32
+                         ") must all be zero",
                          func_name, info_type, i, region.imageOffset.x, region.imageOffset.y, region.imageOffset.z);
             }
             if (!IsExtentEqual(region.imageExtent, image_state->createInfo.extent)) {
@@ -2821,8 +2824,10 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                                               : "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-09115";
                 LogObjectList objlist(device, image_state->image());
                 skip |= LogError(objlist, vuid,
-                                 "%s(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
-                                 "extents (w=%d, h=%d, d=%d) %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                                 "%s(): pRegion[%d].imageExtent (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
+                                 ") must match the image's subresource "
+                                 "extents (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
+                                 ") %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
                                  func_name, i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
                                  image_state->createInfo.extent.width, image_state->createInfo.extent.height,
                                  image_state->createInfo.extent.depth, info_type);
@@ -2963,19 +2968,20 @@ bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 regio
         const char *type_name = is_src ? "srcOffset" : "dstOffset";
         LogObjectList objlist(device);
         skip |= LogError(objlist, vuid,
-                 "vkCopyMemoryToImageEXT(): VkCopyImageToImageInfoEXT.flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
-                 "means that pRegions[%d].%s x(%u), y(%u) and z(%u) must all be zero",
-                 i, type_name, region.srcOffset.x, region.srcOffset.y, region.srcOffset.z);
+                         "vkCopyMemoryToImageEXT(): VkCopyImageToImageInfoEXT.flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT which "
+                         "means that pRegions[%" PRIu32 "].%s x(%" PRIu32 "), y(%" PRIu32 ") and z(%" PRIu32 ") must all be zero",
+                         i, type_name, region.srcOffset.x, region.srcOffset.y, region.srcOffset.z);
     }
     if (!IsExtentEqual(region.extent, image_state.createInfo.extent)) {
         const char *vuid = is_src ? "VUID-VkCopyImageToImageInfoEXT-extent-09115" : "VUID-VkCopyImageToImageInfoEXT-extent-09115";
         LogObjectList objlist(device, image_state.image());
         skip |= LogError(objlist, vuid,
-                            "vkCopyMemoryToImageEXT(): pRegion[%d].imageExtent (w=%d, h=%d, d=%d) must match the image's subresource "
-                            "extents (w=%d, h=%d, d=%d) when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
-                            i, region.extent.width, region.extent.height, region.extent.depth,
-                            image_state.createInfo.extent.width, image_state.createInfo.extent.height,
-                            image_state.createInfo.extent.depth);
+                         "vkCopyMemoryToImageEXT(): pRegion[%" PRIu32 "].imageExtent (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
+                         ") must match the image's subresource "
+                         "extents (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
+                         ") when VkCopyImageToImageInfoEXT->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
+                         i, region.extent.width, region.extent.height, region.extent.depth, image_state.createInfo.extent.width,
+                         image_state.createInfo.extent.height, image_state.createInfo.extent.depth);
     }
     return skip;
 }
@@ -2993,7 +2999,8 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
         LogObjectList objlist(device, image_state.image());
         skip |= LogError(objlist, vuid,
                          "vkCopyMemoryToImageEXT(): "
-                         "%s has a format with 2 planes (%s) and pRegion[%d].%s.aspectMask (%s) must be "
+                         "%s has a format with 2 planes (%s) and pRegion[%" PRIu32
+                         "].%s.aspectMask (%s) must be "
                          "VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT",
                          image_name, string_VkFormat(image_state.createInfo.format), i, resource_name,
                          string_VkImageAspectFlags(aspect_mask).c_str());
@@ -3008,7 +3015,8 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
         LogObjectList objlist(device, image_state.image());
         skip |= LogError(objlist, vuid,
                          "vkCopyMemoryToImageEXT(): "
-                         "%s has a format with 3 planes (%s) and pRegion[%d].%s.aspectMask (%s) must be "
+                         "%s has a format with 3 planes (%s) and pRegion[%" PRIu32
+                         "].%s.aspectMask (%s) must be "
                          "VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT",
                          image_name, string_VkFormat(image_state.createInfo.format), i, resource_name,
                          string_VkImageAspectFlags(aspect_mask).c_str());
