@@ -305,7 +305,6 @@ chassis_sources = [
   "layers/vulkan/generated/vk_safe_struct_vendor.cpp",
   "layers/layer_options.cpp",
   "layers/layer_options.h",
-  "layers/vk_layer_settings_ext.h",
 ]
 
 layers = [ [
@@ -467,7 +466,10 @@ foreach(layer_info, layers) {
     configs -= vulkan_undefine_configs
     configs += [ ":generated_layers_config" ]
     public_configs = [ ":vulkan_layer_config" ]
-    deps = [ ":vulkan_layer_utils" ]
+    deps = [ 
+        ":vulkan_layer_utils",
+        "$vulkan_utility_libraries_dir:vulkan_layer_settings",
+    ]
     if (!is_fuchsia) {
       deps += [
         # Make sure the cleanup of old layers happen before the new ones are compiled.

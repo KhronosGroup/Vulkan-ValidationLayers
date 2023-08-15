@@ -398,8 +398,7 @@ if (USE_ROBIN_HOOD_HASHING)
 endif()
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-
-target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
+target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS Vulkan::LayerSettings VkLayer_utils)
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
 # OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
