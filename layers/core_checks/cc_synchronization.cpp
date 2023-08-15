@@ -1423,7 +1423,7 @@ static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
     return subpass == VK_SUBPASS_EXTERNAL ? sync_utils::kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
 }
 
-bool CoreChecks::ValidateSubpassDependency(ErrorObject &errorObj, const Location &in_loc,
+bool CoreChecks::ValidateSubpassDependency(const ErrorObject &errorObj, const Location &in_loc,
                                            const VkSubpassDependency2 &dependency) const {
     bool skip = false;
     VkMemoryBarrier2KHR converted_barrier;

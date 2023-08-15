@@ -70,7 +70,7 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                               ErrorObject &errorObj) const {
+                                                               const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pAllocateInfo) {
@@ -224,7 +224,7 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
                                                                                     const VkDeviceImageMemoryRequirements *pInfo,
                                                                                     VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                    ErrorObject &errorObj) const {
+                                                                                    const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
@@ -234,7 +234,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, ErrorObject &errorObj) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));

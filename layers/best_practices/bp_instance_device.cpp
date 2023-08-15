@@ -373,7 +373,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 }
 
 bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                               ErrorObject& errorObj) const {
+                                               const ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -396,7 +396,7 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                                   VkFence fence, ErrorObject& errorObj) const {
+                                                   VkFence fence, const ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -409,7 +409,7 @@ bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submi
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                                ErrorObject& errorObj) const {
+                                                const ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -422,7 +422,7 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 }
 
 bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                                   VkFence fence, ErrorObject& errorObj) const {
+                                                   VkFence fence, const ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {

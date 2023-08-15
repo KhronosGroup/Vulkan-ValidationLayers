@@ -2366,7 +2366,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE 
 void CommandBufferAccessContext::RecordDestroyEvent(EVENT_STATE *event_state) { GetCurrentEventsContext()->Destroy(event_state); }
 
 // The is the recorded cb context
-bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, ErrorObject &errorObj,
+bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, const ErrorObject &errorObj,
                                                   uint32_t index) const {
     if (!exec_context.ValidForSyncOps()) return false;
 
@@ -2379,7 +2379,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
     HazardResult hazard;
     ReplayGuard replay_guard(exec_context, *this);
 
-    auto log_msg = [this](const HazardResult &hazard, const CommandExecutionContext &exec_context, ErrorObject &errorObj,
+    auto log_msg = [this](const HazardResult &hazard, const CommandExecutionContext &exec_context, const ErrorObject &errorObj,
                           uint32_t index) {
         const auto handle = exec_context.Handle();
         const auto recorded_handle = cb_state_->commandBuffer();
@@ -4182,9 +4182,9 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
 struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
     std::shared_ptr<QueueBatchContext> last_batch;
-    ErrorObject &errorObj;
+    const ErrorObject &errorObj;
     SignaledSemaphores signaled;
-    QueueSubmitCmdState(ErrorObject &errorObj, const SignaledSemaphores &parent_semaphores)
+    QueueSubmitCmdState(const ErrorObject &errorObj, const SignaledSemaphores &parent_semaphores)
         : errorObj(errorObj), signaled(parent_semaphores) {}
 };
 
@@ -4782,7 +4782,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      VkSubpassContents contents, ErrorObject &errorObj) const {
+                                                      VkSubpassContents contents, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, errorObj);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
@@ -4791,7 +4791,8 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassBeginInfo *pSubpassBeginInfo, ErrorObject &errorObj) const {
+                                                       const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                       const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
     return skip;
@@ -4800,7 +4801,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
 bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
                                                           const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                          ErrorObject &errorObj) const {
+                                                          const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2KHR);
     return skip;
@@ -4859,7 +4860,7 @@ bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const 
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass(commandBuffer, contents, errorObj);
     // Convert to a NextSubpass2
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
@@ -4870,14 +4871,14 @@ bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer,
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                      const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const {
+                                                      const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
     skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2KHR);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                   const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const {
+                                                   const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
     skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
     return skip;
@@ -4926,21 +4927,21 @@ bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     return skip;
 }
 
-bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const {
+bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer, errorObj);
     skip |= ValidateCmdEndRenderPass(commandBuffer, nullptr, CMD_ENDRENDERPASS);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                     ErrorObject &errorObj) const {
+                                                     const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
     skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                        ErrorObject &errorObj) const {
+                                                        const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, errorObj);
     skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2KHR);
     return skip;
@@ -7636,7 +7637,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
 }
 
 bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer *pCommandBuffers, ErrorObject &errorObj) const {
+                                                      const VkCommandBuffer *pCommandBuffers, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, errorObj);
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -7876,7 +7877,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                               ErrorObject &errorObj) const {
+                                               const ErrorObject &errorObj) const {
     auto queue_state = GetQueueSyncStateShared(queue);
     if (!bool(queue_state)) return false;
     SubmitInfoConverter submit_info(submitCount, pSubmits, queue_state->GetQueueFlags());
@@ -7884,7 +7885,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 }
 
 bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                        ErrorObject &errorObj) const {
+                                        const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
@@ -7965,11 +7966,11 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                   VkFence fence, ErrorObject &errorObj) const {
+                                                   VkFence fence, const ErrorObject &errorObj) const {
     return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, errorObj);
 }
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, ErrorObject &errorObj) const {
+                                                VkFence fence, const ErrorObject &errorObj) const {
     return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, errorObj);
 }
 

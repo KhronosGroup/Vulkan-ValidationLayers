@@ -232,7 +232,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             if pre_call_validate:
                 prePrototype = prototype
                 if command.name in error_object_functions:
-                    prePrototype = prePrototype.replace(')', ',\n    ErrorObject&                                errorObj)')
+                    prePrototype = prePrototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
             if pre_call_record:
@@ -328,7 +328,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
             if pre_call_validate:
                 prePrototype = prototype
                 if command.name in error_object_functions:
-                    prePrototype = prePrototype.replace(')', ',\n    ErrorObject&                                errorObj)')
+                    prePrototype = prePrototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
                 out.append('\n')
                 out.append(f'bool ObjectLifetimes::PreCallValidate{prePrototype} const {{\n')
                 out.append('    bool skip = false;\n')

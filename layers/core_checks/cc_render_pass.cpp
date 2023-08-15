@@ -363,7 +363,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
 }
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     auto rp_state = Get<RENDER_PASS_STATE>(renderPass);
     bool skip = false;
     if (rp_state) {
@@ -387,7 +387,7 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 }
 
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                            const VkRenderPassBeginInfo *pRenderPassBegin, ErrorObject &errorObj) const {
+                                            const VkRenderPassBeginInfo *pRenderPassBegin, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     const char *function_name = CommandTypeString(errorObj.cmd_type);
@@ -506,19 +506,21 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                   VkSubpassContents contents, ErrorObject &errorObj) const {
+                                                   VkSubpassContents contents, const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const VkSubpassBeginInfo *pSubpassBeginInfo, ErrorObject &errorObj) const {
+                                                       const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                       const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                    const VkSubpassBeginInfo *pSubpassBeginInfo, ErrorObject &errorObj) const {
+                                                    const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                    const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin, errorObj);
     return skip;
 }
@@ -555,7 +557,7 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer,
-                                          const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const {
+                                          const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
@@ -782,19 +784,19 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_1, commandBuffer, VK_NULL_HANDLE, errorObj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                     ErrorObject &errorObj) const {
+                                                     const ErrorObject &errorObj) const {
     bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer, pSubpassEndInfo, errorObj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer, pSubpassEndInfo, errorObj);
     return skip;
 }
@@ -1342,7 +1344,7 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
 }
 
 bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                   ErrorObject &errorObj) const {
+                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
@@ -1978,7 +1980,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 }
 
 bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state, const RENDER_PASS_STATE &render_pass_state,
-                                      ErrorObject &errorObj) const {
+                                      const ErrorObject &errorObj) const {
     bool skip = false;
     auto const framebuffer_info = framebuffer_state.createInfo.ptr();
     auto const create_info = render_pass_state.createInfo.ptr();
@@ -2134,7 +2136,7 @@ bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state
 }
 
 bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                       ErrorObject &errorObj) const {
+                                       const ErrorObject &errorObj) const {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -2225,7 +2227,7 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
 }
 
 bool CoreChecks::ValidateCreateRenderPass(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                          ErrorObject &errorObj) const {
+                                          const ErrorObject &errorObj) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
@@ -2352,7 +2354,7 @@ bool CoreChecks::ValidateCreateRenderPass(RenderPassCreateVersion rp_version, co
 
 bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                 ErrorObject &errorObj) const {
+                                                 const ErrorObject &errorObj) const {
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
     const VkRenderPassMultiviewCreateInfo *multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
@@ -2440,7 +2442,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
 // VK_KHR_depth_stencil_resolve was added with a requirement on VK_KHR_create_renderpass2 so this will never be able to use
 // VkRenderPassCreateInfo
-bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, ErrorObject &errorObj) const {
+bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &errorObj) const {
     bool skip = false;
 
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
@@ -2622,7 +2624,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
 bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                           ErrorObject &errorObj) const {
+                                           const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDepthStencilResolve(pCreateInfo, errorObj);
@@ -2634,7 +2636,8 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
     return skip;
 }
 
-bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2 *pCreateInfo, ErrorObject &errorObj) const {
+bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                        const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
@@ -2841,13 +2844,13 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                     ErrorObject &errorObj) const {
+                                                     const ErrorObject &errorObj) const {
     return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
@@ -3038,7 +3041,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                           ErrorObject &errorObj) const {
+                                           const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
@@ -3677,7 +3680,7 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char 
     return outside;
 }
 
-bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const {
+bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
@@ -3695,11 +3698,11 @@ bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, ErrorObj
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     return ValidateCmdEndRendering(commandBuffer, errorObj);
 }
 
-bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     return ValidateCmdEndRendering(commandBuffer, errorObj);
 }
 
@@ -3751,12 +3754,12 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
-                                                     ErrorObject &errorObj) const {
+                                                     const ErrorObject &errorObj) const {
     return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
 }
 
@@ -3777,7 +3780,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const
 }
 
 bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer,
-                                        ErrorObject &errorObj) const {
+                                        const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
@@ -3800,17 +3803,17 @@ bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCo
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                               ErrorObject &errorObj) const {
+                                               const ErrorObject &errorObj) const {
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_1, commandBuffer, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                   const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const {
+                                                   const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const {
+                                                const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer, errorObj);
 }
 
@@ -3939,7 +3942,7 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
 
 bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     // TODO : Verify that renderPass FB is created with is compatible with FB
     bool skip = false;
     const Location loc = errorObj.location.dot(Field::pCreateInfo);
@@ -4589,7 +4592,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 }
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
-                                                   const VkAllocationCallbacks *pAllocator, ErrorObject &errorObj) const {
+                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &errorObj) const {
     auto framebuffer_state = Get<FRAMEBUFFER_STATE>(framebuffer);
     bool skip = false;
     if (framebuffer_state) {

@@ -1514,7 +1514,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     ResourceUsageTag RecordEndRenderPass(CMD_TYPE cmd_type);
     void RecordDestroyEvent(EVENT_STATE *event_state);
 
-    bool ValidateFirstUse(CommandExecutionContext &exec_context, ErrorObject &errorObj, uint32_t index) const;
+    bool ValidateFirstUse(CommandExecutionContext &exec_context, const ErrorObject &errorObj, uint32_t index) const;
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
@@ -1984,13 +1984,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                  const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type) const;
 
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                           VkSubpassContents contents, ErrorObject &errorObj) const override;
+                                           VkSubpassContents contents, const ErrorObject &errorObj) const override;
 
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                               const VkSubpassBeginInfo *pSubpassBeginInfo, ErrorObject &errorObj) const override;
+                                               const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                               const ErrorObject &errorObj) const override;
 
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const VkSubpassBeginInfo *pSubpassBeginInfo, ErrorObject &errorObj) const override;
+                                            const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                            const ErrorObject &errorObj) const override;
 
     bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                       const VkBufferCopy *pRegions) const override;
@@ -2055,11 +2057,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                 const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                       ErrorObject &errorObj) const override;
+                                       const ErrorObject &errorObj) const override;
     bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                        const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const override;
+                                        const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const override;
     bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                           const VkSubpassEndInfo *pSubpassEndInfo, ErrorObject &errorObj) const override;
+                                           const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const override;
 
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) override;
     void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -2068,11 +2070,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                           const VkSubpassEndInfo *pSubpassEndInfo) override;
 
     bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd_type) const;
-    bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, ErrorObject &errorObj) const override;
+    bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const override;
     bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                             ErrorObject &errorObj) const override;
+                                             const ErrorObject &errorObj) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                          ErrorObject &errorObj) const override;
+                                          const ErrorObject &errorObj) const override;
 
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) override;
     void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) override;
@@ -2337,7 +2339,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
                                                VkDeviceSize dstOffset, uint32_t marker) override;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                           const VkCommandBuffer *pCommandBuffers, ErrorObject &errorObj) const override;
+                                           const VkCommandBuffer *pCommandBuffers, const ErrorObject &errorObj) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer *pCommandBuffers) override;
     void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
@@ -2360,18 +2362,18 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t *pImageIndex, VkResult result, const char *func_name);
     bool ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                             ErrorObject &errorObj) const;
+                             const ErrorObject &errorObj) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                    ErrorObject &errorObj) const override;
+                                    const ErrorObject &errorObj) const override;
     void RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult result);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                    VkResult result) override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                        ErrorObject &errorObj) const override;
+                                        const ErrorObject &errorObj) const override;
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                        VkResult result) override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                     ErrorObject &errorObj) const override;
+                                     const ErrorObject &errorObj) const override;
     void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                     VkResult result) override;
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) override;

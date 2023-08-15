@@ -314,7 +314,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
 
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                                 const void *pValues, ErrorObject &errorObj) const {
+                                                                 const void *pValues, const ErrorObject &errorObj) const {
     bool skip = false;
     const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
     // Check that offset + size don't exceed the max.
@@ -358,7 +358,8 @@ bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, ErrorObject &errorObj) const {
+bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin,
+                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         skip |= LogError("VUID-VkRenderPassBeginInfo-clearValueCount-04962", rp_begin->renderPass,
@@ -369,20 +370,21 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                   VkSubpassContents, ErrorObject &errorObj) const {
+                                                                   VkSubpassContents, const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer,
                                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                       const VkSubpassBeginInfo *, ErrorObject &errorObj) const {
+                                                                       const VkSubpassBeginInfo *,
+                                                                       const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                    const VkSubpassBeginInfo *, ErrorObject &errorObj) const {
+                                                                    const VkSubpassBeginInfo *, const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
     return skip;
 }
@@ -726,14 +728,14 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                                                      const VkRenderingInfo *pRenderingInfo,
-                                                                     ErrorObject &errorObj) const {
+                                                                     const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERINGKHR);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                                                   const VkRenderingInfo *pRenderingInfo,
-                                                                  ErrorObject &errorObj) const {
+                                                                  const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERING);
     return skip;
 }

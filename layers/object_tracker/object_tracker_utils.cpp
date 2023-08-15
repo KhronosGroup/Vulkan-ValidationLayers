@@ -980,7 +980,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
 }
 
 bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer, ErrorObject& errorObj) const {
+                                                       const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
+                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateFramebuffer-device-parameter", kVUIDUndefined,
                            "vkCreateFramebuffer");
