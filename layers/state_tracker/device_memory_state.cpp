@@ -81,10 +81,10 @@ static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                                          const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                                          std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
-    : BASE_NODE(mem, kVulkanObjectTypeDeviceMemory),
+    : BASE_NODE(memory, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
       export_handle_types(GetExportHandleTypes(p_alloc_info)),
       import_handle_type(GetImportHandleType(p_alloc_info)),
@@ -119,9 +119,9 @@ BindableMemoryTracker::DeviceMemoryState BindableLinearMemoryTracker::GetBoundMe
 
 BindableMemoryTracker::BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(
     const sparse_container::range<VkDeviceSize> &range) const {
-    return binding_.memory_state
-               ? BoundMemoryRange{BoundMemoryRange::value_type{
-                     binding_.memory_state->mem(), BoundMemoryRange::value_type::second_type{{binding_.memory_offset + range.begin,
-                                                                                              binding_.memory_offset + range.end}}}}
-               : BoundMemoryRange{};
+    return binding_.memory_state ? BoundMemoryRange{BoundMemoryRange::value_type{
+                                       binding_.memory_state->deviceMemory(),
+                                       BoundMemoryRange::value_type::second_type{
+                                           {binding_.memory_offset + range.begin, binding_.memory_offset + range.end}}}}
+                                 : BoundMemoryRange{};
 }

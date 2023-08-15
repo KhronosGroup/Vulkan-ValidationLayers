@@ -1256,9 +1256,10 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(
     VkDeviceMemory*                             pMemory) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkAllocateMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateAllocateMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+        skip |= intercept->PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordAllocateMemory]) {
@@ -1279,9 +1280,10 @@ VKAPI_ATTR void VKAPI_CALL FreeMemory(
     const VkAllocationCallbacks*                pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkFreeMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateFreeMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateFreeMemory(device, memory, pAllocator);
+        skip |= intercept->PreCallValidateFreeMemory(device, memory, pAllocator, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFreeMemory]) {
@@ -1304,9 +1306,10 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(
     void**                                      ppData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkMapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateMapMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateMapMemory(device, memory, offset, size, flags, ppData);
+        skip |= intercept->PreCallValidateMapMemory(device, memory, offset, size, flags, ppData, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMapMemory]) {
@@ -1326,9 +1329,10 @@ VKAPI_ATTR void VKAPI_CALL UnmapMemory(
     VkDeviceMemory                              memory) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkUnmapMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateUnmapMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateUnmapMemory(device, memory);
+        skip |= intercept->PreCallValidateUnmapMemory(device, memory, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUnmapMemory]) {
@@ -1348,9 +1352,10 @@ VKAPI_ATTR VkResult VKAPI_CALL FlushMappedMemoryRanges(
     const VkMappedMemoryRange*                  pMemoryRanges) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkFlushMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateFlushMappedMemoryRanges]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+        skip |= intercept->PreCallValidateFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordFlushMappedMemoryRanges]) {
@@ -1371,9 +1376,10 @@ VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(
     const VkMappedMemoryRange*                  pMemoryRanges) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkInvalidateMappedMemoryRanges, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateInvalidateMappedMemoryRanges]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+        skip |= intercept->PreCallValidateInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordInvalidateMappedMemoryRanges]) {
@@ -1394,9 +1400,10 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(
     VkDeviceSize*                               pCommittedMemoryInBytes) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetDeviceMemoryCommitment, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceMemoryCommitment]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
+        skip |= intercept->PreCallValidateGetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryCommitment]) {
@@ -1417,9 +1424,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(
     VkDeviceSize                                memoryOffset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindBufferMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindBufferMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindBufferMemory(device, buffer, memory, memoryOffset);
+        skip |= intercept->PreCallValidateBindBufferMemory(device, buffer, memory, memoryOffset, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory]) {
@@ -1441,9 +1449,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(
     VkDeviceSize                                memoryOffset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindImageMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindImageMemory]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindImageMemory(device, image, memory, memoryOffset);
+        skip |= intercept->PreCallValidateBindImageMemory(device, image, memory, memoryOffset, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory]) {
@@ -1486,9 +1495,10 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(
     VkMemoryRequirements*                       pMemoryRequirements) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetImageMemoryRequirements, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageMemoryRequirements]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetImageMemoryRequirements(device, image, pMemoryRequirements);
+        skip |= intercept->PreCallValidateGetImageMemoryRequirements(device, image, pMemoryRequirements, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements]) {
@@ -3829,9 +3839,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(
     const VkBindBufferMemoryInfo*               pBindInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindBufferMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindBufferMemory2]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos);
+        skip |= intercept->PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory2]) {
@@ -3852,9 +3863,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(
     const VkBindImageMemoryInfo*                pBindInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindImageMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindImageMemory2]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos);
+        skip |= intercept->PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory2]) {
@@ -3969,9 +3981,10 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(
     VkMemoryRequirements2*                      pMemoryRequirements) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetImageMemoryRequirements2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageMemoryRequirements2]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+        skip |= intercept->PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements2]) {
@@ -4695,9 +4708,10 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(
     const VkBufferDeviceAddressInfo*            pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetBufferOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetBufferOpaqueCaptureAddress]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddress(device, pInfo);
+        skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddress(device, pInfo, errorObj);
         if (skip) return 0;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferOpaqueCaptureAddress]) {
@@ -4717,9 +4731,10 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddress(
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceMemoryOpaqueCaptureAddress]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
+        skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, errorObj);
         if (skip) return 0;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryOpaqueCaptureAddress]) {
@@ -7726,9 +7741,10 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(
     VkMemoryRequirements2*                      pMemoryRequirements) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetImageMemoryRequirements2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageMemoryRequirements2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+        skip |= intercept->PreCallValidateGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageMemoryRequirements2KHR]) {
@@ -7840,9 +7856,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(
     const VkBindBufferMemoryInfo*               pBindInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindBufferMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindBufferMemory2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
+        skip |= intercept->PreCallValidateBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindBufferMemory2KHR]) {
@@ -7863,9 +7880,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(
     const VkBindImageMemoryInfo*                pBindInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkBindImageMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateBindImageMemory2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateBindImageMemory2KHR(device, bindInfoCount, pBindInfos);
+        skip |= intercept->PreCallValidateBindImageMemory2KHR(device, bindInfoCount, pBindInfos, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordBindImageMemory2KHR]) {
@@ -8119,9 +8137,10 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(
     const VkBufferDeviceAddressInfo*            pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetBufferOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetBufferOpaqueCaptureAddressKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+        skip |= intercept->PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, pInfo, errorObj);
         if (skip) return 0;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetBufferOpaqueCaptureAddressKHR]) {
@@ -8141,9 +8160,10 @@ VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetDeviceMemoryOpaqueCaptureAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+        skip |= intercept->PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo, errorObj);
         if (skip) return 0;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR]) {
@@ -8347,9 +8367,10 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
     void**                                      ppData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkMapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateMapMemory2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateMapMemory2KHR(device, pMemoryMapInfo, ppData);
+        skip |= intercept->PreCallValidateMapMemory2KHR(device, pMemoryMapInfo, ppData, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMapMemory2KHR]) {
@@ -8369,9 +8390,10 @@ VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
     const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkUnmapMemory2KHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateUnmapMemory2KHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateUnmapMemory2KHR(device, pMemoryUnmapInfo);
+        skip |= intercept->PreCallValidateUnmapMemory2KHR(device, pMemoryUnmapInfo, errorObj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUnmapMemory2KHR]) {
@@ -8818,9 +8840,10 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirementsKHR(
     VkMemoryRequirements2*                      pMemoryRequirements) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetDeviceImageMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceImageMemoryRequirementsKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
+        skip |= intercept->PreCallValidateGetDeviceImageMemoryRequirementsKHR(device, pInfo, pMemoryRequirements, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageMemoryRequirementsKHR]) {
@@ -8841,9 +8864,10 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
+    ErrorObject errorObj(vvl::Func::vkGetDeviceImageSparseMemoryRequirementsKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDeviceImageSparseMemoryRequirementsKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+        skip |= intercept->PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements, errorObj);
         if (skip) return;
     }
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSparseMemoryRequirementsKHR]) {
