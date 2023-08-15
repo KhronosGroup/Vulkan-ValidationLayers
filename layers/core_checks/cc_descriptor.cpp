@@ -802,7 +802,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                                 "binding #%" PRIu32 " index %" PRIu32 " is uses buffer %s that references invalid memory %s.",
                                 FormatHandle(set).c_str(), context.caller, binding_info.first, index, FormatHandle(buffer).c_str(),
-                                FormatHandle(binding->mem()).c_str());
+                                FormatHandle(binding->deviceMemory()).c_str());
             }
         }
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
@@ -1556,7 +1556,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                 "binding #%" PRIu32 " index %" PRIu32
                                 " is using acceleration structure %s that references invalid memory %s.",
                                 FormatHandle(set).c_str(), context.caller, binding, index, FormatHandle(acc).c_str(),
-                                FormatHandle(mem_binding->mem()).c_str());
+                                FormatHandle(mem_binding->deviceMemory()).c_str());
             }
         }
     } else {
@@ -1579,7 +1579,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                 "binding #%" PRIu32 " index %" PRIu32
                                 " is using acceleration structure %s that references invalid memory %s.",
                                 FormatHandle(set).c_str(), context.caller, binding, index, FormatHandle(acc).c_str(),
-                                FormatHandle(mem_binding->mem()).c_str());
+                                FormatHandle(mem_binding->deviceMemory()).c_str());
             }
         }
     }

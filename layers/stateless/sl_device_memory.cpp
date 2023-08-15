@@ -69,15 +69,17 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 }  // namespace
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkDeviceMemory *pMemory) const {
+                                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
+                                                               ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pAllocateInfo) {
+        const Location loc = errorObj.location.dot(Field::pAllocateInfo);
         auto chained_prio_struct = LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
         if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
-            skip |= LogError(device, "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
-                             "priority (=%f) must be between `0` and `1`, inclusive.", chained_prio_struct->priority);
+            skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
+                             loc.dot(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority, true), "is %f",
+                             chained_prio_struct->priority);
         }
 
         VkMemoryAllocateFlags flags = 0;
@@ -90,44 +92,48 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
         auto opaque_alloc_info = LvlFindInChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
         if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
+            const Location address_loc =
+                loc.dot(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress, true);
             if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329",
-                                 "If opaqueCaptureAddress is non-zero, VkMemoryAllocateFlagsInfo::flags must include "
-                                 "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
+                skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329", device, address_loc,
+                                 "is non-zero (%" PRIu64
+                                 ") so VkMemoryAllocateFlagsInfo::flags must include "
+                                 "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
+                                 opaque_alloc_info->opaqueCaptureAddress);
             }
 
             if (import_info.host_pointer_info_ext) {
-                skip |= LogError(
-                    device, "VUID-VkMemoryAllocateInfo-pNext-03332",
-                    "If the pNext chain includes a VkImportMemoryHostPointerInfoEXT structure, opaqueCaptureAddress must be zero.");
+                skip |=
+                    LogError("VUID-VkMemoryAllocateInfo-pNext-03332", device, address_loc,
+                             "is non-zero (%" PRIu64 ") but the pNext chain includes a VkImportMemoryHostPointerInfoEXT structure.",
+                             opaque_alloc_info->opaqueCaptureAddress);
             }
 
             if (import_info.total_import_ops > 0) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333",
-                                 "If the parameters define an import operation, opaqueCaptureAddress must be zero.");
+                skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333", device, loc,
+                                 "is non-zero (%" PRIu64 ") but an import operation is defined.",
+                                 opaque_alloc_info->opaqueCaptureAddress);
             }
         }
 
         if (import_info.total_import_ops > 1) {
-            skip |=
-                LogError(device, "VUID-VkMemoryAllocateInfo-None-06657",
-                         "The parameters must not define more than 1 import operation. User defined %" PRIu32 " import operations",
-                         import_info.total_import_ops);
+            skip |= LogError("VUID-VkMemoryAllocateInfo-None-06657", device, loc, "%" PRIu32 " import operations are defined",
+                             import_info.total_import_ops);
         }
 
         auto export_memory = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
         if (export_memory) {
             auto export_memory_nv = LvlFindInChain<VkExportMemoryAllocateInfoNV>(pAllocateInfo->pNext);
             if (export_memory_nv) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00640",
-                                 "pNext chain of VkMemoryAllocateInfo includes both VkExportMemoryAllocateInfo and "
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, loc,
+                                 "pNext chain includes both VkExportMemoryAllocateInfo and "
                                  "VkExportMemoryAllocateInfoNV");
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             auto export_memory_win32_nv = LvlFindInChain<VkExportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext);
             if (export_memory_win32_nv) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00640",
-                                 "pNext chain of VkMemoryAllocateInfo includes both VkExportMemoryAllocateInfo and "
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, loc,
+                                 "pNext chain includes both VkExportMemoryAllocateInfo and "
                                  "VkExportMemoryWin32HandleInfoNV");
             }
 #endif
@@ -136,13 +142,14 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         if (LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext) &&
             LvlFindInChain<VkImportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext)) {
-            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00641",
-                             "pNext chain of VkMemoryAllocateInfo includes both VkImportMemoryWin32HandleInfoKHR and "
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00641", device, loc,
+                             "pNext chain includes both VkImportMemoryWin32HandleInfoKHR and "
                              "VkImportMemoryWin32HandleInfoNV");
         }
 #endif
 
         if (flags) {
+            const Location flags_loc = loc.dot(Struct::VkMemoryAllocateFlagsInfo, Field::flags, true);
             VkBool32 capture_replay = false;
             VkBool32 buffer_device_address = false;
             const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
@@ -157,13 +164,13 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
                 }
             }
             if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !capture_replay) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-flags-03330",
-                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT is set, "
-                                 "bufferDeviceAddressCaptureReplay must be enabled.");
+                skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03330", device, flags_loc,
+                                 "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set, but"
+                                 "bufferDeviceAddressCaptureReplay feature is not enabled.");
             }
             if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !buffer_device_address) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-flags-03331",
-                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT is set, bufferDeviceAddress must be enabled.");
+                skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03331", device, flags_loc,
+                                 "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT set, but bufferDeviceAddress feature is not enabled.");
             }
         }
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -176,39 +183,37 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 }
 
 bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
-                                                                const char *func_name) const {
+                                                                const Location &loc) const {
     bool skip = false;
 
     if (pInfo && pInfo->pCreateInfo) {
         const auto &create_info = *(pInfo->pCreateInfo);
         if (LvlFindInChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
-            skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416",
-                             "%s(): pCreateInfo->pNext chain contains VkImageSwapchainCreateInfoKHR.", func_name);
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416", device, loc,
+                             "pNext chain contains VkImageSwapchainCreateInfoKHR.");
         }
         if (LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
-            skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776",
-                             "%s(): pCreateInfo->pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.", func_name);
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776", device, loc,
+                             "pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.");
         }
 
         if (FormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
             if (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
-                skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417",
-                                 "%s(): Must not specify VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.",
-                                 func_name);
+                skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
+                                 "is VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.");
             } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
                        !IsOnlyOneValidPlaneAspect(create_info.format, pInfo->planeAspect)) {
-                skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06419",
-                                 "%s(): planeAspect is %s but is invalid for %s.", func_name,
-                                 string_VkImageAspectFlags(pInfo->planeAspect).c_str(), string_VkFormat(create_info.format));
+                skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06419", device, loc.dot(Field::planeAspect),
+                                 "is %s but is invalid for %s.", string_VkImageAspectFlags(pInfo->planeAspect).c_str(),
+                                 string_VkFormat(create_info.format));
             }
         }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         const auto *external_format = LvlFindInChain<VkExternalFormatANDROID>(pInfo->pCreateInfo);
         if (external_format && external_format->externalFormat) {
-            skip |=
-                LogError(device, "VUID-VkDeviceImageMemoryRequirements-pNext-06996",
-                         "%s(): pInfo->pCreateInfo->pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".",
-                         func_name, external_format->externalFormat);
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pNext-06996", device, loc.dot(Field::pCreateInfo),
+                             "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".",
+                             external_format->externalFormat);
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     }
@@ -216,21 +221,23 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(
-    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, VkMemoryRequirements2 *pMemoryRequirements) const {
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
+                                                                                    const VkDeviceImageMemoryRequirements *pInfo,
+                                                                                    VkMemoryRequirements2 *pMemoryRequirements,
+                                                                                    ErrorObject &errorObj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, "vkGetDeviceImageMemoryRequirementsKHR");
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
 
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, ErrorObject &errorObj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, "vkGetDeviceImageSparseMemoryRequirementsKHR");
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
 
     return skip;
 }

@@ -149,7 +149,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->IsDedicatedImage()) {
         auto image_state = Get<IMAGE_STATE>(mem_info->dedicated->handle.Cast<VkImage>());
-        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->mem())))) {
+        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->deviceMemory())))) {
             const LogObjectList objlist(device, pInfo->memory, mem_info->dedicated->handle);
             skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
@@ -396,21 +396,21 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const {
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const {
     bool skip = false;
 
     auto image_state = Get<IMAGE_STATE>(image);
     if (image_state != nullptr) {
         if (image_state->IsExternalAHB() && (0 == image_state->GetBoundMemoryStates().size())) {
-            const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
+            const char *vuid = loc.function == Func::vkGetImageMemoryRequirements
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
                                    : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
             skip |=
-                LogError(image, vuid,
-                         "%s: Attempt get image memory requirements for an image created with a "
+                LogError(vuid, image,
+                         loc
+                         "was created with a "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
-                         "bound to memory.",
-                         func_name);
+                         "bound to memory, so image memory requirements can't yet be queried.");
         }
     }
     return skip;
@@ -435,35 +435,35 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return skip;
 }
 
-bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
-                                                     VkDeviceMemory memory, VkBuffer buffer) const {
+bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                     VkBuffer buffer, const Location &loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindBufferMemory()") == 0) ? "VUID-vkBindBufferMemory-memory-02986"
                                                                             : "VUID-VkBindBufferMemoryInfo-memory-02986";
         const LogObjectList objlist(buffer, memory);
-        skip |= LogError(objlist, vuid,
-                         "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
+        skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                         "(%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
                          "VkExternalMemoryBufferCreateInfo::handleTypes (%s)",
-                         func_name, FormatHandle(memory).c_str(), FormatHandle(buffer).c_str(),
+                         FormatHandle(memory).c_str(), FormatHandle(buffer).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
 }
 
-bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
-                                                    VkDeviceMemory memory, VkImage image) const {
+bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                    VkImage image, const Location &loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindImageMemory()") == 0) ? "VUID-vkBindImageMemory-memory-02990"
                                                                            : "VUID-VkBindImageMemoryInfo-memory-02990";
         const LogObjectList objlist(image, memory);
-        skip |= LogError(objlist, vuid,
-                         "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
+        skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                         "(%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
                          "VkExternalMemoryImageCreateInfo::handleTypes (%s)",
-                         func_name, FormatHandle(memory).c_str(), FormatHandle(image).c_str(),
+                         FormatHandle(memory).c_str(), FormatHandle(image).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
@@ -602,15 +602,15 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return false;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location &loc) const { return false; }
 
-bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
-                                                     VkDeviceMemory memory, VkBuffer buffer) const {
+bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                     VkBuffer buffer, const Location &loc) const {
     return false;
 }
 
-bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
-                                                    VkDeviceMemory memory, VkImage image) const {
+bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                    VkImage image, const Location &loc) const {
     return false;
 }
 

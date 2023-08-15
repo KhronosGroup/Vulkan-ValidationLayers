@@ -843,7 +843,8 @@ class StatelessValidation : public ValidationObject {
                                                                   uint32_t *pPropertyCount,
                                                                   VkExtensionProperties *pProperties) const;
     bool manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const;
+                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
+                                              ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateAccelerationStructureNV(VkDevice device,
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
@@ -1113,7 +1114,7 @@ class StatelessValidation : public ValidationObject {
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const;
 
     bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirementsKHR *pInfo,
-                                               const char *func_name) const;
+                                               const Location &loc) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                   uint32_t *pSurfaceFormatCount,
@@ -1148,10 +1149,11 @@ class StatelessValidation : public ValidationObject {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
-                                                                   VkMemoryRequirements2 *pMemoryRequirements) const;
+                                                                   VkMemoryRequirements2 *pMemoryRequirements,
+                                                                   ErrorObject &errorObj) const;
     bool manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
         VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements) const;
+        VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, ErrorObject &errorObj) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool manual_PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const;

@@ -59,7 +59,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     void *p_driver_data;                   // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
+    DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                         std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
@@ -73,7 +73,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
     bool IsDedicatedImage() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeImage; }
 
-    VkDeviceMemory mem() const { return handle_.Cast<VkDeviceMemory>(); }
+    VkDeviceMemory deviceMemory() const { return handle_.Cast<VkDeviceMemory>(); }
 };
 
 // Generic memory binding struct to track objects bound to objects
@@ -122,7 +122,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
     // Kept for backwards compatibility
     const MEM_BINDING *Binding() const { return binding_.memory_state ? &binding_ : nullptr; }
     unsigned CountDeviceMemory(VkDeviceMemory memory) const {
-        return binding_.memory_state && binding_.memory_state->mem() == memory ? 1 : 0;
+        return binding_.memory_state && binding_.memory_state->deviceMemory() == memory ? 1 : 0;
     }
     //----------------------------------------------------------------------------------------------------
 
@@ -153,7 +153,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
         {
             auto guard = ReadLockGuard{binding_lock_};
             for (const auto &range_state : binding_map_) {
-                count += (range_state.second.memory_state && range_state.second.memory_state->mem() == memory);
+                count += (range_state.second.memory_state && range_state.second.memory_state->deviceMemory() == memory);
             }
         }
 
@@ -206,12 +206,12 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
 
             for (auto it = range_bounds.begin; it != range_bounds.end; ++it) {
                 const auto &binding = *it;
-                if (binding.second.memory_state && binding.second.memory_state->mem() != VK_NULL_HANDLE) {
+                if (binding.second.memory_state && binding.second.memory_state->deviceMemory() != VK_NULL_HANDLE) {
                     VkDeviceSize range_start = binding.first.begin - binding.second.resource_offset;
                     VkDeviceSize range_end = binding.first.end - binding.second.resource_offset;
                     range_start += binding.second.memory_offset;
                     range_end += binding.second.memory_offset;
-                    mem_ranges[binding.second.memory_state->mem()].emplace_back(range_start, range_end);
+                    mem_ranges[binding.second.memory_state->deviceMemory()].emplace_back(range_start, range_end);
                 }
             }
         }
@@ -255,7 +255,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
     unsigned CountDeviceMemory(VkDeviceMemory memory) const {
         unsigned count = 0u;
         for (unsigned i = 0u; i < TRACKING_COUNT; ++i) {
-            count += (bindings_[i].memory_state && bindings_[i].memory_state->mem() == memory);
+            count += (bindings_[i].memory_state && bindings_[i].memory_state->deviceMemory() == memory);
         }
 
         return count;
@@ -292,7 +292,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
             sparse_container::range<VkDeviceSize> plane_range{start_offset, start_offset + plane_size_[i]};
             if (bindings_[i].memory_state && range.intersects(plane_range)) {
                 VkDeviceSize range_end = range.end > plane_range.end ? plane_range.end : range.end;
-                mem_ranges[bindings_[i].memory_state->mem()].emplace_back(sparse_container::range<VkDeviceSize>{
+                mem_ranges[bindings_[i].memory_state->deviceMemory()].emplace_back(sparse_container::range<VkDeviceSize>{
                     bindings_[i].memory_offset + range.begin, bindings_[i].memory_offset + range_end});
             }
             start_offset += plane_size_[i];
