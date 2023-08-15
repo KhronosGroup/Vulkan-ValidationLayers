@@ -20,12 +20,7 @@
 
 #include "generated/vk_function_pointers.h"
 #include "error_monitor.h"
-
-#if defined(VVL_TESTS_USE_CMAKE)
 #include "test_framework.h"
-#else
-#include "test_framework_android.h"
-#endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -611,7 +606,6 @@ class VkShaderObj : public vk_testing::ShaderModule {
                                                       const VkSpecializationInfo *spec_info = nullptr,
                                                       const char *entry_point = "main");
 
-#if defined(VVL_TESTS_USE_CMAKE)
     struct GlslangTargetEnv {
         GlslangTargetEnv(const spv_target_env env) {
             switch (env) {
@@ -669,7 +663,6 @@ class VkShaderObj : public vk_testing::ShaderModule {
         glslang::EShTargetLanguageVersion language_version = glslang::EShTargetSpv_1_0;
         glslang::EShTargetClientVersion client_version = glslang::EShTargetVulkan_1_0;
     };
-#endif
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
