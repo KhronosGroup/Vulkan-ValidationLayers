@@ -159,10 +159,28 @@ static const std::string& FindVUID(const Location& loc, const Table& table) {
 // different VUIDs for different values of an enum or bitfield
 template <typename OuterKey, typename Table>
 static const std::string& FindVUID(OuterKey key, const Location& loc, const Table& table) {
+    // Currently need to squash all the KHR versions to find in the table
+    // Only need for functions because they are now generated in the chassis
+    Func f = loc.function;
+    if (f == Func::vkQueueSubmit2KHR) {
+        f = Func::vkQueueSubmit2;
+    } else if (f == Func::vkCmdPipelineBarrier2KHR) {
+        f = Func::vkCmdPipelineBarrier2;
+    } else if (f == Func::vkCmdResetEvent2KHR) {
+        f = Func::vkCmdResetEvent2;
+    } else if (f == Func::vkCmdSetEvent2KHR) {
+        f = Func::vkCmdSetEvent2;
+    } else if (f == Func::vkCmdWaitEvents2KHR) {
+        f = Func::vkCmdWaitEvents2;
+    } else if (f == Func::vkCmdWriteTimestamp2KHR) {
+        f = Func::vkCmdWriteTimestamp2;
+    }
+    const Location core_loc(f, loc.structure, loc.field, loc.index);
+
     static const std::string empty;
     const auto entry = table.find(key);
     if (entry != table.end()) {
-        return FindVUID(loc, entry->second);
+        return FindVUID(core_loc, entry->second);
     }
     return empty;
 }
