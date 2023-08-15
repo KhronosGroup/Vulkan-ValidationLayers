@@ -21,6 +21,20 @@
             "commit": "v1.3.262"
         },
         {
+            "name": "Vulkan-Utility-Libraries",
+            "url": "https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git",
+            "sub_dir": "Vulkan-Utility-Libraries",
+            "build_dir": "Vulkan-Utility-Libraries/build",
+            "install_dir": "Vulkan-Utility-Libraries/build/install",
+            "commit": "b0712dfdb1f38cf707d0295c9fc687635046c713",
+            "deps": [
+                {
+                    "var_name": "VULKAN_HEADERS_INSTALL_DIR",
+                    "repo_name": "Vulkan-Headers"
+                }
+            ]
+        },
+        {
             "name": "SPIRV-Headers",
             "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
             "sub_dir": "SPIRV-Headers",
@@ -90,6 +104,7 @@
     "install_names": {
         "glslang": "GLSLANG_INSTALL_DIR",
         "Vulkan-Headers": "VULKAN_HEADERS_INSTALL_DIR",
+        "Vulkan-Utility-Libraries": "VULKAN_UTILITY_LIBRARIES_INSTALL_DIR",
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
         "robin-hood-hashing": "ROBIN_HOOD_HASHING_INSTALL_DIR",
