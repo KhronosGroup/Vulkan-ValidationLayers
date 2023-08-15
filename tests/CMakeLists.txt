@@ -156,9 +156,6 @@ target_sources(vk_layer_validation_tests PRIVATE
 get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
-# TODO: Remove once Android.mk is gone.
-target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_TESTS_USE_CMAKE)
-
 add_dependencies(vk_layer_validation_tests vvl)
 
 target_compile_options(vk_layer_validation_tests PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
