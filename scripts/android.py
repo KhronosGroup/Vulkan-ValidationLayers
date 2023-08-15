@@ -29,7 +29,7 @@ import common_ci
 
 # Manifest file describing out test application
 def get_android_manifest() -> str:
-    manifest = common_ci.RepoRelative('build-android/AndroidManifest.xml')
+    manifest = common_ci.RepoRelative('tests/android/AndroidManifest.xml')
     if not os.path.isfile(manifest):
         print(f"Unable to find manifest for APK! {manifest}")
         sys.exit(-1)
@@ -37,7 +37,7 @@ def get_android_manifest() -> str:
 
 # Resources for our test application.
 def get_android_resources() -> str:
-    res = common_ci.RepoRelative('build-android/res')
+    res = common_ci.RepoRelative('tests/android/res')
     if not os.path.isdir(res):
         print(f"Unable to find android resources for APK! {res}")
         sys.exit(-1)
