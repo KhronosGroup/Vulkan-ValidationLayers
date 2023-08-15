@@ -658,7 +658,7 @@ class ValidationObject {
             parameters = parameters.replace('\n', '')
             parameters = ' '.join(parameters.split()) # remove duplicate whitespace
             result = f', {command.returnType} result' if command.returnType == 'VkResult' or command.returnType == 'VkDeviceAddress' else ''
-            errorObject = ', ErrorObject& errorObj' if command.name in error_object_functions else ''
+            errorObject = ', const ErrorObject& errorObj' if command.name in error_object_functions else ''
 
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}{errorObject}) const {{ return false; }};\n')

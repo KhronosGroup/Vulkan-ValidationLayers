@@ -5855,7 +5855,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
     VkFence                                     fence,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueSubmit", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO, false, true, "VUID-VkSubmitInfo-sType-sType", "VUID-vkQueueSubmit-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr)
@@ -5897,7 +5897,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(
     const VkMemoryAllocateInfo*                 pAllocateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDeviceMemory*                             pMemory,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkAllocateMemory", "pAllocateInfo", "VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO", pAllocateInfo, VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, true, "VUID-vkAllocateMemory-pAllocateInfo-parameter", "VUID-VkMemoryAllocateInfo-sType-sType");
     if (pAllocateInfo != nullptr)
@@ -5935,7 +5935,7 @@ bool StatelessValidation::PreCallValidateFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     const VkAllocationCallbacks*                pAllocator,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (pAllocator != nullptr)
     {
@@ -5967,7 +5967,7 @@ bool StatelessValidation::PreCallValidateMapMemory(
     VkDeviceSize                                size,
     VkMemoryMapFlags                            flags,
     void**                                      ppData,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkMapMemory", "memory", memory);
     skip |= ValidateReservedFlags("vkMapMemory", "flags", flags, "VUID-vkMapMemory-flags-zerobitmask");
@@ -5977,7 +5977,7 @@ bool StatelessValidation::PreCallValidateMapMemory(
 bool StatelessValidation::PreCallValidateUnmapMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkUnmapMemory", "memory", memory);
     return skip;
@@ -5987,7 +5987,7 @@ bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkFlushMappedMemoryRanges", "memoryRangeCount", "pMemoryRanges", "VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE", memoryRangeCount, pMemoryRanges, VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true, "VUID-VkMappedMemoryRange-sType-sType", "VUID-vkFlushMappedMemoryRanges-pMemoryRanges-parameter", "VUID-vkFlushMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != nullptr)
@@ -6006,7 +6006,7 @@ bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkInvalidateMappedMemoryRanges", "memoryRangeCount", "pMemoryRanges", "VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE", memoryRangeCount, pMemoryRanges, VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true, "VUID-VkMappedMemoryRange-sType-sType", "VUID-vkInvalidateMappedMemoryRanges-pMemoryRanges-parameter", "VUID-vkInvalidateMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != nullptr)
@@ -6025,7 +6025,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryCommitment(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkDeviceSize*                               pCommittedMemoryInBytes,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkGetDeviceMemoryCommitment", "memory", memory);
     skip |= ValidateRequiredPointer("vkGetDeviceMemoryCommitment", "pCommittedMemoryInBytes", pCommittedMemoryInBytes, "VUID-vkGetDeviceMemoryCommitment-pCommittedMemoryInBytes-parameter");
@@ -6037,7 +6037,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory(
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
     VkDeviceSize                                memoryOffset,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkBindBufferMemory", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkBindBufferMemory", "memory", memory);
@@ -6049,7 +6049,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory(
     VkImage                                     image,
     VkDeviceMemory                              memory,
     VkDeviceSize                                memoryOffset,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkBindImageMemory", "image", image);
     skip |= ValidateRequiredHandle("vkBindImageMemory", "memory", memory);
@@ -6074,7 +6074,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
     VkMemoryRequirements*                       pMemoryRequirements,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkGetImageMemoryRequirements", "image", image);
     skip |= ValidateRequiredPointer("vkGetImageMemoryRequirements", "pMemoryRequirements", pMemoryRequirements, "VUID-vkGetImageMemoryRequirements-pMemoryRequirements-parameter");
@@ -6134,7 +6134,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
     VkFence                                     fence,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueBindSparse", "bindInfoCount", "pBindInfo", "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO", bindInfoCount, pBindInfo, VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, false, true, "VUID-VkBindSparseInfo-sType-sType", "VUID-vkQueueBindSparse-pBindInfo-parameter", kVUIDUndefined);
     if (pBindInfo != nullptr)
@@ -7607,7 +7607,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkFramebuffer*                              pFramebuffer,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateFramebuffer", "pCreateInfo", "VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, true, "VUID-vkCreateFramebuffer-pCreateInfo-parameter", "VUID-VkFramebufferCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -7649,7 +7649,7 @@ bool StatelessValidation::PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
     const VkAllocationCallbacks*                pAllocator,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (pAllocator != nullptr)
     {
@@ -7679,7 +7679,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateRenderPass", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, true, "VUID-vkCreateRenderPass-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -7810,7 +7810,7 @@ bool StatelessValidation::PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
     const VkAllocationCallbacks*                pAllocator,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (pAllocator != nullptr)
     {
@@ -8677,7 +8677,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
     uint32_t                                    offset,
     uint32_t                                    size,
     const void*                                 pValues,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdPushConstants", "layout", layout);
     skip |= ValidateFlags("vkCmdPushConstants", "stageFlags", "VkShaderStageFlagBits", AllVkShaderStageFlagBits, stageFlags, kRequiredFlags, "VUID-vkCmdPushConstants-stageFlags-parameter", "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
@@ -8690,7 +8690,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
     VkSubpassContents                           contents,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRenderPass", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
     if (pRenderPassBegin != nullptr)
@@ -8715,7 +8715,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
 bool StatelessValidation::PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
     VkSubpassContents                           contents,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRangedEnum("vkCmdNextSubpass", "contents", "VkSubpassContents", contents, "VUID-vkCmdNextSubpass-contents-parameter");
     return skip;
@@ -8723,7 +8723,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass(
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass(
     VkCommandBuffer                             commandBuffer,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -8733,7 +8733,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
     const VkCommandBuffer*                      pCommandBuffers,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateHandleArray("vkCmdExecuteCommands", "commandBufferCount", "pCommandBuffers", commandBufferCount, pCommandBuffers, true, true, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
     return skip;
@@ -8743,7 +8743,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkBindBufferMemory2", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, true, true, "VUID-VkBindBufferMemoryInfo-sType-sType", "VUID-vkBindBufferMemory2-pBindInfos-parameter", "VUID-vkBindBufferMemory2-bindInfoCount-arraylength");
     if (pBindInfos != nullptr)
@@ -8766,7 +8766,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkBindImageMemory2", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO, true, true, "VUID-VkBindImageMemoryInfo-sType-sType", "VUID-vkBindImageMemory2-pBindInfos-parameter", "VUID-vkBindImageMemory2-bindInfoCount-arraylength");
     if (pBindInfos != nullptr)
@@ -8836,7 +8836,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkGetImageMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageMemoryRequirements2-pInfo-parameter", "VUID-VkImageMemoryRequirementsInfo2-sType-sType");
     if (pInfo != nullptr)
@@ -9076,7 +9076,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateSamplerYcbcrConversion", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -9388,7 +9388,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateRenderPass2", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
     if (pCreateInfo != nullptr)
@@ -9565,7 +9565,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRenderPass2", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
     if (pRenderPassBegin != nullptr)
@@ -9597,7 +9597,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
     const VkSubpassEndInfo*                     pSubpassEndInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdNextSubpass2", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
     if (pSubpassBeginInfo != nullptr)
@@ -9619,7 +9619,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassEndInfo*                     pSubpassEndInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdEndRenderPass2", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
     if (pSubpassEndInfo != nullptr)
@@ -9687,7 +9687,7 @@ bool StatelessValidation::PreCallValidateSignalSemaphore(
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddress(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkGetBufferDeviceAddress", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != nullptr)
@@ -9702,7 +9702,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddress(
 bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddress(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkGetBufferOpaqueCaptureAddress", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferOpaqueCaptureAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
     if (pInfo != nullptr)
@@ -9717,7 +9717,7 @@ bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddress(
 bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(
     VkDevice                                    device,
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkGetDeviceMemoryOpaqueCaptureAddress", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO, true, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-parameter", "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-sType-sType");
     if (pInfo != nullptr)
@@ -10116,7 +10116,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
     VkFence                                     fence,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructTypeArray("vkQueueSubmit2", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO_2", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType", "VUID-vkQueueSubmit2-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr)
@@ -10393,7 +10393,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2(
 bool StatelessValidation::PreCallValidateCmdBeginRendering(
     VkCommandBuffer                             commandBuffer,
     const VkRenderingInfo*                      pRenderingInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCmdBeginRendering", "pRenderingInfo", "VK_STRUCTURE_TYPE_RENDERING_INFO", pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true, "VUID-vkCmdBeginRendering-pRenderingInfo-parameter", "VUID-VkRenderingInfo-sType-sType");
     if (pRenderingInfo != nullptr)
@@ -10474,7 +10474,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(
 
 bool StatelessValidation::PreCallValidateCmdEndRendering(
     VkCommandBuffer                             commandBuffer,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -11974,7 +11974,7 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(
 bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderingInfo*                      pRenderingInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) skip |= OutputExtensionError("vkCmdBeginRenderingKHR", "VK_KHR_dynamic_rendering");
     skip |= ValidateStructType("vkCmdBeginRenderingKHR", "pRenderingInfo", "VK_STRUCTURE_TYPE_RENDERING_INFO", pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true, "VUID-vkCmdBeginRendering-pRenderingInfo-parameter", "VUID-VkRenderingInfo-sType-sType");
@@ -12056,7 +12056,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
 
 bool StatelessValidation::PreCallValidateCmdEndRenderingKHR(
     VkCommandBuffer                             commandBuffer,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) skip |= OutputExtensionError("vkCmdEndRenderingKHR", "VK_KHR_dynamic_rendering");
     // No xml-driven validation
@@ -12616,7 +12616,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCreateRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCreateRenderPass2KHR", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
@@ -12794,7 +12794,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdBeginRenderPass2KHR", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
@@ -12827,7 +12827,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
     const VkSubpassEndInfo*                     pSubpassEndInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdNextSubpass2KHR", "pSubpassBeginInfo", "VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO", pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true, "VUID-vkCmdNextSubpass2-pSubpassBeginInfo-parameter", "VUID-VkSubpassBeginInfo-sType-sType");
@@ -12850,7 +12850,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassEndInfo*                     pSubpassEndInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2)) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", "VK_KHR_create_renderpass2");
     skip |= ValidateStructType("vkCmdEndRenderPass2KHR", "pSubpassEndInfo", "VK_STRUCTURE_TYPE_SUBPASS_END_INFO", pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true, "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
@@ -13170,7 +13170,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_get_memory_requirements2)) skip |= OutputExtensionError("vkGetImageMemoryRequirements2KHR", "VK_KHR_get_memory_requirements2");
     skip |= ValidateStructType("vkGetImageMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageMemoryRequirements2-pInfo-parameter", "VUID-VkImageMemoryRequirementsInfo2-sType-sType");
@@ -13245,7 +13245,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion");
     skip |= ValidateStructType("vkCreateSamplerYcbcrConversionKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
@@ -13335,7 +13335,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_bind_memory2)) skip |= OutputExtensionError("vkBindBufferMemory2KHR", "VK_KHR_bind_memory2");
     skip |= ValidateStructTypeArray("vkBindBufferMemory2KHR", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, true, true, "VUID-VkBindBufferMemoryInfo-sType-sType", "VUID-vkBindBufferMemory2-pBindInfos-parameter", "VUID-vkBindBufferMemory2-bindInfoCount-arraylength");
@@ -13359,7 +13359,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_bind_memory2)) skip |= OutputExtensionError("vkBindImageMemory2KHR", "VK_KHR_bind_memory2");
     skip |= ValidateStructTypeArray("vkBindImageMemory2KHR", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO, true, true, "VUID-VkBindImageMemoryInfo-sType-sType", "VUID-vkBindImageMemory2-pBindInfos-parameter", "VUID-vkBindImageMemory2-bindInfoCount-arraylength");
@@ -13535,7 +13535,7 @@ bool StatelessValidation::PreCallValidateWaitForPresentKHR(
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetBufferDeviceAddressKHR", "VK_KHR_buffer_device_address");
     skip |= ValidateStructType("vkGetBufferDeviceAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
@@ -13551,7 +13551,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressKHR(
 bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureAddressKHR", "VK_KHR_buffer_device_address");
     skip |= ValidateStructType("vkGetBufferOpaqueCaptureAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferOpaqueCaptureAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");
@@ -13567,7 +13567,7 @@ bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddressKHR(
 bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
     const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "VK_KHR_buffer_device_address");
     skip |= ValidateStructType("vkGetDeviceMemoryOpaqueCaptureAddressKHR", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO, true, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-parameter", "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-sType-sType");
@@ -13745,7 +13745,7 @@ bool StatelessValidation::PreCallValidateMapMemory2KHR(
     VkDevice                                    device,
     const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
     void**                                      ppData,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_map_memory2)) skip |= OutputExtensionError("vkMapMemory2KHR", "VK_KHR_map_memory2");
     skip |= ValidateStructType("vkMapMemory2KHR", "pMemoryMapInfo", "VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR", pMemoryMapInfo, VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR, true, "VUID-vkMapMemory2KHR-pMemoryMapInfo-parameter", "VUID-VkMemoryMapInfoKHR-sType-sType");
@@ -13763,7 +13763,7 @@ bool StatelessValidation::PreCallValidateMapMemory2KHR(
 bool StatelessValidation::PreCallValidateUnmapMemory2KHR(
     VkDevice                                    device,
     const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_map_memory2)) skip |= OutputExtensionError("vkUnmapMemory2KHR", "VK_KHR_map_memory2");
     skip |= ValidateStructType("vkUnmapMemory2KHR", "pMemoryUnmapInfo", "VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR", pMemoryUnmapInfo, VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR, true, "VUID-vkUnmapMemory2KHR-pMemoryUnmapInfo-parameter", "VUID-VkMemoryUnmapInfoKHR-sType-sType");
@@ -14210,7 +14210,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(
     uint32_t                                    submitCount,
     const VkSubmitInfo2*                        pSubmits,
     VkFence                                     fence,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkQueueSubmit2KHR", "VK_KHR_synchronization2");
     skip |= ValidateStructTypeArray("vkQueueSubmit2KHR", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO_2", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType", "VUID-vkQueueSubmit2-pSubmits-parameter", kVUIDUndefined);
@@ -14571,7 +14571,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkDeviceImageMemoryRequirements*      pInfo,
     VkMemoryRequirements2*                      pMemoryRequirements,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) skip |= OutputExtensionError("vkGetDeviceImageMemoryRequirementsKHR", "VK_KHR_maintenance4");
     skip |= ValidateStructType("vkGetDeviceImageMemoryRequirementsKHR", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS", pInfo, VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS, true, "VUID-vkGetDeviceImageMemoryRequirements-pInfo-parameter", "VUID-VkDeviceImageMemoryRequirements-sType-sType");
@@ -14624,7 +14624,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirementsK
     const VkDeviceImageMemoryRequirements*      pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) skip |= OutputExtensionError("vkGetDeviceImageSparseMemoryRequirementsKHR", "VK_KHR_maintenance4");
     skip |= ValidateStructType("vkGetDeviceImageSparseMemoryRequirementsKHR", "pInfo", "VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS", pInfo, VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS, true, "VUID-vkGetDeviceImageSparseMemoryRequirements-pInfo-parameter", "VUID-VkDeviceImageMemoryRequirements-sType-sType");
@@ -17183,7 +17183,7 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    ErrorObject&                                errorObj) const {
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_buffer_device_address)) skip |= OutputExtensionError("vkGetBufferDeviceAddressEXT", "VK_EXT_buffer_device_address");
     skip |= ValidateStructType("vkGetBufferDeviceAddressEXT", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO", pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true, "VUID-vkGetBufferDeviceAddress-pInfo-parameter", "VUID-VkBufferDeviceAddressInfo-sType-sType");

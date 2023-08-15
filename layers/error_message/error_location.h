@@ -76,8 +76,8 @@ struct Location {
 // Created for each function as a starting point to build off of
 struct ErrorObject {
     const Location location;   // starting location (Always the function entrypoint)
-    VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
-    LogObjectList objlist;
+    const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
+    const LogObjectList objlist;
     const CMD_TYPE cmd_type;  // for vkCmd* functions
     ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, CMD_TYPE cmd_type_ = CMD_NONE)
         : location(Location(command_)), handle(handle_), objlist(handle), cmd_type(cmd_type_) {}

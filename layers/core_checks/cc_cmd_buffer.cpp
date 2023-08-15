@@ -805,7 +805,7 @@ constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kNotTrashed;
 constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kTrashedByPrimary;
 
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
-                                                   const VkCommandBuffer *pCommandBuffers, ErrorObject &errorObj) const {
+                                                   const VkCommandBuffer *pCommandBuffers, const ErrorObject &errorObj) const {
     const auto &cb_state = *GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     vvl::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;

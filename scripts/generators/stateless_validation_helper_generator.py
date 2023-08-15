@@ -292,7 +292,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             if 'ValidationCache' in command.name:
                 prototype = prototype.replace('const override', 'const')
             if command.name in error_object_functions:
-                prototype = prototype.replace(')', ',\n    ErrorObject&                                errorObj)')
+                prototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
             out.append(prototype)
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
         self.write("".join(out))
@@ -460,7 +460,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 prototype += ' const {\n'
                 prototype = prototype.split('VKAPI_CALL vk')[1]
                 if command.name in error_object_functions:
-                    prototype = prototype.replace(')', ',\n    ErrorObject&                                errorObj)')
+                    prototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
                 out.append('bool StatelessValidation::PreCallValidate' + prototype)
                 out.append(f'{indent}bool skip = false;\n')
                 if command.instance and command.version:

@@ -207,7 +207,7 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAlloca
 
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                               ErrorObject &errorObj) const {
+                                               const ErrorObject &errorObj) const {
     bool skip = false;
     if (Count<DEVICE_MEMORY_STATE>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= LogError(
@@ -381,7 +381,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 }
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator,
-                                           ErrorObject &errorObj) const {
+                                           const ErrorObject &errorObj) const {
     auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
     bool skip = false;
     if (mem_info) {
@@ -678,12 +678,12 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                                 ErrorObject &errorObj) const {
+                                                 const ErrorObject &errorObj) const {
     return ValidateBindBufferMemory(buffer, memory, memoryOffset, nullptr, errorObj.location);
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo *pBindInfos,
-                                                  ErrorObject &errorObj) const {
+                                                  const ErrorObject &errorObj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
@@ -695,7 +695,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bind
 }
 
 bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                     const VkBindBufferMemoryInfo *pBindInfos, ErrorObject &errorObj) const {
+                                                     const VkBindBufferMemoryInfo *pBindInfos, const ErrorObject &errorObj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
@@ -707,7 +707,8 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
 }
 
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image,
-                                                           VkMemoryRequirements *pMemoryRequirements, ErrorObject &errorObj) const {
+                                                           VkMemoryRequirements *pMemoryRequirements,
+                                                           const ErrorObject &errorObj) const {
     bool skip = false;
     const Location image_loc = errorObj.location.dot(Field::image);
     skip |= ValidateGetImageMemoryRequirementsANDROID(image, image_loc);
@@ -725,7 +726,8 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo, ErrorObject &errorObj) const {
+bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     const Location loc = errorObj.location.dot(Field::pInfo);
     const Location image_loc = loc.dot(Field::image);
@@ -783,13 +785,13 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
 
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                             VkMemoryRequirements2 *pMemoryRequirements,
-                                                            ErrorObject &errorObj) const {
+                                                            const ErrorObject &errorObj) const {
     return ValidateGetImageMemoryRequirements2(pInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                VkMemoryRequirements2 *pMemoryRequirements,
-                                                               ErrorObject &errorObj) const {
+                                                               const ErrorObject &errorObj) const {
     return ValidateGetImageMemoryRequirements2(pInfo, errorObj);
 }
 
@@ -842,7 +844,7 @@ bool CoreChecks::ValidateMapMemory(const DEVICE_MEMORY_STATE &mem_info, VkDevice
 }
 
 bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
-                                          VkFlags flags, void **ppData, ErrorObject &errorObj) const {
+                                          VkFlags flags, void **ppData, const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
     if (mem_info) {
@@ -853,7 +855,7 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory
 }
 
 bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData,
-                                              ErrorObject &errorObj) const {
+                                              const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryMapInfo->memory);
     if (mem_info) {
@@ -864,7 +866,7 @@ bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMap
     return skip;
 }
 
-bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
     if (mem_info && !mem_info->mapped_range.size) {
@@ -875,7 +877,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memo
 }
 
 bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
-                                                ErrorObject &errorObj) const {
+                                                const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
     if (mem_info && !mem_info->mapped_range.size) {
@@ -886,7 +888,7 @@ bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryU
 }
 
 bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappedMemoryRange *pMemoryRanges,
-                                        ErrorObject &errorObj) const {
+                                        const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t i = 0; i < memoryRangeCount; ++i) {
         const Location loc = errorObj.location.dot(Field::pMemoryRanges, i);
@@ -930,7 +932,7 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappe
 }
 
 bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges,
-                                                       ErrorObject &errorObj) const {
+                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t i = 0; i < mem_range_count; ++i) {
         const Location loc = errorObj.location.dot(Field::pMemoryRanges, i);
@@ -976,7 +978,8 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
 }
 
 bool CoreChecks::PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
-                                                        const VkMappedMemoryRange *pMemoryRanges, ErrorObject &errorObj) const {
+                                                        const VkMappedMemoryRange *pMemoryRanges,
+                                                        const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateMappedMemoryRangeDeviceLimits(memoryRangeCount, pMemoryRanges, errorObj);
     skip |= ValidateMemoryIsMapped(memoryRangeCount, pMemoryRanges, errorObj);
@@ -985,7 +988,7 @@ bool CoreChecks::PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_
 
 bool CoreChecks::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
                                                              const VkMappedMemoryRange *pMemoryRanges,
-                                                             ErrorObject &errorObj) const {
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateMappedMemoryRangeDeviceLimits(memoryRangeCount, pMemoryRanges, errorObj);
     skip |= ValidateMemoryIsMapped(memoryRangeCount, pMemoryRanges, errorObj);
@@ -993,7 +996,7 @@ bool CoreChecks::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, ui
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize *pCommittedMem,
-                                                          ErrorObject &errorObj) const {
+                                                          const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
@@ -1010,7 +1013,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
 }
 
 bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                         ErrorObject &errorObj) const {
+                                         const ErrorObject &errorObj) const {
     bool skip = false;
     const bool bind_image_mem_2 = errorObj.location.function != Func::vkBindImageMemory;
 
@@ -1520,7 +1523,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                                ErrorObject &errorObj) const {
+                                                const ErrorObject &errorObj) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(image);
     if (image_state) {
@@ -1552,7 +1555,7 @@ void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, V
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                                 ErrorObject &errorObj) const {
+                                                 const ErrorObject &errorObj) const {
     return ValidateBindImageMemory(bindInfoCount, pBindInfos, errorObj);
 }
 
@@ -1570,7 +1573,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                    const VkBindImageMemoryInfo *pBindInfos, ErrorObject &errorObj) const {
+                                                    const VkBindImageMemoryInfo *pBindInfos, const ErrorObject &errorObj) const {
     return ValidateBindImageMemory(bindInfoCount, pBindInfos, errorObj);
 }
 
@@ -1748,7 +1751,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
 }
 
 bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                ErrorObject &errorObj) const {
+                                                const ErrorObject &errorObj) const {
     bool skip = false;
     if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext_features.bufferDeviceAddress) {
         skip |= LogError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324", pInfo->buffer, errorObj.location,
@@ -1778,22 +1781,22 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                          ErrorObject &errorObj) const {
+                                                          const ErrorObject &errorObj) const {
     return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                          ErrorObject &errorObj) const {
+                                                          const ErrorObject &errorObj) const {
     return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                       ErrorObject &errorObj) const {
+                                                       const ErrorObject &errorObj) const {
     return ValidateGetBufferDeviceAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                       ErrorObject &errorObj) const {
+                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     const LogObjectList objlist(device, pInfo->buffer);
 
@@ -1811,17 +1814,17 @@ bool CoreChecks::ValidateGetBufferOpaqueCaptureAddress(VkDevice device, const Vk
 }
 
 bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                                 ErrorObject &errorObj) const {
+                                                                 const ErrorObject &errorObj) const {
     return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                              ErrorObject &errorObj) const {
+                                                              const ErrorObject &errorObj) const {
     return ValidateGetBufferOpaqueCaptureAddress(device, static_cast<const VkBufferDeviceAddressInfo *>(pInfo), errorObj);
 }
 
 bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo,
-                                                             ErrorObject &errorObj) const {
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
     const LogObjectList objlst(device, pInfo->memory);
 
@@ -1850,14 +1853,14 @@ bool CoreChecks::ValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, co
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device,
                                                                        const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo,
-                                                                       ErrorObject &errorObj) const {
+                                                                       const ErrorObject &errorObj) const {
     return ValidateGetDeviceMemoryOpaqueCaptureAddress(device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfo *>(pInfo),
                                                        errorObj);
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
                                                                     const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo,
-                                                                    ErrorObject &errorObj) const {
+                                                                    const ErrorObject &errorObj) const {
     return ValidateGetDeviceMemoryOpaqueCaptureAddress(device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfo *>(pInfo),
                                                        errorObj);
 }

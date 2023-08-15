@@ -113,7 +113,7 @@ struct CommandBufferSubmitState {
 };
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                            ErrorObject &errorObj) const {
+                                            const ErrorObject &errorObj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
@@ -235,7 +235,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 }
 
 bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                      ErrorObject &errorObj) const {
+                                      const ErrorObject &errorObj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
@@ -329,12 +329,12 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, ErrorObject &errorObj) const {
+                                                VkFence fence, const ErrorObject &errorObj) const {
     return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                             ErrorObject &errorObj) const {
+                                             const ErrorObject &errorObj) const {
     return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
 }
 
@@ -574,7 +574,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 }
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                VkFence fence, ErrorObject &errorObj) const {
+                                                VkFence fence, const ErrorObject &errorObj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
