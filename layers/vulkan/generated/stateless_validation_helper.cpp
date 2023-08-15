@@ -6566,7 +6566,8 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) const {
+    VkBuffer*                                   pBuffer,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateBuffer", "pCreateInfo", "VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, true, "VUID-vkCreateBuffer-pCreateInfo-parameter", "VUID-VkBufferCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -6602,7 +6603,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateBuffer", "pBuffer", pBuffer, "VUID-vkCreateBuffer-pBuffer-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+    if (!skip) skip |= manual_PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, errorObj);
     return skip;
 }
 
@@ -6638,7 +6639,8 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView) const {
+    VkBufferView*                               pView,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateBufferView", "pCreateInfo", "VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, true, "VUID-vkCreateBufferView-pCreateInfo-parameter", "VUID-VkBufferViewCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -6674,7 +6676,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateBufferView", "pView", pView, "VUID-vkCreateBufferView-pView-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView);
+    if (!skip) skip |= manual_PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView, errorObj);
     return skip;
 }
 
@@ -6710,7 +6712,8 @@ bool StatelessValidation::PreCallValidateCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage) const {
+    VkImage*                                    pImage,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateImage", "pCreateInfo", "VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, true, "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -6758,7 +6761,7 @@ bool StatelessValidation::PreCallValidateCreateImage(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateImage", "pImage", pImage, "VUID-vkCreateImage-pImage-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage);
+    if (!skip) skip |= manual_PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage, errorObj);
     return skip;
 }
 
@@ -6810,7 +6813,8 @@ bool StatelessValidation::PreCallValidateCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView) const {
+    VkImageView*                                pView,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateImageView", "pCreateInfo", "VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, true, "VUID-vkCreateImageView-pCreateInfo-parameter", "VUID-VkImageViewCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -6858,7 +6862,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateImageView", "pView", pView, "VUID-vkCreateImageView-pView-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateImageView(device, pCreateInfo, pAllocator, pView);
+    if (!skip) skip |= manual_PreCallValidateCreateImageView(device, pCreateInfo, pAllocator, pView, errorObj);
     return skip;
 }
 
@@ -8356,10 +8360,11 @@ bool StatelessValidation::PreCallValidateCmdFillBuffer(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data) const {
+    uint32_t                                    data,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdFillBuffer", "dstBuffer", dstBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+    if (!skip) skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, errorObj);
     return skip;
 }
 

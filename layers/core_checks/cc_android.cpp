@@ -405,12 +405,10 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
             const char *vuid = loc.function == Func::vkGetImageMemoryRequirements
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
                                    : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
-            skip |=
-                LogError(vuid, image,
-                         loc
-                         "was created with a "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
-                         "bound to memory, so image memory requirements can't yet be queried.");
+            skip |= LogError(vuid, image, loc,
+                             "was created with a VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, "
+                             "which has not yet been "
+                             "bound to memory, so image memory requirements can't yet be queried.");
         }
     }
     return skip;

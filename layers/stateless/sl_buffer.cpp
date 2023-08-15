@@ -19,7 +19,8 @@
 #include "stateless/stateless_validation.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const {
+                                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -88,8 +89,8 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                                 const VkAllocationCallbacks *pAllocator,
-                                                                 VkBufferView *pBufferView) const {
+                                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
+                                                                 const ErrorObject &errorObj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(

@@ -2262,7 +2262,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                               VkQueryResultFlags flags) override;
 
     bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                      uint32_t data) const override;
+                                      uint32_t data, const ErrorObject &errorObj) const override;
     void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                     uint32_t data) override;
 

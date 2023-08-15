@@ -612,13 +612,16 @@ class StatelessValidation : public ValidationObject {
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) const;
 
     bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const;
+                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                            const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage) const;
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage,
+                                           const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView) const;
+                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView,
+                                               const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkCommandBuffer object) const;
@@ -661,7 +664,8 @@ class StatelessValidation : public ValidationObject {
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) const;
 
     bool manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView) const;
+                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
+                                                const ErrorObject &errorObj) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const char *api_call,
@@ -769,7 +773,7 @@ class StatelessValidation : public ValidationObject {
                                                VkDeviceSize dataSize, const void *pData) const;
 
     bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                             VkDeviceSize size, uint32_t data) const;
+                                             VkDeviceSize size, uint32_t data, const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) const;

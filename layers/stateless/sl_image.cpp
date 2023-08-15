@@ -20,7 +20,8 @@
 #include "generated/enum_flag_bits.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) const {
+                                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage,
+                                                            const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -644,7 +645,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) const {
+                                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {

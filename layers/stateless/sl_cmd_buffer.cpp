@@ -1013,23 +1013,22 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) const {
+                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data,
+                                                              const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (dstOffset & 3) {
-        skip |= LogError(device, "VUID-vkCmdFillBuffer-dstOffset-00025",
-                         "vkCmdFillBuffer() parameter, VkDeviceSize dstOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
-                         dstOffset);
+        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00025", dstBuffer, errorObj.location.dot(Field::dstOffset),
+                         "(0x%" PRIxLEAST64 ") is not a multiple of 4.", dstOffset);
     }
 
     if (size != VK_WHOLE_SIZE) {
         if (size <= 0) {
-            skip |=
-                LogError(device, "VUID-vkCmdFillBuffer-size-00026",
-                         "vkCmdFillBuffer() parameter, VkDeviceSize size (0x%" PRIxLEAST64 "), must be greater than zero.", size);
+            skip |= LogError("VUID-vkCmdFillBuffer-size-00026", dstBuffer, errorObj.location.dot(Field::size),
+                             "(0x%" PRIxLEAST64 ") must be greater than zero.", size);
         } else if (size & 3) {
-            skip |= LogError(device, "VUID-vkCmdFillBuffer-size-00028",
-                             "vkCmdFillBuffer() parameter, VkDeviceSize size (0x%" PRIxLEAST64 "), is not a multiple of 4.", size);
+            skip |= LogError("VUID-vkCmdFillBuffer-size-00028", dstBuffer, errorObj.location.dot(Field::size),
+                             "(0x%" PRIxLEAST64 ") is not a multiple of 4.", size);
         }
     }
     return skip;
