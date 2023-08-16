@@ -300,7 +300,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
             // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
             // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
             // overlap, an error will be logged.
-
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6040
+#if 0
             if (auto other_scratches = GetBuffersByAddress(pInfos[other_info_j].scratchData.deviceAddress);
                 !other_scratches.empty()) {
                 using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
@@ -529,7 +530,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     *this, other_scratches, "vkCmdBuildAccelerationStructuresKHR()", address_name_ss.str(),
                     pInfos[other_info_j].scratchData.deviceAddress);
             }
-
+#endif
             // skip comparing to self pInfos[info_i]
             if (other_info_j != info_i) {
                 const auto other_dst_as_state =
