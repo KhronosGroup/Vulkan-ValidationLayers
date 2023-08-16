@@ -1330,7 +1330,8 @@ bool PreCallValidateGetDeviceImageSparseMemoryRequirements(
 bool PreCallValidateDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator) const override;
+    const VkAllocationCallbacks*                pAllocator,
+    const ErrorObject&                          errorObj) const override;
 void PreCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
@@ -1339,26 +1340,31 @@ bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
-    VkBool32*                                   pSupported) const override;
+    VkBool32*                                   pSupported,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) const override;
+    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormatKHR*                         pSurfaceFormats) const override;
+    VkSurfaceFormatKHR*                         pSurfaceFormats,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const override;
+    VkPresentModeKHR*                           pPresentModes,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchain) const override;
+    VkSwapchainKHR*                             pSwapchain,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
@@ -1390,26 +1396,31 @@ bool PreCallValidateAcquireNextImageKHR(
     uint64_t                                    timeout,
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
-    uint32_t*                                   pImageIndex) const override;
+    uint32_t*                                   pImageIndex,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateQueuePresentKHR(
     VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo) const override;
+    const VkPresentInfoKHR*                     pPresentInfo,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
     VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) const override;
 bool PreCallValidateGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const override;
+    VkDeviceGroupPresentModeFlagsKHR*           pModes,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
-    VkRect2D*                                   pRects) const override;
+    VkRect2D*                                   pRects,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
-    uint32_t*                                   pImageIndex) const override;
+    uint32_t*                                   pImageIndex,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
@@ -1422,7 +1433,8 @@ bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays) const override;
+    VkDisplayKHR*                               pDisplays,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
@@ -1439,7 +1451,8 @@ bool PreCallValidateCreateDisplayModeKHR(
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDisplayModeKHR*                           pMode) const override;
+    VkDisplayModeKHR*                           pMode,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
@@ -1451,12 +1464,14 @@ bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
-    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) const override;
+    VkDisplayPlaneCapabilitiesKHR*              pCapabilities,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const override;
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
@@ -1468,7 +1483,8 @@ bool PreCallValidateCreateSharedSwapchainsKHR(
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchains) const override;
+    VkSwapchainKHR*                             pSwapchains,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateSharedSwapchainsKHR(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
@@ -1481,7 +1497,8 @@ bool PreCallValidateCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const override;
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
@@ -1494,14 +1511,16 @@ bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID) const override;
+    VisualID                                    visualID,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 bool PreCallValidateCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const override;
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
@@ -1514,14 +1533,16 @@ bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id) const override;
+    xcb_visualid_t                              visual_id,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 bool PreCallValidateCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const override;
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
@@ -1533,7 +1554,8 @@ void PostCallRecordCreateWaylandSurfaceKHR(
 bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display) const override;
+    struct wl_display*                          display,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateCreateAndroidSurfaceKHR(
@@ -1553,7 +1575,8 @@ bool PreCallValidateCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const override;
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
@@ -1564,7 +1587,8 @@ void PostCallRecordCreateWin32SurfaceKHR(
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex) const override;
+    uint32_t                                    queueFamilyIndex,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -1858,12 +1882,14 @@ bool PreCallValidateReleaseProfilingLockKHR(
 bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) const override;
+    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormat2KHR*                        pSurfaceFormats) const override;
+    VkSurfaceFormat2KHR*                        pSurfaceFormats,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
@@ -1880,7 +1906,8 @@ bool PreCallValidateGetDisplayModeProperties2KHR(
 bool PreCallValidateGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities) const override;
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
@@ -1970,7 +1997,8 @@ bool PreCallValidateWaitForPresentKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint64_t                                    presentId,
-    uint64_t                                    timeout) const override;
+    uint64_t                                    timeout,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
@@ -2383,7 +2411,8 @@ void PostCallRecordGetRandROutputDisplayEXT(
 bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) const override;
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateDisplayPowerControlEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
@@ -2886,23 +2915,27 @@ bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const override;
+    VkPresentModeKHR*                           pPresentModes,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const override;
+    VkSwapchainKHR                              swapchain,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const override;
+    VkSwapchainKHR                              swapchain,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const override;
+    VkDeviceGroupPresentModeFlagsKHR*           pModes,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
@@ -2992,7 +3025,8 @@ bool PreCallValidateGetImageSubresourceLayout2EXT(
     VkSubresourceLayout2KHR*                    pLayout) const override;
 bool PreCallValidateReleaseSwapchainImagesEXT(
     VkDevice                                    device,
-    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) const override;
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
@@ -3297,7 +3331,8 @@ void PostCallRecordCreateScreenSurfaceQNX(
 bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct _screen_window*                      window) const override;
+    struct _screen_window*                      window,
+    const ErrorObject&                          errorObj) const override;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 bool PreCallValidateCmdSetColorWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,

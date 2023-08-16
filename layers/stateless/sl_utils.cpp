@@ -87,11 +87,10 @@ bool StatelessValidation::ValidateString(const char *apiName, const ParameterNam
     return skip;
 }
 
-bool StatelessValidation::ValidateNotZero(bool is_zero, const ParameterName &parameter_name, const std::string &vuid,
-                                                  const char *api_name) const {
+bool StatelessValidation::ValidateNotZero(bool is_zero, const std::string &vuid, const Location &loc) const {
     bool skip = false;
     if (is_zero) {
-        skip |= LogError(device, vuid, "%s: parameter %s is zero", api_name, parameter_name.get_name().c_str());
+        skip |= LogError(vuid, device, loc, "is zero.");
     }
     return skip;
 }

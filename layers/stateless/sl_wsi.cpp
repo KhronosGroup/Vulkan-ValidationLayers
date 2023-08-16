@@ -20,31 +20,31 @@
 #include "generated/enum_flag_bits.h"
 
 bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                                    VkSemaphore semaphore, VkFence fence,
-                                                                    uint32_t *pImageIndex) const {
+                                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+                                                                    const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (semaphore == VK_NULL_HANDLE && fence == VK_NULL_HANDLE) {
-        skip |= LogError(swapchain, "VUID-vkAcquireNextImageKHR-semaphore-01780",
-                         "vkAcquireNextImageKHR: semaphore and fence are both VK_NULL_HANDLE.");
+        skip |= LogError("VUID-vkAcquireNextImageKHR-semaphore-01780", swapchain, errorObj.location,
+                         "semaphore and fence are both VK_NULL_HANDLE.");
     }
 
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                                     uint32_t *pImageIndex) const {
+                                                                     uint32_t *pImageIndex, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pAcquireInfo->semaphore == VK_NULL_HANDLE && pAcquireInfo->fence == VK_NULL_HANDLE) {
-        skip |= LogError(pAcquireInfo->swapchain, "VUID-VkAcquireNextImageInfoKHR-semaphore-01782",
-                         "vkAcquireNextImage2KHR: pAcquireInfo->semaphore and pAcquireInfo->fence are both VK_NULL_HANDLE.");
+        skip |= LogError("VUID-VkAcquireNextImageInfoKHR-semaphore-01782", pAcquireInfo->swapchain,
+                         errorObj.location.dot(Field::pAcquireInfo), "semaphore and fence are both VK_NULL_HANDLE.");
     }
 
     return skip;
 }
 
-bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo) const {
+bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -52,48 +52,42 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkS
         if (pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
             if (pCreateInfo->queueFamilyIndexCount <= 1) {
-                skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01278",
-                                 "%s: if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
-                                 "pCreateInfo->queueFamilyIndexCount must be greater than 1.",
-                                 func_name);
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01278", device, loc.dot(Field::imageSharingMode),
+                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
+                                 pCreateInfo->queueFamilyIndexCount);
             }
 
             // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
             // queueFamilyIndexCount uint32_t values
             if (pCreateInfo->pQueueFamilyIndices == nullptr) {
-                skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277",
-                                 "%s: if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
-                                 "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
-                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.",
-                                 func_name);
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277", device, loc.dot(Field::imageSharingMode),
+                                 "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
             }
         }
 
-        skip |= ValidateNotZero(pCreateInfo->imageArrayLayers == 0, "pCreateInfo->imageArrayLayers",
-                                "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", func_name);
+        skip |= ValidateNotZero(pCreateInfo->imageArrayLayers == 0, "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
+                                loc.dot(Field::imageArrayLayers));
 
         // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
         const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
         if (format_list_info) {
             const uint32_t viewFormatCount = format_list_info->viewFormatCount;
             if (((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
-                skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-04100",
-                                 "%s: If the VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR is not set, then "
-                                 "VkImageFormatListCreateInfo::viewFormatCount (%" PRIu32
-                                 ") must be 0 or 1 if it is in the pNext chain.",
-                                 func_name, viewFormatCount);
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
+                                 loc.dot(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount, true),
+                                 "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
+                                 viewFormatCount, string_VkImageCreateFlags(pCreateInfo->flags).c_str());
             }
 
             // Using the first format, compare the rest of the formats against it that they are compatible
             for (uint32_t i = 1; i < viewFormatCount; i++) {
                 if (FormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
                     FormatCompatibilityClass(format_list_info->pViewFormats[i])) {
-                    skip |= LogError(device, "VUID-VkSwapchainCreateInfoKHR-pNext-04099",
-                                     "%s: VkImageFormatListCreateInfo::pViewFormats[0] (%s) and "
-                                     "VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
-                                     "] (%s) are not compatible in the pNext chain.",
-                                     func_name, string_VkFormat(format_list_info->pViewFormats[0]), i,
-                                     string_VkFormat(format_list_info->pViewFormats[i]));
+                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
+                                     loc.dot(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i, true),
+                                     "(%s) and pViewFormats[0] (%s) are not compatible in the pNext chain.",
+                                     string_VkFormat(format_list_info->pViewFormats[i]),
+                                     string_VkFormat(format_list_info->pViewFormats[0]));
                 }
             }
         }
@@ -101,23 +95,18 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkS
         // Validate VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR
         if ((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
             if (!IsExtEnabled(device_extensions.vk_khr_swapchain_mutable_format)) {
-                skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
-                                 "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
-                                 "VK_KHR_swapchain_mutable_format extension, which has not been enabled.",
-                                 func_name);
+                skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, loc.dot(Field::flags),
+                                 "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
+                                 "VK_KHR_swapchain_mutable_format extension, which has not been enabled.");
             } else {
                 if (format_list_info == nullptr) {
-                    skip |= LogError(
-                        device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
-                        "pCreateInfo does not contain an instance of VkImageFormatListCreateInfo.",
-                        func_name);
+                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
+                                     "VkImageFormatListCreateInfo.");
                 } else if (format_list_info->viewFormatCount == 0) {
-                    skip |= LogError(
-                        device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the viewFormatCount "
-                        "member of VkImageFormatListCreateInfo in the pNext chain is zero.",
-                        func_name);
+                    skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                     "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
+                                     loc.dot(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
                 } else {
                     bool found_base_format = false;
                     for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
@@ -127,12 +116,11 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkS
                         }
                     }
                     if (!found_base_format) {
-                        skip |=
-                            LogError(device, "VUID-VkSwapchainCreateInfoKHR-flags-03168",
-                                     "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
-                                     "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
-                                     "pCreateInfo->imageFormat.",
-                                     func_name);
+                        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
+                                         "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
+                                         "elements of the pViewFormats member of VkImageFormatListCreateInfo match "
+                                         "imageFormat (%s).",
+                                         string_VkFormat(pCreateInfo->imageFormat));
                     }
                 }
             }
@@ -143,28 +131,28 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkS
 
 bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                                    const VkAllocationCallbacks *pAllocator,
-                                                                   VkSwapchainKHR *pSwapchain) const {
+                                                                   VkSwapchainKHR *pSwapchain, const ErrorObject &errorObj) const {
     bool skip = false;
-    skip |= ValidateSwapchainCreateInfo("vkCreateSwapchainKHR()", pCreateInfo);
+    skip |= ValidateSwapchainCreateInfo(pCreateInfo, errorObj.location.dot(Field::pCreateInfo));
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                                           const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                                           const VkAllocationCallbacks *pAllocator,
-                                                                          VkSwapchainKHR *pSwapchains) const {
+                                                                          VkSwapchainKHR *pSwapchains,
+                                                                          const ErrorObject &errorObj) const {
     bool skip = false;
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            std::stringstream func_name;
-            func_name << "vkCreateSharedSwapchainsKHR[" << swapchainCount << "]()";
-            skip |= ValidateSwapchainCreateInfo(func_name.str().c_str(), &pCreateInfos[i]);
+            skip |= ValidateSwapchainCreateInfo(&pCreateInfos[i], errorObj.location.dot(Field::pCreateInfos, i));
         }
     }
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {
+bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pPresentInfo && pPresentInfo->pNext) {
@@ -172,16 +160,16 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
         if (present_regions) {
             // TODO: This and all other pNext extension dependencies should be added to code-generation
             if (!IsExtEnabled(device_extensions.vk_khr_incremental_present)) {
-                skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
-                                 "vkQueuePresentKHR() called even though the %s extension was not enabled for this VkDevice.",
+                skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, errorObj.location, "%s extension was not enabled.",
                                  VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
             }
 
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
-                skip |= LogError(device, "VUID-VkPresentRegionsKHR-swapchainCount-01260",
-                                 "QueuePresentKHR(): pPresentInfo->swapchainCount has a value of %i but VkPresentRegionsKHR "
-                                 "extension swapchainCount is %i. These values must be equal.",
-                                 pPresentInfo->swapchainCount, present_regions->swapchainCount);
+                skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
+                                 errorObj.location.dot(Struct::VkPresentRegionsKHR, Field::swapchainCount, true),
+                                 "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_regions->swapchainCount,
+                                 errorObj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
+                                 pPresentInfo->swapchainCount);
             }
             skip |= ValidateStructPnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
                                         GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
@@ -195,22 +183,19 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
 bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                                      const VkDisplayModeCreateInfoKHR *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkDisplayModeKHR *pMode) const {
+                                                                     VkDisplayModeKHR *pMode, const ErrorObject &errorObj) const {
     bool skip = false;
 
     const VkDisplayModeParametersKHR display_mode_parameters = pCreateInfo->parameters;
-    if (display_mode_parameters.visibleRegion.width == 0) {
-        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-width-01990",
-                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.visibleRegion.width must be greater than 0.");
-    }
-    if (display_mode_parameters.visibleRegion.height == 0) {
-        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-height-01991",
-                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.visibleRegion.height must be greater than 0.");
-    }
-    if (display_mode_parameters.refreshRate == 0) {
-        skip |= LogError(device, "VUID-VkDisplayModeParametersKHR-refreshRate-01992",
-                         "vkCreateDisplayModeKHR(): pCreateInfo->parameters.refreshRate must be greater than 0.");
-    }
+    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location param_loc = loc.dot(Field::parameters);
+
+    skip |= ValidateNotZero(display_mode_parameters.visibleRegion.width == 0, "VUID-VkDisplayModeParametersKHR-width-01990",
+                            param_loc.dot(Field::visibleRegion).dot(Field::width));
+    skip |= ValidateNotZero(display_mode_parameters.visibleRegion.height == 0, "VUID-VkDisplayModeParametersKHR-height-01991",
+                            param_loc.dot(Field::visibleRegion).dot(Field::width));
+    skip |= ValidateNotZero(display_mode_parameters.refreshRate == 0, "VUID-VkDisplayModeParametersKHR-refreshRate-01992",
+                            param_loc.dot(Field::refreshRate));
 
     return skip;
 }
@@ -218,12 +203,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalD
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice,
                                                                                    VkSurfaceKHR surface,
                                                                                    uint32_t *pSurfaceFormatCount,
-                                                                                   VkSurfaceFormatKHR *pSurfaceFormats) const {
+                                                                                   VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-        skip |= LogError(
-            physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06524",
-            "vkGetPhysicalDeviceSurfaceFormatsKHR(): surface is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
+        skip |=
+            LogError("VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06524", physicalDevice,
+                     errorObj.location.dot(Field::surface), "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
     return skip;
 }
@@ -231,24 +217,25 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsK
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
                                                                                         VkSurfaceKHR surface,
                                                                                         uint32_t *pPresentModeCount,
-                                                                                        VkPresentModeKHR *pPresentModes) const {
+                                                                                        VkPresentModeKHR *pPresentModes,
+                                                                                        const ErrorObject &errorObj) const {
     bool skip = false;
     if (surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-        skip |= LogError(
-            physicalDevice, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06524",
-            "vkGetPhysicalDeviceSurfacePresentModesKHR: surface is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
+        skip |=
+            LogError("VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06524", physicalDevice,
+                     errorObj.location.dot(Field::surface), "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-    VkSurfaceCapabilities2KHR *pSurfaceCapabilities) const {
+    VkSurfaceCapabilities2KHR *pSurfaceCapabilities, const ErrorObject &errorObj) const {
     bool skip = false;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06521",
-                         "vkGetPhysicalDeviceSurfaceCapabilities2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
-                         "VK_GOOGLE_surfaceless_query is not enabled.");
+        skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06521", physicalDevice,
+                         errorObj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
+                         "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     const auto *capabilities_full_screen_exclusive =
@@ -257,8 +244,8 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
         const auto *full_screen_exclusive_win32_info =
             LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
         if (!full_screen_exclusive_win32_info) {
-            skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671",
-                             "vkGetPhysicalDeviceSurfaceCapabilities2KHR(): pSurfaceCapabilities->pNext contains "
+            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671", physicalDevice, errorObj.location,
+                             "pSurfaceCapabilities->pNext contains "
                              "VkSurfaceCapabilitiesFullScreenExclusiveEXT, but pSurfaceInfo->pNext does not contain "
                              "VkSurfaceFullScreenExclusiveWin32InfoEXT");
         }
@@ -273,15 +260,15 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
 
         if (!(LvlFindInChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext))) {
             if (surface_present_mode_compatibility) {
-                skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776",
-                                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR(): VK_EXT_surface_maintenance1 is enabled and "
+                skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776", physicalDevice, errorObj.location,
+                                 "VK_EXT_surface_maintenance1 is enabled and "
                                  "pSurfaceCapabilities->pNext contains VkSurfacePresentModeCompatibilityEXT, but "
                                  "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.");
             }
 
             if (surface_present_scaling_compatibilities) {
-                skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777",
-                                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR(): VK_EXT_surface_maintenance1 is enabled and "
+                skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777", physicalDevice, errorObj.location,
+                                 "VK_EXT_surface_maintenance1 is enabled and "
                                  "pSurfaceCapabilities->pNext contains VkSurfacePresentScalingCapabilitiesEXT, but "
                                  "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.");
             }
@@ -291,16 +278,16 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
             if (pSurfaceInfo->surface == VK_NULL_HANDLE) {
                 if (surface_present_mode_compatibility) {
                     skip |=
-                        LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778",
-                                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR: VK_EXT_surface_maintenance1 and "
+                        LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778", physicalDevice, errorObj.location,
+                                 "VK_EXT_surface_maintenance1 and "
                                  "VK_GOOGLE_surfaceless_query are enabled and pSurfaceCapabilities->pNext contains a "
                                  "VkSurfacePresentModeCompatibilityEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.");
                 }
 
                 if (surface_present_scaling_compatibilities) {
                     skip |=
-                        LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779",
-                                 "vkGetPhysicalDeviceSurfaceCapabilities2KHR: VK_EXT_surface_maintenance1 and "
+                        LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779", physicalDevice, errorObj.location,
+                                 "VK_EXT_surface_maintenance1 and "
                                  "VK_GOOGLE_surfaceless_query are enabled and pSurfaceCapabilities->pNext contains a "
                                  "VkSurfacePresentScalingCapabilitiesEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.");
                 }
@@ -312,12 +299,12 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pSurfaceFormatCount,
-    VkSurfaceFormat2KHR *pSurfaceFormats) const {
+    VkSurfaceFormat2KHR *pSurfaceFormats, const ErrorObject &errorObj) const {
     bool skip = false;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521",
-                         "vkGetPhysicalDeviceSurfaceFormats2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
-                         "VK_GOOGLE_surfaceless_query is not enabled.");
+        skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521", physicalDevice,
+                         errorObj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
+                         "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
     return skip;
 }
@@ -325,24 +312,23 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pPresentModeCount,
-    VkPresentModeKHR *pPresentModes) const {
+    VkPresentModeKHR *pPresentModes, const ErrorObject &errorObj) const {
     bool skip = false;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-        skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521",
-                         "vkGetPhysicalDeviceSurfacePresentModes2EXT: pSurfaceInfo->surface is VK_NULL_HANDLE and "
-                         "VK_GOOGLE_surfaceless_query is not enabled.");
-    }
-    return skip;
+        skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", physicalDevice,
+                         errorObj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
+                         "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
+        return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance,
                                                                       const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                                       const VkAllocationCallbacks *pAllocator,
-                                                                      VkSurfaceKHR *pSurface) const {
+                                                                      VkSurfaceKHR *pSurface, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo->hwnd == nullptr) {
-        skip |= LogError(device, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", "vkCreateWin32SurfaceKHR(): hwnd is NULL.");
+        skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", instance, errorObj.location, "pCreateInfo->hwnd is NULL.");
     }
 
     return skip;
@@ -350,7 +336,8 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 
 bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                                const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) const {
+                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes,
+                                                                               const ErrorObject &errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_swapchain))
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -378,9 +365,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
         if (pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
-            skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521",
-                             "vkGetPhysicalDeviceSurfacePresentModes2EXT: pSurfaceInfo->surface is VK_NULL_HANDLE and "
-                             "VK_GOOGLE_surfaceless_query is not enabled.");
+            skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", device,
+                             errorObj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
+                             "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
         }
 
         skip |= ValidateRequiredHandle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
@@ -393,18 +380,20 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
 bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance,
                                                                         const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
                                                                         const VkAllocationCallbacks *pAllocator,
-                                                                        VkSurfaceKHR *pSurface) const {
+                                                                        VkSurfaceKHR *pSurface, const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto display = pCreateInfo->display;
     const auto surface = pCreateInfo->surface;
 
     if (display == nullptr) {
-        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-display-01304", "vkCreateWaylandSurfaceKHR: display is NULL!");
+        skip |= LogError("VUID-VkWaylandSurfaceCreateInfoKHR-display-01304", instance,
+                         errorObj.location.dot(Field::pCreateInfo).dot(Field::display), "is NULL!");
     }
 
     if (surface == nullptr) {
-        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305", "vkCreateWaylandSurfaceKHR: surface is NULL!");
+        skip |= LogError("VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305", instance,
+                         errorObj.location.dot(Field::pCreateInfo).dot(Field::surface), "is NULL!");
     }
 
     return skip;
@@ -414,20 +403,20 @@ bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstan
 #ifdef VK_USE_PLATFORM_XCB_KHR
 bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance,
                                                                     const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
-                                                                    const VkAllocationCallbacks *pAllocator,
-                                                                    VkSurfaceKHR *pSurface) const {
+                                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                    const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto connection = pCreateInfo->connection;
     const auto window = pCreateInfo->window;
 
     if (connection == nullptr) {
-        skip |= LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-connection-01310", "vkCreateXcbSurfaceKHR: connection is NULL!");
+        skip |= LogError("VUID-VkXcbSurfaceCreateInfoKHR-connection-01310", instance,
+                         errorObj.location.dot(Field::pCreateInfo).dot(Field::connection), "is NULL!");
     }
 
-    if (window == 0) {
-        skip |= LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-window-01311", "vkCreateXcbSurfaceKHR: window is 0!");
-    }
+    skip |= ValidateNotZero(window == 0, "VUID-VkXcbSurfaceCreateInfoKHR-window-01311",
+                            errorObj.location.dot(Field::pCreateInfo).dot(Field::window));
 
     return skip;
 }
@@ -437,19 +426,19 @@ bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance i
 bool StatelessValidation::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance,
                                                                      const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkSurfaceKHR *pSurface) const {
+                                                                     VkSurfaceKHR *pSurface, const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto display = pCreateInfo->dpy;
     const auto window = pCreateInfo->window;
 
     if (display == nullptr) {
-        skip |= LogError(device, "VUID-VkXlibSurfaceCreateInfoKHR-dpy-01313", "vkCreateXlibSurfaceKHR: dpy is NULL!");
+        skip |= LogError("VUID-VkXlibSurfaceCreateInfoKHR-dpy-01313", instance,
+                         errorObj.location.dot(Field::pCreateInfo).dot(Field::dpy), "is NULL!");
     }
 
-    if (window == 0) {
-        skip |= LogError(device, "VUID-VkXlibSurfaceCreateInfoKHR-window-01314", "vkCreateXlibSurfaceKHR: window is 0!");
-    }
+    skip |= ValidateNotZero(window == 0, "VUID-VkXlibSurfaceCreateInfoKHR-window-01314",
+                            errorObj.location.dot(Field::pCreateInfo).dot(Field::window));
 
     return skip;
 }

@@ -2355,7 +2355,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) override;
     void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) override;
 
-    bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const override;
+    bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                        const ErrorObject &errorObj) const override;
     ResourceUsageRange SetupPresentInfo(const VkPresentInfoKHR &present_info, std::shared_ptr<QueueBatchContext> &batch,
                                         PresentedImages &presented_images) const;
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) override;

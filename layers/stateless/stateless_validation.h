@@ -94,7 +94,7 @@ class StatelessValidation : public ValidationObject {
         }
     }
 
-    bool ValidateNotZero(bool is_zero, const ParameterName &parameter_name, const std::string &vuid, const char *api_name) const;
+    bool ValidateNotZero(bool is_zero, const std::string &vuid, const Location &loc) const;
 
     bool ValidateRequiredPointer(const char *apiName, const ParameterName &parameterName, const void *value,
                                  const std::string &vuid) const;
@@ -596,7 +596,7 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
                                              const Location &loc) const;
 
-    bool ValidateSwapchainCreateInfo(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo) const;
+    bool ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const;
 
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
@@ -781,34 +781,41 @@ class StatelessValidation : public ValidationObject {
                                              VkDeviceSize size, uint32_t data, const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) const;
+                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
+                                                  const ErrorObject &errorObj) const;
     bool manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
-                                                         const VkAllocationCallbacks *pAllocator,
-                                                         VkSwapchainKHR *pSwapchains) const;
-    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const;
+                                                         const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
+                                                         const ErrorObject &errorObj) const;
+    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                               const ErrorObject &errorObj) const;
     bool manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                     const VkDisplayModeCreateInfoKHR *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode) const;
+                                                    const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
+                                                    const ErrorObject &errorObj) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
+                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                     const ErrorObject &errorObj) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     bool manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
+                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                       const ErrorObject &errorObj) const;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
     bool manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
+                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                   const ErrorObject &errorObj) const;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     bool manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
+                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                    const ErrorObject &errorObj) const;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
@@ -896,7 +903,8 @@ class StatelessValidation : public ValidationObject {
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                              VkDeviceGroupPresentModeFlagsKHR *pModes) const override;
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes,
+                                                              const ErrorObject &errorObj) const override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
@@ -920,10 +928,11 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const;
 
     bool manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) const;
+                                                   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+                                                   const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                    uint32_t *pImageIndex) const;
+                                                    uint32_t *pImageIndex, const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                   uint32_t bindingCount, const VkBuffer *pBuffers,
@@ -1131,20 +1140,23 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                   uint32_t *pSurfaceFormatCount,
-                                                                  VkSurfaceFormatKHR *pSurfaceFormats) const;
+                                                                  VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                  const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                       uint32_t *pPresentModeCount,
-                                                                       VkPresentModeKHR *pPresentModes) const;
+                                                                       uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes,
+                                                                       const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                        VkSurfaceCapabilities2KHR *pSurfaceCapabilities) const;
+                                                                        VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
+                                                                        const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
                                                                    const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                    uint32_t *pSurfaceFormatCount,
-                                                                   VkSurfaceFormat2KHR *pSurfaceFormats) const;
+                                                                   VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                   const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer,
                                                                VkBool32 discardRectangleEnable) const;
@@ -1158,7 +1170,8 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                         uint32_t *pPresentModeCount,
-                                                                        VkPresentModeKHR *pPresentModes) const;
+                                                                        VkPresentModeKHR *pPresentModes,
+                                                                        const ErrorObject &errorObj) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,

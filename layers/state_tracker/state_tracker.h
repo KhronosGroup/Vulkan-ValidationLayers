@@ -75,8 +75,6 @@ struct SPIRV_MODULE_STATE;
 //
 // Added from VK_KHR_create_renderpass2
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
-// Added from VK_KHR_device_group but added to VK_KHR_swapchain with Vulkan 1.1
-enum AcquireVersion { ACQUIRE_VERSION_1 = 0, ACQUIRE_VERSION_2 = 1 };
 
 // This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
 struct create_shader_module_api_state {
