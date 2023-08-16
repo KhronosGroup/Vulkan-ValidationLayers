@@ -108,7 +108,7 @@ void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state) 
 }
 
 bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                           uint32_t firstVertex, uint32_t firstInstance) const {
+                                           uint32_t firstVertex, uint32_t firstInstance, const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (instanceCount == 0) {
@@ -127,7 +127,8 @@ void BestPractices::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_
 }
 
 bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                  uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
+                                                  uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                                  const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (instanceCount == 0) {
@@ -355,7 +356,7 @@ void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, 
 }
 
 bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   uint32_t drawCount, uint32_t stride) const {
+                                                   uint32_t drawCount, uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (drawCount == 0) {
@@ -375,7 +376,7 @@ void BestPractices::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer,
 }
 
 bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                          uint32_t drawCount, uint32_t stride) const {
+                                                          uint32_t drawCount, uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (drawCount == 0) {
@@ -396,7 +397,8 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
 
 bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                               uint32_t maxDrawCount, uint32_t stride) const {
+                                                               uint32_t maxDrawCount, uint32_t stride,
+                                                               const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirectCount()");
 
     return skip;
@@ -413,7 +415,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer co
 bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                  uint32_t stride) const {
+                                                                  uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirectCountAMD");
 
     return skip;
@@ -431,7 +433,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer
 bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                  uint32_t stride) const {
+                                                                  uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirectCountKHR");
 
     return skip;
@@ -449,7 +451,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer
 bool BestPractices::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                                uint32_t firstInstance, VkBuffer counterBuffer,
                                                                VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                               uint32_t vertexStride) const {
+                                                               uint32_t vertexStride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirectByteCountEXT");
 
     return skip;
@@ -466,7 +468,7 @@ void BestPractices::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer co
 
 bool BestPractices::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride) const {
+                                                        uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirectCount");
 
     return skip;
@@ -482,7 +484,8 @@ void BestPractices::PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBu
 
 bool BestPractices::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride) const {
+                                                           uint32_t maxDrawCount, uint32_t stride,
+                                                           const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirectCountAMD");
 
     return skip;
@@ -498,7 +501,8 @@ void BestPractices::PostCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer comman
 
 bool BestPractices::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride) const {
+                                                           uint32_t maxDrawCount, uint32_t stride,
+                                                           const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirectCountKHR");
 
     return skip;
@@ -515,7 +519,7 @@ void BestPractices::PostCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer comman
 bool BestPractices::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                    VkDeviceSize offset, VkBuffer countBuffer,
                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                   uint32_t stride) const {
+                                                                   uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawMeshTasksIndirectCountNV");
 
     return skip;
@@ -531,7 +535,8 @@ void BestPractices::PostCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffe
 }
 
 bool BestPractices::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                              uint32_t drawCount, uint32_t stride) const {
+                                                              uint32_t drawCount, uint32_t stride,
+                                                              const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawMeshTasksIndirectNV");
 
     return skip;
@@ -543,7 +548,8 @@ void BestPractices::PostCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer com
     RecordCmdDrawType(commandBuffer, 0, "vkCmdDrawMeshTasksIndirectNV()");
 }
 
-bool BestPractices::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {
+bool BestPractices::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                      const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawMeshTasksNV");
 
     return skip;
@@ -556,8 +562,8 @@ void BestPractices::PostCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuff
 
 bool BestPractices::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                           const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
-                                                          uint32_t firstInstance, uint32_t stride,
-                                                          const int32_t* pVertexOffset) const {
+                                                          uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
+                                                          const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawMultiIndexedEXT");
 
     return skip;
@@ -577,7 +583,7 @@ void BestPractices::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer command
 
 bool BestPractices::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                    const VkMultiDrawInfoEXT* pVertexInfo, uint32_t instanceCount,
-                                                   uint32_t firstInstance, uint32_t stride) const {
+                                                   uint32_t firstInstance, uint32_t stride, const ErrorObject& errorObj) const {
     bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawMultiEXT");
 
     return skip;
@@ -664,7 +670,7 @@ void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
 }
 
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                               uint32_t groupCountZ) const {
+                                               uint32_t groupCountZ, const ErrorObject& errorObj) const {
     bool skip = false;
 
     if ((groupCountX == 0) || (groupCountY == 0) || (groupCountZ == 0)) {

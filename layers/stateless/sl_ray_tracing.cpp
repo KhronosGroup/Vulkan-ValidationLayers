@@ -865,93 +865,134 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer 
                                                                 const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                                uint32_t width, uint32_t height, uint32_t depth) const {
+                                                                uint32_t width, uint32_t height, uint32_t depth,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
     // RayGen
     if (pRaygenShaderBindingTable->size != pRaygenShaderBindingTable->stride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-size-04023",
-                         "vkCmdTraceRaysKHR: The size member of pRayGenShaderBindingTable must be equal to its stride member");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysKHR-size-04023", commandBuffer, errorObj.location.dot(Field::pRaygenShaderBindingTable),
+                     "size (%" PRIu64 ") is not equal to stride (%" PRIu64 ").", pRaygenShaderBindingTable->size,
+                     pRaygenShaderBindingTable->stride);
     }
     if (SafeModulo(pRaygenShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03682",
-                         "vkCmdTraceRaysKHR: pRaygenShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03682", commandBuffer,
+                     errorObj.location.dot(Field::pRaygenShaderBindingTable).dot(Field::deviceAddress),
+                     "(%" PRIu64
+                     ") must be a multiple of "
+                     "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                     pRaygenShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // Callable
     if (SafeModulo(pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-03694",
-                         "vkCmdTraceRaysKHR: The stride member of pCallableShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-stride-03694", commandBuffer,
+                         errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pCallableShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04041",
-                         "vkCmdTraceRaysKHR: The stride member of pCallableShaderBindingTable must be"
-                         "less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride.");
+        skip |= LogError(
+            "VUID-vkCmdTraceRaysKHR-stride-04041", commandBuffer,
+            errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::stride),
+            "(%" PRIu64
+            ") must be less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+            pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pCallableShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03693",
-                         "vkCmdTraceRaysKHR: pCallableShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03693", commandBuffer,
+                     errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::deviceAddress),
+                     "(%" PRIu64
+                     ") must be a multiple of "
+                     "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                     pCallableShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // hitShader
     if (SafeModulo(pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-03690",
-                         "vkCmdTraceRaysKHR: The stride member of pHitShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-stride-03690", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pHitShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04035",
-                         "vkCmdTraceRaysKHR: TThe stride member of pHitShaderBindingTable must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-stride-04035", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                         pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pHitShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03689",
-                         "vkCmdTraceRaysKHR: pHitShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03689", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         pHitShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // missShader
     if (SafeModulo(pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-03686",
-                         "vkCmdTraceRaysKHR: The stride member of pMissShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-stride-03686", commandBuffer,
+                         errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pMissShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04029",
-                         "vkCmdTraceRaysKHR: The stride member of pMissShaderBindingTable must be"
-                         "less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysKHR-stride-04029", commandBuffer,
+                     errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::stride),
+                     "(%" PRIu64
+                     ") must be "
+                     "less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                     pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pMissShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03685",
-                         "vkCmdTraceRaysKHR: pMissShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03685", commandBuffer,
+                         errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         pMissShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     if (width * depth * height > phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-width-03641",
-                         "vkCmdTraceRaysKHR: width {times} height {times} depth must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03641", commandBuffer, errorObj.location,
+                         "width x height x depth (%" PRIu32 " x %" PRIu32 " x %" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount (%" PRIu32 ").",
+                         width, depth, height, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
     }
     if (width > device_limits.maxComputeWorkGroupCount[0] * device_limits.maxComputeWorkGroupSize[0]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-width-03638",
-                     "vkCmdTraceRaysKHR: width must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] "
-                     "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0]");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03638", commandBuffer, errorObj.location.dot(Field::width),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] (%" PRIu32 " x %" PRIu32 ").",
+                         width, device_limits.maxComputeWorkGroupCount[0], device_limits.maxComputeWorkGroupSize[0]);
     }
 
     if (height > device_limits.maxComputeWorkGroupCount[1] * device_limits.maxComputeWorkGroupSize[1]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-height-03639",
-                     "vkCmdTraceRaysKHR: height must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] "
-                     "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1]");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-height-03639", commandBuffer, errorObj.location.dot(Field::height),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] (%" PRIu32 " x %" PRIu32 ").",
+                         height, device_limits.maxComputeWorkGroupCount[1], device_limits.maxComputeWorkGroupSize[1]);
     }
 
     if (depth > device_limits.maxComputeWorkGroupCount[2] * device_limits.maxComputeWorkGroupSize[2]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-depth-03640",
-                     "vkCmdTraceRaysKHR: depth must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] "
-                     "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2]");
+        skip |= LogError("VUID-vkCmdTraceRaysKHR-depth-03640", commandBuffer, errorObj.location.dot(Field::depth),
+                         "(%" PRIu32
+                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] "
+                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] (%" PRIu32 " x %" PRIu32 ").",
+                         depth, device_limits.maxComputeWorkGroupCount[2], device_limits.maxComputeWorkGroupSize[2]);
     }
     return skip;
 }
@@ -959,102 +1000,133 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer 
 bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
     VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
     const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress) const {
+    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
-        skip |= LogError(
-            device, "VUID-vkCmdTraceRaysIndirectKHR-rayTracingPipelineTraceRaysIndirect-03637",
-            "vkCmdTraceRaysIndirectKHR: the VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipelineTraceRaysIndirect "
-            "feature must be enabled.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysIndirectKHR-rayTracingPipelineTraceRaysIndirect-03637", commandBuffer, errorObj.location,
+                     "VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipelineTraceRaysIndirect feature must be enabled.");
     }
     // RayGen
     if (pRaygenShaderBindingTable->size != pRaygenShaderBindingTable->stride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-size-04023",
-                         "vkCmdTraceRaysKHR: The size member of pRayGenShaderBindingTable must be equal to its stride member");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-size-04023", commandBuffer,
+                         errorObj.location.dot(Field::pRaygenShaderBindingTable),
+                         "size (%" PRIu64 ") is not equal to stride (%" PRIu64 ").", pRaygenShaderBindingTable->size,
+                         pRaygenShaderBindingTable->stride);
     }
     if (SafeModulo(pRaygenShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03682",
-                         "vkCmdTraceRaysIndirectKHR: pRaygenShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03682", commandBuffer,
+                     errorObj.location.dot(Field::pRaygenShaderBindingTable).dot(Field::deviceAddress),
+                     "(%" PRIu64
+                     ") must be a multiple of "
+                     "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                     pRaygenShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // Callabe
     if (SafeModulo(pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-03694",
-                         "vkCmdTraceRaysIndirectKHR: The stride member of pCallableShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-stride-03694", commandBuffer,
+                         errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pCallableShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04041",
-                         "vkCmdTraceRaysIndirectKHR: The stride member of pCallableShaderBindingTable must be less than or equal "
-                         "to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride.");
+        skip |= LogError(
+            "VUID-vkCmdTraceRaysIndirectKHR-stride-04041", commandBuffer,
+            errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::stride),
+            "(%" PRIu64
+            ") must be less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+            pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pCallableShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03693",
-                         "vkCmdTraceRaysIndirectKHR: pCallableShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03693", commandBuffer,
+                     errorObj.location.dot(Field::pCallableShaderBindingTable).dot(Field::deviceAddress),
+                     "(%" PRIu64
+                     ") must be a multiple of "
+                     "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                     pCallableShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // hitShader
     if (SafeModulo(pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-03690",
-                         "vkCmdTraceRaysIndirectKHR: The stride member of pHitShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-stride-03690", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pHitShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04035",
-                         "vkCmdTraceRaysIndirectKHR: The stride member of pHitShaderBindingTable must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-stride-04035", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                         pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pHitShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03689",
-                         "vkCmdTraceRaysIndirectKHR: pHitShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03689", commandBuffer,
+                         errorObj.location.dot(Field::pHitShaderBindingTable).dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         pHitShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
     // missShader
     if (SafeModulo(pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-03686",
-                         "vkCmdTraceRaysIndirectKHR:The stride member of pMissShaderBindingTable must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-stride-03686", commandBuffer,
+                         errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::stride),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleAlignment (%" PRIu32 ").",
+                         pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleAlignment);
     }
     if (pMissShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04029",
-                         "vkCmdTraceRaysIndirectKHR: The stride member of pMissShaderBindingTable must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride.");
+        skip |=
+            LogError("VUID-vkCmdTraceRaysIndirectKHR-stride-04029", commandBuffer,
+                     errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::stride),
+                     "(%" PRIu64
+                     ") must be "
+                     "less than or equal to VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxShaderGroupStride (%" PRIu32 ").",
+                     pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
     }
     if (SafeModulo(pMissShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment) !=
         0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03685",
-                         "vkCmdTraceRaysIndirectKHR: pMissShaderBindingTable->deviceAddress must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03685", commandBuffer,
+                         errorObj.location.dot(Field::pMissShaderBindingTable).dot(Field::deviceAddress),
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         pMissShaderBindingTable->deviceAddress, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupBaseAlignment);
     }
-
     if (SafeModulo(indirectDeviceAddress, 4) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03634",
-                         "vkCmdTraceRaysIndirectKHR: indirectDeviceAddress must be a multiple of 4.");
+        skip |= LogError("VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03634", commandBuffer,
+                         errorObj.location.dot(Field::indirectDeviceAddress), "(%" PRIu64 ") must be a multiple of 4.",
+                         indirectDeviceAddress);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
-                                                                         VkDeviceAddress indirectDeviceAddress) const {
+                                                                         VkDeviceAddress indirectDeviceAddress,
+                                                                         const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(device_createinfo_pnext);
-    if (!raytracing_features) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637",
-                         "vkCmdTraceRaysIndirect2KHR(): no VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR structure was found "
-                         "in device create info pNext chain.");
-    } else if (!raytracing_features->rayTracingPipelineTraceRaysIndirect2) {
+    if (!raytracing_features || !raytracing_features->rayTracingPipelineTraceRaysIndirect2) {
         skip |= LogError(
-            device, "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637",
-            "vkCmdTraceRaysIndirect2KHR(): VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR::rayTracingPipelineTraceRaysIndirect2 "
-            "found in device create info pNext chain is VK_FALSE");
+            "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637", commandBuffer, errorObj.location,
+            "VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR::rayTracingPipelineTraceRaysIndirect2 feature was not enabled.");
     }
 
     if (SafeModulo(indirectDeviceAddress, 4) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634",
-                         "vkCmdTraceRaysIndirect2KHR: indirectDeviceAddress (0x%" PRIx64 ") must be a multiple of 4.",
+        skip |= LogError("VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634", commandBuffer,
+                         errorObj.location.dot(Field::indirectDeviceAddress), "(%" PRIu64 ") must be a multiple of 4.",
                          indirectDeviceAddress);
     }
     return skip;
@@ -1065,78 +1137,85 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
     VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
     VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset, VkDeviceSize hitShaderBindingStride,
     VkBuffer callableShaderBindingTableBuffer, VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-    uint32_t width, uint32_t height, uint32_t depth) const {
+    uint32_t width, uint32_t height, uint32_t depth, const ErrorObject &errorObj) const {
     bool skip = false;
     if (SafeModulo(callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462",
-                         "vkCmdTraceRaysNV: callableShaderBindingOffset must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462", commandBuffer,
+                         errorObj.location.dot(Field::callableShaderBindingOffset),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
     if (SafeModulo(callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465",
-                         "vkCmdTraceRaysNV: callableShaderBindingStride must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465", commandBuffer,
+                         errorObj.location.dot(Field::callableShaderBindingStride),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
     }
     if (callableShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02468",
-                         "vkCmdTraceRaysNV: callableShaderBindingStride must be less than or equal to "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02468", commandBuffer,
+                         errorObj.location.dot(Field::callableShaderBindingStride),
+                         "must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride. ");
     }
 
     // hitShader
     if (SafeModulo(hitShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
-                         "vkCmdTraceRaysNV: hitShaderBindingOffset must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460", commandBuffer,
+                         errorObj.location.dot(Field::hitShaderBindingOffset),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
     if (SafeModulo(hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464",
-                         "vkCmdTraceRaysNV: hitShaderBindingStride must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464", commandBuffer,
+                         errorObj.location.dot(Field::hitShaderBindingStride),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
     }
     if (hitShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02467",
-                         "vkCmdTraceRaysNV: hitShaderBindingStride must be less than or equal to "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02467", commandBuffer,
+                         errorObj.location.dot(Field::hitShaderBindingStride),
+                         "must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
     }
 
     // missShader
     if (SafeModulo(missShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
-                         "vkCmdTraceRaysNV: missShaderBindingOffset must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458", commandBuffer,
+                         errorObj.location.dot(Field::missShaderBindingOffset),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
     if (SafeModulo(missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463",
-                         "vkCmdTraceRaysNV: missShaderBindingStride must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463", commandBuffer,
+                         errorObj.location.dot(Field::missShaderBindingStride),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
     }
     if (missShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingStride-02466",
-                         "vkCmdTraceRaysNV: missShaderBindingStride must be less than or equal to "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02466", commandBuffer,
+                         errorObj.location.dot(Field::missShaderBindingStride),
+                         "must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
     }
 
     // raygenShader
     if (SafeModulo(raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456",
-                         "vkCmdTraceRaysNV: raygenShaderBindingOffset must be a multiple of "
+        skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456", commandBuffer,
+                         errorObj.location.dot(Field::raygenShaderBindingOffset),
+                         "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
     if (width > device_limits.maxComputeWorkGroupCount[0]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysNV-width-02469",
-                     "vkCmdTraceRaysNV: width must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[o].");
+        skip |= LogError("VUID-vkCmdTraceRaysNV-width-02469", commandBuffer, errorObj.location.dot(Field::width),
+                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0].");
     }
     if (height > device_limits.maxComputeWorkGroupCount[1]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysNV-height-02470",
-                     "vkCmdTraceRaysNV: height must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1].");
+        skip |= LogError("VUID-vkCmdTraceRaysNV-height-02470", commandBuffer, errorObj.location.dot(Field::height),
+                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1].");
     }
     if (depth > device_limits.maxComputeWorkGroupCount[2]) {
-        skip |=
-            LogError(device, "VUID-vkCmdTraceRaysNV-depth-02471",
-                     "vkCmdTraceRaysNV: depth must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2].");
+        skip |= LogError("VUID-vkCmdTraceRaysNV-depth-02471", commandBuffer, errorObj.location.dot(Field::depth),
+                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2].");
     }
     return skip;
 }

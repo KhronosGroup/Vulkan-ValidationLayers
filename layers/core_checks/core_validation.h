@@ -1521,7 +1521,7 @@ class CoreChecks : public ValidationStateTracker {
                                        VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                        VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                        VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                       uint32_t width, uint32_t height, uint32_t depth) const override;
+                                       uint32_t width, uint32_t height, uint32_t depth, const ErrorObject& errorObj) const override;
     bool ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const char* rt_func_name,
                                               const char* vuid_single_device_memory, const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table,
@@ -1536,15 +1536,15 @@ class CoreChecks : public ValidationStateTracker {
                                         const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
-                                        uint32_t height, uint32_t depth) const override;
+                                        uint32_t height, uint32_t depth, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
-                                                VkDeviceAddress indirectDeviceAddress) const override;
-    bool PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
-                                                 VkDeviceAddress indirectDeviceAddress) const override;
+                                                VkDeviceAddress indirectDeviceAddress, const ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                 const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const override;
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
@@ -1769,40 +1769,44 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVTGShaderStages(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type) const;
     bool ValidateMeshShaderStage(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, bool is_NV) const;
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                                uint32_t firstInstance) const override;
+                                uint32_t firstInstance, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
-                                        uint32_t instanceCount, uint32_t firstInstance, uint32_t stride) const override;
+                                        uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+                                        const ErrorObject& errorObj) const override;
     bool ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE& cb_state, uint32_t indexCount, uint32_t firstIndex,
                                           const char* caller, const char* first_index_vuid) const;
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                       uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const override;
+                                       uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                       const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
-                                               uint32_t firstInstance, uint32_t stride,
-                                               const int32_t* pVertexOffset) const override;
+                                               uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
+                                               const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               uint32_t drawCount, uint32_t stride) const override;
+                                               uint32_t drawCount, uint32_t stride, const ErrorObject& errorObj) const override;
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                             uint32_t stride, CMD_TYPE cmd_type) const;
+                                             uint32_t stride, const ErrorObject& errorObj) const;
     bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride) const override;
+                                                       uint32_t stride, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                    uint32_t stride) const override;
-    bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const override;
-    bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const override;
+                                                    uint32_t stride, const ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
+                                    const ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                            const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                        uint32_t stride) const override;
+                                        uint32_t stride, const ErrorObject& errorObj) const override;
     bool ValidateBaseGroups(const CMD_BUFFER_STATE& cb_state, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                            const char* apiName) const;
+                            const Location& loc) const;
     bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                        uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                        uint32_t groupCountZ) const override;
+                                        uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                        const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                           uint32_t groupCountZ) const override;
+                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                           const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const override;
     bool ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
                               CMD_TYPE cmd_type) const;
@@ -2131,29 +2135,33 @@ class CoreChecks : public ValidationStateTracker {
                                                  const VkSampleLocationsInfoEXT* pSampleLocationsInfo) const override;
     bool ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
                                       VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride,
-                                      CMD_TYPE cmd_type) const;
+                                      const ErrorObject& errorObj) const;
     bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                uint32_t stride) const override;
+                                                uint32_t stride, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                             uint32_t stride) const override;
+                                             uint32_t stride, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
                                                     VkBuffer counterBuffer, VkDeviceSize counterBufferOffset,
-                                                    uint32_t counterOffset, uint32_t vertexStride) const override;
-    bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const override;
+                                                    uint32_t counterOffset, uint32_t vertexStride,
+                                                    const ErrorObject& errorObj) const override;
+    bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                           const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   uint32_t drawCount, uint32_t stride) const override;
+                                                   uint32_t drawCount, uint32_t stride, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride) const override;
+                                                        uint32_t stride, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                            uint32_t groupCountZ) const override;
+                                            uint32_t groupCountZ, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                    uint32_t drawCount, uint32_t stride) const override;
+                                                    uint32_t drawCount, uint32_t stride,
+                                                    const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                         uint32_t maxDrawCount, uint32_t stride) const override;
+                                                         uint32_t maxDrawCount, uint32_t stride,
+                                                         const ErrorObject& errorObj) const override;
     bool ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, const ErrorObject& errorObj) const;
     bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                   const ErrorObject& errorObj) const override;
@@ -2197,10 +2205,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
                                  const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags) const;
     bool ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
-                                         const char* struct_name, const uint32_t struct_size) const;
+                                         const char* struct_name, const uint32_t struct_size, const Location& loc) const;
     bool ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
                                          const char* struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                         const VkDeviceSize offset, const BUFFER_STATE* buffer_state) const;
+                                         const VkDeviceSize offset, const BUFFER_STATE* buffer_state, const Location& loc) const;
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const override;
     bool PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,

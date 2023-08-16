@@ -1603,7 +1603,8 @@ bool ObjectLifetimes::PreCallValidateCmdDraw(
     uint32_t                                    vertexCount,
     uint32_t                                    instanceCount,
     uint32_t                                    firstVertex,
-    uint32_t                                    firstInstance) const {
+    uint32_t                                    firstInstance,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDraw-commandBuffer-parameter", kVUIDUndefined, "vkCmdDraw");
 
@@ -1616,7 +1617,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexed(
     uint32_t                                    instanceCount,
     uint32_t                                    firstIndex,
     int32_t                                     vertexOffset,
-    uint32_t                                    firstInstance) const {
+    uint32_t                                    firstInstance,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndexed-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndexed");
 
@@ -1628,7 +1630,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndirect(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndirect-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndirect");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndirect-buffer-parameter", "VUID-vkCmdDrawIndirect-commonparent", "vkCmdDrawIndirect");
@@ -1641,7 +1644,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexedIndirect(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndexedIndirect");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndexedIndirect-buffer-parameter", "VUID-vkCmdDrawIndexedIndirect-commonparent", "vkCmdDrawIndexedIndirect");
@@ -1653,7 +1657,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatch(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const {
+    uint32_t                                    groupCountZ,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatch-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatch");
 
@@ -1663,7 +1668,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatch(
 bool ObjectLifetimes::PreCallValidateCmdDispatchIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset) const {
+    VkDeviceSize                                offset,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchIndirect-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchIndirect");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDispatchIndirect-buffer-parameter", "VUID-vkCmdDispatchIndirect-commonparent", "vkCmdDispatchIndirect");
@@ -2104,7 +2110,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatchBase(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const {
+    uint32_t                                    groupCountZ,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchBase-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchBase");
 
@@ -2358,7 +2365,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndirectCount");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndirectCount-commonparent", "vkCmdDrawIndirectCount");
@@ -2374,7 +2382,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexedIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndexedIndirectCount");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndexedIndirectCount-commonparent", "vkCmdDrawIndexedIndirectCount");
@@ -3837,7 +3846,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatchBaseKHR(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const {
+    uint32_t                                    groupCountZ,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchBase-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchBaseKHR");
 
@@ -4399,7 +4409,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndirectCountKHR");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndirectCount-commonparent", "vkCmdDrawIndirectCountKHR");
@@ -4415,7 +4426,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexedIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndexedIndirectCountKHR");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndexedIndirectCount-commonparent", "vkCmdDrawIndexedIndirectCountKHR");
@@ -4953,7 +4965,8 @@ bool ObjectLifetimes::PreCallValidateCmdResolveImage2KHR(
 
 bool ObjectLifetimes::PreCallValidateCmdTraceRaysIndirect2KHR(
     VkCommandBuffer                             commandBuffer,
-    VkDeviceAddress                             indirectDeviceAddress) const {
+    VkDeviceAddress                             indirectDeviceAddress,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-parameter", kVUIDUndefined, "vkCmdTraceRaysIndirect2KHR");
 
@@ -5233,7 +5246,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndirectByteCountEXT(
     VkBuffer                                    counterBuffer,
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
-    uint32_t                                    vertexStride) const {
+    uint32_t                                    vertexStride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndirectByteCountEXT");
     skip |= ValidateObject(counterBuffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-parameter", "VUID-vkCmdDrawIndirectByteCountEXT-commonparent", "vkCmdDrawIndirectByteCountEXT");
@@ -5367,7 +5381,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndirectCountAMD");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndirectCount-commonparent", "vkCmdDrawIndirectCountAMD");
@@ -5383,7 +5398,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexedIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawIndexedIndirectCountAMD");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawIndexedIndirectCount-buffer-parameter", "VUID-vkCmdDrawIndexedIndirectCount-commonparent", "vkCmdDrawIndexedIndirectCountAMD");
@@ -5984,7 +6000,8 @@ bool ObjectLifetimes::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(
 bool ObjectLifetimes::PreCallValidateCmdDispatchGraphAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const {
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphAMDX");
 
@@ -5996,7 +6013,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatchGraphAMDX(
 bool ObjectLifetimes::PreCallValidateCmdDispatchGraphIndirectAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    const VkDispatchGraphCountInfoAMDX*         pCountInfo) const {
+    const VkDispatchGraphCountInfoAMDX*         pCountInfo,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphIndirectAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphIndirectAMDX");
 
@@ -6008,7 +6026,8 @@ bool ObjectLifetimes::PreCallValidateCmdDispatchGraphIndirectAMDX(
 bool ObjectLifetimes::PreCallValidateCmdDispatchGraphIndirectCountAMDX(
     VkCommandBuffer                             commandBuffer,
     VkDeviceAddress                             scratch,
-    VkDeviceAddress                             countInfo) const {
+    VkDeviceAddress                             countInfo,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDispatchGraphIndirectCountAMDX-commandBuffer-parameter", kVUIDUndefined, "vkCmdDispatchGraphIndirectCountAMDX");
 
@@ -6289,7 +6308,8 @@ bool ObjectLifetimes::PreCallValidateCmdTraceRaysNV(
     VkDeviceSize                                callableShaderBindingStride,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth) const {
+    uint32_t                                    depth,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdTraceRaysNV-commandBuffer-parameter", kVUIDUndefined, "vkCmdTraceRaysNV");
     skip |= ValidateObject(raygenShaderBindingTableBuffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdTraceRaysNV-raygenShaderBindingTableBuffer-parameter", "VUID-vkCmdTraceRaysNV-commonparent", "vkCmdTraceRaysNV");
@@ -6463,7 +6483,8 @@ bool ObjectLifetimes::PreCallValidateGetCalibratedTimestampsEXT(
 bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
-    uint32_t                                    firstTask) const {
+    uint32_t                                    firstTask,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksNV-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksNV");
 
@@ -6475,7 +6496,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectNV(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksIndirectNV");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-parameter", "VUID-vkCmdDrawMeshTasksIndirectNV-commonparent", "vkCmdDrawMeshTasksIndirectNV");
@@ -6490,7 +6512,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksIndirectCountNV");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-parameter", "VUID-vkCmdDrawMeshTasksIndirectCountNV-commonparent", "vkCmdDrawMeshTasksIndirectCountNV");
@@ -7788,7 +7811,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMultiEXT(
     const VkMultiDrawInfoEXT*                   pVertexInfo,
     uint32_t                                    instanceCount,
     uint32_t                                    firstInstance,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMultiEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMultiEXT");
 
@@ -7802,7 +7826,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMultiIndexedEXT(
     uint32_t                                    instanceCount,
     uint32_t                                    firstInstance,
     uint32_t                                    stride,
-    const int32_t*                              pVertexOffset) const {
+    const int32_t*                              pVertexOffset,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMultiIndexedEXT");
 
@@ -8032,7 +8057,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawClusterHUAWEI(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const {
+    uint32_t                                    groupCountZ,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawClusterHUAWEI-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawClusterHUAWEI");
 
@@ -8042,7 +8068,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawClusterHUAWEI(
 bool ObjectLifetimes::PreCallValidateCmdDrawClusterIndirectHUAWEI(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset) const {
+    VkDeviceSize                                offset,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawClusterIndirectHUAWEI-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawClusterIndirectHUAWEI");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawClusterIndirectHUAWEI-buffer-parameter", "VUID-vkCmdDrawClusterIndirectHUAWEI-commonparent", "vkCmdDrawClusterIndirectHUAWEI");
@@ -8909,7 +8936,8 @@ bool ObjectLifetimes::PreCallValidateCmdTraceRaysKHR(
     const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth) const {
+    uint32_t                                    depth,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdTraceRaysKHR-commandBuffer-parameter", kVUIDUndefined, "vkCmdTraceRaysKHR");
 
@@ -8936,7 +8964,8 @@ bool ObjectLifetimes::PreCallValidateCmdTraceRaysIndirectKHR(
     const VkStridedDeviceAddressRegionKHR*      pMissShaderBindingTable,
     const VkStridedDeviceAddressRegionKHR*      pHitShaderBindingTable,
     const VkStridedDeviceAddressRegionKHR*      pCallableShaderBindingTable,
-    VkDeviceAddress                             indirectDeviceAddress) const {
+    VkDeviceAddress                             indirectDeviceAddress,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-parameter", kVUIDUndefined, "vkCmdTraceRaysIndirectKHR");
 
@@ -8968,7 +8997,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const {
+    uint32_t                                    groupCountZ,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksEXT");
 
@@ -8980,7 +9010,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectEXT(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksIndirectEXT");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectEXT-buffer-parameter", "VUID-vkCmdDrawMeshTasksIndirectEXT-commonparent", "vkCmdDrawMeshTasksIndirectEXT");
@@ -8995,7 +9026,8 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const {
+    uint32_t                                    stride,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdDrawMeshTasksIndirectCountEXT");
     skip |= ValidateObject(buffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-buffer-parameter", "VUID-vkCmdDrawMeshTasksIndirectCountEXT-commonparent", "vkCmdDrawMeshTasksIndirectCountEXT");

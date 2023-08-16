@@ -209,19 +209,20 @@ bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCom
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                                             uint32_t firstInstance, VkBuffer counterBuffer,
                                                                             VkDeviceSize counterBufferOffset,
-                                                                            uint32_t counterOffset, uint32_t vertexStride) const {
+                                                                            uint32_t counterOffset, uint32_t vertexStride,
+                                                                            const ErrorObject &errorObj) const {
     bool skip = false;
 
     if ((vertexStride <= 0) || (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride)) {
-        skip |= LogError(counterBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289",
-                         "vkCmdDrawIndirectByteCountEXT: vertexStride (%" PRIu32
-                         ") must be between 0 and maxTransformFeedbackBufferDataStride (%" PRIu32 ").",
-                         vertexStride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289", counterBuffer,
+                         errorObj.location.dot(Field::vertexStride),
+                         "(%" PRIu32 ") must be between 0 and maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
     if ((counterOffset % 4) != 0) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568",
-                         "vkCmdDrawIndirectByteCountEXT(): offset (%" PRIu32 ") must be a multiple of 4.", counterOffset);
+        skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568", counterBuffer,
+                         errorObj.location.dot(Field::offset), "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
     }
 
     return skip;
@@ -769,63 +770,57 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                uint32_t drawCount, uint32_t stride) const {
+                                                                uint32_t drawCount, uint32_t stride,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
-        skip |= LogError(device, "VUID-vkCmdDrawIndirect-drawCount-02718",
-                         "vkCmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
-                         drawCount);
+        skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-02718", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
-        skip |=
-            LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-02719",
-                     "vkCmdDrawIndirect(): drawCount (%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
-                     drawCount, device_limits.maxDrawIndirectCount);
+        skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-02719", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "(%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").", drawCount,
+                         device_limits.maxDrawIndirectCount);
     }
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-offset-02710",
-                         "vkCmdDrawIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
+        skip |= LogError("VUID-vkCmdDrawIndirect-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                       VkDeviceSize offset, uint32_t drawCount,
-                                                                       uint32_t stride) const {
+                                                                       VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
+                                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
-        skip |= LogError(
-            device, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718",
-            "vkCmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
-            drawCount);
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-02718", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-02719",
-                         "vkCmdDrawIndexedIndirect(): drawCount (%" PRIu32
-                         ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
-                         drawCount, device_limits.maxDrawIndirectCount);
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-02719", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "(%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").", drawCount,
+                         device_limits.maxDrawIndirectCount);
     }
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-offset-02710",
-                         "vkCmdDrawIndexedIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
 
 bool StatelessValidation::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                       VkDeviceSize countBufferOffset, CMD_TYPE cmd_type) const {
+                                                       VkDeviceSize countBufferOffset, const Location &loc) const {
     bool skip = false;
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-offset-02710",
-                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
-                         CommandTypeString(cmd_type), offset);
+        skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", commandBuffer, loc.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
     if (countBufferOffset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
-                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
-                         CommandTypeString(cmd_type), countBufferOffset);
+        skip |= LogError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716", commandBuffer, loc.dot(Field::countBufferOffset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", countBufferOffset);
     }
     return skip;
 }
@@ -833,37 +828,35 @@ bool StatelessValidation::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBu
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                      VkDeviceSize offset, VkBuffer countBuffer,
                                                                      VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                     uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNT);
+                                                                     uint32_t stride, const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                         VkDeviceSize offset, VkBuffer countBuffer,
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                        uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNTAMD);
+                                                                        uint32_t stride, const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                         VkDeviceSize offset, VkBuffer countBuffer,
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                        uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNTKHR);
+                                                                        uint32_t stride, const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                              VkDeviceSize countBufferOffset, CMD_TYPE cmd_type) const {
+                                                              VkDeviceSize countBufferOffset, const Location &loc) const {
     bool skip = false;
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
-                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
-                         CommandTypeString(cmd_type), offset);
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", commandBuffer, loc.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
     if (countBufferOffset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
-                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
-                         CommandTypeString(cmd_type), countBufferOffset);
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716", commandBuffer,
+                         loc.dot(Field::countBufferOffset), "(0x%" PRIxLEAST64 "), is not a multiple of 4.", countBufferOffset);
     }
     return skip;
 }
@@ -871,36 +864,38 @@ bool StatelessValidation::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer co
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                             VkDeviceSize offset, VkBuffer countBuffer,
                                                                             VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                            uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNT);
+                                                                            uint32_t stride, const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                                VkDeviceSize offset, VkBuffer countBuffer,
                                                                                VkDeviceSize countBufferOffset,
-                                                                               uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNTAMD);
+                                                                               uint32_t maxDrawCount, uint32_t stride,
+                                                                               const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                                VkDeviceSize offset, VkBuffer countBuffer,
                                                                                VkDeviceSize countBufferOffset,
-                                                                               uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
+                                                                               uint32_t maxDrawCount, uint32_t stride,
+                                                                               const ErrorObject &errorObj) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                                 const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                                uint32_t firstInstance, uint32_t stride) const {
+                                                                uint32_t firstInstance, uint32_t stride,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
     if (stride & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-stride-04936",
-                         "CmdDrawMultiEXT: parameter, uint32_t stride (%" PRIu32 ") is not a multiple of 4.", stride);
+        skip |= LogError("VUID-vkCmdDrawMultiEXT-stride-04936", commandBuffer, errorObj.location.dot(Field::stride),
+                         "(%" PRIu32 ") is not a multiple of 4.", stride);
     }
     if (drawCount && nullptr == pVertexInfo) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiEXT-drawCount-04935",
-                         "CmdDrawMultiEXT: parameter, VkMultiDrawInfoEXT *pVertexInfo must be a valid pointer to memory containing "
-                         "one or more valid instances of VkMultiDrawInfoEXT structures");
+        skip |= LogError("VUID-vkCmdDrawMultiEXT-drawCount-04935", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "is %" PRIu32 " but pVertexInfo is NULL.", drawCount);
     }
     return skip;
 }
@@ -908,16 +903,16 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                                        const VkMultiDrawIndexedInfoEXT *pIndexInfo,
                                                                        uint32_t instanceCount, uint32_t firstInstance,
-                                                                       uint32_t stride, const int32_t *pVertexOffset) const {
+                                                                       uint32_t stride, const int32_t *pVertexOffset,
+                                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     if (stride & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-stride-04941",
-                         "CmdDrawMultiIndexedEXT: parameter, uint32_t stride (%" PRIu32 ") is not a multiple of 4.", stride);
+        skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-stride-04941", commandBuffer, errorObj.location.dot(Field::stride),
+                         "(%" PRIu32 ") is not a multiple of 4.", stride);
     }
     if (drawCount && nullptr == pIndexInfo) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940",
-                         "CmdDrawMultiIndexedEXT: parameter, VkMultiDrawIndexedInfoEXT *pIndexInfo must be a valid pointer to "
-                         "memory containing one or more valid instances of VkMultiDrawIndexedInfoEXT structures");
+        skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940", commandBuffer, errorObj.location.dot(Field::drawCount),
+                         "is %" PRIu32 " but pIndexInfo is NULL.", drawCount);
     }
     return skip;
 }
@@ -1035,87 +1030,83 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX,
-                                                            uint32_t groupCountY, uint32_t groupCountZ) const {
+                                                            uint32_t groupCountY, uint32_t groupCountZ,
+                                                            const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (groupCountX > device_limits.maxComputeWorkGroupCount[0]) {
-        skip |=
-            LogError(commandBuffer, "VUID-vkCmdDispatch-groupCountX-00386",
-                     "vkCmdDispatch(): groupCountX (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").",
-                     groupCountX, device_limits.maxComputeWorkGroupCount[0]);
+        skip |= LogError("VUID-vkCmdDispatch-groupCountX-00386", commandBuffer, errorObj.location.dot(Field::groupCountX),
+                         "(%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").", groupCountX,
+                         device_limits.maxComputeWorkGroupCount[0]);
     }
 
     if (groupCountY > device_limits.maxComputeWorkGroupCount[1]) {
-        skip |=
-            LogError(commandBuffer, "VUID-vkCmdDispatch-groupCountY-00387",
-                     "vkCmdDispatch(): groupCountY (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").",
-                     groupCountY, device_limits.maxComputeWorkGroupCount[1]);
+        skip |= LogError("VUID-vkCmdDispatch-groupCountY-00387", commandBuffer, errorObj.location.dot(Field::groupCountY),
+                         "(%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").", groupCountY,
+                         device_limits.maxComputeWorkGroupCount[1]);
     }
 
     if (groupCountZ > device_limits.maxComputeWorkGroupCount[2]) {
-        skip |=
-            LogError(commandBuffer, "VUID-vkCmdDispatch-groupCountZ-00388",
-                     "vkCmdDispatch(): groupCountZ (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").",
-                     groupCountZ, device_limits.maxComputeWorkGroupCount[2]);
+        skip |= LogError("VUID-vkCmdDispatch-groupCountZ-00388", commandBuffer, errorObj.location.dot(Field::groupCountZ),
+                         "(%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").", groupCountZ,
+                         device_limits.maxComputeWorkGroupCount[2]);
     }
 
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                    VkDeviceSize offset) const {
+                                                                    VkDeviceSize offset, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchIndirect-offset-02710",
-                         "vkCmdDispatchIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
+        skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
                                                                    uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX,
-                                                                   uint32_t groupCountY, uint32_t groupCountZ) const {
+                                                                   uint32_t groupCountY, uint32_t groupCountZ,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Paired if {} else if {} tests used to avoid any possible uint underflow
     uint32_t limit = device_limits.maxComputeWorkGroupCount[0];
     if (baseGroupX >= limit) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-baseGroupX-00421",
-                         "vkCmdDispatch(): baseGroupX (%" PRIu32
-                         ") equals or exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").",
-                         baseGroupX, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-baseGroupX-00421", commandBuffer, errorObj.location.dot(Field::baseGroupX),
+                     "(%" PRIu32 ") equals or exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").", baseGroupX, limit);
     } else if (groupCountX > (limit - baseGroupX)) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-groupCountX-00424",
-                         "vkCmdDispatchBaseKHR(): baseGroupX (%" PRIu32 ") + groupCountX (%" PRIu32
-                         ") exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").",
-                         baseGroupX, groupCountX, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-groupCountX-00424", commandBuffer, errorObj.location.dot(Field::baseGroupX),
+                     "(%" PRIu32 ") + groupCountX (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[0] (%" PRIu32 ").",
+                     baseGroupX, groupCountX, limit);
     }
 
     limit = device_limits.maxComputeWorkGroupCount[1];
     if (baseGroupY >= limit) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-baseGroupX-00422",
-                         "vkCmdDispatch(): baseGroupY (%" PRIu32
-                         ") equals or exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").",
-                         baseGroupY, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-baseGroupX-00422", commandBuffer, errorObj.location.dot(Field::baseGroupY),
+                     "(%" PRIu32 ") equals or exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").", baseGroupY, limit);
     } else if (groupCountY > (limit - baseGroupY)) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-groupCountY-00425",
-                         "vkCmdDispatchBaseKHR(): baseGroupY (%" PRIu32 ") + groupCountY (%" PRIu32
-                         ") exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").",
-                         baseGroupY, groupCountY, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-groupCountY-00425", commandBuffer, errorObj.location.dot(Field::baseGroupY),
+                     "(%" PRIu32 ") + groupCountY (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[1] (%" PRIu32 ").",
+                     baseGroupY, groupCountY, limit);
     }
 
     limit = device_limits.maxComputeWorkGroupCount[2];
     if (baseGroupZ >= limit) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-baseGroupZ-00423",
-                         "vkCmdDispatch(): baseGroupZ (%" PRIu32
-                         ") equals or exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").",
-                         baseGroupZ, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-baseGroupZ-00423", commandBuffer, errorObj.location.dot(Field::baseGroupZ),
+                     "(%" PRIu32 ") equals or exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").", baseGroupZ, limit);
     } else if (groupCountZ > (limit - baseGroupZ)) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDispatchBase-groupCountZ-00426",
-                         "vkCmdDispatchBaseKHR(): baseGroupZ (%" PRIu32 ") + groupCountZ (%" PRIu32
-                         ") exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").",
-                         baseGroupZ, groupCountZ, limit);
+        skip |=
+            LogError("VUID-vkCmdDispatchBase-groupCountZ-00426", commandBuffer, errorObj.location.dot(Field::baseGroupZ),
+                     "(%" PRIu32 ") + groupCountZ (%" PRIu32 ") exceeds device limit maxComputeWorkGroupCount[2] (%" PRIu32 ").",
+                     baseGroupZ, groupCountZ, limit);
     }
 
     return skip;
@@ -1130,13 +1121,13 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(VkComman
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount,
-                                                                   uint32_t firstTask) const {
+                                                                   uint32_t firstTask, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (taskCount > phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount) {
         skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksNV-taskCount-02119",
-            "vkCmdDrawMeshTasksNV() parameter, uint32_t taskCount (0x%" PRIxLEAST32
+            "VUID-vkCmdDrawMeshTasksNV-taskCount-02119", commandBuffer, errorObj.location.dot(Field::taskCount),
+            "(0x%" PRIxLEAST32
             "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32 ").",
             taskCount, phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount);
     }
@@ -1145,31 +1136,28 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuff
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                           VkDeviceSize offset, uint32_t drawCount,
-                                                                           uint32_t stride) const {
+                                                                           VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
+                                                                           const ErrorObject &errorObj) const {
     bool skip = false;
     if (offset & 3) {
-        skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710",
-            "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
     if (drawCount > 1 && ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
-                         "vkCmdDrawMeshTasksIndirectNV() parameter, uint32_t stride (0x%" PRIxLEAST32
-                         "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146", commandBuffer, errorObj.location.dot(Field::stride),
+                         "(0x%" PRIxLEAST32 "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
                          stride);
     }
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
-        skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
-            "vkCmdDrawMeshTasksIndirectNV(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
-            drawCount);
+        skip |=
+            LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718", commandBuffer, errorObj.location.dot(Field::drawCount),
+                     "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02719",
-                         "vkCmdDrawMeshTasksIndirectNV: drawCount (%" PRIu32
-                         ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
-                         drawCount, device_limits.maxDrawIndirectCount);
+        skip |=
+            LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02719", commandBuffer, errorObj.location.dot(Field::drawCount),
+                     "(%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
+                     device_limits.maxDrawIndirectCount);
     }
     return skip;
 }
@@ -1177,20 +1165,18 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                                 VkDeviceSize offset, VkBuffer countBuffer,
                                                                                 VkDeviceSize countBufferOffset,
-                                                                                uint32_t maxDrawCount, uint32_t stride) const {
+                                                                                uint32_t maxDrawCount, uint32_t stride,
+                                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710",
-                         "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
-                         "), is not a multiple of 4.",
-                         offset);
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
     if (countBufferOffset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02716",
-                         "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
-                         "), is not a multiple of 4.",
+        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02716", commandBuffer,
+                         errorObj.location.dot(Field::countBufferOffset), "(0x%" PRIxLEAST64 "), is not a multiple of 4.",
                          countBufferOffset);
     }
 
@@ -1198,29 +1184,30 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX,
-                                                                    uint32_t groupCountY, uint32_t groupCountZ) const {
+                                                                    uint32_t groupCountY, uint32_t groupCountZ,
+                                                                    const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (groupCountX > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]) {
         skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322",
-            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountX (0x%" PRIxLEAST32
+            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322", commandBuffer, errorObj.location.dot(Field::groupCountX),
+            "(0x%" PRIxLEAST32
             "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[0] (0x%" PRIxLEAST32
             ").",
             groupCountX, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]);
     }
     if (groupCountY > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]) {
         skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323",
-            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountY (0x%" PRIxLEAST32
+            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323", commandBuffer, errorObj.location.dot(Field::groupCountY),
+            "(0x%" PRIxLEAST32
             "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[1] (0x%" PRIxLEAST32
             ").",
             groupCountY, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]);
     }
     if (groupCountZ > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]) {
         skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324",
-            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountZ (0x%" PRIxLEAST32
+            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324", commandBuffer, errorObj.location.dot(Field::groupCountZ),
+            "(0x%" PRIxLEAST32
             "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[2] (0x%" PRIxLEAST32
             ").",
             groupCountZ, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]);
@@ -1240,8 +1227,8 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuf
         }
     }
     if (fail) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325",
-                         "vkCmdDrawMeshTasksEXT(): The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32
+        skip |= LogError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325", commandBuffer, errorObj.location,
+                         "The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32
                          ") and groupCountZ (0x%" PRIxLEAST32
                          ") must be less than or equal to "
                          "VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (0x%" PRIxLEAST32 ").",
@@ -1253,22 +1240,21 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuf
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                             VkDeviceSize offset, uint32_t drawCount,
-                                                                            uint32_t stride) const {
+                                                                            uint32_t stride, const ErrorObject &errorObj) const {
     bool skip = false;
 
     // TODO: vkMapMemory() and check the contents of buffer at offset
     // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
-        skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718",
-            "vkCmdDrawMeshTasksIndirectEXT(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
-            drawCount);
+        skip |=
+            LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718", commandBuffer, errorObj.location.dot(Field::drawCount),
+                     "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719",
-                         "vkCmdDrawMeshTasksIndirectEXT: drawCount (%" PRIu32
-                         ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
-                         drawCount, device_limits.maxDrawIndirectCount);
+        skip |=
+            LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719", commandBuffer, errorObj.location.dot(Field::drawCount),
+                     "%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
+                     device_limits.maxDrawIndirectCount);
     }
 
     return skip;
