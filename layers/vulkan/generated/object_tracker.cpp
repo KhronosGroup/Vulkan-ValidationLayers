@@ -3047,7 +3047,8 @@ bool ObjectLifetimes::PreCallValidateGetDeviceImageSparseMemoryRequirements(
 bool ObjectLifetimes::PreCallValidateDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator) const {
+    const VkAllocationCallbacks*                pAllocator,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkDestroySurfaceKHR-instance-parameter", kVUIDUndefined, "vkDestroySurfaceKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true, "VUID-vkDestroySurfaceKHR-surface-parameter", kVUIDUndefined, "vkDestroySurfaceKHR");
@@ -3068,7 +3069,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
-    VkBool32*                                   pSupported) const {
+    VkBool32*                                   pSupported,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceSupportKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-surface-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceSupportKHR");
@@ -3079,7 +3081,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) const {
+    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-surface-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
@@ -3091,7 +3094,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormatKHR*                         pSurfaceFormats) const {
+    VkSurfaceFormatKHR*                         pSurfaceFormats,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceFormatsKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceFormatsKHR");
@@ -3103,7 +3107,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const {
+    VkPresentModeKHR*                           pPresentModes,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfacePresentModesKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, true, "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfacePresentModesKHR");
@@ -3115,7 +3120,8 @@ bool ObjectLifetimes::PreCallValidateCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchain) const {
+    VkSwapchainKHR*                             pSwapchain,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateSwapchainKHR-device-parameter", kVUIDUndefined, "vkCreateSwapchainKHR");
     if (pCreateInfo) {
@@ -3143,7 +3149,8 @@ bool ObjectLifetimes::PreCallValidateAcquireNextImageKHR(
     uint64_t                                    timeout,
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
-    uint32_t*                                   pImageIndex) const {
+    uint32_t*                                   pImageIndex,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkAcquireNextImageKHR-device-parameter", kVUIDUndefined, "vkAcquireNextImageKHR");
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkAcquireNextImageKHR-swapchain-parameter", kVUIDUndefined, "vkAcquireNextImageKHR");
@@ -3155,7 +3162,8 @@ bool ObjectLifetimes::PreCallValidateAcquireNextImageKHR(
 
 bool ObjectLifetimes::PreCallValidateQueuePresentKHR(
     VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo) const {
+    const VkPresentInfoKHR*                     pPresentInfo,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(queue, kVulkanObjectTypeQueue, false, "VUID-vkQueuePresentKHR-queue-parameter", kVUIDUndefined, "vkQueuePresentKHR");
     if (pPresentInfo) {
@@ -3186,7 +3194,8 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
 bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const {
+    VkDeviceGroupPresentModeFlagsKHR*           pModes,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter", kVUIDUndefined, "vkGetDeviceGroupSurfacePresentModesKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-parameter", kVUIDUndefined, "vkGetDeviceGroupSurfacePresentModesKHR");
@@ -3198,7 +3207,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
-    VkRect2D*                                   pRects) const {
+    VkRect2D*                                   pRects,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDevicePresentRectanglesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDevicePresentRectanglesKHR");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetPhysicalDevicePresentRectanglesKHR-surface-parameter", kVUIDUndefined, "vkGetPhysicalDevicePresentRectanglesKHR");
@@ -3209,7 +3219,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
 bool ObjectLifetimes::PreCallValidateAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
-    uint32_t*                                   pImageIndex) const {
+    uint32_t*                                   pImageIndex,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkAcquireNextImage2KHR-device-parameter", kVUIDUndefined, "vkAcquireNextImage2KHR");
     if (pAcquireInfo) {
@@ -3235,7 +3246,8 @@ bool ObjectLifetimes::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays) const {
+    VkDisplayKHR*                               pDisplays,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetDisplayPlaneSupportedDisplaysKHR");
 
@@ -3262,7 +3274,8 @@ bool ObjectLifetimes::PreCallValidateCreateDisplayModeKHR(
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDisplayModeKHR*                           pMode) const {
+    VkDisplayModeKHR*                           pMode,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkCreateDisplayModeKHR-physicalDevice-parameter", kVUIDUndefined, "vkCreateDisplayModeKHR");
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkCreateDisplayModeKHR-display-parameter", kVUIDUndefined, "vkCreateDisplayModeKHR");
@@ -3286,7 +3299,8 @@ bool ObjectLifetimes::PreCallValidateGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
-    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) const {
+    VkDisplayPlaneCapabilitiesKHR*              pCapabilities,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetDisplayPlaneCapabilitiesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetDisplayPlaneCapabilitiesKHR");
     skip |= ValidateObject(mode, kVulkanObjectTypeDisplayModeKHR, false, "VUID-vkGetDisplayPlaneCapabilitiesKHR-mode-parameter", kVUIDUndefined, "vkGetDisplayPlaneCapabilitiesKHR");
@@ -3298,7 +3312,8 @@ bool ObjectLifetimes::PreCallValidateCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const {
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkCreateDisplayPlaneSurfaceKHR-instance-parameter", kVUIDUndefined, "vkCreateDisplayPlaneSurfaceKHR");
     if (pCreateInfo) {
@@ -3324,7 +3339,8 @@ bool ObjectLifetimes::PreCallValidateCreateSharedSwapchainsKHR(
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchains) const {
+    VkSwapchainKHR*                             pSwapchains,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateSharedSwapchainsKHR-device-parameter", kVUIDUndefined, "vkCreateSharedSwapchainsKHR");
     if (pCreateInfos) {
@@ -3358,7 +3374,8 @@ bool ObjectLifetimes::PreCallValidateCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const {
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkCreateXlibSurfaceKHR-instance-parameter", kVUIDUndefined, "vkCreateXlibSurfaceKHR");
 
@@ -3382,7 +3399,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID) const {
+    VisualID                                    visualID,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceXlibPresentationSupportKHR");
 
@@ -3395,7 +3413,8 @@ bool ObjectLifetimes::PreCallValidateCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const {
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkCreateXcbSurfaceKHR-instance-parameter", kVUIDUndefined, "vkCreateXcbSurfaceKHR");
 
@@ -3419,7 +3438,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id) const {
+    xcb_visualid_t                              visual_id,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
 
@@ -3432,7 +3452,8 @@ bool ObjectLifetimes::PreCallValidateCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const {
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkCreateWaylandSurfaceKHR-instance-parameter", kVUIDUndefined, "vkCreateWaylandSurfaceKHR");
 
@@ -3455,7 +3476,8 @@ void ObjectLifetimes::PostCallRecordCreateWaylandSurfaceKHR(
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display) const {
+    struct wl_display*                          display,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
 
@@ -3492,7 +3514,8 @@ bool ObjectLifetimes::PreCallValidateCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const {
+    VkSurfaceKHR*                               pSurface,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkCreateWin32SurfaceKHR-instance-parameter", kVUIDUndefined, "vkCreateWin32SurfaceKHR");
 
@@ -3514,7 +3537,8 @@ void ObjectLifetimes::PostCallRecordCreateWin32SurfaceKHR(
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex) const {
+    uint32_t                                    queueFamilyIndex,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
 
@@ -4247,7 +4271,8 @@ bool ObjectLifetimes::PreCallValidateReleaseProfilingLockKHR(
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) const {
+    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
     if (pSurfaceInfo) {
@@ -4261,7 +4286,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormat2KHR*                        pSurfaceFormats) const {
+    VkSurfaceFormat2KHR*                        pSurfaceFormats,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceFormats2KHR");
     if (pSurfaceInfo) {
@@ -4284,7 +4310,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR
 bool ObjectLifetimes::PreCallValidateGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities) const {
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetDisplayPlaneCapabilities2KHR-physicalDevice-parameter", kVUIDUndefined, "vkGetDisplayPlaneCapabilities2KHR");
     if (pDisplayPlaneInfo) {
@@ -4510,7 +4537,8 @@ bool ObjectLifetimes::PreCallValidateWaitForPresentKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint64_t                                    presentId,
-    uint64_t                                    timeout) const {
+    uint64_t                                    timeout,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkWaitForPresentKHR-device-parameter", kVUIDUndefined, "vkWaitForPresentKHR");
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkWaitForPresentKHR-swapchain-parameter", kVUIDUndefined, "vkWaitForPresentKHR");
@@ -5593,7 +5621,8 @@ void ObjectLifetimes::PostCallRecordGetRandROutputDisplayEXT(
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) const {
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
     skip |= ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
@@ -6782,7 +6811,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const {
+    VkPresentModeKHR*                           pPresentModes,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceSurfacePresentModes2EXT");
     if (pSurfaceInfo) {
@@ -6796,7 +6826,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
 
 bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const {
+    VkSwapchainKHR                              swapchain,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkAcquireFullScreenExclusiveModeEXT-device-parameter", kVUIDUndefined, "vkAcquireFullScreenExclusiveModeEXT");
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-parameter", kVUIDUndefined, "vkAcquireFullScreenExclusiveModeEXT");
@@ -6808,7 +6839,8 @@ bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(
 
 bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const {
+    VkSwapchainKHR                              swapchain,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined, "vkReleaseFullScreenExclusiveModeEXT");
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, kVUIDUndefined, kVUIDUndefined, "vkReleaseFullScreenExclusiveModeEXT");
@@ -6821,7 +6853,8 @@ bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(
 bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const {
+    VkDeviceGroupPresentModeFlagsKHR*           pModes,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter", kVUIDUndefined, "vkGetDeviceGroupSurfacePresentModes2EXT");
     if (pSurfaceInfo) {
@@ -7067,7 +7100,8 @@ bool ObjectLifetimes::PreCallValidateGetImageSubresourceLayout2EXT(
 
 bool ObjectLifetimes::PreCallValidateReleaseSwapchainImagesEXT(
     VkDevice                                    device,
-    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) const {
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkReleaseSwapchainImagesEXT-device-parameter", kVUIDUndefined, "vkReleaseSwapchainImagesEXT");
     if (pReleaseInfo) {
@@ -7801,7 +7835,8 @@ void ObjectLifetimes::PostCallRecordCreateScreenSurfaceQNX(
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct _screen_window*                      window) const {
+    struct _screen_window*                      window,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceScreenPresentationSupportQNX");
 

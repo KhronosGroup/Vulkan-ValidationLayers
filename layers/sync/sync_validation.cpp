@@ -7745,7 +7745,8 @@ struct QueuePresentCmdState {
     QueuePresentCmdState(const SignaledSemaphores &parent_semaphores) : signaled(parent_semaphores) {}
 };
 
-bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {
+bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                                   const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.

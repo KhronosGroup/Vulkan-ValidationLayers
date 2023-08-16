@@ -392,11 +392,12 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage, const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) const override;
+                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
+                                           const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                   const VkSwapchainCreateInfoKHR* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator,
-                                                  VkSwapchainKHR* pSwapchains) const override;
+                                                  const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
+                                                  const ErrorObject& errorObj) const override;
     bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                          const ErrorObject& errorObj) const override;
@@ -677,12 +678,15 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) override;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const char* api_name) const;
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) const override;
+                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+                                                            const ErrorObject& errorObj) const override;
     bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities) const override;
+                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities,
+                                                       const ErrorObject& errorObj) const override;
     bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
-                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities) const override;
+                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities,
+                                                        const ErrorObject& errorObj) const override;
     bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                               VkImage* pSwapchainImages) const override;
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
@@ -694,8 +698,8 @@ class BestPractices : public ValidationStateTracker {
                                                                    uint32_t* pQueueFamilyPropertyCount,
                                                                    VkQueueFamilyProperties2* pQueueFamilyProperties) const override;
     bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           uint32_t* pSurfaceFormatCount,
-                                                           VkSurfaceFormatKHR* pSurfaceFormats) const override;
+                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                           const ErrorObject& errorObj) const override;
     bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* pd_state,
                                                               uint32_t requested_queue_family_property_count,
                                                               const CALL_STATE call_state, const char* caller_name) const;
@@ -771,7 +775,7 @@ class BestPractices : public ValidationStateTracker {
                                                      VkResult result, void* cgpl_state_data);
 
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                            VkFence fence, uint32_t* pImageIndex) const override;
+                                            VkFence fence, uint32_t* pImageIndex, const ErrorObject& errorObj) const override;
 
     void CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer);
     void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
@@ -874,7 +878,8 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                         VkPipeline pipeline) const override;
 
-    bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const override;
+    bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
+                                        const ErrorObject& errorObj) const override;
 
     bool PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const override;
