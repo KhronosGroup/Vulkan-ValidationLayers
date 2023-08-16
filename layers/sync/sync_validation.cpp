@@ -5979,8 +5979,8 @@ void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
 
 bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                                                            uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
-                                                           VkDeviceSize dstOffset, VkDeviceSize stride,
-                                                           VkQueryResultFlags flags) const {
+                                                           VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                           const ErrorObject &errorObj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);

@@ -725,7 +725,8 @@ bool ObjectLifetimes::PreCallValidateCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool) const {
+    VkQueryPool*                                pQueryPool,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateQueryPool-device-parameter", kVUIDUndefined, "vkCreateQueryPool");
 
@@ -771,7 +772,8 @@ bool ObjectLifetimes::PreCallValidateGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const {
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetQueryPoolResults-device-parameter", kVUIDUndefined, "vkGetQueryPoolResults");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkGetQueryPoolResults-queryPool-parameter", "VUID-vkGetQueryPoolResults-queryPool-parent", "vkGetQueryPoolResults");
@@ -1923,7 +1925,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags) const {
+    VkQueryControlFlags                         flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginQuery-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginQuery");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdBeginQuery-queryPool-parameter", "VUID-vkCmdBeginQuery-commonparent", "vkCmdBeginQuery");
@@ -1934,7 +1937,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginQuery(
 bool ObjectLifetimes::PreCallValidateCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndQuery-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndQuery");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdEndQuery-queryPool-parameter", "VUID-vkCmdEndQuery-commonparent", "vkCmdEndQuery");
@@ -1946,7 +1950,8 @@ bool ObjectLifetimes::PreCallValidateCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdResetQueryPool-commandBuffer-parameter", kVUIDUndefined, "vkCmdResetQueryPool");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdResetQueryPool-queryPool-parameter", "VUID-vkCmdResetQueryPool-commonparent", "vkCmdResetQueryPool");
@@ -1958,7 +1963,8 @@ bool ObjectLifetimes::PreCallValidateCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWriteTimestamp-commandBuffer-parameter", kVUIDUndefined, "vkCmdWriteTimestamp");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdWriteTimestamp-queryPool-parameter", "VUID-vkCmdWriteTimestamp-commonparent", "vkCmdWriteTimestamp");
@@ -1974,7 +1980,8 @@ bool ObjectLifetimes::PreCallValidateCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const {
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdCopyQueryPoolResults-commandBuffer-parameter", kVUIDUndefined, "vkCmdCopyQueryPoolResults");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdCopyQueryPoolResults-queryPool-parameter", "VUID-vkCmdCopyQueryPoolResults-commonparent", "vkCmdCopyQueryPoolResults");
@@ -2455,7 +2462,8 @@ bool ObjectLifetimes::PreCallValidateResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkResetQueryPool-device-parameter", kVUIDUndefined, "vkResetQueryPool");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkResetQueryPool-queryPool-parameter", "VUID-vkResetQueryPool-queryPool-parent", "vkResetQueryPool");
@@ -2700,7 +2708,8 @@ bool ObjectLifetimes::PreCallValidateCmdWriteTimestamp2(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWriteTimestamp2-commandBuffer-parameter", kVUIDUndefined, "vkCmdWriteTimestamp2");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdWriteTimestamp2-queryPool-parameter", "VUID-vkCmdWriteTimestamp2-commonparent", "vkCmdWriteTimestamp2");
@@ -4227,7 +4236,8 @@ bool ObjectLifetimes::PreCallValidateAcquireProfilingLockKHR(
 }
 
 bool ObjectLifetimes::PreCallValidateReleaseProfilingLockKHR(
-    VkDevice                                    device) const {
+    VkDevice                                    device,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkReleaseProfilingLockKHR-device-parameter", kVUIDUndefined, "vkReleaseProfilingLockKHR");
 
@@ -4822,7 +4832,8 @@ bool ObjectLifetimes::PreCallValidateCmdWriteTimestamp2KHR(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWriteTimestamp2-commandBuffer-parameter", kVUIDUndefined, "vkCmdWriteTimestamp2KHR");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdWriteTimestamp2-queryPool-parameter", "VUID-vkCmdWriteTimestamp2-commonparent", "vkCmdWriteTimestamp2KHR");
@@ -5219,7 +5230,8 @@ bool ObjectLifetimes::PreCallValidateCmdBeginQueryIndexedEXT(
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index) const {
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdBeginQueryIndexedEXT");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdBeginQueryIndexedEXT-queryPool-parameter", "VUID-vkCmdBeginQueryIndexedEXT-commonparent", "vkCmdBeginQueryIndexedEXT");
@@ -5231,7 +5243,8 @@ bool ObjectLifetimes::PreCallValidateCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index) const {
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdEndQueryIndexedEXT");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkCmdEndQueryIndexedEXT-queryPool-parameter", "VUID-vkCmdEndQueryIndexedEXT-commonparent", "vkCmdEndQueryIndexedEXT");
@@ -6855,7 +6868,8 @@ bool ObjectLifetimes::PreCallValidateResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkResetQueryPool-device-parameter", kVUIDUndefined, "vkResetQueryPoolEXT");
     skip |= ValidateObject(queryPool, kVulkanObjectTypeQueryPool, false, "VUID-vkResetQueryPool-queryPool-parameter", "VUID-vkResetQueryPool-queryPool-parent", "vkResetQueryPoolEXT");

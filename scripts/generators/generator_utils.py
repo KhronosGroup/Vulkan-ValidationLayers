@@ -113,6 +113,20 @@ error_object_functions = [
     "vkCmdTraceRaysKHR",
     "vkCmdTraceRaysIndirectKHR",
     "vkCmdTraceRaysIndirect2KHR",
+    "vkGetQueryPoolResults",
+    "vkCreateQueryPool",
+    "vkCmdBeginQuery",
+    "vkCmdEndQuery",
+    "vkCmdResetQueryPool",
+    "vkCmdCopyQueryPoolResults",
+    "vkCmdWriteTimestamp",
+    "vkCmdWriteTimestamp2",
+    "vkCmdWriteTimestamp2KHR",
+    "vkCmdBeginQueryIndexedEXT",
+    "vkCmdEndQueryIndexedEXT",
+    "vkResetQueryPool",
+    "vkResetQueryPoolEXT",
+    "vkReleaseProfilingLockKHR",
 ]
 
 # Build a set of all vuid text strings found in validusage.json
