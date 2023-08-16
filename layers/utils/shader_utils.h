@@ -37,7 +37,7 @@ struct ResourceInterfaceVariable;
 struct DescriptorRequirement {
     uint64_t revalidate_hash;
     const ResourceInterfaceVariable *variable;
-    DescriptorRequirement() : revalidate_hash(0) {}
+    DescriptorRequirement() : revalidate_hash(0), variable(nullptr) {}
 };
 
 enum class ShaderObjectStage : uint32_t {

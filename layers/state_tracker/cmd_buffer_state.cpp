@@ -190,7 +190,6 @@ void CMD_BUFFER_STATE::ResetCBState() {
 
     // Clean up the label data
     debug_label.Reset();
-    validate_descriptorsets_in_queuesubmit.clear();
 
     // Best practices info
     small_indexed_draw_call_count = 0;
@@ -1079,15 +1078,9 @@ void CMD_BUFFER_STATE::UpdatePipelineState(Func command, const VkPipelineBindPoi
             cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
             const auto &binding_req_map = reduced_map.FilteredMap(*this, pipe);
 
-            if (reduced_map.IsManyDescriptors()) {
-                // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
-                descriptor_set->UpdateValidationCache(*this, *pipe, binding_req_map);
-            }
-
             // We can skip updating the state if "nothing" has changed since the last validation.
             // See CoreChecks::ValidateActionState for more details.
-            const bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
-                                                // Update if descriptor set (or contents) has changed
+            const bool descriptor_set_changed = // Update if descriptor set (or contents) has changed
                                                 set_info.validated_set != descriptor_set.get() ||
                                                 set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
                                                 (!dev_data->disabled[image_layout_validation] &&
@@ -1104,30 +1097,12 @@ void CMD_BUFFER_STATE::UpdatePipelineState(Func command, const VkPipelineBindPoi
                 }
 
                 // Bind this set and its active descriptor resources to the command buffer
-                if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
-                    // Only record the bindings that haven't already been recorded
-                    BindingVariableMap delta_reqs;
-                    std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        set_info.validated_set_binding_req_map.begin(),
-                                        set_info.validated_set_binding_req_map.end(),
-                                        vvl::insert_iterator<BindingVariableMap>(delta_reqs, delta_reqs.begin()));
-                    descriptor_set->UpdateDrawState(dev_data, this, command, pipe, delta_reqs);
-                } else {
-                    descriptor_set->UpdateDrawState(dev_data, this, command, pipe, binding_req_map);
-                }
+                descriptor_set->UpdateDrawState(dev_data, this, command, pipe, binding_req_map);
 
                 set_info.validated_set = descriptor_set.get();
                 set_info.validated_set_change_count = descriptor_set->GetChangeCount();
                 set_info.validated_set_image_layout_change_count = image_layout_change_count;
-                if (reduced_map.IsManyDescriptors()) {
-                    // Check whether old == new before assigning, the equality check is much cheaper than
-                    // freeing and reallocating the map.
-                    if (set_info.validated_set_binding_req_map != set_binding_pair.second) {
-                        set_info.validated_set_binding_req_map = set_binding_pair.second;
-                    }
-                } else {
-                    set_info.validated_set_binding_req_map = BindingVariableMap();
-                }
+                set_info.validated_set_binding_req_map = BindingVariableMap();
             }
         }
     }

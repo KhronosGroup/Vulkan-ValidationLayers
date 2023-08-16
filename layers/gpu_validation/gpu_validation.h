@@ -23,6 +23,8 @@
 #include "gpu_validation/gpu_subclasses.h"
 #include "state_tracker/pipeline_state.h"
 
+typedef vvl::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+
 class GpuAssisted;
 
 struct GpuVuid {
@@ -101,6 +103,9 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav_state::Sampler, SAMPLER_STAT
 
 class GpuAssisted : public GpuAssistedBase {
     using Func = vvl::Func;
+    using Struct = vvl::Struct;
+    using Field = vvl::Field;
+    using ImageBarrier = sync_utils::ImageBarrier;
 
   public:
     GpuAssisted() {
@@ -154,13 +159,48 @@ class GpuAssisted : public GpuAssistedBase {
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, void* csm_state_data) override;
-    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, gpuav_state::BufferInfo& buffer_info,
+    void AnalyzeAndGenerateMessages(gpuav_state::CommandBuffer &command_buffer, VkQueue queue, gpuav_state::CommandInfo& cmd_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer,
-                                    const std::vector<gpuav_state::DescSetState>& descriptor_sets);
+                                    const std::vector<gpuav_state::DescSetState>& descriptor_sets, const Location &loc);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
     void UpdateBDABuffer(gpuav_state::DeviceMemoryBlock buffer_device_addresses);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
+
+    void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                         const VkSubpassContents contents);
+    void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
+    void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
+
+    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state, const int);
+    void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* cb_state);
+
+    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state);
+
+    bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& image_loc,
+                                           const ImageBarrier& img_barrier, const CommandBufferImageLayoutMap& current_map,
+                                           CommandBufferImageLayoutMap& layout_updates) const;
+
+    void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                         VkSubpassContents contents, const RecordObject& ) override;
+    void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& ) override;
+    void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& ) override;
+
+    void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
+    void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
+                                      const RecordObject& record_obj) override;
+    void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                          const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
+    void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                       const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
+
+    void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+    void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                            const RecordObject& record_obj) override;
+    void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                         const RecordObject& record_obj) override;
 
     void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
@@ -168,14 +208,18 @@ class GpuAssisted : public GpuAssistedBase {
                                              const uint32_t* pDynamicOffsets, const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                              const VkWriteDescriptorSet* pDescriptorWrites,
-                                              const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                  const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
-                                      const RecordObject& record_obj) override;
-    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                   const RecordObject& record_obj) override;
+                                              const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject& ) override;
+    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence, const RecordObject& ) override;
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                   const RecordObject &record_obj) override;
+    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+                                      VkFence fence, const RecordObject& ) override;
+    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence, const RecordObject& ) override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                       const RecordObject &record_obj) override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                    const RecordObject &record_obj) override;
+
     void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj) override;
@@ -273,18 +317,121 @@ class GpuAssisted : public GpuAssistedBase {
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
                                                     const RecordObject& record_obj) override;
 
+    void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                   VkImage* pImage, const RecordObject& record_obj) override;
+    void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator, const RecordObject& ) override;
+    void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                             VkImage *pSwapchainImages, const RecordObject &record_obj) override;
+
+    void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                         const VkClearColorValue* pColor, uint32_t rangeCount,
+                                         const VkImageSubresourceRange* pRanges, const RecordObject& ) override;
+    void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                const VkImageSubresourceRange *pRanges, const RecordObject& ) override;
+    void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                          const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                          const VkClearRect *pRects, const RecordObject& ) override;
+    void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
+                                                const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                const RecordObject &record_obj) override;
+    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                   const VkImageCopy *pRegions, const RecordObject& ) override;
+    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo, const RecordObject& ) override;
+    void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo, const RecordObject& ) override;
+
+    void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions, const RecordObject& ) override;
+    void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo, const RecordObject& ) override;
+    void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                            const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo, const RecordObject& ) override;
+
+    void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                           VkImageLayout dstImageLayout, uint32_t regionCount,
+                                           const VkBufferImageCopy *pRegions, const RecordObject& ) override;
+    void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR, const RecordObject& ) override;
+    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                            const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo, const RecordObject& ) override;
+
+    template <typename RegionType>
+    void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                            VkFilter filter);
+    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                   const VkImageBlit *pRegions, VkFilter filter, const RecordObject& ) override;
+    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo, const RecordObject& ) override;
+    void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo, const RecordObject& ) override;
+
+    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
+                                       const RecordObject &record_obj) override;
+    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                        const RecordObject &record_obj)  override;
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                           const RecordObject &record_obj) override;
+
+    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                    uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject& ) override;
+    void RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                              const VkDependencyInfo *pDependencyInfos, Func command);
+    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                        const VkDependencyInfoKHR *pDependencyInfos, const RecordObject&) override;
+    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                     const VkDependencyInfo *pDependencyInfos, const RecordObject&) override;
+
+    void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                         VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                         uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                         uint32_t bufferMemoryBarrierCount,
+                                         const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                         uint32_t imageMemoryBarrierCount,
+                                         const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject& ) override;
+
+    void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo, const RecordObject& ) override;
+    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo, const RecordObject& ) override;
+
+    void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE& cb_state);
+    void RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const ImageBarrier &mem_barrier);
+    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
+    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
+
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
     std::shared_ptr<cvdescriptorset::DescriptorSet> CreateDescriptorSet(
         VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
         uint32_t variable_count) final;
 
-    void DestroyBuffer(gpuav_state::BufferInfo& buffer_info);
+    void DestroyBuffer(gpuav_state::CommandInfo& cmd_info);
     void DestroyBuffer(gpuav_state::AccelerationStructureBuildValidationBufferInfo& buffer_info);
 
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+                                const char* vuid, const char* more_message = "") const override;
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+                                  const char* vuid, const char* more_message = "") const override;
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+                                 const char* vuid, const char* more_message = "") const override;
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+                                   const char* vuid, const char* more_message = "") const override;
+
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                           bool* error) const override;
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
     VkPipeline GetValidationPipeline(VkRenderPass render_pass);
+
+    template <typename RangeFactory>
+    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
+                                VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
+                                const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
+                                bool *error) const;
 
     VkBool32 shaderInt64;
     bool validate_instrumented_shaders;

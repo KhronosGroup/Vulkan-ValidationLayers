@@ -519,14 +519,14 @@ bool GpuAssistedBase::CommandBufferNeedsProcessing(VkCommandBuffer command_buffe
     return false;
 }
 
-void GpuAssistedBase::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer) {
+void GpuAssistedBase::ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc) {
     auto cb_node = GetWrite<gpu_utils_state::CommandBuffer>(command_buffer);
 
-    cb_node->Process(queue);
+    cb_node->Process(queue, loc);
     for (auto *secondary_cmd_base : cb_node->linkedCommandBuffers) {
         auto *secondary_cb_node = static_cast<gpu_utils_state::CommandBuffer *>(secondary_cmd_base);
         auto guard = secondary_cb_node->WriteLock();
-        secondary_cb_node->Process(queue);
+        secondary_cb_node->Process(queue, loc);
     }
 }
 
@@ -553,9 +553,10 @@ void GpuAssistedBase::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCo
     DispatchQueueWaitIdle(queue);
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_idx);
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBuffers[i]);
+            ProcessCommandBuffer(queue, submit->pCommandBuffers[i], submit_loc.dot(vvl::Field::pCommandBuffers, i));
         }
     }
 }
@@ -578,9 +579,11 @@ void GpuAssistedBase::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, co
     DispatchQueueWaitIdle(queue);
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo2, vvl::Field::pSubmits, submit_idx);
         const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer);
+            ProcessCommandBuffer(queue, submit->pCommandBufferInfos[i].commandBuffer,
+                                 submit_loc.dot(vvl::Struct::VkCommandBufferSubmitInfo, vvl::Field::pCommandBufferInfos, i));
         }
     }
 }

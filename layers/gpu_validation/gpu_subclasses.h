@@ -23,13 +23,16 @@
 #include "gpu_validation/gpu_descriptor_set.h"
 #include "gpu_validation/gpu_state_tracker.h"
 #include "generated/vk_object_types.h"
+#include "gpu_shaders/gpu_shaders_constants.h"
 
 class GpuAssisted;
 
 namespace gpuav_state {
 
 struct DescSetState {
-    std::shared_ptr<DescriptorSet> set_state;
+    uint32_t num;
+    std::shared_ptr<DescriptorSet> state;
+    BindingVariableMap binding_req;
     // State that will be used by the GPU-AV shader instrumentation
     // For update-after-bind, this will be set during queue submission
     // Otherwise it will be set when the DescriptorSet is bound.
@@ -42,7 +45,7 @@ struct DeviceMemoryBlock {
     VmaAllocation allocation;
 };
 
-struct InputBuffers {
+struct DescBindingInfo {
     VkBuffer bindless_state_buffer;
     VmaAllocation bindless_state_buffer_allocation;
     std::vector<DescSetState> descriptor_set_buffers;
@@ -66,7 +69,7 @@ struct PreDispatchResources {
     static const uint32_t push_constant_words = 4;
 };
 
-struct BufferInfo {
+struct CommandInfo {
     DeviceMemoryBlock output_mem_block;
     PreDrawResources pre_draw_resources;
     PreDispatchResources pre_dispatch_resources;
@@ -76,9 +79,9 @@ struct BufferInfo {
     bool uses_robustness;
     vvl::Func command;
     uint32_t desc_binding_index;
-    BufferInfo(DeviceMemoryBlock output_mem_block, PreDrawResources pre_draw_resources, PreDispatchResources pre_dispatch_resources,
-               VkDescriptorSet desc_set, VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness,
-               vvl::Func command, uint32_t desc_binding_index)
+    CommandInfo(DeviceMemoryBlock output_mem_block, PreDrawResources pre_draw_resources, PreDispatchResources pre_dispatch_resources,
+                VkDescriptorSet desc_set, VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness,
+                vvl::Func command, uint32_t desc_binding_index)
         : output_mem_block(output_mem_block),
           pre_draw_resources(pre_draw_resources),
           pre_dispatch_resources(pre_dispatch_resources),
@@ -106,8 +109,10 @@ struct AccelerationStructureBuildValidationBufferInfo {
 
 class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
-    std::vector<BufferInfo> per_draw_buffer_list;
-    std::vector<InputBuffers> di_input_buffer_list;
+    // per draw/dispatch command state
+    std::vector<CommandInfo> per_draw_buffer_list;
+    // per vkCmdBindDescriptorSet() state
+    std::vector<DescBindingInfo> di_input_buffer_list;
     std::vector<AccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
 
@@ -116,7 +121,7 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     ~CommandBuffer();
 
     bool NeedsProcessing() const final { return !per_draw_buffer_list.empty() || has_build_as_cmd; }
-    void Process(VkQueue queue) final;
+    void Process(VkQueue queue, const Location &loc) final;
 
     void Destroy() final;
     void Reset() final;
@@ -124,35 +129,6 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
   private:
     void ResetCBState();
     void ProcessAccelerationStructure(VkQueue queue);
-};
-
-typedef uint32_t DescriptorId;
-
-class DescriptorHeap {
-  public:
-    DescriptorHeap(GpuAssisted &, uint32_t max_descriptors);
-    ~DescriptorHeap();
-    DescriptorId NextId(const VulkanTypedHandle &handle);
-    void DeleteId(DescriptorId id);
-
-    VkDeviceAddress GetDeviceAddress() const {
-        return device_address_;
-    }
-
-  private:
-    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
-
-    mutable std::mutex lock_;
-
-    const uint32_t max_descriptors_;
-    gpuav_state::DescriptorId next_id_{1};
-    vvl::unordered_map<gpuav_state::DescriptorId, VulkanTypedHandle> alloc_map_;
-
-    VmaAllocator allocator_{nullptr};
-    VmaAllocation allocation_{nullptr};
-    VkBuffer buffer_{VK_NULL_HANDLE};
-    uint32_t *gpu_heap_state_{nullptr};
-    VkDeviceAddress device_address_{0};
 };
 
 class Buffer : public BUFFER_STATE {
@@ -227,3 +203,27 @@ class AccelerationStructureNV : public ACCELERATION_STRUCTURE_STATE_NV {
 };
 
 }  // namespace gpuav_state
+
+namespace gpuav_glsl {
+
+struct AccelerationStructureBuildValidationBuffer {
+    uint32_t instances_to_validate;
+    uint32_t replacement_handle_bits_0;
+    uint32_t replacement_handle_bits_1;
+    uint32_t invalid_handle_found;
+    uint32_t invalid_handle_bits_0;
+    uint32_t invalid_handle_bits_1;
+    uint32_t valid_handles_count;
+};
+
+struct DescriptorSetRecord {
+    VkDeviceAddress layout_data;
+    VkDeviceAddress in_data;
+    VkDeviceAddress out_data;
+};
+
+struct BindlessStateBuffer {
+    VkDeviceAddress global_state;
+    DescriptorSetRecord desc_sets[gpuav_glsl::kDebugInputBindlessMaxDescSets];
+};
+} // namespace gpuav_glsl

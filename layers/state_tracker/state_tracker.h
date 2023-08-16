@@ -1750,6 +1750,18 @@ class ValidationStateTracker : public ValidationObject {
     }
 #endif
 
+    virtual bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+                                const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
+                                  const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+                                 const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+                                   const char* vuid, const char* more_message = "") const { return false; }
+    virtual bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                           bool* error) const { return false; }
+
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 

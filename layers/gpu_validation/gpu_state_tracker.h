@@ -69,7 +69,7 @@ class CommandBuffer : public CMD_BUFFER_STATE {
                   const COMMAND_POOL_STATE *pool);
 
     virtual bool NeedsProcessing() const = 0;
-    virtual void Process(VkQueue queue) = 0;
+    virtual void Process(VkQueue queue, const Location &loc) = 0;
 };
 }  // namespace gpu_utils_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_utils_state::Queue, QUEUE_STATE)
@@ -184,7 +184,7 @@ class GpuAssistedBase : public ValidationStateTracker {
 
   protected:
     bool CommandBufferNeedsProcessing(VkCommandBuffer command_buffer) const;
-    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer);
+    void ProcessCommandBuffer(VkQueue queue, VkCommandBuffer command_buffer, const Location &loc);
 
     void SubmitBarrier(VkQueue queue) {
         auto queue_state = Get<gpu_utils_state::Queue>(queue);

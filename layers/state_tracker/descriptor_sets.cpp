@@ -575,16 +575,12 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
-    CMD_BUFFER_STATE::CmdDrawDispatchInfo cmd_info = {};
     for (const auto &binding_req_pair : binding_req_map) {
-        auto binding = GetBinding(binding_req_pair.first);
+        auto *binding = GetBinding(binding_req_pair.first);
         assert(binding);
 
-        // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state
-        if (binding->IsBindless()) {
-            if (!(binding->binding_flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)) {
-                cmd_info.binding_infos.emplace_back(binding_req_pair);
-            }
+        // core validation doesn't handle descriptor indexing, that is only done by GPU-AV
+        if (SkipBinding(*binding)) {
             continue;
         }
         switch (binding->descriptor_class) {
@@ -612,16 +608,6 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
             default:
                 break;
         }
-    }
-
-    if (cmd_info.binding_infos.size() > 0) {
-        cmd_info.command = command;
-        if (cb_state->activeFramebuffer) {
-            cmd_info.framebuffer = cb_state->activeFramebuffer->framebuffer();
-            cmd_info.attachments = cb_state->active_attachments;
-            cmd_info.subpasses = cb_state->active_subpasses;
-        }
-        cb_state->validate_descriptorsets_in_queuesubmit[GetSet()].emplace_back(cmd_info);
     }
 }
 
@@ -656,15 +642,15 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
     const auto &non_dynamic_buffers = validated.non_dynamic_buffers;
     const auto &stats = layout_->GetBindingTypeStats();
     for (const auto &binding_req_pair : in_req) {
-        auto binding = binding_req_pair.first;
-        VkDescriptorSetLayoutBinding const *layout_binding = layout_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
-        if (!layout_binding) {
+        const auto *binding = GetBinding(binding_req_pair.first);
+        if (!binding || SkipBinding(*binding)) {
             continue;
         }
+
         // Caching criteria differs per type.
         // If image_layout have changed , the image descriptors need to be validated against them.
-        if (IsBufferDescriptor(layout_binding->descriptorType)) {
-            if (IsDynamicDescriptor(layout_binding->descriptorType)) {
+        if (IsBufferDescriptor(binding->type)) {
+            if (IsDynamicDescriptor(binding->type)) {
                 FilterOneBindingReq(binding_req_pair, out_req, dynamic_buffers, stats.dynamic_buffer_count);
             } else {
                 FilterOneBindingReq(binding_req_pair, out_req, non_dynamic_buffers, stats.non_dynamic_buffer_count);
@@ -674,7 +660,7 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
             // but the simple "versioning" is a simple "dirt" test.
             bool stale = true;
             if (image_sample_version) {
-                const auto version_it = image_sample_version->find(binding);
+                const auto version_it = image_sample_version->find(binding->binding);
                 if (version_it != image_sample_version->cend() && (version_it->second == cb_state.image_layout_change_count)) {
                     stale = false;
                 }
@@ -682,33 +668,6 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
             if (stale) {
                 out_req->emplace(binding_req_pair);
             }
-        }
-    }
-}
-
-void cvdescriptorset::DescriptorSet::UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                                           const BindingVariableMap &updated_bindings) {
-    auto &validated = cb_state.descriptorset_cache[this];
-
-    auto &image_sample_version = validated.image_samplers[&pipeline];
-    auto &dynamic_buffers = validated.dynamic_buffers;
-    auto &non_dynamic_buffers = validated.non_dynamic_buffers;
-    for (const auto &binding_req_pair : updated_bindings) {
-        auto binding = binding_req_pair.first;
-        VkDescriptorSetLayoutBinding const *layout_binding = layout_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
-        if (!layout_binding) {
-            continue;
-        }
-        // Caching criteria differs per type.
-        if (IsBufferDescriptor(layout_binding->descriptorType)) {
-            if (IsDynamicDescriptor(layout_binding->descriptorType)) {
-                dynamic_buffers.emplace(binding);
-            } else {
-                non_dynamic_buffers.emplace(binding);
-            }
-        } else {
-            // Save the layout change version...
-            image_sample_version[binding] = cb_state.image_layout_change_count;
         }
     }
 }
@@ -1176,10 +1135,7 @@ bool cvdescriptorset::MutableDescriptor::Invalid() const {
 
 const BindingVariableMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
                                                                                 const PIPELINE_STATE *pipeline) {
-    if (IsManyDescriptors()) {
-        filtered_map_.reset(new BindingVariableMap);
-        descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());
-        return *filtered_map_;
-    }
-    return orig_map_;
+    filtered_map_.reset(new BindingVariableMap);
+    descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());
+    return *filtered_map_;
 }

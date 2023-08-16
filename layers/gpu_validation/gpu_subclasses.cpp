@@ -17,78 +17,8 @@
 
 #include "gpu_subclasses.h"
 #include "gpu_validation.h"
-
-gpuav_state::DescriptorHeap::DescriptorHeap(GpuAssisted &gpu_dev, uint32_t max_descriptors)
-    : max_descriptors_(max_descriptors), allocator_(gpu_dev.vmaAllocator) {
-
-     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
-     // support calls into this class as no-ops if this happens.
-     if (max_descriptors_ == 0) {
-         return;
-     }
-
-    VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = ((max_descriptors_ + 31) & ~31) * sizeof(uint32_t);
-    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-    VmaAllocationCreateInfo alloc_info{};
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    [[maybe_unused]] VkResult result;
-    result = vmaCreateBuffer(allocator_, &buffer_info, &alloc_info, &buffer_, &allocation_, nullptr);
-    assert(result == VK_SUCCESS);
-
-    result = vmaMapMemory(allocator_, allocation_, reinterpret_cast<void **>(&gpu_heap_state_));
-    assert(result == VK_SUCCESS);
-    memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
-
-    auto buffer_device_address_info = vku::InitStruct<VkBufferDeviceAddressInfo>();
-    buffer_device_address_info.buffer = buffer_;
-    // We cannot rely on device_extensions here, since we may be enabling BDA support even
-    // though the application has not requested it.
-    if (gpu_dev.api_version >= VK_API_VERSION_1_2) {
-        device_address_ = DispatchGetBufferDeviceAddress(gpu_dev.device, &buffer_device_address_info);
-    } else {
-        device_address_ = DispatchGetBufferDeviceAddressKHR(gpu_dev.device, &buffer_device_address_info);
-    }
-    assert(device_address_ != 0);
-}
-
-gpuav_state::DescriptorHeap::~DescriptorHeap() {
-    if (max_descriptors_ > 0) {
-        vmaUnmapMemory(allocator_, allocation_);
-        gpu_heap_state_ = nullptr;
-        vmaDestroyBuffer(allocator_, buffer_, allocation_);
-    }
-}
-
-gpuav_state::DescriptorId gpuav_state::DescriptorHeap::NextId(const VulkanTypedHandle &handle) {
-    if (max_descriptors_ == 0) {
-        return 0;
-    }
-    gpuav_state::DescriptorId result;
-
-    auto guard = Lock();
-    assert(alloc_map_.size() < max_descriptors_);
-    do {
-        result = next_id_++;
-        if (next_id_ == max_descriptors_) {
-            next_id_ = 1;
-            result = next_id_;
-        }
-    } while (alloc_map_.count(result) > 0);
-    alloc_map_[result] = handle;
-    gpu_heap_state_[result/32] |= 1u << (result & 31);
-    return result;
-}
-
-void gpuav_state::DescriptorHeap::DeleteId(gpuav_state::DescriptorId id) {
-    if (max_descriptors_ > 0) {
-        auto guard = Lock();
-        // Note: We don't mess with next_id_ here because ids should be signed in LRU order.
-        gpu_heap_state_[id/32] &= ~(1u << (id & 31));
-        alloc_map_.erase(id);
-    }
-}
+#include "gpu_vuids.h"
+#include "drawdispatch/descriptor_validator.h"
 
 gpuav_state::Buffer::Buffer(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo,
                             DescriptorHeap &desc_heap_)
@@ -186,3 +116,134 @@ void gpuav_state::AccelerationStructureNV::NotifyInvalidate(const NodeList &inva
     desc_heap.DeleteId(id);
     ACCELERATION_STRUCTURE_STATE_NV::NotifyInvalidate(invalid_nodes, unlink);
 }
+
+gpuav_state::CommandBuffer::CommandBuffer(GpuAssisted *ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                          const COMMAND_POOL_STATE *pool)
+    : gpu_utils_state::CommandBuffer(ga, cb, pCreateInfo, pool) {}
+
+gpuav_state::CommandBuffer::~CommandBuffer() { Destroy(); }
+
+void gpuav_state::CommandBuffer::Destroy() {
+    ResetCBState();
+    CMD_BUFFER_STATE::Destroy();
+}
+
+void gpuav_state::CommandBuffer::Reset() {
+    CMD_BUFFER_STATE::Reset();
+    ResetCBState();
+}
+
+void gpuav_state::CommandBuffer::ResetCBState() {
+    auto gpuav = static_cast<GpuAssisted *>(dev_data);
+    // Free the device memory and descriptor set(s) associated with a command buffer.
+    for (auto &cmd_info : per_draw_buffer_list) {
+        gpuav->DestroyBuffer(cmd_info);
+    }
+    per_draw_buffer_list.clear();
+
+    for (auto &buffer_info : di_input_buffer_list) {
+        vmaDestroyBuffer(gpuav->vmaAllocator, buffer_info.bindless_state_buffer, buffer_info.bindless_state_buffer_allocation);
+    }
+    di_input_buffer_list.clear();
+    current_bindless_buffer = VK_NULL_HANDLE;
+
+    for (auto &as_validation_buffer_info : as_validation_buffers) {
+        gpuav->DestroyBuffer(as_validation_buffer_info);
+    }
+    as_validation_buffers.clear();
+}
+
+// For the given command buffer, map its debug data buffers and read their contents for analysis.
+void gpuav_state::CommandBuffer::Process(VkQueue queue, const Location &loc) {
+    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+    if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
+        uint32_t draw_index = 0;
+        uint32_t compute_index = 0;
+        uint32_t ray_trace_index = 0;
+
+        for (auto &cmd_info : per_draw_buffer_list) {
+            char *data;
+            gpuav_state::DescBindingInfo *di_info = nullptr;
+            if (cmd_info.desc_binding_index != vvl::kU32Max) {
+                di_info = &di_input_buffer_list[cmd_info.desc_binding_index];
+            }
+            std::vector<gpuav_state::DescSetState> empty;
+
+            uint32_t operation_index = 0;
+            if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                operation_index = draw_index;
+                draw_index++;
+            } else if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                operation_index = compute_index;
+                compute_index++;
+            } else if (cmd_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+                operation_index = ray_trace_index;
+                ray_trace_index++;
+            } else {
+                assert(false);
+            }
+
+            VkResult result = vmaMapMemory(device_state->vmaAllocator, cmd_info.output_mem_block.allocation, (void **)&data);
+            if (result == VK_SUCCESS) {
+                device_state->AnalyzeAndGenerateMessages(*this, queue, cmd_info, operation_index, (uint32_t *)data,
+                                                         di_info ? di_info->descriptor_set_buffers : empty, loc);
+                vmaUnmapMemory(device_state->vmaAllocator, cmd_info.output_mem_block.allocation);
+            }
+        }
+        // For each vkCmdBindDescriptorSets()...
+        // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
+        // checking them multiple times.
+        vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
+        for (auto &di_info : di_input_buffer_list) {
+            Location draw_loc(vvl::Func::vkCmdDraw);
+            // For each descriptor set ...
+            for (auto &set : di_info.descriptor_set_buffers) {
+                if (validated_desc_sets.count(set.state->GetSet()) > 0) {
+                    continue;
+                }
+                validated_desc_sets.emplace(set.state->GetSet());
+                assert(set.output_state);
+
+                vvl::DescriptorValidator context(*device_state, *this, *set.state, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+                auto used_descs = set.output_state->UsedDescriptors(*set.state);
+                // For each used binding ...
+                for (const auto &u : used_descs) {
+                    auto iter = set.binding_req.find(u.first);
+                    vvl::DescriptorBindingInfo binding_info{u.first, (iter != set.binding_req.end()) ? iter->second : DescriptorRequirement()};
+                    context.ValidateBinding(binding_info, u.second);
+                }
+            }
+        }
+    }
+    ProcessAccelerationStructure(queue);
+}
+
+void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
+    if (!has_build_as_cmd) {
+        return;
+    }
+    auto *device_state = static_cast<GpuAssisted *>(dev_data);
+    for (const auto &as_validation_buffer_info : as_validation_buffers) {
+        gpuav_glsl::AccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
+
+        VkResult result = vmaMapMemory(device_state->vmaAllocator, as_validation_buffer_info.buffer_allocation,
+                                       reinterpret_cast<void **>(&mapped_validation_buffer));
+        if (result == VK_SUCCESS) {
+            if (mapped_validation_buffer->invalid_handle_found > 0) {
+                const std::array<uint32_t, 2> invalid_handles = {mapped_validation_buffer->invalid_handle_bits_0,
+                                                                 mapped_validation_buffer->invalid_handle_bits_1};
+                const uint64_t invalid_handle = vvl_bit_cast<uint64_t>(invalid_handles);
+
+                // TODO - pass in Locaiton correctly
+                const Location loc(vvl::Func::vkQueueSubmit);
+                device_state->LogError(
+                    "UNASSIGNED-AccelerationStructure", as_validation_buffer_info.acceleration_structure, loc,
+                    "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
+                    "handle (%" PRIu64 ")",
+                    invalid_handle);
+            }
+            vmaUnmapMemory(device_state->vmaAllocator, as_validation_buffer_info.buffer_allocation);
+        }
+    }
+}
+

@@ -52,35 +52,6 @@ struct CommandBufferSubmitState {
             &qfo_buffer_scoreboards);
         skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->Queue());
 
-        for (const auto &descriptor_set : cb_state.validate_descriptorsets_in_queuesubmit) {
-            auto set_node = core->Get<cvdescriptorset::DescriptorSet>(descriptor_set.first);
-            if (!set_node) {
-                continue;
-            }
-            for (const auto &cmd_info : descriptor_set.second) {
-                // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                std::vector<uint32_t> dynamic_offsets;
-                std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
-
-                CoreChecks::DescriptorContext context{loc,
-                                                      core->GetDrawDispatchVuid(cmd_info.command),
-                                                      cb_state,
-                                                      *set_node,
-                                                      cmd_info.framebuffer,
-                                                      false,  // This is submit time not record time...
-                                                      checked_layouts};
-
-                for (const auto &binding_info : cmd_info.binding_infos) {
-                    std::string error;
-                    if (set_node->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
-                        context.checked_layouts.emplace();
-                    }
-                    const auto *binding = set_node->GetBinding(binding_info.first);
-                    skip |= core->ValidateDescriptorSetBindingData(context, binding_info, *binding);
-                }
-            }
-        }
-
         // Potential early exit here as bad object state may crash in delayed function calls
         if (skip) {
             return true;
