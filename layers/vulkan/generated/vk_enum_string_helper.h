@@ -24,25 +24,6 @@
 #pragma once
 #include <string>
 #include <vulkan/vulkan.h>
-
-static inline bool IsDuplicatePnext(VkStructureType input_value) {
-    switch (input_value) {
-        case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO:
-        case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
-        case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
-            return true;
-        default:
-            return false;
-    }
-}
-
 static inline const char* string_VkResult(VkResult input_value) {
     switch (input_value) {
         case VK_SUCCESS:

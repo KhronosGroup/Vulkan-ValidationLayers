@@ -58,20 +58,6 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
 #include <vulkan/vulkan.h>
 ''')
 
-        # TODO - this should be moved into different generated util file
-        out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
-        out.append('    switch (input_value) {\n')
-
-        for struct in [x for x in self.vk.structs.values() if x.allowDuplicate and x.sType is not None]:
-            # The sType will always be first member of struct
-            out.append(f'        case {struct.sType}:\n')
-        out.append('            return true;\n')
-        out.append('        default:\n')
-        out.append('            return false;\n')
-        out.append('    }\n')
-        out.append('}\n')
-        out.append('\n')
-
         # If there are no fields (empty enum) ignore
         for enum in [x for x in self.vk.enums.values() if len(x.fields) > 0]:
             groupType = enum.name if enum.bitWidth == 32 else 'uint64_t'
