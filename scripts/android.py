@@ -148,7 +148,7 @@ def main():
         shutil.rmtree(cmake_install_dir)
 
     for abi in android_abis:
-        build_dir = common_ci.RepoRelative(f'build-android/obj/{abi}')
+        build_dir = common_ci.RepoRelative(f'build-android/cmake/{abi}')
         lib_dir = f'lib/{abi}'
 
         if clean:
