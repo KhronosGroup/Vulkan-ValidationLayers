@@ -5,13 +5,6 @@
 # CI scripts will use build-ci to not conflict with existing builds
 build-ci/
 
-# TODO: Once the ndk-build is fully removed just ignore the entire build-android directory
-build-android/external
-build-android/bin
-build-android/libs
-build-android/obj
-build-android/third_party
-
 CMakeCache.txt
 CMakeLists.txt.user
 CMakeFiles/
@@ -35,6 +28,8 @@ out64/*
 build
 build32
 dbuild
+# See android.py
+build-android/
 *.config
 *.creator
 *.creator.user
@@ -46,6 +41,7 @@ dbuild
 scripts/.vs
 .*.sw[op]
 *~
+
 # BUILD.gn artifacts
 .cipd/
 .gclient
