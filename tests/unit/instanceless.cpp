@@ -245,7 +245,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     uint32_t physical_device_count = 1;
     VkPhysicalDevice physical_device;
     const VkResult err = vk::EnumeratePhysicalDevices(instance, &physical_device_count, &physical_device);
-    ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
+    ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
     ASSERT_EQ(physical_device_count, 1);
 
     float dqci_priorities[] = {1.0};

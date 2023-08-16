@@ -266,7 +266,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     // Choose a physical device
     uint32_t gpu_count = 0;
     const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, nullptr);
-    ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
+    ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
     ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
     std::vector<VkPhysicalDevice> phys_devices(gpu_count);
