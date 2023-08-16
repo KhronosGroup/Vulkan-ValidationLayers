@@ -22,6 +22,8 @@
 #include "state_tracker/descriptor_sets.h"
 #include "vma/vma.h"
 
+class GpuAssisted;
+
 namespace gpuav_state {
 
 class DescriptorSet : public cvdescriptorset::DescriptorSet {
@@ -40,6 +42,8 @@ class DescriptorSet : public cvdescriptorset::DescriptorSet {
         VmaAllocation allocation{nullptr};
         VkBuffer buffer{VK_NULL_HANDLE};
         VkDeviceAddress device_addr{0};
+    
+        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const gpuav_state::DescriptorSet &set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
@@ -47,7 +51,10 @@ class DescriptorSet : public cvdescriptorset::DescriptorSet {
 
     VkDeviceAddress GetLayoutState();
     std::shared_ptr<State> GetCurrentState();
+    std::shared_ptr<State> GetOutputState();
 
+  protected:
+    bool SkipBinding(const cvdescriptorset::DescriptorBinding &binding) const override { return true; }
   private:
     struct Layout {
         VmaAllocation allocation{nullptr};
@@ -59,7 +66,38 @@ class DescriptorSet : public cvdescriptorset::DescriptorSet {
     Layout layout_;
     std::atomic<uint32_t> current_version_{0};
     std::shared_ptr<State> last_used_state_;
+    std::shared_ptr<State> output_state_;
     mutable std::mutex state_lock_;
 };
+
+typedef uint32_t DescriptorId;
+
+class DescriptorHeap {
+  public:
+    DescriptorHeap(GpuAssisted &, uint32_t max_descriptors);
+    ~DescriptorHeap();
+    DescriptorId NextId(const VulkanTypedHandle &handle);
+    void DeleteId(DescriptorId id);
+
+    VkDeviceAddress GetDeviceAddress() const {
+        return device_address_;
+    }
+
+  private:
+    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
+
+    mutable std::mutex lock_;
+
+    const uint32_t max_descriptors_;
+    gpuav_state::DescriptorId next_id_{1};
+    vvl::unordered_map<gpuav_state::DescriptorId, VulkanTypedHandle> alloc_map_;
+
+    VmaAllocator allocator_{nullptr};
+    VmaAllocation allocation_{nullptr};
+    VkBuffer buffer_{VK_NULL_HANDLE};
+    uint32_t *gpu_heap_state_{nullptr};
+    VkDeviceAddress device_address_{0};
+};
+
 
 }  // namespace gpuav_state

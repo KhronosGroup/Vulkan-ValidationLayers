@@ -339,16 +339,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::shared_ptr<const CMD_BUFFER_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<CMD_BUFFER_STATE> shared_from_this() { return SharedFromThisImpl(this); }
 
-    using DescriptorBindingInfo = vvl::map_entry<uint32_t, DescriptorRequirement>;
-    struct CmdDrawDispatchInfo {
-        Func command;
-        std::vector<DescriptorBindingInfo> binding_infos;
-        VkFramebuffer framebuffer;
-        std::shared_ptr<std::vector<SUBPASS_INFO>> subpasses;
-        std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> attachments;
-    };
-    vvl::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
-
     // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
     // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
     std::vector<VkViewport> inheritedViewportDepths;

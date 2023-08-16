@@ -53,6 +53,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/hash_util.h
     utils/hash_util.cpp
     utils/hash_vk_types.h
+    utils/image_layout_utils.h
+    utils/image_layout_utils.cpp
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
     utils/ray_tracing_utils.cpp
@@ -149,6 +151,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_video.cpp
     core_checks/cc_wsi.cpp
     core_checks/cc_ycbcr.cpp
+    drawdispatch/descriptor_validator.cpp
+    drawdispatch/drawdispatch_vuids.cpp
     error_message/validation_error_enums.h
     external/vma/vma.h
     external/vma/vma.cpp
@@ -189,6 +193,7 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_descriptor_set.h
     gpu_validation/gpu_error_message.cpp
     gpu_validation/gpu_error_message.h
+    gpu_validation/gpu_image_layout.cpp
     gpu_validation/gpu_state_tracker.cpp
     gpu_validation/gpu_state_tracker.h
     gpu_validation/gpu_subclasses.cpp
@@ -196,6 +201,8 @@ target_sources(vvl PRIVATE
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h
+    gpu_validation/gpu_vuids.cpp
+    gpu_validation/gpu_vuids.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/base_node.cpp

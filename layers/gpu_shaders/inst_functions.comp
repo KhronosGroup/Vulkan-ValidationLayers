@@ -39,6 +39,10 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[]; // x = id, y = extra data depending on the descriptor type
 };
 
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetOutData {
+    uint data[];
+};
+
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState {
     uint data[];
 };
@@ -52,6 +56,7 @@ layout(set = 7, binding = 0, std430) buffer inst_OutputBuffer {
 struct DescriptorSetRecord {
     DescriptorLayoutData layout_data;
     DescriptorSetInData in_data;
+    DescriptorSetOutData out_data;
 };
 
 layout(set = 7, binding = 1, std430) buffer inst_bindless_StateBuffer {
@@ -193,6 +198,12 @@ bool inst_bindless_check_desc(const uint shader_id, const uint inst_num, const u
                 break;
             }
         }
+        DescriptorSetOutData out_data = inst_bindless_state_buffer.desc_sets[desc_set].out_data;
+        uvec2 out_vec = uvec2(out_data);
+        if ((out_vec.x == 0u) && (out_vec.y == 0u)) {
+            break;
+        }
+        out_data.data[state_index] = 1;
     } while (false);
 
     if (0u != error) {

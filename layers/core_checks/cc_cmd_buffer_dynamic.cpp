@@ -22,6 +22,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(CBDynamicFlags state_status_cb, CBDynamicState dynamic_state,
                                            const LogObjectList& objlist, const Location& loc, const char* vuid) const {
@@ -36,7 +37,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
     bool skip = false;
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
-    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
 
     // Verify vkCmdSet* calls since last bound pipeline
@@ -239,7 +240,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
     }
 
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
-    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
     if (!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         if (cb_state.active_attachments) {
             for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
@@ -410,7 +411,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
 
-    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
 
     // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
     const auto *discard_rectangle_state = vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
@@ -895,7 +896,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
 bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& last_bound_state, const Location& loc) const {
     bool skip = false;
     const CMD_BUFFER_STATE& cb_state = last_bound_state.cb_state;
-    const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
+    const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(loc.function);
     const LogObjectList objlist(cb_state.commandBuffer());
 
     bool graphics_shader_bound = false;

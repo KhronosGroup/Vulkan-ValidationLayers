@@ -918,8 +918,6 @@ class DescriptorSet : public BASE_NODE {
                                     const TrackedBindings &set, uint32_t limit);
     void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *, const BindingVariableMap &in_req,
                            BindingVariableMap *out_req) const;
-    void UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                               const BindingVariableMap &updated_bindings);
 
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
@@ -1079,6 +1077,12 @@ class DescriptorSet : public BASE_NODE {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
+    virtual bool SkipBinding(const DescriptorBinding &binding) const {
+        // core validation case: do not handle descriptor arrays since we don't have a way to determine
+        // which array elements are statically or dynamically used.
+        return binding.IsBindless() || binding.count > 1;
+    }
+
   protected:
     union AnyBinding {
         SamplerBinding sampler;
@@ -1124,7 +1128,6 @@ class DescriptorSet : public BASE_NODE {
 // For the "bindless" style resource usage with many descriptors, need to optimize binding and validation
 class PrefilterBindRequestMap {
   public:
-    static const uint32_t kManyDescriptors_ = 64;  // TODO base this number on measured data
     std::unique_ptr<BindingVariableMap> filtered_map_;
     const BindingVariableMap &orig_map_;
     const DescriptorSet &descriptor_set_;
@@ -1132,6 +1135,5 @@ class PrefilterBindRequestMap {
     PrefilterBindRequestMap(const DescriptorSet &ds, const BindingVariableMap &in_map)
         : filtered_map_(), orig_map_(in_map), descriptor_set_(ds) {}
     const BindingVariableMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE *);
-    bool IsManyDescriptors() const { return descriptor_set_.GetTotalDescriptorCount() > kManyDescriptors_; }
 };
 }  // namespace cvdescriptorset

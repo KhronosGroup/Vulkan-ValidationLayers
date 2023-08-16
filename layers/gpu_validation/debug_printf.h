@@ -66,7 +66,7 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     ~CommandBuffer();
 
     bool NeedsProcessing() const final { return !buffer_infos.empty(); }
-    void Process(VkQueue queue) final;
+    void Process(VkQueue queue, const Location &loc) final;
 
     void Destroy() final;
     void Reset() final;
