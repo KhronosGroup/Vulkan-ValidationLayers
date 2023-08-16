@@ -208,6 +208,12 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
             }
         } else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
             // VK_EXT_debug_report callback (deprecated)
+            if (object_name_infos.empty()) {
+                VkDebugUtilsObjectNameInfoEXT null_object_name = {VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr,
+                                                                  VK_OBJECT_TYPE_UNKNOWN, 0, nullptr};
+                // need to have at least one object
+                object_name_infos.emplace_back(null_object_name);
+            }
             if (current_callback.debug_report_callback_function_ptr(
                     msg_flags, convertCoreObjectToDebugReportObject(object_name_infos[0].objectType),
                     object_name_infos[0].objectHandle, message_id_number, 0, layer_prefix, composite.c_str(),
