@@ -1198,7 +1198,7 @@ TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
 
         if (const auto result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
             result != VK_SUCCESS) {
-            GTEST_SKIP() << "Unable to create image. VkResult = " << vk_result_string(result);
+            GTEST_SKIP() << "Unable to create image. VkResult = " << string_VkResult(result);
         }
     }
 

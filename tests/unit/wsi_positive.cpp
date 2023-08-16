@@ -831,7 +831,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     {
         uint32_t format_count = 1;
         const VkResult err = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, &format_tmp);
-        ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
+        ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
     }
     const VkFormat format = format_tmp.format;
 
