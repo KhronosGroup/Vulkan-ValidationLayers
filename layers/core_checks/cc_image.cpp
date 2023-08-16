@@ -510,8 +510,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             skip |=
                 LogError(device, "VUID-VkImageCreateInfo-pNext-00990",
                          "vkCreateImage(): VkImageCreateInfo pNext chain contains VkExternalMemoryImageCreateInfo with handleTypes "
-                         "flags (%s)  that are not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2.",
-                         string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str());
+                         "flags (%s) that are not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2. Compatible "
+                         "types are %s.",
+                         string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str(),
+                         string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());
         }
 
         vvl::PnextChainRemoveLast(const_cast<void *>(image_format_info.pNext));
