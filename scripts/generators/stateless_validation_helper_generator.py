@@ -271,6 +271,19 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append('#pragma once\n')
+
+        out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
+        out.append('    switch (input_value) {\n')
+        for struct in [x for x in self.vk.structs.values() if x.allowDuplicate and x.sType is not None]:
+            # The sType will always be first member of struct
+            out.append(f'        case {struct.sType}:\n')
+        out.append('            return true;\n')
+        out.append('        default:\n')
+        out.append('            return false;\n')
+        out.append('    }\n')
+        out.append('}\n')
+        out.append('\n')
+
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
