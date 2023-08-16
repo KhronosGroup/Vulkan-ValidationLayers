@@ -664,8 +664,8 @@ class CoreChecks : public ValidationStateTracker {
     static bool ValidatePerformanceQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
-                            uint32_t index, CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
-    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, uint32_t index, CMD_TYPE cmd,
+                            uint32_t index, const Location& loc, const ValidateBeginQueryVuids* vuids) const;
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, uint32_t index, const Location& loc,
                              const ValidateEndQueryVuids* vuids) const;
 
     const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
@@ -756,7 +756,7 @@ class CoreChecks : public ValidationStateTracker {
     }
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const char* caller_name, const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE& cb_state, const char* caller_name, VkQueueFlags flags,
-                               const char* error_code) const;
+                               const char* vuid) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const char* apiName) const;
     bool MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo1,
                                   const VkSampleLocationsInfoEXT* pSampleLocationsInfo2) const;
@@ -1599,11 +1599,11 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
                                          const VkAllocationCallbacks* pAllocator) const override;
-    bool ValidatePerformanceQueryResults(const char* cmd_name, const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery,
-                                         uint32_t queryCount, VkQueryResultFlags flags) const;
+    bool ValidatePerformanceQueryResults(const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
+                                         VkQueryResultFlags flags, const Location& loc) const;
     bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                            size_t dataSize, void* pData, VkDeviceSize stride,
-                                            VkQueryResultFlags flags) const override;
+                                            size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                            const ErrorObject& errorObj) const override;
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset, const void* pNext,
                                   const Location& loc) const;
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
@@ -1639,7 +1639,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const override;
     bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool) const override;
+                                        const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
+                                        const ErrorObject& errorObj) const override;
     bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                            const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) const override;
@@ -1875,21 +1876,23 @@ class CoreChecks : public ValidationStateTracker {
 
     void EnqueueVerifyBeginQuery(VkCommandBuffer, const QueryObject& query_obj, const CMD_TYPE cmd_type);
     bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                      VkQueryControlFlags flags) const override;
+                                      VkQueryControlFlags flags, const ErrorObject& errorObj) const override;
     void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                     VkQueryControlFlags flags) override;
     void EnqueueVerifyEndQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj);
-    bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) const override;
+    bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
+                                    const ErrorObject& errorObj) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;
     bool ValidateQueryPoolIndex(const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
                                 const char* func_name, const char* first_vuid, const char* sum_vuid) const;
     bool ValidateQueriesNotActive(const CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                   const char* func_name, const char* vuid) const;
     bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                          uint32_t queryCount) const override;
+                                          uint32_t queryCount, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                 uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                VkDeviceSize stride, VkQueryResultFlags flags) const override;
+                                                VkDeviceSize stride, VkQueryResultFlags flags,
+                                                const ErrorObject& errorObj) const override;
     void PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                               uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
                                               VkQueryResultFlags flags) override;
@@ -1899,14 +1902,14 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdWriteTimestamp(const CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t query,
                                    CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                          VkQueryPool queryPool, uint32_t query) const override;
+                                          VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const override;
 
     bool ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
-                                    uint32_t query, CMD_TYPE cmd_type) const;
+                                    uint32_t query, const ErrorObject& errorObj) const;
     bool PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
-                                              uint32_t query) const override;
+                                              uint32_t query, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                           uint32_t query) const override;
+                                           uint32_t query, const ErrorObject& errorObj) const override;
     void RecordCmdWriteTimestamp2(CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t query, CMD_TYPE cmd_type) const;
     void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
                                         uint32_t slot) override;
@@ -2091,11 +2094,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) const override;
 
     bool PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                                VkQueryControlFlags flags, uint32_t index) const override;
+                                                VkQueryControlFlags flags, uint32_t index,
+                                                const ErrorObject& errorObj) const override;
     void PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                               VkQueryControlFlags flags, uint32_t index) override;
-    bool PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                              uint32_t index) const override;
+    bool PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index,
+                                              const ErrorObject& errorObj) const override;
     void PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                             uint32_t index) override;
 
@@ -2194,22 +2198,21 @@ class CoreChecks : public ValidationStateTracker {
                                         const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                         uint32_t local_size_z) const;
 
-    bool ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery, uint32_t queryCount,
-                            const char* vuid_badfirst, const char* vuid_badrange, const char* apiName) const;
     bool ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                const char* apiName) const;
-    bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                          uint32_t queryCount) const override;
-    bool PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                       uint32_t queryCount) const override;
+                                const ErrorObject& errorObj) const;
+    bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                          const ErrorObject& errorObj) const override;
+    bool PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                       const ErrorObject& errorObj) const override;
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
-                                 const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags) const;
+                                 const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags,
+                                 const Location& loc) const;
     bool ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
                                          const char* struct_name, const uint32_t struct_size, const Location& loc) const;
     bool ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
                                          const char* struct_name, const uint32_t struct_size, const uint32_t drawCount,
                                          const VkDeviceSize offset, const BUFFER_STATE* buffer_state, const Location& loc) const;
-    bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const override;
+    bool PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject& errorObj) const override;
     bool PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkPrivateDataSlotEXT* pPrivateDataSlot) const override;

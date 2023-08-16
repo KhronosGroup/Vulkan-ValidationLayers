@@ -603,7 +603,8 @@ class StatelessValidation : public ValidationObject {
     void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) override;
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) const;
+                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
+                                               const ErrorObject &errorObj) const;
 
     bool manual_PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance) const;
@@ -1120,8 +1121,8 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                          uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) const;
     bool manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                                   size_t dataSize, void *pData, VkDeviceSize stride,
-                                                   VkQueryResultFlags flags) const;
+                                                   size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                   const ErrorObject &errorObj) const;
     bool manual_PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const;
 

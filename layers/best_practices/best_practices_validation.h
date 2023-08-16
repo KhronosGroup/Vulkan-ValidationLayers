@@ -511,11 +511,11 @@ class BestPractices : public ValidationStateTracker {
     bool ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) const;
 
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                          VkQueryPool queryPool, uint32_t query) const override;
+                                          VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                              VkQueryPool queryPool, uint32_t query) const override;
+                                              VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
-                                           VkQueryPool queryPool, uint32_t query) const override;
+                                           VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const override;
     void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                       VkPipeline pipeline) override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,

@@ -292,7 +292,8 @@ bool PreCallValidateCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool) const override;
+    VkQueryPool*                                pQueryPool,
+    const ErrorObject&                          errorObj) const override;
 void PostCallRecordCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
@@ -315,7 +316,8 @@ bool PreCallValidateGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const override;
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
@@ -892,21 +894,25 @@ bool PreCallValidateCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags) const override;
+    VkQueryControlFlags                         flags,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const override;
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const override;
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const override;
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdCopyQueryPoolResults(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
@@ -915,7 +921,8 @@ bool PreCallValidateCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const override;
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdPushConstants(
     VkCommandBuffer                             commandBuffer,
     VkPipelineLayout                            layout,
@@ -1138,7 +1145,8 @@ bool PreCallValidateResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const override;
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetSemaphoreCounterValue(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
@@ -1217,7 +1225,8 @@ bool PreCallValidateCmdWriteTimestamp2(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const override;
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateQueueSubmit2(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
@@ -1844,7 +1853,8 @@ bool PreCallValidateAcquireProfilingLockKHR(
     VkDevice                                    device,
     const VkAcquireProfilingLockInfoKHR*        pInfo) const override;
 bool PreCallValidateReleaseProfilingLockKHR(
-    VkDevice                                    device) const override;
+    VkDevice                                    device,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
@@ -2062,7 +2072,8 @@ bool PreCallValidateCmdWriteTimestamp2KHR(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const override;
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
@@ -2205,12 +2216,14 @@ bool PreCallValidateCmdBeginQueryIndexedEXT(
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index) const override;
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index) const override;
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdDrawIndirectByteCountEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    instanceCount,
@@ -2910,7 +2923,8 @@ bool PreCallValidateResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const override;
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const override;
 bool PreCallValidateCmdSetCullModeEXT(
     VkCommandBuffer                             commandBuffer,
     VkCullModeFlags                             cullMode) const override;

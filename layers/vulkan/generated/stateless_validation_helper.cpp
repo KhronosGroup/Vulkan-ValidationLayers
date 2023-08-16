@@ -6479,7 +6479,8 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool) const {
+    VkQueryPool*                                pQueryPool,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateStructType("vkCreateQueryPool", "pCreateInfo", "VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, true, "VUID-vkCreateQueryPool-pCreateInfo-parameter", "VUID-VkQueryPoolCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
@@ -6513,7 +6514,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateQueryPool", "pQueryPool", pQueryPool, "VUID-vkCreateQueryPool-pQueryPool-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
+    if (!skip) skip |= manual_PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, errorObj);
     return skip;
 }
 
@@ -6553,12 +6554,13 @@ bool StatelessValidation::PreCallValidateGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const {
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkGetQueryPoolResults", "queryPool", queryPool);
     skip |= ValidateArray("vkGetQueryPoolResults", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetQueryPoolResults-dataSize-arraylength", "VUID-vkGetQueryPoolResults-pData-parameter");
     skip |= ValidateFlags("vkGetQueryPoolResults", "flags", "VkQueryResultFlagBits", AllVkQueryResultFlagBits, flags, kOptionalFlags, "VUID-vkGetQueryPoolResults-flags-parameter");
-    if (!skip) skip |= manual_PreCallValidateGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
+    if (!skip) skip |= manual_PreCallValidateGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags, errorObj);
     return skip;
 }
 
@@ -8628,7 +8630,8 @@ bool StatelessValidation::PreCallValidateCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags) const {
+    VkQueryControlFlags                         flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdBeginQuery", "queryPool", queryPool);
     skip |= ValidateFlags("vkCmdBeginQuery", "flags", "VkQueryControlFlagBits", AllVkQueryControlFlagBits, flags, kOptionalFlags, "VUID-vkCmdBeginQuery-flags-parameter");
@@ -8638,7 +8641,8 @@ bool StatelessValidation::PreCallValidateCmdBeginQuery(
 bool StatelessValidation::PreCallValidateCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdEndQuery", "queryPool", queryPool);
     return skip;
@@ -8648,7 +8652,8 @@ bool StatelessValidation::PreCallValidateCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdResetQueryPool", "queryPool", queryPool);
     return skip;
@@ -8658,7 +8663,8 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateFlags("vkCmdWriteTimestamp", "pipelineStage", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pipelineStage, kRequiredSingleBit, "VUID-vkCmdWriteTimestamp-pipelineStage-parameter", "VUID-vkCmdWriteTimestamp-pipelineStage-parameter");
     skip |= ValidateRequiredHandle("vkCmdWriteTimestamp", "queryPool", queryPool);
@@ -8673,7 +8679,8 @@ bool StatelessValidation::PreCallValidateCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const {
+    VkQueryResultFlags                          flags,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdCopyQueryPoolResults", "queryPool", queryPool);
     skip |= ValidateRequiredHandle("vkCmdCopyQueryPoolResults", "dstBuffer", dstBuffer);
@@ -9649,7 +9656,8 @@ bool StatelessValidation::PreCallValidateResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkResetQueryPool", "queryPool", queryPool);
     return skip;
@@ -10118,7 +10126,8 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateFlags("vkCmdWriteTimestamp2", "stage", "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, stage, kOptionalFlags, "VUID-vkCmdWriteTimestamp2-stage-parameter");
     skip |= ValidateRequiredHandle("vkCmdWriteTimestamp2", "queryPool", queryPool);
@@ -13048,7 +13057,8 @@ bool StatelessValidation::PreCallValidateAcquireProfilingLockKHR(
 }
 
 bool StatelessValidation::PreCallValidateReleaseProfilingLockKHR(
-    VkDevice                                    device) const {
+    VkDevice                                    device,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_performance_query)) skip |= OutputExtensionError("vkReleaseProfilingLockKHR", "VK_KHR_performance_query");
     // No xml-driven validation
@@ -14214,7 +14224,8 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2KHR(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlags2                       stage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const {
+    uint32_t                                    query,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkCmdWriteTimestamp2KHR", "VK_KHR_synchronization2");
     skip |= ValidateFlags("vkCmdWriteTimestamp2KHR", "stage", "VkPipelineStageFlagBits2", AllVkPipelineStageFlagBits2, stage, kOptionalFlags, "VUID-vkCmdWriteTimestamp2-stage-parameter");
@@ -15017,7 +15028,8 @@ bool StatelessValidation::PreCallValidateCmdBeginQueryIndexedEXT(
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index) const {
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback)) skip |= OutputExtensionError("vkCmdBeginQueryIndexedEXT", "VK_EXT_transform_feedback");
     skip |= ValidateRequiredHandle("vkCmdBeginQueryIndexedEXT", "queryPool", queryPool);
@@ -15029,7 +15041,8 @@ bool StatelessValidation::PreCallValidateCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index) const {
+    uint32_t                                    index,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback)) skip |= OutputExtensionError("vkCmdEndQueryIndexedEXT", "VK_EXT_transform_feedback");
     skip |= ValidateRequiredHandle("vkCmdEndQueryIndexedEXT", "queryPool", queryPool);
@@ -17360,7 +17373,8 @@ bool StatelessValidation::PreCallValidateResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const {
+    uint32_t                                    queryCount,
+    const ErrorObject&                          errorObj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_host_query_reset)) skip |= OutputExtensionError("vkResetQueryPoolEXT", "VK_EXT_host_query_reset");
     skip |= ValidateRequiredHandle("vkResetQueryPoolEXT", "queryPool", queryPool);

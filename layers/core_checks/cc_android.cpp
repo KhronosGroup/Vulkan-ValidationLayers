@@ -437,8 +437,8 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeF
                                                      VkBuffer buffer, const Location &loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
-        const char *vuid = (strcmp(func_name, "vkBindBufferMemory()") == 0) ? "VUID-vkBindBufferMemory-memory-02986"
-                                                                            : "VUID-VkBindBufferMemoryInfo-memory-02986";
+        const char *vuid = loc.function == Func::vkBindBufferMemory ? "VUID-vkBindBufferMemory-memory-02986"
+                                                                    : "VUID-VkBindBufferMemoryInfo-memory-02986";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
                          "(%s) was created with an AHB import operation which is not set "
@@ -454,8 +454,8 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
                                                     VkImage image, const Location &loc) const {
     bool skip = false;
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
-        const char *vuid = (strcmp(func_name, "vkBindImageMemory()") == 0) ? "VUID-vkBindImageMemory-memory-02990"
-                                                                           : "VUID-VkBindImageMemoryInfo-memory-02990";
+        const char *vuid = loc.function == Func::vkBindImageMemory ? "VUID-vkBindImageMemory-memory-02990"
+                                                                   : "VUID-VkBindImageMemoryInfo-memory-02990";
         const LogObjectList objlist(image, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
                          "(%s) was created with an AHB import operation which is not set "

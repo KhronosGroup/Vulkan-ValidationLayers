@@ -1038,24 +1038,24 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator,
-                                                                VkQueryPool *pQueryPool) const {
+                                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pCreateInfo != nullptr) {
+        const Location loc = errorObj.location.dot(Field::pCreateInfo);
         // If queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, pipelineStatistics must be a valid combination of
         // VkQueryPipelineStatisticFlagBits values
         if ((pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) && (pCreateInfo->pipelineStatistics != 0) &&
             ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0)) {
-            skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryType-00792",
-                             "vkCreateQueryPool(): if pCreateInfo->queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, "
+            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
                              "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
                              "values.");
         }
         if (pCreateInfo->queryCount == 0) {
-            skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryCount-02763",
-                             "vkCreateQueryPool(): queryCount must be greater than zero.");
+            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryCount-02763", device, loc.dot(Field::queryCount), "is zero.");
         }
     }
     return skip;

@@ -98,7 +98,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                     VkQueryPool queryPool, uint32_t query) const {
+                                                     VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp", static_cast<VkPipelineStageFlags>(pipelineStage));
@@ -107,7 +107,7 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                         VkQueryPool queryPool, uint32_t query) const {
+                                                         VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2KHR", pipelineStage);
@@ -116,7 +116,7 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer command
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
-                                                      VkQueryPool queryPool, uint32_t query) const {
+                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2", pipelineStage);
