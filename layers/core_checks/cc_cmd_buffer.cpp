@@ -1348,23 +1348,25 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
-                                                 const char *struct_name, const uint32_t struct_size) const {
+                                                 const char *struct_name, const uint32_t struct_size, const Location &loc) const {
     bool skip = false;
     static const int condition_multiples = 0b0011;
     if ((stride & condition_multiples) || (stride < struct_size)) {
-        skip |= LogError(commandBuffer, vuid, "stride %d is invalid or less than sizeof(%s) %d.", stride, struct_name, struct_size);
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::stride), "%" PRIu32 " is invalid or less than sizeof(%s) %d.", stride,
+                         struct_name, struct_size);
     }
     return skip;
 }
 
 bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
                                                  const char *struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state) const {
+                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state,
+                                                 const Location &loc) const {
     bool skip = false;
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state->createInfo.size) {
         const LogObjectList objlist(commandBuffer, buffer_state->buffer());
-        skip |= LogError(objlist, vuid,
+        skip |= LogError(vuid, objlist, loc,
                          "stride[%d] * (drawCount[%d] - 1) + offset[%" PRIx64 "] + sizeof(%s)[%d] = %" PRIx64
                          " is greater than the buffer size[%" PRIx64 "].",
                          stride, drawCount, offset, struct_name, struct_size, validation_value, buffer_state->createInfo.size);
