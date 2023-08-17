@@ -32,8 +32,8 @@ bool PreCallValidateQueueBindSparse(/*..*/ ErrorObject &errorObj) const {
         }
 
         if (pNext == VkTimelineSemaphoreSubmitInfo) {
-            // the |true| tells it this field is part of a pNext chain
-            const Location pnext_loc = loc.dot(Struct::VkTimelineSemaphoreSubmitInfo, Field::waitSemaphoreValueCount, true);
+            // use pNext() instead of dot() to print out it was part of a pNext chain
+            const Location pnext_loc = loc.pNext(Struct::VkTimelineSemaphoreSubmitInfo, Field::waitSemaphoreValueCount);
             LogError("VUID-D", pnext_loc);
         }
     }
@@ -82,7 +82,7 @@ const Location layout_loc     = attachment_loc.dot(Field::layout);
 LogError(/*..*/, layout_loc, "good");
 ```
 
-or
+or has been found to be more common
 
 ```cpp
 // Pass an argument

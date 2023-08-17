@@ -38,15 +38,15 @@ struct Location {
     const vvl::Struct structure;
     const vvl::Field field;
     const uint32_t index;  // optional index if checking an array.
-    const bool pNext;      // will print the struct is from a 'pNext` chain
+    const bool isPNext;    // will print the struct is from a 'pNext` chain
     const Location* prev;
 
     Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(s), field(f), index(i), pNext(false), prev(nullptr) {}
+        : function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
     Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(vvl::Struct::Empty), field(f), index(i), pNext(false), prev(nullptr) {}
+        : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
     Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
-        : function(prev_loc.function), structure(s), field(f), index(i), pNext(p), prev(&prev_loc) {}
+        : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
 
     void AppendFields(std::ostream &out) const;
     std::string Fields() const;
@@ -54,16 +54,26 @@ struct Location {
 
     // the dot() method is for walking down into a structure that is being validated
     // eg:  loc.dot(Field::pMemoryBarriers, 5).dot(Field::srcStagemask)
-    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index, bool pNext = false) const {
-        Location result(*this, s, sub_field, sub_index, pNext);
+    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index) const {
+        Location result(*this, s, sub_field, sub_index, false);
         return result;
     }
-    Location dot(vvl::Struct s, vvl::Field sub_field, bool pNext = false) const {
-        Location result(*this, s, sub_field, kNoIndex, pNext);
+    Location dot(vvl::Struct s, vvl::Field sub_field) const {
+        Location result(*this, s, sub_field, kNoIndex, false);
         return result;
     }
     Location dot(vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
         Location result(*this, this->structure, sub_field, sub_index, false);
+        return result;
+    }
+
+    // same as dot() but will mark these were part of a pNext struct
+    Location pNext(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index) const {
+        Location result(*this, s, sub_field, sub_index, true);
+        return result;
+    }
+    Location pNext(vvl::Struct s, vvl::Field sub_field) const {
+        Location result(*this, s, sub_field, kNoIndex, true);
         return result;
     }
 

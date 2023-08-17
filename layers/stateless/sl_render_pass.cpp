@@ -223,10 +223,9 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                skip |=
-                    LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308", device,
-                             attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilInitialLayout, true),
-                             "is %s.", string_VkImageLayout(stencil_initial_layout));
+                skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308", device,
+                                 attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilInitialLayout),
+                                 "is %s.", string_VkImageLayout(stencil_initial_layout));
             }
             if (stencil_final_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
@@ -236,12 +235,12 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                 stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                 skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309", device,
-                                 attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout, true),
+                                 attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout),
                                  "is %s.", string_VkImageLayout(stencil_final_layout));
             }
             if (stencil_final_layout == VK_IMAGE_LAYOUT_UNDEFINED || stencil_final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
                 skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310", device,
-                                 attachment_loc.dot(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout, true),
+                                 attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout),
                                  "is %s.", string_VkImageLayout(stencil_final_layout));
             }
         }

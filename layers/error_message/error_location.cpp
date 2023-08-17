@@ -28,7 +28,7 @@ void Location::AppendFields(std::ostream& out) const {
         }
     }
     if (field != vvl::Field::Empty) {
-        if (pNext && structure != vvl::Struct::Empty) {
+        if (isPNext && structure != vvl::Struct::Empty) {
             out << "pNext<" << vvl::String(structure) << ">.";
         }
         out << vvl::String(field);

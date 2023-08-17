@@ -290,7 +290,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
                 if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
                     skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", device,
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true), "is %s.",
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 }
             }
@@ -299,7 +299,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
                     if (pCreateInfo->extent.width > device_limits.maxFramebufferWidth) {
                         skip |= LogError("VUID-VkImageCreateInfo-Format-02536", device,
-                                         loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true),
+                                         loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage),
                                          "includes VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image width (%" PRIu32
                                          ") exceeds device "
                                          "maxFramebufferWidth (%" PRIu32 ")",
@@ -308,7 +308,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
                     if (pCreateInfo->extent.height > device_limits.maxFramebufferHeight) {
                         skip |= LogError("VUID-VkImageCreateInfo-format-02537", device,
-                                         loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true),
+                                         loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage),
                                          "includes VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image height (%" PRIu32
                                          ") exceeds device "
                                          "maxFramebufferHeight (%" PRIu32 ")",
@@ -320,7 +320,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                     ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
                     (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
                     skip |= LogError("VUID-VkImageCreateInfo-format-02538", device,
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true),
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage),
                                      "includes VK_IMAGE_USAGE_STORAGE_BIT and format is %s and samples is %s, but "
                                      "shaderStorageImageMultisample feature was not enabled.",
                                      string_VkFormat(image_format), string_VkSampleCountFlagBits(pCreateInfo->samples));
@@ -331,14 +331,14 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                     skip |= LogError("VUID-VkImageCreateInfo-format-02795", device, loc.dot(Field::usage),
                                      "is (%s), format is %s, and %s is %s", string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
                                      string_VkFormat(image_format),
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true).Fields().c_str(),
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage).Fields().c_str(),
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 } else if (((pCreateInfo->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) &&
                            ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
                     skip |= LogError("VUID-VkImageCreateInfo-format-02796", device, loc.dot(Field::usage),
                                      "is (%s), format is %s, and %s is %s", string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
                                      string_VkFormat(image_format),
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true).Fields().c_str(),
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage).Fields().c_str(),
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 }
 
@@ -347,14 +347,14 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                     skip |= LogError("VUID-VkImageCreateInfo-format-02797", device, loc.dot(Field::usage),
                                      "is (%s), format is %s, and %s is %s", string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
                                      string_VkFormat(image_format),
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true).Fields().c_str(),
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage).Fields().c_str(),
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 } else if (((pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) == 0) &&
                            ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0)) {
                     skip |= LogError("VUID-VkImageCreateInfo-format-02798", device, loc.dot(Field::usage),
                                      "is (%s), format is %s, and %s is %s", string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
                                      string_VkFormat(image_format),
-                                     loc.dot(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage, true).Fields().c_str(),
+                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage).Fields().c_str(),
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 }
             }
@@ -401,7 +401,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             if (drm_format_mod_explict && drm_format_mod_explict->pPlaneLayouts != nullptr) {
                 for (uint32_t i = 0; i < drm_format_mod_explict->drmFormatModifierPlaneCount; ++i) {
                     const Location drm_loc =
-                        loc.dot(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::pPlaneLayouts, i, true);
+                        loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::pPlaneLayouts, i);
                     if (drm_format_mod_explict->pPlaneLayouts[i].size != 0) {
                         skip |=
                             LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267", device,
@@ -507,7 +507,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 // table in #swapchain-wsi-image-create-info. Breaking up into multiple checks allows for more useful information
                 // returned why this error occured. Check for matching Swapchain flags is done later in state tracking validation
                 const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
-                const Location swapchain_loc = loc.dot(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain, true);
+                const Location swapchain_loc = loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain);
 
                 if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
                     // also implicitly forces the check above that extent.depth is 1
@@ -562,7 +562,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             const uint32_t viewFormatCount = format_list_info->viewFormatCount;
             if (((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) && (viewFormatCount > 1)) {
                 skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
-                                 loc.dot(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount, true),
+                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
                                  "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.",
                                  viewFormatCount, string_VkImageCreateFlags(image_flags).c_str());
             }
@@ -577,13 +577,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                             FormatElementSize(format_list_info->pViewFormats[i]) == FormatElementSize(image_format);
                         if (!size_compatible) {
                             skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device,
-                                             loc.dot(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i, true),
+                                             loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
                                              "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
                                              string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
                         }
                     } else {
                         skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device,
-                                         loc.dot(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i, true),
+                                         loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
                                          "(%s) and VkImageCreateInfo::format (%s) are not compatible.",
                                          string_VkFormat(format_list_info->pViewFormats[i]), string_VkFormat(image_format));
                     }
@@ -599,10 +599,10 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
             if (image_compression_control->flags == VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT &&
                 !image_compression_control->pFixedRateFlags) {
-                skip |= LogError("VUID-VkImageCompressionControlEXT-flags-06748", device,
-                                 loc.dot(Struct::VkImageCompressionControlEXT, Field::flags, true),
-                                 "is %s, but pFixedRateFlags is NULL.",
-                                 string_VkImageCompressionFlagsEXT(image_compression_control->flags).c_str());
+                skip |=
+                    LogError("VUID-VkImageCompressionControlEXT-flags-06748", device,
+                             loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags), "is %s, but pFixedRateFlags is NULL.",
+                             string_VkImageCompressionFlagsEXT(image_compression_control->flags).c_str());
             }
         }
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -611,7 +611,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) &&
                 (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)) {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-06783", device,
-                                 loc.dot(Struct::VkExportMetalObjectCreateInfoEXT, Field::exportObjectType, true),
+                                 loc.pNext(Struct::VkExportMetalObjectCreateInfoEXT, Field::exportObjectType),
                                  "is %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
                                  "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT or "
                                  "VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT are allowed",
@@ -621,7 +621,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
         auto import_metal_texture_info = LvlFindInChain<VkImportMetalTextureInfoEXT>(pCreateInfo->pNext);
         while (import_metal_texture_info) {
-            const Location info_loc = loc.dot(Struct::VkImportMetalTextureInfoEXT, Field::plane, true);
+            const Location info_loc = loc.pNext(Struct::VkImportMetalTextureInfoEXT, Field::plane);
             if ((import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_0_BIT) &&
                 (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                 (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
@@ -686,7 +686,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
                 (astc_decode_mode->decodeMode != VK_FORMAT_R8G8B8A8_UNORM) &&
                 (astc_decode_mode->decodeMode != VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {
                 skip |= LogError("VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230", pCreateInfo->image,
-                                 loc.dot(Struct::VkImageViewASTCDecodeModeEXT, Field::decodeMode, true), "is %s.",
+                                 loc.pNext(Struct::VkImageViewASTCDecodeModeEXT, Field::decodeMode), "is %s.",
                                  string_VkFormat(astc_decode_mode->decodeMode));
             }
             if ((FormatIsCompressed_ASTC_LDR(pCreateInfo->format) == false) &&

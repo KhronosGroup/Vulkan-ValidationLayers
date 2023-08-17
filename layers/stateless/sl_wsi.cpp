@@ -74,7 +74,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR c
             const uint32_t viewFormatCount = format_list_info->viewFormatCount;
             if (((pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (viewFormatCount > 1)) {
                 skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
-                                 loc.dot(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount, true),
+                                 loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
                                  "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
                                  viewFormatCount, string_VkImageCreateFlags(pCreateInfo->flags).c_str());
             }
@@ -84,7 +84,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR c
                 if (FormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
                     FormatCompatibilityClass(format_list_info->pViewFormats[i])) {
                     skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
-                                     loc.dot(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i, true),
+                                     loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
                                      "(%s) and pViewFormats[0] (%s) are not compatible in the pNext chain.",
                                      string_VkFormat(format_list_info->pViewFormats[i]),
                                      string_VkFormat(format_list_info->pViewFormats[0]));
@@ -106,7 +106,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR c
                 } else if (format_list_info->viewFormatCount == 0) {
                     skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
                                      "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
-                                     loc.dot(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
+                                     loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
                 } else {
                     bool found_base_format = false;
                     for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
@@ -166,7 +166,7 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
 
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
                 skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
-                                 errorObj.location.dot(Struct::VkPresentRegionsKHR, Field::swapchainCount, true),
+                                 errorObj.location.pNext(Struct::VkPresentRegionsKHR, Field::swapchainCount),
                                  "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_regions->swapchainCount,
                                  errorObj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
                                  pPresentInfo->swapchainCount);
