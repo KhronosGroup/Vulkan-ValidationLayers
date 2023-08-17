@@ -243,16 +243,15 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                 const auto &perf_counter_iter = physical_device_state->perf_counters.find(perf_ci->queueFamilyIndex);
                 if (perf_counter_iter == physical_device_state->perf_counters.end()) {
                     skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236", device,
-                                     loc.dot(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex, true),
+                                     loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex),
                                      "(%" PRIu32 ") is not a valid queue family index.", perf_ci->queueFamilyIndex);
                 } else {
                     const QUEUE_FAMILY_PERF_COUNTERS *perf_counters = perf_counter_iter->second.get();
                     for (uint32_t idx = 0; idx < perf_ci->counterIndexCount; idx++) {
                         if (perf_ci->pCounterIndices[idx] >= perf_counters->counters.size()) {
-                            skip |=
-                                LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321", device,
-                                         loc.dot(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::pCounterIndices, idx, true),
-                                         "(%" PRIu32 ") is not a valid counter index.", perf_ci->pCounterIndices[idx]);
+                            skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321", device,
+                                             loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::pCounterIndices, idx),
+                                             "(%" PRIu32 ") is not a valid counter index.", perf_ci->pCounterIndices[idx]);
                         }
                     }
                 }

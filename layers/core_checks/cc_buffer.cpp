@@ -127,7 +127,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_devaddr_struct->deviceAddress != 0) {
             skip |= LogError("VUID-VkBufferCreateInfo-deviceAddress-02604", device,
-                             loc.dot(Struct::VkBufferDeviceAddressCreateInfoEXT, Field::deviceAddress, true),
+                             loc.pNext(Struct::VkBufferDeviceAddressCreateInfoEXT, Field::deviceAddress),
                              "(%" PRIu64 ") is non-zero but requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
                              chained_devaddr_struct->deviceAddress);
         }
@@ -138,7 +138,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
             skip |= LogError("VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337", device,
-                             loc.dot(Struct::VkBufferOpaqueCaptureAddressCreateInfo, Field::opaqueCaptureAddress, true),
+                             loc.pNext(Struct::VkBufferOpaqueCaptureAddressCreateInfo, Field::opaqueCaptureAddress),
                              "(%" PRIu64 ") is non-zero but requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
                              chained_opaqueaddr_struct->opaqueCaptureAddress);
         }
@@ -280,7 +280,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
         if ((external_memory_info->handleTypes & compatible_types) != external_memory_info->handleTypes) {
             skip |= LogError("VUID-VkBufferCreateInfo-pNext-00920", device,
-                             loc.dot(Struct::VkExternalMemoryBufferCreateInfo, Field::handleTypes, true),
+                             loc.pNext(Struct::VkExternalMemoryBufferCreateInfo, Field::handleTypes),
                              "(%s) is not reported as compatible by vkGetPhysicalDeviceExternalBufferProperties.",
                              string_VkExternalMemoryHandleTypeFlags(external_memory_info->handleTypes).c_str());
         }
@@ -391,11 +391,11 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
         if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", buffer_state.buffer(),
-                             loc.dot(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage, true), "is %s.",
+                             loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage), "is %s.",
                              string_VkBufferUsageFlags2KHR(usage).c_str());
         } else if ((usage & buffer_state.usage) != buffer_state.usage) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", buffer_state.buffer(),
-                             loc.dot(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage, true),
+                             loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage),
                              "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2KHR(usage).c_str(),
                              string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str());
         }

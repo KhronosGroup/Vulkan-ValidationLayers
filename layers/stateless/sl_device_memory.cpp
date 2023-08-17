@@ -78,7 +78,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
         auto chained_prio_struct = LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
         if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
             skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
-                             loc.dot(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority, true), "is %f",
+                             loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority), "is %f",
                              chained_prio_struct->priority);
         }
 
@@ -92,8 +92,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
         auto opaque_alloc_info = LvlFindInChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
         if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
-            const Location address_loc =
-                loc.dot(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress, true);
+            const Location address_loc = loc.pNext(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress);
             if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329", device, address_loc,
                                  "is non-zero (%" PRIu64
@@ -149,7 +148,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 #endif
 
         if (flags) {
-            const Location flags_loc = loc.dot(Struct::VkMemoryAllocateFlagsInfo, Field::flags, true);
+            const Location flags_loc = loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
             VkBool32 capture_replay = false;
             VkBool32 buffer_device_address = false;
             const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
