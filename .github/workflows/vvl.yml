@@ -143,7 +143,7 @@ jobs:
       - name: Test Max Profile
         run: python scripts/tests.py --test
 
-  android_cmake:
+  android:
       runs-on: ubuntu-22.04
       strategy:
         matrix:
@@ -180,7 +180,6 @@ jobs:
         - name: Build
           run: cmake --build build/
         - name: Test
-          if: matrix.build_tests == 'ON'
           working-directory: ./build
           run: ctest --output-on-failure -C Debug
 
