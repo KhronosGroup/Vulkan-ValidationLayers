@@ -110,8 +110,9 @@ std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
 //
 // AHB-extension new APIs
 //
-bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
-    VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties) const {
+bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
+                                                                          VkAndroidHardwareBufferPropertiesANDROID *pProperties,
+                                                                          const ErrorObject &errorObj) const {
     bool skip = false;
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
@@ -130,7 +131,8 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
 
 bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
-                                                                      struct AHardwareBuffer **pBuffer) const {
+                                                                      struct AHardwareBuffer **pBuffer,
+                                                                      const ErrorObject &errorObj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pInfo->memory);
 

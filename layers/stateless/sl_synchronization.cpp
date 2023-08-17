@@ -19,8 +19,8 @@
 #include "stateless/stateless_validation.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator,
-                                                                VkSemaphore *pSemaphore) const {
+                                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(
@@ -30,7 +30,8 @@ bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device,
     return skip;
 }
 bool StatelessValidation::manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) const {
+                                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent,
+                                                            const ErrorObject &errorObj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(

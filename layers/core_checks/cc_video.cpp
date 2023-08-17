@@ -725,7 +725,8 @@ bool CoreChecks::ValidateReferencePictureUseCount(const CMD_BUFFER_STATE &cb_sta
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                       const VkVideoProfileInfoKHR *pVideoProfile,
-                                                                      VkVideoCapabilitiesKHR *pCapabilities) const {
+                                                                      VkVideoCapabilitiesKHR *pCapabilities,
+                                                                      const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateVideoProfileInfo(pVideoProfile, device, "vkGetPhysicalDeviceVideoCapabilitiesKHR", "pVideoProfile");
@@ -765,7 +766,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
-    uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties) const {
+    uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties, const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
@@ -784,8 +785,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
 }
 
 bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator,
-                                                      VkVideoSessionKHR *pVideoSession) const {
+                                                      const VkAllocationCallbacks *pAllocator, VkVideoSessionKHR *pVideoSession,
+                                                      const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateVideoProfileInfo(pCreateInfo->pVideoProfile, device, "vkCreateVideoSessionKHR", "pCreateInfo->pVideoProfile");
@@ -883,7 +884,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
 }
 
 bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                       const VkAllocationCallbacks *pAllocator) const {
+                                                       const VkAllocationCallbacks *pAllocator, const ErrorObject &errorObj) const {
     auto video_session_state = Get<VIDEO_SESSION_STATE>(videoSession);
     bool skip = false;
     if (video_session_state) {
@@ -895,7 +896,8 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoS
 
 bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                           uint32_t bindSessionMemoryInfoCount,
-                                                          const VkBindVideoSessionMemoryInfoKHR *pBindSessionMemoryInfos) const {
+                                                          const VkBindVideoSessionMemoryInfoKHR *pBindSessionMemoryInfos,
+                                                          const ErrorObject &errorObj) const {
     bool skip = false;
 
     auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
@@ -993,7 +995,8 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
 bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
                                                                 const VkVideoSessionParametersCreateInfoKHR *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
-                                                                VkVideoSessionParametersKHR *pVideoSessionParameters) const {
+                                                                VkVideoSessionParametersKHR *pVideoSessionParameters,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     std::shared_ptr<const VIDEO_SESSION_PARAMETERS_STATE> template_state;
@@ -1049,7 +1052,8 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
 }
 
 bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
-                                                                const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo) const {
+                                                                const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     auto vsp_state = Get<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters);
@@ -1192,7 +1196,8 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
 
 bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device,
                                                                  VkVideoSessionParametersKHR videoSessionParameters,
-                                                                 const VkAllocationCallbacks *pAllocator) const {
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 const ErrorObject &errorObj) const {
     auto video_session_parameters_state = Get<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters);
     bool skip = false;
     if (video_session_parameters_state) {
@@ -1202,8 +1207,8 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
-                                                       const VkVideoBeginCodingInfoKHR *pBeginInfo) const {
+bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR *pBeginInfo,
+                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
@@ -1410,8 +1415,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer,
-                                                     const VkVideoEndCodingInfoKHR *pEndCodingInfo) const {
+bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,
+                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
@@ -1426,7 +1431,8 @@ bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
-                                                         const VkVideoCodingControlInfoKHR *pCodingControlInfo) const {
+                                                         const VkVideoCodingControlInfoKHR *pCodingControlInfo,
+                                                         const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
@@ -1435,7 +1441,8 @@ bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer command
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo) const {
+bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
+                                                  const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;

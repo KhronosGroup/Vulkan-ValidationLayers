@@ -69,7 +69,7 @@ bool BestPractices::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDev
 }
 
 bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                                         VkImage* pSwapchainImages) const {
+                                                         VkImage* pSwapchainImages, const ErrorObject& errorObj) const {
     bool skip = false;
 
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);

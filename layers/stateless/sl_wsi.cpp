@@ -318,7 +318,8 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
         skip |= LogError("VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521", physicalDevice,
                          errorObj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
-        return skip;
+    }
+    return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance,

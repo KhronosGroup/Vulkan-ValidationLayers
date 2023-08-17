@@ -120,7 +120,8 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const {
+                                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
+                                                              const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -494,7 +495,8 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device,
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
-                                                                          VkDescriptorSetLayout *pSetLayout) const {
+                                                                          VkDescriptorSetLayout *pSetLayout,
+                                                                          const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
@@ -663,7 +665,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
 
 bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool,
                                                                    uint32_t descriptorSetCount,
-                                                                   const VkDescriptorSet *pDescriptorSets) const {
+                                                                   const VkDescriptorSet *pDescriptorSets,
+                                                                   const ErrorObject &errorObj) const {
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
@@ -896,7 +899,8 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const char *vkCallingFuncti
 bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                                      uint32_t descriptorCopyCount,
-                                                                     const VkCopyDescriptorSet *pDescriptorCopies) const {
+                                                                     const VkCopyDescriptorSet *pDescriptorCopies,
+                                                                     const ErrorObject &errorObj) const {
     return ValidateWriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
 }
 
@@ -967,7 +971,8 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
 
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkDescriptorPool *pDescriptorPool) const {
+                                                                     VkDescriptorPool *pDescriptorPool,
+                                                                     const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfo) {

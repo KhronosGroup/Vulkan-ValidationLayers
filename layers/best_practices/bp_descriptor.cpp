@@ -21,9 +21,11 @@
 #include "best_practices/best_practices_error_enums.h"
 
 bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                          VkDescriptorSet* pDescriptorSets, void* ads_state_data) const {
+                                                          VkDescriptorSet* pDescriptorSets, const ErrorObject& errorObj,
+                                                          void* ads_state_data) const {
     bool skip = false;
-    skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, ads_state_data);
+    skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, errorObj,
+                                                                          ads_state_data);
 
     if (!skip) {
         const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
@@ -101,7 +103,8 @@ void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescript
 }
 
 bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
+                                                 const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
+                                                 const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorArm)) {
@@ -165,7 +168,8 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
 
 bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                        const VkCopyDescriptorSet* pDescriptorCopies) const {
+                                                        const VkCopyDescriptorSet* pDescriptorCopies,
+                                                        const ErrorObject& errorObj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
         if (descriptorCopyCount > 0) {
@@ -181,7 +185,8 @@ bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_
 bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
                                                                   const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                                   const VkAllocationCallbacks* pAllocator,
-                                                                  VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) const {
+                                                                  VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                                  const ErrorObject& errorObj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |= LogPerformanceWarning(device, kVUID_BestPractices_UpdateDescriptors_PreferNonTemplate,

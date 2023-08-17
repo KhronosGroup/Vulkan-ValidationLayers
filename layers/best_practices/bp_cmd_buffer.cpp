@@ -21,7 +21,8 @@
 #include "best_practices/best_practices_error_enums.h"
 
 bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const {
+                                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                                     const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (pCreateInfo->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
@@ -35,7 +36,7 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
 }
 
 bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                          VkCommandBuffer* pCommandBuffers) const {
+                                                          VkCommandBuffer* pCommandBuffers, const ErrorObject& errorObj) const {
     bool skip = false;
 
     auto cp_state = Get<COMMAND_POOL_STATE>(pAllocateInfo->commandPool);
@@ -66,8 +67,8 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     cb->is_one_time_submit = (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) != 0;
 }
 
-bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
-                                                      const VkCommandBufferBeginInfo* pBeginInfo) const {
+bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                                      const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {

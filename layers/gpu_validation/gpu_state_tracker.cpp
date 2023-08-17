@@ -591,21 +591,20 @@ bool GpuAssistedBase::ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPi
     return false;
 }
 
-bool GpuAssistedBase::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                                   uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                   uint32_t bufferMemoryBarrierCount,
-                                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                   uint32_t imageMemoryBarrierCount,
-                                                   const VkImageMemoryBarrier *pImageMemoryBarriers) const {
-    ValidationStateTracker::PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask,
-                                                         memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                                         pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+bool GpuAssistedBase::PreCallValidateCmdWaitEvents(
+    VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
+    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+    const VkImageMemoryBarrier *pImageMemoryBarriers, const ErrorObject &errorObj) const {
+    ValidationStateTracker::PreCallValidateCmdWaitEvents(
+        commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+        bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, errorObj);
     return ValidateCmdWaitEvents(commandBuffer, static_cast<VkPipelineStageFlags2>(srcStageMask), CMD_WAITEVENTS);
 }
 
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                       const VkDependencyInfoKHR *pDependencyInfos) const {
+                                                       const VkDependencyInfoKHR *pDependencyInfos,
+                                                       const ErrorObject &errorObj) const {
     VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
@@ -613,12 +612,12 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBu
         src_stage_mask |= stage_masks.src;
     }
 
-    ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
     return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2KHR);
 }
 
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                    const VkDependencyInfo *pDependencyInfos) const {
+                                                    const VkDependencyInfo *pDependencyInfos, const ErrorObject &errorObj) const {
     VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
@@ -626,7 +625,7 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
         src_stage_mask |= stage_masks.src;
     }
 
-    ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
     return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2);
 }
 

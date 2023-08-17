@@ -136,8 +136,8 @@ ExtEnabled ExtensionStateByName(const ExtensionState &extensions, const char *ex
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkInstance *pInstance) const {
+                                                               const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
+                                                               const ErrorObject &errorObj) const {
     bool skip = false;
     // Note: From the spec--
     //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
@@ -382,7 +382,8 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) const {
+                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
 
     for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
@@ -780,21 +781,21 @@ bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhys
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties) const {
+    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &errorObj) const {
     return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                            "vkGetPhysicalDeviceImageFormatProperties2");
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties) const {
+    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &errorObj) const {
     return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                            "vkGetPhysicalDeviceImageFormatProperties2KHR");
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
-    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties) const {
+    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
@@ -823,7 +824,8 @@ bool StatelessValidation::ValidateDebugUtilsObjectNameInfoEXT(const std::string 
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
-                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
+                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
+                                                                           const ErrorObject &errorObj) const {
     bool skip = false;
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError(device, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587",
@@ -838,7 +840,8 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDev
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
-                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const {
+                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
+                                                                          const ErrorObject &errorObj) const {
     bool skip = false;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError(device, "VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908",
