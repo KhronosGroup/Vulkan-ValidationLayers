@@ -25,8 +25,8 @@
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 
-bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
-                                                 const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator,
+                                                 const ErrorObject &errorObj) const {
     if (disabled[query_validation]) return false;
     if (queryPool == VK_NULL_HANDLE) return false;
     const auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);

@@ -62,7 +62,7 @@ VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateI
 
 bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                  const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                 VkShaderEXT* pShaders) const {
+                                                 VkShaderEXT* pShaders, const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
@@ -284,8 +284,8 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
-                                                 const VkAllocationCallbacks* pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
+                                                 const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
@@ -297,7 +297,8 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
 }
 
 bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
-                                                  const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) const {
+                                                  const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
+                                                  const ErrorObject& errorObj) const {
     bool skip = false;
 
     const auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -434,7 +435,8 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) const {
+bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
+                                                       const ErrorObject& errorObj) const {
     bool skip = false;
 
     if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {

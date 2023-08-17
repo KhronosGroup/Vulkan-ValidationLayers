@@ -21,7 +21,8 @@
 
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkPipelineLayout *pPipelineLayout) const {
+                                                                     VkPipelineLayout *pPipelineLayout,
+                                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     // Validate layout count against device physical limit
     if (pCreateInfo->setLayoutCount > device_limits.maxBoundDescriptorSets) {
@@ -515,11 +516,12 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                                         uint32_t createInfoCount,
                                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
-                                                                        VkPipeline *pPipelines) const {
+                                                                        VkPipeline *pPipelines, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCreateInfos != nullptr) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
+            const Location &loc = errorObj.location.dot(Field::pCreateInfos, i);
             bool has_pre_raster_state = true;
             // Create a copy of create_info and set non-included sub-state to null
             auto create_info = pCreateInfos[i];
@@ -952,6 +954,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, i);
                 } else {
                     const auto &viewport_state = *create_info.pViewportState;
+                    const Location &viewport_loc = loc.dot(Field::pViewportState);
                     skip |= ValidatePipelineViewportStateCreateInfo(*create_info.pViewportState, i);
 
                     auto exclusive_scissor_struct =
@@ -1198,11 +1201,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (!has_dynamic_viewport && viewport_state.pViewports) {
                         for (uint32_t viewport_i = 0; viewport_i < viewport_state.viewportCount; ++viewport_i) {
                             const auto &viewport = viewport_state.pViewports[viewport_i];  // will crash on invalid ptr
-                            const char *fn_name = "vkCreateGraphicsPipelines";
-                            skip |= manual_PreCallValidateViewport(viewport, fn_name,
-                                                                   ParameterName("pCreateInfos[%i].pViewportState->pViewports[%i]",
-                                                                                 ParameterName::IndexVector{i, viewport_i}),
-                                                                   VkCommandBuffer(0));
+                            skip |= ValidateViewport(viewport, VkCommandBuffer(0), viewport_loc.dot(Field::pViewports, viewport_i));
                         }
                     }
 
@@ -1822,7 +1821,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                                                        uint32_t createInfoCount,
                                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                       VkPipeline *pPipelines) const {
+                                                                       VkPipeline *pPipelines, const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t i = 0; i < createInfoCount; i++) {
         skip |=
@@ -1938,8 +1937,8 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
 }
 
 bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache,
-                                                                    uint32_t srcCacheCount,
-                                                                    const VkPipelineCache *pSrcCaches) const {
+                                                                    uint32_t srcCacheCount, const VkPipelineCache *pSrcCaches,
+                                                                    const ErrorObject &errorObj) const {
     bool skip = false;
     if (pSrcCaches) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {

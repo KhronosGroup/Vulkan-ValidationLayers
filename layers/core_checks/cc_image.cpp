@@ -629,7 +629,8 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     }
 }
 
-bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
+                                             const ErrorObject &errorObj) const {
     auto image_state = Get<IMAGE_STATE>(image);
     bool skip = false;
     if (image_state) {
@@ -688,7 +689,7 @@ bool CoreChecks::ValidateClearImageAttributes(const CMD_BUFFER_STATE &cb_state, 
 
 bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                    const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                   const VkImageSubresourceRange *pRanges) const {
+                                                   const VkImageSubresourceRange *pRanges, const ErrorObject &errorObj) const {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -759,7 +760,8 @@ bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, V
 
 bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                           const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                          const VkImageSubresourceRange *pRanges) const {
+                                                          const VkImageSubresourceRange *pRanges,
+                                                          const ErrorObject &errorObj) const {
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
@@ -920,7 +922,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_state,
 
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                    const VkClearRect *pRects) const {
+                                                    const VkClearRect *pRects, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state_ptr) {
@@ -2090,8 +2092,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
-                                                 const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
+                                                 const ErrorObject &errorObj) const {
     auto image_view_state = Get<IMAGE_VIEW_STATE>(imageView);
 
     bool skip = false;
@@ -2251,7 +2253,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
-                                                          VkSubresourceLayout *pLayout) const {
+                                                          VkSubresourceLayout *pLayout, const ErrorObject &errorObj) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(image);
     if (pSubresource && pLayout && image_state) {
@@ -2268,7 +2270,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image,
                                                               const VkImageSubresource2EXT *pSubresource,
-                                                              VkSubresourceLayout2EXT *pLayout) const
+                                                              VkSubresourceLayout2EXT *pLayout, const ErrorObject &errorObj) const
 
 {
     bool skip = false;

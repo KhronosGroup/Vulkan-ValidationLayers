@@ -159,8 +159,7 @@ TEST_F(NegativeSparse, ResidencyImageCreateUnsupportedSamples) {
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 2D image w/ sparse residency and linear tiling is an error
-    CreateImageTest(*this, &image_create_info,
-                    "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT then image tiling of VK_IMAGE_TILING_LINEAR is not supported");
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-tiling-04121");
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 
     // Multi-sample image w/ sparse residency when feature isn't available (4 flavors)

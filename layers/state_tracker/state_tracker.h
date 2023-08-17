@@ -708,7 +708,7 @@ class ValidationStateTracker : public ValidationObject {
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               void* pipe_state) const override;
+                                               const ErrorObject& errorObj, void* pipe_state) const override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
@@ -716,7 +716,8 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                            VkResult result) override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                               VkDescriptorSet* pDescriptorSets, void* ads_state_data) const override;
+                                               VkDescriptorSet* pDescriptorSets, const ErrorObject& errorObj,
+                                               void* ads_state_data) const override;
     void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                  const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
@@ -757,7 +758,7 @@ class ValidationStateTracker : public ValidationObject {
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                void* cgpl_state) const override;
+                                                const ErrorObject& errorObj, void* cgpl_state) const override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
@@ -799,7 +800,7 @@ class ValidationStateTracker : public ValidationObject {
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    void* pipe_state) const override;
+                                                    const ErrorObject& errorObj, void* pipe_state) const override;
     void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
@@ -811,7 +812,7 @@ class ValidationStateTracker : public ValidationObject {
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                     void* pipe_state) const override;
+                                                     const ErrorObject& errorObj, void* pipe_state) const override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,

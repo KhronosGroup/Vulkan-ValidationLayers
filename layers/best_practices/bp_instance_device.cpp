@@ -120,7 +120,7 @@ bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const cha
 }
 
 bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                                  VkInstance* pInstance) const {
+                                                  VkInstance* pInstance, const ErrorObject& errorObj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -140,7 +140,8 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
 }
 
 bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const {
+                                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                                const ErrorObject& errorObj) const {
     bool skip = false;
 
     // get API version of physical device passed when creating device.
@@ -251,7 +252,8 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const P
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
-                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) const {
+                                                                          VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                          const ErrorObject& errorObj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
@@ -263,7 +265,8 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pQueueFamilyPropertyCount,
-                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) const {
+                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                           const ErrorObject& errorObj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
@@ -273,8 +276,10 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
     return false;
 }
 
-bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
-    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
+bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t* pQueueFamilyPropertyCount,
+                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                              const ErrorObject& errorObj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,

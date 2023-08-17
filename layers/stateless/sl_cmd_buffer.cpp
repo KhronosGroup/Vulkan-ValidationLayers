@@ -28,7 +28,8 @@ static ReadLockGuard CBReadLock() { return ReadLockGuard(secondary_cb_map_mutex)
 static WriteLockGuard CBWriteLock() { return WriteLockGuard(secondary_cb_map_mutex); }
 
 bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkIndexType indexType) const {
+                                                                   VkDeviceSize offset, VkIndexType indexType,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (indexType == VK_INDEX_TYPE_NONE_KHR) {
@@ -47,7 +48,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
 
 bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                        VkDeviceSize offset, VkDeviceSize size,
-                                                                       VkIndexType indexType) const {
+                                                                       VkIndexType indexType, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (indexType == VK_INDEX_TYPE_NONE_KHR) {
@@ -67,7 +68,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommand
 
 bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                     const VkDeviceSize *pOffsets) const {
+                                                                     const VkDeviceSize *pOffsets,
+                                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     if (firstBinding > device_limits.maxVertexInputBindings) {
         skip |=
@@ -103,11 +105,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
-                                                                                   uint32_t firstBinding, uint32_t bindingCount,
-                                                                                   const VkBuffer *pBuffers,
-                                                                                   const VkDeviceSize *pOffsets,
-                                                                                   const VkDeviceSize *pSizes) const {
+bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(
+    VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
+    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes, const ErrorObject &errorObj) const {
     bool skip = false;
 
     char const *const cmd_name = "CmdBindTransformFeedbackBuffersEXT";
@@ -151,11 +151,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer,
-                                                                             uint32_t firstCounterBuffer,
-                                                                             uint32_t counterBufferCount,
-                                                                             const VkBuffer *pCounterBuffers,
-                                                                             const VkDeviceSize *pCounterBufferOffsets) const {
+bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
+    VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+    const VkDeviceSize *pCounterBufferOffsets, const ErrorObject &errorObj) const {
     bool skip = false;
 
     char const *const cmd_name = "CmdBeginTransformFeedbackEXT";
@@ -182,7 +180,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkC
 bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
                                                                            uint32_t firstCounterBuffer, uint32_t counterBufferCount,
                                                                            const VkBuffer *pCounterBuffers,
-                                                                           const VkDeviceSize *pCounterBufferOffsets) const {
+                                                                           const VkDeviceSize *pCounterBufferOffsets,
+                                                                           const ErrorObject &errorObj) const {
     bool skip = false;
 
     char const *const cmd_name = "CmdEndTransformFeedbackEXT";
@@ -296,7 +295,8 @@ bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandB
 bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                          uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                                         const VkDeviceSize *pStrides) const {
+                                                                         const VkDeviceSize *pStrides,
+                                                                         const ErrorObject &errorObj) const {
     bool skip = false;
     skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                          CMD_BINDVERTEXBUFFERS2EXT);
@@ -306,7 +306,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkComma
 bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                       uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                       const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                                      const VkDeviceSize *pStrides) const {
+                                                                      const VkDeviceSize *pStrides,
+                                                                      const ErrorObject &errorObj) const {
     bool skip = false;
     skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                          CMD_BINDVERTEXBUFFERS2);
@@ -349,8 +350,8 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer
 
 bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
                                                                    VkImageLayout imageLayout, const VkClearColorValue *pColor,
-                                                                   uint32_t rangeCount,
-                                                                   const VkImageSubresourceRange *pRanges) const {
+                                                                   uint32_t rangeCount, const VkImageSubresourceRange *pRanges,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     if (!pColor) {
         skip |=
@@ -756,7 +757,8 @@ bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice dev
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
-    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const {
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
+    const ErrorObject &errorObj) const {
     bool skip = false;
 
     if ((pConditionalRenderingBegin->offset & 3) != 0) {
@@ -919,7 +921,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMultiIndexedEXT(VkCommand
 
 bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                                    const VkClearRect *pRects) const {
+                                                                    const VkClearRect *pRects, const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t rect = 0; rect < rectCount; rect++) {
         if (pRects[rect].layerCount == 0) {
@@ -939,7 +941,8 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                              uint32_t regionCount, const VkBufferCopy *pRegions) const {
+                                                              uint32_t regionCount, const VkBufferCopy *pRegions,
+                                                              const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pRegions != nullptr) {
@@ -954,7 +957,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer co
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                                  const VkCopyBufferInfo2KHR *pCopyBufferInfo) const {
+                                                                  const VkCopyBufferInfo2KHR *pCopyBufferInfo,
+                                                                  const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCopyBufferInfo->pRegions != nullptr) {
@@ -969,7 +973,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffe
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
-                                                               const VkCopyBufferInfo2 *pCopyBufferInfo) const {
+                                                               const VkCopyBufferInfo2 *pCopyBufferInfo,
+                                                               const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pCopyBufferInfo->pRegions != nullptr) {
@@ -984,8 +989,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer c
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                                VkDeviceSize dstOffset, VkDeviceSize dataSize,
-                                                                const void *pData) const {
+                                                                VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (dstOffset & 3) {
@@ -1112,11 +1117,9 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
-                                                                        VkPipelineBindPoint pipelineBindPoint,
-                                                                        VkPipelineLayout layout, uint32_t set,
-                                                                        uint32_t descriptorWriteCount,
-                                                                        const VkWriteDescriptorSet *pDescriptorWrites) const {
+bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(
+    VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
+    uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, const ErrorObject &errorObj) const {
     return ValidateWriteDescriptorSet("vkCmdPushDescriptorSetKHR", descriptorWriteCount, pDescriptorWrites, true);
 }
 
@@ -1260,8 +1263,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCo
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name,
-                                                         const ParameterName &parameter_name, VkCommandBuffer object) const {
+bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const {
     bool skip = false;
 
     // Note: for numerical correctness
@@ -1300,13 +1302,12 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
     if (!(viewport.width > 0.0f)) {
         width_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-width-01770", "%s: %s.width (=%f) is not greater than 0.0.", fn_name,
-                         parameter_name.get_name().c_str(), viewport.width);
+        skip |=
+            LogError("VUID-VkViewport-width-01770", object, loc.dot(Field::width), "(%f) is not greater than 0.0.", viewport.width);
     } else if (!(f_lte_u32_exact(viewport.width, max_w) || f_lte_u32_direct(viewport.width, max_w))) {
         width_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-width-01771",
-                         "%s: %s.width (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32 ").", fn_name,
-                         parameter_name.get_name().c_str(), viewport.width, max_w);
+        skip |= LogError("VUID-VkViewport-width-01771", object, loc.dot(Field::width),
+                         "(%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (%" PRIu32 ").", viewport.width, max_w);
     }
 
     // height
@@ -1317,35 +1318,32 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-apiVersion-07917", "%s: %s.height (=%f) is not greater 0.0.", fn_name,
-                         parameter_name.get_name().c_str(), viewport.height);
+        skip |= LogError("VUID-VkViewport-apiVersion-07917", object, loc.dot(Field::height), "(%f) is not greater 0.0.",
+                         viewport.height);
     } else if (!(f_lte_u32_exact(fabsf(viewport.height), max_h) || f_lte_u32_direct(fabsf(viewport.height), max_h))) {
         height_healthy = false;
 
-        skip |= LogError(object, "VUID-VkViewport-height-01773",
-                         "%s: Absolute value of %s.height (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
-                         ").",
-                         fn_name, parameter_name.get_name().c_str(), viewport.height, max_h);
+        skip |= LogError("VUID-VkViewport-height-01773", object, loc.dot(Field::height),
+                         "absolute value (%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (%" PRIu32 ").",
+                         viewport.height, max_h);
     }
 
     // x
     bool x_healthy = true;
     if (!(viewport.x >= device_limits.viewportBoundsRange[0])) {
         x_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-x-01774",
-                         "%s: %s.x (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
-                         parameter_name.get_name().c_str(), viewport.x, device_limits.viewportBoundsRange[0]);
+        skip |= LogError("VUID-VkViewport-x-01774", object, loc.dot(Field::x),
+                         "(%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).", viewport.x,
+                         device_limits.viewportBoundsRange[0]);
     }
 
     // x + width
     if (x_healthy && width_healthy) {
         const float right_bound = viewport.x + viewport.width;
         if (right_bound > device_limits.viewportBoundsRange[1]) {
-            skip |= LogError(
-                object, "VUID-VkViewport-x-01232",
-                "%s: %s.x + %s.width (=%f + %f = %f) is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
-                fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.x, viewport.width,
-                right_bound, device_limits.viewportBoundsRange[1]);
+            skip |= LogError("VUID-VkViewport-x-01232", object, loc,
+                             "x (%f) + width (%f) is %f which is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
+                             viewport.x, viewport.width, right_bound, device_limits.viewportBoundsRange[1]);
         }
     }
 
@@ -1353,14 +1351,14 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     bool y_healthy = true;
     if (!(viewport.y >= device_limits.viewportBoundsRange[0])) {
         y_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-y-01775",
-                         "%s: %s.y (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
-                         parameter_name.get_name().c_str(), viewport.y, device_limits.viewportBoundsRange[0]);
+        skip |= LogError("VUID-VkViewport-y-01775", object, loc.dot(Field::y),
+                         "(%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).", viewport.y,
+                         device_limits.viewportBoundsRange[0]);
     } else if (negative_height_enabled && viewport.y > device_limits.viewportBoundsRange[1]) {
         y_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-y-01776",
-                         "%s: %s.y (=%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).", fn_name,
-                         parameter_name.get_name().c_str(), viewport.y, device_limits.viewportBoundsRange[1]);
+        skip |= LogError("VUID-VkViewport-y-01776", object, loc.dot(Field::y),
+                         "(%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).", viewport.y,
+                         device_limits.viewportBoundsRange[1]);
     }
 
     // y + height
@@ -1368,34 +1366,25 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
         const float boundary = viewport.y + viewport.height;
 
         if (boundary > device_limits.viewportBoundsRange[1]) {
-            skip |= LogError(object, "VUID-VkViewport-y-01233",
-                             "%s: %s.y + %s.height (=%f + %f = %f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
-                             fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.y,
-                             viewport.height, boundary, device_limits.viewportBoundsRange[1]);
+            skip |= LogError("VUID-VkViewport-y-01233", object, loc,
+                             "y (%f) + height (%f) is %f which exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
+                             viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[1]);
         } else if (negative_height_enabled && boundary < device_limits.viewportBoundsRange[0]) {
-            skip |=
-                LogError(object, "VUID-VkViewport-y-01777",
-                         "%s: %s.y + %s.height (=%f + %f = %f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).",
-                         fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.y, viewport.height,
-                         boundary, device_limits.viewportBoundsRange[0]);
+            skip |= LogError("VUID-VkViewport-y-01777", object, loc,
+                             "y (%f) + height (%f) is %f which is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).",
+                             viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[0]);
         }
     }
 
     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         // minDepth
         if (!(viewport.minDepth >= 0.0) || !(viewport.minDepth <= 1.0)) {
-            skip |= LogError(object, "VUID-VkViewport-minDepth-01234",
-                             "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.minDepth (=%f) is not within the "
-                             "[0.0, 1.0] range.",
-                             fn_name, parameter_name.get_name().c_str(), viewport.minDepth);
+            skip |= LogError("VUID-VkViewport-minDepth-01234", object, loc.dot(Field::minDepth), "is %f.", viewport.minDepth);
         }
 
         // maxDepth
         if (!(viewport.maxDepth >= 0.0) || !(viewport.maxDepth <= 1.0)) {
-            skip |= LogError(object, "VUID-VkViewport-maxDepth-01235",
-                             "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.maxDepth (=%f) is not within the "
-                             "[0.0, 1.0] range.",
-                             fn_name, parameter_name.get_name().c_str(), viewport.maxDepth);
+            skip |= LogError("VUID-VkViewport-maxDepth-01235", object, loc.dot(Field::maxDepth), "is %f.", viewport.maxDepth);
         }
     }
 
@@ -1404,7 +1393,8 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
 bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                                    uint32_t commandBufferCount,
-                                                                   const VkCommandBuffer *pCommandBuffers) const {
+                                                                   const VkCommandBuffer *pCommandBuffers,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -1416,7 +1406,8 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
 }
 
 bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
-                                                                   const VkCommandBufferBeginInfo *pBeginInfo) const {
+                                                                   const VkCommandBufferBeginInfo *pBeginInfo,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
 
     // VkCommandBufferInheritanceInfo validation, due to a 'noautovalidity' of pBeginInfo->pInheritanceInfo in vkBeginCommandBuffer

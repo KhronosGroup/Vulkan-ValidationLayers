@@ -179,9 +179,9 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                            void *crtpl_state_data) const {
+                                                            const ErrorObject &errorObj, void *crtpl_state_data) const {
     bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                         pPipelines, crtpl_state_data);
+                                                                         pPipelines, errorObj, crtpl_state_data);
 
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
@@ -221,9 +221,9 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              VkPipelineCache pipelineCache, uint32_t count,
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                             void *crtpl_state_data) const {
-    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count,
-                                                                          pCreateInfos, pAllocator, pPipelines, crtpl_state_data);
+                                                             const ErrorObject &errorObj, void *crtpl_state_data) const {
+    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(
+        device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, errorObj, crtpl_state_data);
 
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     for (uint32_t i = 0; i < count; i++) {

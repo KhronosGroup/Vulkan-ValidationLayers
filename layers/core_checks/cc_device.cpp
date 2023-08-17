@@ -312,7 +312,8 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
 }
 
 bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) const {
+                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                             const ErrorObject &errorObj) const {
     bool skip = false;
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(gpu);
 
@@ -519,8 +520,8 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     }
 }
 
-bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
-                                               VkQueue *pQueue) const {
+bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
+                                               const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex",
@@ -554,7 +555,8 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) const {
+bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
+                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pQueueInfo) {
@@ -619,7 +621,8 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysica
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                        VkImageFormatProperties2 *pImageFormatProperties) const {
+                                                                        VkImageFormatProperties2 *pImageFormatProperties,
+                                                                        const ErrorObject &errorObj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties);
     skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties);
@@ -628,7 +631,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysic
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                           VkImageFormatProperties2 *pImageFormatProperties) const {
+                                                                           VkImageFormatProperties2 *pImageFormatProperties,
+                                                                           const ErrorObject &errorObj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties);
     skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties);
@@ -713,17 +717,20 @@ bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) const {
+bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
+                                                 const ErrorObject &errorObj) const {
     return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, CMD_SETDEVICEMASK);
 }
 
-bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) const {
+bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
+                                                    const ErrorObject &errorObj) const {
     return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, CMD_SETDEVICEMASKKHR);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,
-                                                         VkPrivateDataSlotEXT *pPrivateDataSlot) const {
+                                                         VkPrivateDataSlotEXT *pPrivateDataSlot,
+                                                         const ErrorObject &errorObj) const {
     bool skip = false;
     if (!enabled_features.core13.privateData) {
         skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
@@ -733,8 +740,8 @@ bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const 
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator,
-                                                      VkPrivateDataSlot *pPrivateDataSlot) const {
+                                                      const VkAllocationCallbacks *pAllocator, VkPrivateDataSlot *pPrivateDataSlot,
+                                                      const ErrorObject &errorObj) const {
     bool skip = false;
     if (!enabled_features.core13.privateData) {
         skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
@@ -744,7 +751,8 @@ bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkP
 }
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) const {
+                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
+                                                  const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, "vkCreateCommandPool", "pCreateInfo->queueFamilyIndex",
                                       "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
@@ -759,7 +767,7 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 }
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                   const VkAllocationCallbacks *pAllocator) const {
+                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &errorObj) const {
     auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
     bool skip = false;
     if (cp_state) {
@@ -770,7 +778,8 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
     return skip;
 }
 
-bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) const {
+bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
+                                                 const ErrorObject &errorObj) const {
     auto command_pool_state = Get<COMMAND_POOL_STATE>(commandPool);
     return CheckCommandBuffersInFlight(command_pool_state.get(), "reset command pool with",
                                        "VUID-vkResetCommandPool-commandPool-00040");

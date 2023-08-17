@@ -108,8 +108,8 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flag
 }
 
 bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator,
-                                                    VkPipelineCache *pPipelineCache) const {
+                                                    const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
+                                                    const ErrorObject &errorObj) const {
     bool skip = false;
     if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
         if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
@@ -171,7 +171,8 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE &pipe
 
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
                                                                    uint32_t *pExecutableCount,
-                                                                   VkPipelineExecutablePropertiesKHR *pProperties) const {
+                                                                   VkPipelineExecutablePropertiesKHR *pProperties,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, nullptr, "vkGetPipelineExecutablePropertiesKHR",
                                            "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
@@ -210,7 +211,8 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device,
                                                                    const VkPipelineExecutableInfoKHR *pExecutableInfo,
                                                                    uint32_t *pStatisticCount,
-                                                                   VkPipelineExecutableStatisticKHR *pStatistics) const {
+                                                                   VkPipelineExecutableStatisticKHR *pStatistics,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, "vkGetPipelineExecutableStatisticsKHR",
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
@@ -227,7 +229,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR *pStatistics) const {
+    VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, "vkGetPipelineExecutableInternalRepresentationsKHR",
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
@@ -242,8 +244,8 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline,
-                                                const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
+                                                const ErrorObject &errorObj) const {
     auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
     bool skip = false;
     if (pipeline_state) {
@@ -253,7 +255,7 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
 }
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipeline pipeline) const {
+                                                VkPipeline pipeline, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 

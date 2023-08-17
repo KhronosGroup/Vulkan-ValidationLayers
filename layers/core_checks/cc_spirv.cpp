@@ -2547,7 +2547,8 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
 }
 
 bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) const {
+                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
 
@@ -2603,7 +2604,8 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 }
 
 bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
-                                                             VkShaderModuleIdentifierEXT *pIdentifier) const {
+                                                             VkShaderModuleIdentifierEXT *pIdentifier,
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
     if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
         skip |= LogError(shaderModule, "VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884",
@@ -2613,7 +2615,8 @@ bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, Vk
 }
 
 bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                                       VkShaderModuleIdentifierEXT *pIdentifier) const {
+                                                                       VkShaderModuleIdentifierEXT *pIdentifier,
+                                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
         skip |= LogError(

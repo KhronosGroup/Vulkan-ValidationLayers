@@ -174,7 +174,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
 
 bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     VkDevice device, const VkAccelerationStructureCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkAccelerationStructureNV *pAccelerationStructure) const {
+    VkAccelerationStructureNV *pAccelerationStructure, const ErrorObject &errorObj) const {
     bool skip = false;
     if (pCreateInfo) {
         if ((pCreateInfo->compactedSize != 0) &&
@@ -191,12 +191,10 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
-                                                                                const VkAccelerationStructureInfoNV *pInfo,
-                                                                                VkBuffer instanceData, VkDeviceSize instanceOffset,
-                                                                                VkBool32 update, VkAccelerationStructureNV dst,
-                                                                                VkAccelerationStructureNV src, VkBuffer scratch,
-                                                                                VkDeviceSize scratchOffset) const {
+bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
+    VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData, VkDeviceSize instanceOffset,
+    VkBool32 update, VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch, VkDeviceSize scratchOffset,
+    const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pInfo != nullptr) {
@@ -208,7 +206,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
 
 bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkAccelerationStructureKHR *pAccelerationStructure) const {
+    VkAccelerationStructureKHR *pAccelerationStructure, const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *acceleration_structure_features =
         LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
@@ -274,7 +272,8 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
 
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
                                                                                  VkAccelerationStructureNV accelerationStructure,
-                                                                                 size_t dataSize, void *pData) const {
+                                                                                 size_t dataSize, void *pData,
+                                                                                 const ErrorObject &errorObj) const {
     bool skip = false;
     if (dataSize < 8) {
         skip = LogError(accelerationStructure, "VUID-vkGetAccelerationStructureHandleNV-dataSize-02240",
@@ -285,7 +284,7 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV
 
 bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureNV *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) const {
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     if (queryType != VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
         skip |= LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-06216",
@@ -295,11 +294,9 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
-                                                                            uint32_t createInfoCount,
-                                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                                            const VkAllocationCallbacks *pAllocator,
-                                                                            VkPipeline *pPipelines) const {
+bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
+    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &errorObj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
@@ -433,7 +430,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
 
 bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const {
+    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipeline == VK_FALSE) {
@@ -659,7 +657,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 }
 
 bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
+    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
         skip |= LogError(device, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
@@ -682,7 +681,7 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
-    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
+    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo, const ErrorObject &errorObj) const {
     bool skip = false;
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
         skip |=  // to update VUID to VkCmdCopyAccelerationStructureToMemoryInfoKHR after spec update
@@ -711,8 +710,10 @@ bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyA
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
+bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(VkDevice device,
+                                                                             VkDeferredOperationKHR deferredOperation,
+                                                                             const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                             const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR()");
     const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
@@ -725,8 +726,9 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
-    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
+bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                                const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                                const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR()");
     return skip;
@@ -743,7 +745,8 @@ bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const
 }
 
 bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
+    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCopyMemoryToAccelerationStructureKHR()", true);
     const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
@@ -759,7 +762,7 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
-    VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo, const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCmdCopyMemoryToAccelerationStructureKHR()", false);
     if (SafeModulo(pInfo->src.deviceAddress, 256) != 0) {
@@ -773,7 +776,7 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStruc
 
 bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) const {
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     if (!(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
           queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
@@ -788,7 +791,7 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
 
 bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, size_t dataSize, void *pData, size_t stride) const {
+    VkQueryType queryType, size_t dataSize, void *pData, size_t stride, const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *acc_structure_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_structure_features || acc_structure_features->accelerationStructureHostCommands == VK_FALSE) {
@@ -848,7 +851,8 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
 }
 
 bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
-    VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData) const {
+    VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
@@ -1222,7 +1226,7 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
-    VkAccelerationStructureCompatibilityKHR *pCompatibility) const {
+    VkAccelerationStructureCompatibilityKHR *pCompatibility, const ErrorObject &errorObj) const {
     bool skip = false;
     const auto *accel_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!(accel_struct_features && accel_struct_features->accelerationStructure)) {
@@ -1565,7 +1569,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
 }
 bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkCmdBuildAccelerationStructuresKHR");
     for (uint32_t i = 0; i < infoCount; ++i) {
@@ -1678,8 +1682,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
 
 bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides,
-    const uint32_t *const *ppMaxPrimitiveCounts) const {
+    const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides, const uint32_t *const *ppMaxPrimitiveCounts,
+    const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkCmdBuildAccelerationStructuresIndirectKHR");
     const auto *ray_tracing_acceleration_structure_features =
@@ -1794,7 +1798,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
 bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkBuildAccelerationStructuresKHR");
     const auto *ray_tracing_acceleration_structure_features =
@@ -1840,7 +1844,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
 
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
-    const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo) const {
+    const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo, const ErrorObject &errorObj) const {
     bool skip = false;
     uint64_t total_primitive_count = 0;
     if (pBuildInfo && pMaxPrimitiveCounts) {

@@ -73,7 +73,7 @@ bool CoreChecks::CheckCommandBuffersInFlight(const COMMAND_POOL_STATE *pPool, co
 }
 
 bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                   const VkCommandBuffer *pCommandBuffers) const {
+                                                   const VkCommandBuffer *pCommandBuffers, const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         auto cb_state = GetRead<CMD_BUFFER_STATE>(pCommandBuffers[i]);
@@ -85,8 +85,8 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
     return skip;
 }
 
-bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
-                                                   const VkCommandBufferBeginInfo *pBeginInfo) const {
+bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
+                                                   const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
@@ -331,7 +331,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) const {
+bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state_ptr) {
@@ -369,7 +369,8 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) const {
+bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
+                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
@@ -420,14 +421,15 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, co
 }
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   VkIndexType indexType) const {
+                                                   VkIndexType indexType, const ErrorObject &errorObj) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateCmdBindIndexBuffer(*cb_state, *buffer_state, offset, indexType, CMD_BINDINDEXBUFFER);
 }
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkDeviceSize size, VkIndexType indexType) const {
+                                                       VkDeviceSize size, VkIndexType indexType,
+                                                       const ErrorObject &errorObj) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
@@ -451,7 +453,8 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) const {
+                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                     const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 
@@ -476,7 +479,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                VkDeviceSize dataSize, const void *pData) const {
+                                                VkDeviceSize dataSize, const void *pData, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto dst_buffer_state = Get<BUFFER_STATE>(dstBuffer);
@@ -1334,14 +1337,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
-                                                       const VkDebugMarkerMarkerInfoEXT *pMarkerInfo) const {
+bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT *pMarkerInfo,
+                                                       const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     return ValidateCmd(*cb_state, CMD_DEBUGMARKERBEGINEXT);
 }
 
-bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) const {
+bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     return ValidateCmd(*cb_state, CMD_DEBUGMARKERENDEXT);
@@ -1376,7 +1379,8 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                    uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                   const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes) const {
+                                                                   const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     char const *const cmd_name = "CmdBindTransformFeedbackBuffersEXT";
     if (!enabled_features.transform_feedback_features.transformFeedback) {
@@ -1439,7 +1443,8 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
 
 bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                              uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-                                                             const VkDeviceSize *pCounterBufferOffsets) const {
+                                                             const VkDeviceSize *pCounterBufferOffsets,
+                                                             const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     skip |= ValidateCmd(*cb_state, CMD_BEGINTRANSFORMFEEDBACKEXT);
@@ -1509,7 +1514,8 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
 
 bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                            uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-                                                           const VkDeviceSize *pCounterBufferOffsets) const {
+                                                           const VkDeviceSize *pCounterBufferOffsets,
+                                                           const ErrorObject &errorObj) const {
     bool skip = false;
     char const *const cmd_name = "CmdEndTransformFeedbackEXT";
     if (!enabled_features.transform_feedback_features.transformFeedback) {
@@ -1614,7 +1620,7 @@ bool CoreChecks::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, ui
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                          uint32_t bindingCount, const VkBuffer *pBuffers,
                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                         const VkDeviceSize *pStrides) const {
+                                                         const VkDeviceSize *pStrides, const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                               CMD_BINDVERTEXBUFFERS2EXT);
     return skip;
@@ -1622,14 +1628,16 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
 
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                       const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
-                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides) const {
+                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
+                                                      const ErrorObject &errorObj) const {
     bool skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                               CMD_BINDVERTEXBUFFERS2);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
-    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin) const {
+    VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
+    const ErrorObject &errorObj) const {
     bool skip = false;
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -1661,7 +1669,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) const {
+bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     bool skip = false;
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -1688,7 +1696,7 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
 }
 
 bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                          VkImageLayout imageLayout) const {
+                                                          VkImageLayout imageLayout, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
@@ -1759,7 +1767,7 @@ void CoreChecks::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer comman
     cb_state->BeginLabel();
 }
 
-bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) const {
+bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;

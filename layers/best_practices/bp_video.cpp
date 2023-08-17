@@ -20,9 +20,10 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
 
-bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
-    VkDevice device, VkVideoSessionKHR videoSession, uint32_t* pMemoryRequirementsCount,
-    VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) const {
+bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                                        uint32_t* pMemoryRequirementsCount,
+                                                                        VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
+                                                                        const ErrorObject& errorObj) const {
     bool skip = false;
 
     auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
@@ -41,7 +42,8 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
 
 bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                              uint32_t bindSessionMemoryInfoCount,
-                                                             const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) const {
+                                                             const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
+                                                             const ErrorObject& errorObj) const {
     bool skip = false;
 
     auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);

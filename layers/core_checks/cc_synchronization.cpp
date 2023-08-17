@@ -419,7 +419,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
 }
 
 bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence) const {
+                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence,
+                                            const ErrorObject &errorObj) const {
     bool skip = false;
     auto fence_export_info = LvlFindInChain<VkExportFenceCreateInfo>(pCreateInfo->pNext);
     if (fence_export_info && fence_export_info->handleTypes != 0) {
@@ -452,7 +453,8 @@ bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreate
 }
 
 bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) const {
+                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                                const ErrorObject &errorObj) const {
     bool skip = false;
     auto sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
 
@@ -500,11 +502,13 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     return skip;
 }
 
-bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) const {
+bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                               const ErrorObject &errorObj) const {
     return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphores");
 }
 
-bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) const {
+bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                                  const ErrorObject &errorObj) const {
     return ValidateWaitSemaphores(device, pWaitInfo, timeout, "VkWaitSemaphoresKHR");
 }
 
@@ -524,7 +528,8 @@ bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitIn
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator,
+                                             const ErrorObject &errorObj) const {
     auto fence_node = Get<FENCE_STATE>(fence);
     bool skip = false;
     if (fence_node) {
@@ -535,7 +540,8 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
     return skip;
 }
 
-bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) const {
+bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences,
+                                            const ErrorObject &errorObj) const {
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto fence_state = Get<FENCE_STATE>(pFences[i]);
@@ -546,8 +552,8 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore,
-                                                 const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
+                                                 const ErrorObject &errorObj) const {
     auto sema_node = Get<SEMAPHORE_STATE>(semaphore);
     bool skip = false;
     if (sema_node) {
@@ -556,7 +562,8 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
+                                             const ErrorObject &errorObj) const {
     auto event_state = Get<EVENT_STATE>(event);
     bool skip = false;
     if (event_state) {
@@ -565,7 +572,8 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator,
+                                               const ErrorObject &errorObj) const {
     auto sampler_state = Get<SAMPLER_STATE>(sampler);
     bool skip = false;
     if (sampler_state) {
@@ -574,7 +582,8 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
+bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                            const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETEVENT, VK_TRUE, nullptr, nullptr);
@@ -604,16 +613,17 @@ bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent eve
 }
 
 bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                const VkDependencyInfoKHR *pDependencyInfo) const {
+                                                const VkDependencyInfoKHR *pDependencyInfo, const ErrorObject &errorObj) const {
     return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2KHR);
 }
 
-bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-                                             const VkDependencyInfo *pDependencyInfo) const {
+bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
+                                             const ErrorObject &errorObj) const {
     return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2);
 }
 
-bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
+bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                              const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     const LogObjectList objlist(commandBuffer);
@@ -644,13 +654,13 @@ bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent e
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                  VkPipelineStageFlags2KHR stageMask) const {
+bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                                                  const ErrorObject &errorObj) const {
     return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2KHR);
 }
 
-bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-                                               VkPipelineStageFlags2 stageMask) const {
+bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                               const ErrorObject &errorObj) const {
     return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2);
 }
 
@@ -1031,8 +1041,8 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                              uint32_t imageMemoryBarrierCount,
-                                              const VkImageMemoryBarrier *pImageMemoryBarriers) const {
+                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                              const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
@@ -1093,12 +1103,12 @@ bool CoreChecks::ValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t 
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                  const VkDependencyInfoKHR *pDependencyInfos) const {
+                                                  const VkDependencyInfoKHR *pDependencyInfos, const ErrorObject &errorObj) const {
     return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2KHR);
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                               const VkDependencyInfo *pDependencyInfos) const {
+                                               const VkDependencyInfo *pDependencyInfos, const ErrorObject &errorObj) const {
     return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2);
 }
 
@@ -1178,13 +1188,11 @@ void CoreChecks::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uin
     }
 }
 
-bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                                   VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                                   uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                   uint32_t bufferMemoryBarrierCount,
-                                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                   uint32_t imageMemoryBarrierCount,
-                                                   const VkImageMemoryBarrier *pImageMemoryBarriers) const {
+bool CoreChecks::PreCallValidateCmdPipelineBarrier(
+    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+    const VkImageMemoryBarrier *pImageMemoryBarriers, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
@@ -1251,12 +1259,13 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer,
-                                                       const VkDependencyInfoKHR *pDependencyInfo) const {
+bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
+                                                       const ErrorObject &errorObj) const {
     return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2KHR);
 }
 
-bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) const {
+bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
+                                                    const ErrorObject &errorObj) const {
     return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2);
 }
 
@@ -1294,7 +1303,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
-bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) const {
+bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject &errorObj) const {
     bool skip = false;
     auto event_state = Get<EVENT_STATE>(event);
     if (event_state) {
@@ -1310,7 +1319,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) const {
     return skip;
 }
 
-bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event) const {
+bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject &errorObj) const {
     bool skip = false;
     auto event_state = Get<EVENT_STATE>(event);
     if (event_state) {
@@ -1323,7 +1332,7 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event) const
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event) const {
+bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject &errorObj) const {
     bool skip = false;
     auto event_state = Get<EVENT_STATE>(event);
     if (event_state) {
@@ -1390,11 +1399,13 @@ bool CoreChecks::ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSigna
     return skip;
 }
 
-bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) const {
+bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                const ErrorObject &errorObj) const {
     return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphore");
 }
 
-bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) const {
+bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                   const ErrorObject &errorObj) const {
     return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphoreKHR");
 }
 
@@ -1409,10 +1420,12 @@ bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore s
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                            const ErrorObject &errorObj) const {
     return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "vkGetSemaphoreCounterValueKHR");
 }
-bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                         const ErrorObject &errorObj) const {
     return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "vkGetSemaphoreCounterValue");
 }
 

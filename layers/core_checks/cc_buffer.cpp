@@ -407,7 +407,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
+                                              const ErrorObject &errorObj) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
 
     bool skip = false;
@@ -417,8 +418,8 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
-                                                  const VkAllocationCallbacks *pAllocator) const {
+bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
+                                                  const ErrorObject &errorObj) const {
     auto buffer_view_state = Get<BUFFER_VIEW_STATE>(bufferView);
     bool skip = false;
     if (buffer_view_state) {
