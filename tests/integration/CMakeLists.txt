@@ -57,10 +57,8 @@ target_include_directories(foobar PRIVATE
 
 target_sources(foobar PRIVATE main.cpp)
 
-# LunarG/VulkanTools expects source files in specific places for Android/Layer-Factory usage.
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/external/xxhash.cpp")
-    message(FATAL_ERROR "xxhash.cpp is missing - update LunarG/VulkanTools")
-endif()
+# See LunarG/VulkanTools build-android/jni/Android.mk
+# https://github.com/LunarG/VulkanTools/blob/main/build-android/jni/Android.mk
 
 if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/vk_layer_config.cpp")
     message(FATAL_ERROR "vk_layer_config.cpp is missing - update LunarG/VulkanTools")
