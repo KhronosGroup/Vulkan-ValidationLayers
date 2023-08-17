@@ -3678,35 +3678,41 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     //       transistion, under the theory of "most recent access".  If the resource acces  *isn't* safe
     //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    if (layout_transition || scope.WriteInScope(barrier, *this)) {
+    auto update_pending_write_barriers = [this, &barrier]() {
         pending_write_barriers |= barrier.dst_access_scope;
         pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
-        if (layout_transition) {
-            pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+    };
+    if (layout_transition) {
+        update_pending_write_barriers();
+        pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        pending_layout_transition = true;
+    } else {
+        if (scope.WriteInScope(barrier, *this)) {
+            update_pending_write_barriers();
         }
-    }
-    // Track layout transistion as pending as we can't modify last_write.has_value() until all barriers processed
-    pending_layout_transition |= layout_transition;
 
-    if (!pending_layout_transition) {
-        // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
-        // don't need to be tracked as we're just going to clear them.
-        VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
+        if (!pending_layout_transition) {
+            // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
+            // don't need to be tracked as we're just going to clear them.
+            VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
 
-        for (auto &read_access : last_reads) {
-            // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
-            if (scope.ReadInScope(barrier, read_access)) {
-                // We'll apply the barrier in the next loop, because it's DRY'r to do it one place.
-                stages_in_scope |= read_access.stage;
+            for (auto &read_access : last_reads) {
+                // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync
+                // scope
+                if (scope.ReadInScope(barrier, read_access)) {
+                    // We'll apply the barrier in the next loop, because it's DRY'r to do it one place.
+                    stages_in_scope |= read_access.stage;
+                }
             }
-        }
 
-        for (auto &read_access : last_reads) {
-            if (0 != ((read_access.stage | read_access.sync_stages) & stages_in_scope)) {
-                // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this read
-                // NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep, because the
-                //       barriers used to determine sync_stages have been propagated to all known earlier stages
-                read_access.ApplyReadBarrier(barrier.dst_exec_scope.exec_scope);
+            for (auto &read_access : last_reads) {
+                if (0 != ((read_access.stage | read_access.sync_stages) & stages_in_scope)) {
+                    // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this
+                    // read NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep,
+                    // because the
+                    //       barriers used to determine sync_stages have been propagated to all known earlier stages
+                    read_access.ApplyReadBarrier(barrier.dst_exec_scope.exec_scope);
+                }
             }
         }
     }
