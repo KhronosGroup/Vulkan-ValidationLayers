@@ -2941,7 +2941,7 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
         if (!y_extent_valid) {
             skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
                              "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIi32
-                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
+                             ") + pRenderingInfo->renderArea.extent.height (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.height,
                              pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
         }
