@@ -13,8 +13,11 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
+#include "generated/vk_enum_string_helper.h"
 
 #include "utils/vk_layer_utils.h"
+
+#include <iostream>
 
 // A reasonable well supported default VkImageCreateInfo for image creation
 VkImageCreateInfo ImageTest::DefaultImageInfo() {
@@ -1200,8 +1203,16 @@ TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
             result != VK_SUCCESS) {
             GTEST_SKIP() << "Unable to create image. VkResult = " << vk_result_string(result);
         }
-        if (!((external_image_properties.externalMemoryProperties.compatibleHandleTypes & external_info.handleTypes) ==
-              external_info.handleTypes)) {
+
+        std::cout << "external_image_properties.externalMemoryProperties.compatibleHandleTypes: "
+                  << string_VkExternalMemoryHandleTypeFlags(
+                         external_image_properties.externalMemoryProperties.compatibleHandleTypes)
+                  << '\n';
+
+        std::cout << "external_info.handleTypes: " << string_VkExternalMemoryHandleTypeFlags(external_info.handleTypes) << '\n';
+
+        if ((external_image_properties.externalMemoryProperties.compatibleHandleTypes & external_info.handleTypes) !=
+            external_info.handleTypes) {
             GTEST_SKIP() << "Unable to create image, VkExternalMemoryImageCreateInfo::handleTypes not supported";
         }
     }
