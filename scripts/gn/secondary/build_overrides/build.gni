@@ -1,4 +1,4 @@
-# Copyright (c) 2019,2021 LunarG, Inc.
+# Copyright (c) 2019-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# We are building inside Vulkan-ValidationLayers
-spirv_tools_standalone = false
-
-# Paths to SPIRV-Tools dependencies
-spirv_tools_googletest_dir = "//external/googletest"
-spirv_tools_spirv_headers_dir = "//external/SPIRV-Headers"
+build_with_chromium = false
+ignore_elf32_limitations = true
+linux_use_bundled_binutils_override = false
+use_system_xcode = true
