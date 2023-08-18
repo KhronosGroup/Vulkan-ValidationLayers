@@ -2200,22 +2200,31 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
         std::vector<sparse_container::range<VkDeviceSize>> src_ranges;
         std::vector<sparse_container::range<VkDeviceSize>> dst_ranges;
 
-        for (uint32_t i = 0u; i < regionCount; ++i) {
+        for (uint32_t i = 0; i < regionCount; ++i) {
             const RegionType &region = pRegions[i];
             src_ranges.emplace_back(sparse_container::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size});
             dst_ranges.emplace_back(sparse_container::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size});
         }
 
-        auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, src_ranges, dst_ranges, vuid,
+        auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, regionCount, src_ranges,
+                                        dst_ranges, vuid,
                                         func_name](const ValidationStateTracker &device_data, const class QUEUE_STATE &queue_state,
                                                    const CMD_BUFFER_STATE &cb_state) -> bool {
             bool skip = false;
-            for (const auto &src : src_ranges) {
-                for (const auto &dst : dst_ranges) {
-                    if (src_buffer_state->DoesResourceMemoryOverlap(src, dst_buffer_state.get(), dst)) {
-                        const LogObjectList objlist(commandBuffer, src_buffer_state->buffer(), dst_buffer_state->buffer());
-                        skip |= this->LogError(objlist, vuid, "%s: Detected overlap between source and dest regions in memory.",
-                                               func_name);
+            for (uint32_t i = 0; i < regionCount; ++i) {
+                const auto &src = src_ranges[i];
+                for (uint32_t j = 0; j < regionCount; ++j) {
+                    const auto &dst = dst_ranges[j];
+                    if (const auto [memory, overlap_range] =
+                            src_buffer_state->GetResourceMemoryOverlap(src, dst_buffer_state.get(), dst);
+                        memory != VK_NULL_HANDLE) {
+                        const LogObjectList objlist(commandBuffer, src_buffer_state->buffer(), dst_buffer_state->buffer(), memory);
+                        skip |= this->LogError(objlist, vuid,
+                                               "%s: Memory (%s) has copy overlap on range %s. Source "
+                                               "buffer range is pRegions[%" PRIu32
+                                               "]=%s, destination buffer range is pRegions[%" PRIu32 "]=%s.",
+                                               func_name, FormatHandle(memory).c_str(), string_range(overlap_range).c_str(), i,
+                                               string_range(src).c_str(), j, string_range(dst).c_str());
                     }
                 }
             }
