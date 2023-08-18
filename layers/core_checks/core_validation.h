@@ -1467,13 +1467,14 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                             const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) override;
 
-    bool PreCallValidateCopyMemoryToImageEXT(VkDevice device,
-                                             const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) const override;
+    bool PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,
+                                             const ErrorObject& errorObj) const override;
 
-    bool PreCallValidateCopyImageToMemoryEXT(VkDevice device,
-                                             const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) const override;
+    bool PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo,
+                                             const ErrorObject& errorObj) const override;
 
-    bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) const override;
+    bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
+                                            const ErrorObject& errorObj) const override;
 
     bool ValidateCreateImageANDROID(const VkImageCreateInfo* create_info) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info) const;
@@ -2359,7 +2360,8 @@ class CoreChecks : public ValidationStateTracker {
                                                                   const uint32_t* pIndirectStrides,
                                                                   const uint32_t* const* ppMaxPrimitiveCounts,
                                                                   const ErrorObject& errorObj) const override;
-    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* pInfo, const char* api_name) const;
+    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* pInfo, const VulkanTypedHandle& handle,
+                                                  const Location& loc) const;
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                         const ErrorObject& errorObj) const override;
@@ -2605,7 +2607,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_STATE& image_state, const VkImageSubresource& subresource,
                                            VkSubresourceLayout& layout, bool is_ext) const;
     bool PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions) const override;
+                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                                 const ErrorObject& errorObj) const override;
     void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions, VkResult result) override;
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,

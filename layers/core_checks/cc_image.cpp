@@ -2290,7 +2290,8 @@ static const SubresourceRangeErrorCodes TransitionImageLayoutVUIDs{
 };
 
 bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                         const VkHostImageLayoutTransitionInfoEXT *pTransitions) const {
+                                                         const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                         const ErrorObject &errorObj) const {
     bool skip = false;
     const char *func_name = "vkTransitionImageLayoutEXT()";
 
