@@ -26,12 +26,12 @@ bool StatelessValidation::ValidateApiVersion(uint32_t api_version, APIVersion ef
             skip |= LogError(instance, "VUID-VkApplicationInfo-apiVersion-04010",
                              "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                              "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                             api_version, effective_api_version.major(), effective_api_version.minor());
+                             api_version, effective_api_version.Major(), effective_api_version.Minor());
         } else {
             skip |= LogWarning(instance, kVUIDUndefined,
                                "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                                "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                               api_version, effective_api_version.major(), effective_api_version.minor());
+                               api_version, effective_api_version.Major(), effective_api_version.Minor());
         }
     }
     return skip;

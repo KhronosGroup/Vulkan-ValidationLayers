@@ -85,11 +85,11 @@ class APIVersion {
         return *this;
     }
 
-    bool valid() const { return api_version_ != VVL_UNRECOGNIZED_API_VERSION; }
-    uint32_t value() const { return api_version_; }
-    uint32_t major() const { return VK_API_VERSION_MAJOR(api_version_); }
-    uint32_t minor() const { return VK_API_VERSION_MINOR(api_version_); }
-    uint32_t patch() const { return VK_API_VERSION_PATCH(api_version_); }
+    bool Valid() const { return api_version_ != VVL_UNRECOGNIZED_API_VERSION; }
+    uint32_t Value() const { return api_version_; }
+    uint32_t Major() const { return VK_API_VERSION_MAJOR(api_version_); }
+    uint32_t Minor() const { return VK_API_VERSION_MINOR(api_version_); }
+    uint32_t Patch() const { return VK_API_VERSION_PATCH(api_version_); }
 
     bool operator<(APIVersion api_version) const { return api_version_ < api_version.api_version_; }
     bool operator<=(APIVersion api_version) const { return api_version_ <= api_version.api_version_; }
