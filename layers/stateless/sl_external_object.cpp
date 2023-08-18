@@ -24,8 +24,8 @@ bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, 
     constexpr auto allowed_types = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
     bool skip = false;
     if (0 == (pGetFdInfo->handleType & allowed_types)) {
-        skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00672",
-                         "vkGetMemoryFdKHR(): handle type %s is not one of the supported handle types.",
+        skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00672", pGetFdInfo->memory, errorObj.location,
+                         "handle type %s is not one of the supported handle types.",
                          string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType));
     }
     return skip;
@@ -37,13 +37,12 @@ bool StatelessValidation::manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevic
                                                                          const ErrorObject &errorObj) const {
     bool skip = false;
     if (fd < 0) {
-        skip |= LogError(device, "VUID-vkGetMemoryFdPropertiesKHR-fd-00673",
-                         "vkGetMemoryFdPropertiesKHR(): fd handle (%d) is not a valid POSIX file descriptor.", fd);
+        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-fd-00673", device, errorObj.location,
+                         "fd handle (%d) is not a valid POSIX file descriptor.", fd);
     }
     if (handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
-        skip |= LogError(device, "VUID-vkGetMemoryFdPropertiesKHR-handleType-00674",
-                         "vkGetMemoryFdPropertiesKHR(): opaque handle type %s is not allowed.",
-                         string_VkExternalMemoryHandleTypeFlagBits(handleType));
+        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-handleType-00674", device, errorObj.location,
+                         "opaque handle type %s is not allowed.", string_VkExternalMemoryHandleTypeFlagBits(handleType));
     }
     return skip;
 }
@@ -91,10 +90,10 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice de
 
     if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT &&
         (info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) == 0) {
-        skip |= LogError(info->semaphore, "VUID-VkImportSemaphoreFdInfoKHR-handleType-07307",
-                         "%s(): handleType is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT so"
+        skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-07307", info->semaphore, errorObj.location.dot(Field::info),
+                         "handleType is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT so"
                          " VK_SEMAPHORE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
-                         func_name, info->flags);
+                         info->flags);
     }
     return skip;
 }
@@ -117,10 +116,10 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
                                             info->handleType, kFenceFdHandleTypes);
 
     if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (info->flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
-        skip |= LogError(info->fence, "VUID-VkImportFenceFdInfoKHR-handleType-07306",
-                         "%s(): handleType is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT so"
+        skip |= LogError("VUID-VkImportFenceFdInfoKHR-handleType-07306", info->fence, errorObj.location.dot(Field::info),
+                         "handleType is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT so"
                          " VK_FENCE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
-                         func_name, info->flags);
+                         info->flags);
     }
     return skip;
 }

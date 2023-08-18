@@ -156,7 +156,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmd(*cb_state, CMD_BUILDACCELERATIONSTRUCTURESKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
 
     if (!pInfos || !ppBuildRangeInfos) {
         return skip;
@@ -769,7 +769,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     assert(cb_state);
     bool skip = false;
 
-    skip |= ValidateCmd(*cb_state, CMD_BUILDACCELERATIONSTRUCTURENV);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
 
     if (pInfo != nullptr && pInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
         for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
@@ -925,7 +925,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     assert(cb_state);
     bool skip = false;
 
-    skip |= ValidateCmd(*cb_state, CMD_COPYACCELERATIONSTRUCTURENV);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
     auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
     auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
 
@@ -1026,7 +1026,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     const auto &query_pool_ci = query_pool_state->createInfo;
     if (query_pool_ci.queryType != queryType) {
@@ -1056,7 +1056,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCom
                                                                            uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESNV);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     const auto &query_pool_ci = query_pool_state->createInfo;
     if (query_pool_ci.queryType != queryType) {
@@ -1088,7 +1088,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
     // TODO - This is not called in vkCmdBuildAccelerationStructuresKHR and only seems used for ValidateActionState
     skip |= ValidateCmdRayQueryState(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
     for (uint32_t i = 0; i < infoCount; ++i) {
@@ -1156,28 +1156,29 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
 }
 
 bool CoreChecks::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo,
-                                                          const char *api_name) const {
+                                                          const VulkanTypedHandle &handle, const Location &loc) const {
     bool skip = false;
     if (pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
         if (!(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
-            skip |= LogError(device, "VUID-VkCopyAccelerationStructureInfoKHR-src-03411",
-                             "(%s): src must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR"
+            const LogObjectList objlist(handle, pInfo->src);
+            skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-src-03411", objlist, loc.dot(Field::src),
+                             "(%s) must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR"
                              "if mode is VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR.",
-                             api_name);
+                             FormatHandle(pInfo->src).c_str());
         }
     }
     auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
     if (src_accel_state) {
         auto buffer_state = Get<BUFFER_STATE>(src_accel_state->create_infoKHR.buffer);
-        skip |=
-            ValidateMemoryIsBoundToBuffer(device, *buffer_state, api_name, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
+        skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, loc.StringFunc(),
+                                              "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03718");
     }
     auto dst_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
     if (dst_accel_state) {
         auto buffer_state = Get<BUFFER_STATE>(dst_accel_state->create_infoKHR.buffer);
-        skip |=
-            ValidateMemoryIsBoundToBuffer(device, *buffer_state, api_name, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
+        skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, loc.StringFunc(),
+                                              "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     }
     return skip;
 }
@@ -1188,9 +1189,9 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmd(*cb_state, CMD_COPYACCELERATIONSTRUCTUREKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
     if (pInfo) {
-        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR");
+        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, errorObj.handle, errorObj.location.dot(Field::pInfo));
         auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
         if (src_accel_state) {
             skip |=
@@ -1212,7 +1213,7 @@ bool CoreChecks::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, Vk
                                                              const ErrorObject &errorObj) const {
     bool skip = false;
     if (pInfo) {
-        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR");
+        skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, errorObj.handle, errorObj.location.dot(Field::pInfo));
         auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
         if (src_accel_state) {
             skip |= ValidateHostVisibleMemoryIsBoundToBuffer(*src_accel_state->buffer_state, "vkCopyAccelerationStructureKHR",
@@ -1232,7 +1233,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, CMD_COPYACCELERATIONSTRUCTURETOMEMORYKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
 
     auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
     if (accel_state) {
@@ -1263,7 +1264,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
 
     auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
     if (accel_state) {

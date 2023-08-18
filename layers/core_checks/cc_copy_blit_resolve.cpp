@@ -282,7 +282,7 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-VkCopyImageToBufferInfo2-srcImage-07974",  //  copy2 &  from_image
             kVUIDUndefined,                                  //  memory & !from_image
             kVUIDUndefined,                                  //  memory & from_image
-                                                            
+
         }},
         {"06659", {
             "VUID-VkBufferImageCopy-imageExtent-06659",
@@ -592,7 +592,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
                                  function, i, region.imageOffset.z, region.imageExtent.depth);
             }
         }
-        
+
         if (image_state.createInfo.imageType == VK_IMAGE_TYPE_3D) {
             if ((0 != region.imageSubresource.baseArrayLayer) || (1 != region.imageSubresource.layerCount)) {
                 const LogObjectList objlist(handle, image_state.image());
@@ -2938,8 +2938,8 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImag
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
-                                                     const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo) const {
+bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo,
+                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
     auto image_state = Get<IMAGE_STATE>(dst_image);
@@ -2953,8 +2953,8 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
     return skip;
 };
 
-bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
-                                                     const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo) const {
+bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo,
+                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     auto src_image = pCopyImageToMemoryInfo->srcImage;
     auto image_state = Get<IMAGE_STATE>(src_image);
@@ -3032,7 +3032,8 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo) const {
+bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo,
+                                                    const ErrorObject &errorObj) const {
     bool skip = false;
     auto info_ptr = pCopyImageToImageInfo;
     auto src_image_state = Get<IMAGE_STATE>(info_ptr->srcImage);
