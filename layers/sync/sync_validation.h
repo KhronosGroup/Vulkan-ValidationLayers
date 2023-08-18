@@ -413,16 +413,16 @@ class SignaledSemaphores {
 
 struct ResourceFirstAccess {
     ResourceUsageTag tag;
-    SyncStageAccessIndex usage_index;
+    const SyncStageAccessInfoType *usage_info;
     SyncOrdering ordering_rule;
-    ResourceFirstAccess(ResourceUsageTag tag_, SyncStageAccessIndex usage_index_, SyncOrdering ordering_rule_)
-        : tag(tag_), usage_index(usage_index_), ordering_rule(ordering_rule_){};
+    ResourceFirstAccess(ResourceUsageTag tag_, const SyncStageAccessInfoType &usage_info_, SyncOrdering ordering_rule_)
+        : tag(tag_), usage_info(&usage_info_), ordering_rule(ordering_rule_){};
     ResourceFirstAccess(const ResourceFirstAccess &other) = default;
     ResourceFirstAccess(ResourceFirstAccess &&other) = default;
     ResourceFirstAccess &operator=(const ResourceFirstAccess &rhs) = default;
     ResourceFirstAccess &operator=(ResourceFirstAccess &&rhs) = default;
     bool operator==(const ResourceFirstAccess &rhs) const {
-        return (tag == rhs.tag) && (usage_index == rhs.usage_index) && (ordering_rule == rhs.ordering_rule);
+        return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule);
     }
 };
 
@@ -706,7 +706,7 @@ class ResourceAccessState : public SyncStageAccess {
     }
     VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const;
 
-    void UpdateFirst(ResourceUsageTag tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule);
+    void UpdateFirst(ResourceUsageTag tag, const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
     void MergePending(const ResourceAccessState &other);
     void MergeReads(const ResourceAccessState &other);

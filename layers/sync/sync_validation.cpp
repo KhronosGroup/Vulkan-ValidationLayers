@@ -197,14 +197,6 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
     return out_str;
 }
 
-static std::string string_UsageIndex(SyncStageAccessIndex usage_index) {
-    const char *stage_access_name = "INVALID_STAGE_ACCESS";
-    if (usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size())) {
-        stage_access_name = syncStageAccessInfoByStageAccessIndex()[usage_index].name;
-    }
-    return std::string(stage_access_name);
-}
-
 struct SyncNodeFormatter {
     const debug_report_data *report_data;
     const BASE_NODE *node;
@@ -349,7 +341,8 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceFirstAccess &access) const {
     std::stringstream out;
-    out << "(recorded_usage: " << string_UsageIndex(access.usage_index);
+    assert(access.usage_info);
+    out << "(recorded_usage: " << access.usage_info->name;
     out << ", " << FormatUsage(access.tag) << ")";
     return out.str();
 }
@@ -3286,7 +3279,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
     Size count = recorded_accesses.size();
     if (count) {
         const auto &last_access = recorded_accesses.back();
-        bool do_write_last = IsWrite(last_access.usage_index);
+        bool do_write_last = IsWrite(*last_access.usage_info);
         if (do_write_last) --count;
 
         for (Size i = 0; i < count; ++count) {
@@ -3298,7 +3291,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 break;
             }
 
-            hazard = DetectHazard(UsageInfo(first.usage_index), first.ordering_rule, queue_id);
+            hazard = DetectHazard(*first.usage_info, first.ordering_rule, queue_id);
             if (hazard.hazard) {
                 hazard.AddRecordedAccess(first);
                 break;
@@ -3308,7 +3301,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
         if (do_write_last && tag_range.includes(last_access.tag)) {
             // Writes are a bit special... both for the "most recent" access logic, and layout transition specific logic
             OrderingBarrier barrier = GetOrderingRules(last_access.ordering_rule);
-            if (last_access.usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
+            if (last_access.usage_info->stage_access_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
                 // Or in the layout first access scope as a barrier... IFF the usage is an ILT
                 // this was saved off in the "apply barriers" logic to simplify ILT access checks as they straddle
                 // the barrier that applies them
@@ -3323,9 +3316,9 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 // active context.
                 barrier.exec_scope |= recorded_use.first_read_stages_;
                 // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
-                barrier.access_scope |= FlagBit(last_access.usage_index);
+                barrier.access_scope |= last_access.usage_info->stage_access_bit;
             }
-            hazard = DetectHazard(UsageInfo(last_access.usage_index), barrier, queue_id);
+            hazard = DetectHazard(*last_access.usage_info, barrier, queue_id);
             if (hazard.hazard) {
                 hazard.AddRecordedAccess(last_access);
             }
@@ -3370,7 +3363,7 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &r
         if (first.tag < tag_range.begin) continue;
         if (first.tag >= tag_range.end) break;
 
-        hazard = DetectAsyncHazard(UsageInfo(first.usage_index), start_tag);
+        hazard = DetectAsyncHazard(*first.usage_info, start_tag);
         if (hazard.hazard) {
             hazard.AddRecordedAccess(first);
             break;
@@ -3574,13 +3567,13 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         for (auto &b : other.first_accesses_) {
             // TODO: Determine whether some tag offset will be needed for PHASE II
             while ((a != a_end) && (a->tag < b.tag)) {
-                UpdateFirst(a->tag, a->usage_index, a->ordering_rule);
+                UpdateFirst(a->tag, *a->usage_info, a->ordering_rule);
                 ++a;
             }
-            UpdateFirst(b.tag, b.usage_index, b.ordering_rule);
+            UpdateFirst(b.tag, *b.usage_info, b.ordering_rule);
         }
         for (; a != a_end; ++a) {
-            UpdateFirst(a->tag, a->usage_index, a->ordering_rule);
+            UpdateFirst(a->tag, *a->usage_info, a->ordering_rule);
         }
     }
 }
@@ -3590,7 +3583,6 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
     // Move this logic in the ResourceStateTracker as methods, thereof (or we'll repeat it for every flavor of resource...
     const auto &usage_bit = usage_info.stage_access_bit;
     const auto &usage_stage = usage_info.stage_mask;
-    const auto &usage_index = usage_info.stage_access_index;
     if (IsRead(usage_info)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
@@ -3629,7 +3621,7 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
         // TODO determine what to do with READ-WRITE operations if any
         SetWrite(usage_info, tag);
     }
-    UpdateFirst(tag, usage_index, ordering_rule);
+    UpdateFirst(tag, usage_info, ordering_rule);
 }
 
 // Clobber last read and all barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
@@ -3723,8 +3715,9 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
 void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
-        SetWrite(UsageInfo(SYNC_IMAGE_LAYOUT_TRANSITION), tag);  // Side effect notes below
-        UpdateFirst(tag, SYNC_IMAGE_LAYOUT_TRANSITION, SyncOrdering::kNonAttachment);
+        const SyncStageAccessInfoType &layout_usage_info = UsageInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
+        SetWrite(layout_usage_info, tag);  // Side effect notes below
+        UpdateFirst(tag, layout_usage_info, SyncOrdering::kNonAttachment);
         TouchupFirstForLayoutTransition(tag, pending_layout_ordering_);
         pending_layout_ordering_ = OrderingBarrier();
         pending_layout_transition = false;
@@ -4043,10 +4036,10 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
     return ordered_stages;
 }
 
-void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, SyncStageAccessIndex usage_index, SyncOrdering ordering_rule) {
+void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, const SyncStageAccessInfoType &usage_info,
+                                      SyncOrdering ordering_rule) {
     // Only record until we record a write.
-    const SyncStageAccessInfoType &usage_info = SyncStageAccess::UsageInfo(usage_index);
-    if (first_accesses_.empty() || IsRead(first_accesses_.back().usage_index)) {
+    if (first_accesses_.empty() || IsRead(*first_accesses_.back().usage_info)) {
         const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_info) ? usage_info.stage_mask : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
@@ -4054,7 +4047,7 @@ void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, SyncStageAcces
             first_read_stages_ |= usage_stage;
             if (0 == (read_execution_barriers & usage_stage)) {
                 // If this stage isn't masked then we add it (since writes map to usage_stage 0, this also records writes)
-                first_accesses_.emplace_back(tag, usage_index, ordering_rule);
+                first_accesses_.emplace_back(tag, usage_info, ordering_rule);
             }
         }
     }
@@ -4065,7 +4058,7 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     assert(first_accesses_.size());
     if (first_accesses_.back().tag == tag) {
         // If this layout transition is the the first write, add the additional ordering rules that guard the ILT
-        assert(first_accesses_.back().usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
+        assert(first_accesses_.back().usage_info->stage_access_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
         first_write_layout_ordering_ = layout_ordering;
     }
 }
