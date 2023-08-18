@@ -16,7 +16,7 @@ void ShaderObjectTest::InitBasicShaderObject(void* pNextFeatures, APIVersion tar
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
+        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";

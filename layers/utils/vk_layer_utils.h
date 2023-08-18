@@ -66,11 +66,11 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
 // Convert integer API version to a string
 static inline std::string StringAPIVersion(APIVersion version) {
     std::stringstream version_name;
-    if (!version.valid()) {
+    if (!version.Valid()) {
         return "<unrecognized>";
     }
-    version_name << version.major() << "." << version.minor() << "." << version.patch() << " (0x" << std::setfill('0')
-                 << std::setw(8) << std::hex << version.value() << ")";
+    version_name << version.Major() << "." << version.Minor() << "." << version.Patch() << " (0x" << std::setfill('0')
+                 << std::setw(8) << std::hex << version.Value() << ")";
     return version_name.str();
 }
 

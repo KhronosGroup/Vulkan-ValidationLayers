@@ -795,7 +795,7 @@ void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     m_attempted_api_version = target_api_version;  // used to know if request failed
 
     m_target_api_version = std::min(target_api_version, m_instance_api_version);
-    app_info_.apiVersion = m_target_api_version.value();
+    app_info_.apiVersion = m_target_api_version.Value();
 }
 
 APIVersion VkLayerTest::DeviceValidationVersion() const {

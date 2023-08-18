@@ -26,7 +26,7 @@ void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
+        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.Minor() << " is required";
     }
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(pNextFeatures);
