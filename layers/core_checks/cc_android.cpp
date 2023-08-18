@@ -416,17 +416,16 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
     return skip;
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties) const {
+bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                        const VkImageFormatProperties2 *pImageFormatProperties,
+                                                                        const ErrorObject &errorObj) const {
     bool skip = false;
-    const VkAndroidHardwareBufferUsageANDROID *ahb_usage =
-        LvlFindInChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
-    if (nullptr != ahb_usage) {
-        const VkPhysicalDeviceExternalImageFormatInfo *pdeifi =
-            LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
-        if ((nullptr == pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
-            skip |= LogError(device, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868",
-                             "vkGetPhysicalDeviceImageFormatProperties2: pImageFormatProperties includes a chained "
+    const auto *ahb_usage = LvlFindInChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
+    if (ahb_usage) {
+        const auto *pdeifi = LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
+        if ((!pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
+            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868", physical_device, errorObj.location,
+                             "pImageFormatProperties includes a chained "
                              "VkAndroidHardwareBufferUsageANDROID struct, but pImageFormatInfo does not include a chained "
                              "VkPhysicalDeviceExternalImageFormatInfo struct with handleType "
                              "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.");
@@ -597,8 +596,9 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
 
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const { return false; }
 
-bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties) const {
+bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                        const VkImageFormatProperties2 *pImageFormatProperties,
+                                                                        const ErrorObject &errorObj) const {
     return false;
 }
 

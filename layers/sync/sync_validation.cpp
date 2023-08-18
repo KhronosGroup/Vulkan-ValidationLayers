@@ -4431,7 +4431,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     }
 }
 
-bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfos,
+bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                            CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -4441,20 +4441,20 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
     const auto *context = cb_context->GetCurrentAccessContext();
 
     // If we have no previous accesses, we have no hazards
-    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->dstBuffer);
+    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer);
+    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer);
 
-    for (uint32_t region = 0; region < pCopyBufferInfos->regionCount; region++) {
-        const auto &copy_region = pCopyBufferInfos->pRegions[region];
+    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
+        const auto &copy_region = pCopyBufferInfo->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.hazard) {
                 // TODO -- add tag information to log msg when useful.
                 skip |=
-                    LogError(pCopyBufferInfos->srcBuffer, string_SyncHazardVUID(hazard.hazard),
+                    LogError(pCopyBufferInfo->srcBuffer, string_SyncHazardVUID(hazard.hazard),
                              "%s(): Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfos->srcBuffer).c_str(), region,
+                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfo->srcBuffer).c_str(), region,
                              cb_context->FormatHazard(hazard).c_str());
             }
         }
@@ -4463,9 +4463,9 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |=
-                    LogError(pCopyBufferInfos->dstBuffer, string_SyncHazardVUID(hazard.hazard),
+                    LogError(pCopyBufferInfo->dstBuffer, string_SyncHazardVUID(hazard.hazard),
                              "%s(): Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfos->dstBuffer).c_str(), region,
+                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfo->dstBuffer).c_str(), region,
                              cb_context->FormatHazard(hazard).c_str());
             }
         }
@@ -4474,17 +4474,17 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
     return skip;
 }
 
-bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos,
+bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
                                                      const ErrorObject &errorObj) const {
-    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfos, CMD_COPYBUFFER2KHR);
+    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2KHR);
 }
 
-bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfos,
+bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                                   const ErrorObject &errorObj) const {
-    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfos, CMD_COPYBUFFER2);
+    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2);
 }
 
-void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos,
+void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
                                          CMD_TYPE cmd_type) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -4493,11 +4493,11 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     const auto tag = cb_context->NextCommandTag(cmd_type);
     auto *context = cb_context->GetCurrentAccessContext();
 
-    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->srcBuffer);
-    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfos->dstBuffer);
+    auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer);
+    auto dst_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->dstBuffer);
 
-    for (uint32_t region = 0; region < pCopyBufferInfos->regionCount; region++) {
-        const auto &copy_region = pCopyBufferInfos->pRegions[region];
+    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
+        const auto &copy_region = pCopyBufferInfo->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
             context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, tag);
@@ -4509,12 +4509,12 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     }
 }
 
-void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfos, CMD_COPYBUFFER2KHR);
+void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo) {
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2KHR);
 }
 
-void SyncValidator::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfos) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfos, CMD_COPYBUFFER2);
+void SyncValidator::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo) {
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
