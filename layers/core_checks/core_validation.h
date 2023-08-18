@@ -480,7 +480,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo, const ErrorObject& errorObj) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_state, const char* action, const char* error_code) const;
-    bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str) const;
+    bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
                                       const VkPipelineRenderingCreateInfo* rendering_struct, uint32_t pipe_index, int lib_index,
@@ -540,7 +540,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const char* cmd_name,
                                    const char* vuid, const char* more_message = "") const;
 
-    bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo* pCreateInfo, const IMAGE_STATE& image_state) const;
+    bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo* pCreateInfo, const IMAGE_STATE& image_state,
+                                           const Location& loc) const;
 
     bool ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInputStateCreateInfo& input_state,
                                         const std::vector<VkVertexInputBindingDescription>& binding_descriptions,
@@ -632,7 +633,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE& cb_state,
                                             VkCommandBuffer secondaryBuffer, const CMD_BUFFER_STATE& sub_cb_state,
                                             const char* caller) const;
-    bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo) const;
+    bool ValidateDescriptorUpdateTemplate(const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                          const ErrorObject& errorObj) const;
     bool ValidateCreateSamplerYcbcrConversion(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                               const ErrorObject& errorObj) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const char* caller_name) const;
@@ -790,9 +792,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateReferencePictureUseCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    template<typename HandleT>
-    bool ValidateImageSampleCount(const HandleT handle, const IMAGE_STATE& image_state,
-                                  VkSampleCountFlagBits sample_count, const char* location, const std::string& msgCode) const;
+    template <typename HandleT>
+    bool ValidateImageSampleCount(const HandleT handle, const IMAGE_STATE& image_state, VkSampleCountFlagBits sample_count,
+                                  const Location& loc, const std::string& vuid) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, CMD_TYPE cmd_type) const;
@@ -1044,14 +1046,14 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& src_image_state,
                                                           const IMAGE_STATE& dst_image_state, const RegionType* region,
-                                                          const uint32_t i, const char* function, CMD_TYPE cmd_type) const;
+                                                          const uint32_t i, const Location& loc) const;
     bool ValidateUsageFlags(VkFlags64 actual, VkFlags64 desired, VkBool32 strict, const LogObjectList& objlist,
                             const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
                             char const* usage_str) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
-                                       const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
-                                       const char* param_name, const char* image_layer_count_var_name, const VkImage image,
-                                       const SubresourceRangeErrorCodes& errorCodes) const;
+                                       const VkImageSubresourceRange& subresourceRange, const char* image_layer_count_var_name,
+                                       const VkImage image, const SubresourceRangeErrorCodes& errorCodes,
+                                       const Location& loc) const;
     bool ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
                                                              VkRenderPass renderpass, uint32_t subpass, IMAGE_STATE* image_state,
                                                              VkSampleCountFlagBits msrtss_samples, uint32_t attachment_index,
@@ -1069,20 +1071,20 @@ class CoreChecks : public ValidationStateTracker {
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const IMAGE_STATE& image_state) const;
     template <typename HandleT, typename RegionType>
     bool ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType* pRegions,
-                                       const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type, bool from_image,
+                                       const IMAGE_STATE& image_state, const char* function, const Location& loc, bool from_image,
                                        bool is_memory) const;
     bool UsageHostTransferCheck(VkDevice device, const IMAGE_STATE& image_state, bool has_stencil, bool has_non_stencil,
                                 const char* vuid_09111, const char* vuid_09112, const char* vuid_09113,
                                 const char* func_name) const;
     template <typename InfoPointer>
-    bool ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer iPointer, bool from_image) const;
+    bool ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer iPointer, const Location& loc) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
-                                     const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type,
+                                     const IMAGE_STATE& image_state, const char* function, const Location& loc,
                                      bool image_to_buffer) const;
     bool ValidateHostCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
-                                 const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
-                                 const char* func_name, const char* field_name, const char* supported_name, const char* vuid) const;
+                                     const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
+                                     const Location& loc, const char* supported_name, const char* vuid) const;
     bool ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, uint32_t i, const IMAGE_STATE& image_state,
                                bool is_src) const;
     bool ValidateHostCopyCurrentLayout(VkDevice device, VkImageLayout expected_layout,
@@ -1112,18 +1114,19 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                      const ErrorObject& errorObj) const override;
 
-    bool ValidateClearImageAttributes(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
-                                      const VkImageSubresourceRange& range, const char* param_name) const;
+    bool ValidateClearImageSubresourceRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
+                                            const VkImageSubresourceRange& range, const Location& loc) const;
 
     bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, const VkRect2D& render_area,
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
 
     template <typename HandleT, typename RegionType>
     bool ValidateImageCopyData(const HandleT handle, const uint32_t regionCount, const RegionType* pRegions,
-                               const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, bool is_host, CMD_TYPE cmd_type) const;
+                               const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, bool is_host,
+                               const Location& loc) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
-                                const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
+                                const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
 
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
@@ -1230,7 +1233,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
-                              CMD_TYPE cmd_type) const;
+                              const Location& loc) const;
 
     bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1252,7 +1255,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                  VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
-                                 CMD_TYPE cmd_type) const;
+                                 const Location& loc) const;
 
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1267,7 +1270,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions, VkFilter filter,
-                              CMD_TYPE cmd_type) const;
+                              const Location& loc) const;
 
     bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1332,13 +1335,13 @@ class CoreChecks : public ValidationStateTracker {
                                  const char* func_name, const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
 
     bool ValidateCreateImageViewSubresourceRange(const IMAGE_STATE& image_state, bool is_imageview_2d_type,
-                                                 const VkImageSubresourceRange& subresourceRange) const;
+                                                 const VkImageSubresourceRange& subresourceRange, const Location& loc) const;
 
     bool ValidateCmdClearColorSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& subresourceRange,
-                                               const char* param_name) const;
+                                               const Location& loc) const;
 
     bool ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& subresourceRange,
-                                               const char* param_name) const;
+                                               const Location& loc) const;
 
     bool ValidateImageBarrierSubresourceRange(const Location& loc, const IMAGE_STATE& image_state,
                                               const VkImageSubresourceRange& subresourceRange) const;
@@ -1351,7 +1354,7 @@ class CoreChecks : public ValidationStateTracker {
                                         const ErrorObject& errorObj) const override;
     template <typename RegionType>
     bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const BUFFER_STATE& src_buffer_state, const BUFFER_STATE& dst_buffer_state,
-                                     uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
+                                     uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;
 
     template <typename HandleT, typename RegionType>
     bool ValidateImageBounds(const HandleT handle, const IMAGE_STATE& image_state, const uint32_t regionCount,
@@ -1385,15 +1388,15 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RegionType>
     bool ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                               const RegionType* pRegions, CMD_TYPE cmd_type) const;
+                               const RegionType* pRegions, const Location& loc) const;
 
     bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                       const VkBufferCopy* pRegions, const ErrorObject& errorObj) const override;
 
-    bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfos,
+    bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
                                           const ErrorObject& errorObj) const override;
 
-    bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfos,
+    bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                        const ErrorObject& errorObj) const override;
 
     template <typename RegionType>
@@ -1401,8 +1404,8 @@ class CoreChecks : public ValidationStateTracker {
                              const RegionType* pRegions, CMD_TYPE cmd_type);
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy* pRegions) override;
-    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfos) override;
-    void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfos) override;
+    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo) override;
+    void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) override;
 
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& errorObj) const override;
@@ -1419,7 +1422,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkBuffer dstBuffer, uint32_t regionCount, const RegionType* pRegions,
-                                      CMD_TYPE cmd_type) const;
+                                      const Location& loc) const;
 
     bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
@@ -1444,7 +1447,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RegionType>
     bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                       VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
-                                      CMD_TYPE cmd_type) const;
+                                      const Location& loc) const;
 
     bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                              VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
@@ -1483,7 +1486,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                                const VkImageFormatProperties2* pImageFormatProperties) const;
+                                                                const VkImageFormatProperties2* pImageFormatProperties,
+                                                                const ErrorObject& errorObj) const;
     bool ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkBuffer buffer,
                                              const Location& loc) const;
     bool ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkImage image,
@@ -1646,7 +1650,8 @@ class CoreChecks : public ValidationStateTracker {
                                                        VkMemoryRequirements2* pMemoryRequirements,
                                                        const ErrorObject& errorObj) const override;
     bool ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                         VkImageFormatProperties2* pImageFormatProperties) const;
+                                                         VkImageFormatProperties2* pImageFormatProperties,
+                                                         const ErrorObject& errorObj) const;
     bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                 const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 VkImageFormatProperties2* pImageFormatProperties,

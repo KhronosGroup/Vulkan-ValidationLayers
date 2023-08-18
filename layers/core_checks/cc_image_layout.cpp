@@ -935,25 +935,23 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
 
 bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
                                         const VkImageSubresourceRange &range, VkImageLayout dest_image_layout,
-                                        const char *func_name) const {
+                                        const Location &loc) const {
     bool skip = false;
-    if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
+    if (loc.function == Func::vkCmdClearDepthStencilImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
             LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-            skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-imageLayout-00012",
-                             "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
+            skip |= LogError("VUID-vkCmdClearDepthStencilImage-imageLayout-00012", objlist, loc,
+                             "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.",
                              string_VkImageLayout(dest_image_layout));
         }
 
-    } else {
-        assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
+    } else if (loc.function == Func::vkCmdClearColorImage) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
             (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
             LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-            skip |=
-                LogError(objlist, "VUID-vkCmdClearColorImage-imageLayout-01394",
-                         "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
-                         func_name, string_VkImageLayout(dest_image_layout));
+            skip |= LogError("VUID-vkCmdClearColorImage-imageLayout-01394", objlist, loc,
+                             "Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
+                             string_VkImageLayout(dest_image_layout));
         }
     }
 
@@ -964,25 +962,21 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
-        skip |=
-            subresource_map->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, func_name, image = image_state.image()](
-                                                            const LayoutRange &range, const LayoutEntry &state) {
-                bool subres_skip = false;
-                if (!layout_check.Check(state)) {
-                    const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
-                    if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
-                        error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
-                    } else {
-                        assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
-                    }
-                    LogObjectList objlist(cb_state.commandBuffer(), image);
-                    subres_skip |= LogError(objlist, error_code,
-                                            "%s: Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
-                                            func_name, string_VkImageLayout(layout_check.expected_layout), layout_check.message,
-                                            string_VkImageLayout(layout_check.layout));
-                }
-                return subres_skip;
-            });
+        skip |= subresource_map->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, loc, image = image_state.image()](
+                                                                const LayoutRange &range, const LayoutEntry &state) {
+            bool subres_skip = false;
+            if (!layout_check.Check(state)) {
+                const char *vuid = (loc.function == Func::vkCmdClearDepthStencilImage)
+                                       ? "VUID-vkCmdClearDepthStencilImage-imageLayout-00011"
+                                       : "VUID-vkCmdClearColorImage-imageLayout-00004";
+                LogObjectList objlist(cb_state.commandBuffer(), image);
+                subres_skip |=
+                    LogError(vuid, objlist, loc, "Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
+                             string_VkImageLayout(layout_check.expected_layout), layout_check.message,
+                             string_VkImageLayout(layout_check.layout));
+            }
+            return subres_skip;
+        });
     }
 
     return skip;

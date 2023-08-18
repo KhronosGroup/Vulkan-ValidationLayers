@@ -2405,23 +2405,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, vuids);
     }
 
-    // viewportCounts must match
-    {
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
-            helper.vp_state_ci_.viewportCount = 1;
-            helper.vp_state_ci_.pViewports = viewports;
-            helper.vp_state_ci_.scissorCount = 1;
-            helper.vp_state_ci_.pScissors = scissors;
-            helper.vp_state_ci_.pNext = &vsrisci;
-            helper.dyn_state_ci_ = dyn;
-
-            vsrisci.shadingRateImageEnable = VK_TRUE;
-            vsrisci.viewportCount = 0;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                          "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056");
-    }
-
     // pShadingRatePalettes must not be NULL.
     {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
@@ -2571,6 +2554,82 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     }
 
     m_commandBuffer->end();
+}
+
+TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
+    TEST_DESCRIPTION("Test VK_NV_shading_rate_image viewportCount.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // Create a device that enables shading_rate_image but disables multiViewport
+    auto shading_rate_image_features = LvlInitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
+    if (!shading_rate_image_features.shadingRateImage) {
+        GTEST_SKIP() << "shadingRateImage not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Test shading rate image creation
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8_UINT;
+    image_create_info.extent.width = 4;
+    image_create_info.extent.height = 4;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8_UINT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vk_testing::ImageView view(*m_device, ivci);
+
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkViewport viewports[20] = {viewport, viewport};
+    VkRect2D scissor = {{0, 0}, {64, 64}};
+    VkRect2D scissors[20] = {scissor, scissor};
+    VkDynamicState dynPalette = VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
+    VkPipelineDynamicStateCreateInfo dyn = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, 1, &dynPalette};
+
+    const auto break_vp = [&](CreatePipelineHelper &helper) {
+        helper.vp_state_ci_.viewportCount = 1;
+        helper.vp_state_ci_.pViewports = viewports;
+        helper.vp_state_ci_.scissorCount = 1;
+        helper.vp_state_ci_.pScissors = scissors;
+        helper.vp_state_ci_.pNext = &vsrisci;
+        helper.dyn_state_ci_ = dyn;
+
+        vsrisci.shadingRateImageEnable = VK_TRUE;
+        vsrisci.viewportCount = 2;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
+                                      "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056");
 }
 
 TEST_F(NegativeFragmentShadingRate, StageUsage) {
