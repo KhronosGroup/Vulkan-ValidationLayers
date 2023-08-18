@@ -28,7 +28,7 @@ def BuildGn():
     os.environ['PATH'] = os.environ.get('PATH') + ":" + common_ci.RepoRelative("depot_tools")
 
     print("Updating Repo Dependencies and GN Toolchain\n")
-    update_cmd = './build-gn/update_deps.sh'
+    update_cmd = './scripts/gn/update_deps.sh'
     common_ci.RunShellCmd(update_cmd)
 
     print("Checking Header Dependencies\n")

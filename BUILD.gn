@@ -30,7 +30,7 @@ raw_root_out_dir = rebase_path(root_out_dir, root_build_dir)
 
 # This special action is needed to remove old VVL objects that are now renamed.
 action("vulkan_clean_old_validation_layer_objects") {
-  script = "build-gn/remove_files.py"
+  script = "scripts/gn/remove_files.py"
 
   # inputs is a (random) new file since the vvl roll, used to ensure the cleanup is done only once
   inputs = [ "layers/gpu_validation/gpu_validation.cpp" ]
@@ -324,7 +324,7 @@ layers = [ [
 
 if (!is_android) {
   action("vulkan_gen_json_files") {
-    script = "build-gn/generate_vulkan_layers_json.py"
+    script = "scripts/gn/generate_vulkan_layers_json.py"
 
     deps = [ "$vulkan_headers_dir:vulkan_headers" ]
     if (!is_fuchsia) {
