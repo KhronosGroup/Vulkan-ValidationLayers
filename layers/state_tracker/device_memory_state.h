@@ -205,13 +205,15 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
             auto range_bounds = binding_map_.bounds(range);
 
             for (auto it = range_bounds.begin; it != range_bounds.end; ++it) {
-                const auto &binding = *it;
-                if (binding.second.memory_state && binding.second.memory_state->deviceMemory() != VK_NULL_HANDLE) {
-                    VkDeviceSize range_start = binding.first.begin - binding.second.resource_offset;
-                    VkDeviceSize range_end = binding.first.end - binding.second.resource_offset;
-                    range_start += binding.second.memory_offset;
-                    range_end += binding.second.memory_offset;
-                    mem_ranges[binding.second.memory_state->deviceMemory()].emplace_back(range_start, range_end);
+                const auto &[resource_range, memory_data] = *it;
+                if (memory_data.memory_state && memory_data.memory_state->deviceMemory() != VK_NULL_HANDLE) {
+                    const VkDeviceSize memory_range_start = std::max(range.begin, memory_data.resource_offset) -
+                                                            memory_data.resource_offset + memory_data.memory_offset;
+                    const VkDeviceSize memory_range_end =
+                        std::min(range.end, memory_data.resource_offset + resource_range.distance()) - memory_data.resource_offset +
+                        memory_data.memory_offset;
+
+                    mem_ranges[memory_data.memory_state->deviceMemory()].emplace_back(memory_range_start, memory_range_end);
                 }
             }
         }
