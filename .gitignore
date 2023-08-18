@@ -1,9 +1,8 @@
 # By default we install dependencies to the external directory
 /external/*
 
-# Instead of using the existing build directory
-# CI scripts will use build-ci to not conflict with existing builds
-build-ci/
+# Ignore any build directories
+*build*/
 
 CMakeCache.txt
 CMakeLists.txt.user
@@ -25,11 +24,6 @@ out64/*
 *.vcxproj
 *.sdf
 *.filters
-build
-build32
-dbuild
-# See android.py
-build-android/
 *.config
 *.creator
 *.creator.user
