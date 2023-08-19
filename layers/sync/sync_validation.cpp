@@ -258,7 +258,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
     if (record.alt_usage) {
         out << record.alt_usage.Formatter(formatter.sync_state);
     } else {
-        out << "command: " << CommandTypeString(record.command);
+        out << "command: " << vvl::String(record.command);
         out << ", seq_no: " << record.seq_num;
         if (record.sub_command != 0) {
             out << ", subcmd: " << record.sub_command;
@@ -726,12 +726,12 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const A
 class ValidateResolveAction {
   public:
     ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, const AccessContext &context,
-                          const CommandExecutionContext &exec_context, CMD_TYPE cmd_type)
+                          const CommandExecutionContext &exec_context, vvl::Func command)
         : render_pass_(render_pass),
           subpass_(subpass),
           context_(context),
           exec_context_(exec_context),
-          cmd_type_(cmd_type),
+          command_(command),
           skip_(false) {}
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
                     const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
@@ -743,8 +743,8 @@ class ValidateResolveAction {
                 render_pass_, string_SyncHazardVUID(hazard.hazard),
                 "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32 " to resolve attachment %" PRIu32
                 ". Access info %s.",
-                CommandTypeString(cmd_type_), string_SyncHazard(hazard.hazard), subpass_, aspect_name, attachment_name, src_at,
-                dst_at, exec_context_.FormatHazard(hazard).c_str());
+                vvl::String(command_), string_SyncHazard(hazard.hazard), subpass_, aspect_name, attachment_name, src_at, dst_at,
+                exec_context_.FormatHazard(hazard).c_str());
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -755,7 +755,7 @@ class ValidateResolveAction {
     const uint32_t subpass_;
     const AccessContext &context_;
     const CommandExecutionContext &exec_context_;
-    CMD_TYPE cmd_type_;
+    vvl::Func command_;
     bool skip_;
 };
 
@@ -1162,7 +1162,7 @@ void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessConte
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
 bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &exec_context, const RENDER_PASS_STATE &rp_state,
                                               const VkRect2D &render_area, uint32_t subpass,
-                                              const AttachmentViewGenVector &attachment_views, CMD_TYPE cmd_type) const {
+                                              const AttachmentViewGenVector &attachment_views, vvl::Func command) const {
     bool skip = false;
     // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
     // previous subpass, we have to validate them against a copy of the AccessContext, with resolve operations applied, as
@@ -1190,20 +1190,19 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &exe
         }
         auto hazard = DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.hazard) {
-            const char *func_name = CommandTypeString(cmd_type);
             if (hazard.tag == kInvalidTag) {
                 skip |= exec_context.GetSyncState().LogError(
                     rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32,
-                    func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
+                    vvl::String(command), string_SyncHazard(hazard.hazard), subpass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout), transition.prev_pass);
             } else {
                 skip |= exec_context.GetSyncState().LogError(
                     rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                    func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment,
+                    vvl::String(command), string_SyncHazard(hazard.hazard), subpass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
                     exec_context.FormatHazard(hazard).c_str());
             }
@@ -1214,7 +1213,7 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &exe
 
 bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_context, const RENDER_PASS_STATE &rp_state,
                                           const VkRect2D &render_area, uint32_t subpass,
-                                          const AttachmentViewGenVector &attachment_views, CMD_TYPE cmd_type) const {
+                                          const AttachmentViewGenVector &attachment_views, vvl::Func command) const {
     bool skip = false;
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
 
@@ -1259,7 +1258,6 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_co
             }
 
             if (hazard.hazard) {
-                const char *func_name = CommandTypeString(cmd_type);
                 auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
                 const auto &sync_state = exec_context.GetSyncState();
                 if (hazard.tag == kInvalidTag) {
@@ -1267,13 +1265,14 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_co
                     skip |= sync_state.LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                                                 "%s: Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s.",
-                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
+                                                vvl::String(command), string_SyncHazard(hazard.hazard), subpass, i, aspect,
+                                                load_op_string);
                 } else {
                     skip |= sync_state.LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                                                 "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
-                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string,
-                                                exec_context.FormatHazard(hazard).c_str());
+                                                vvl::String(command), string_SyncHazard(hazard.hazard), subpass, i, aspect,
+                                                load_op_string, exec_context.FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -1287,7 +1286,7 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_co
 // The latter is handled in layout transistion validation directly
 bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &exec_context, const RENDER_PASS_STATE &rp_state,
                                            const VkRect2D &render_area, uint32_t subpass,
-                                           const AttachmentViewGenVector &attachment_views, CMD_TYPE cmd_type) const {
+                                           const AttachmentViewGenVector &attachment_views, vvl::Func command) const {
     bool skip = false;
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
 
@@ -1334,8 +1333,8 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &exec_c
                 skip |= exec_context.GetSyncState().LogError(rp_state.renderPass(), string_SyncHazardVUID(hazard.hazard),
                                                              "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                              " %s aspect during store with %s %s. Access info %s",
-                                                             CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard), subpass,
-                                                             i, aspect, op_type_string, store_op_string,
+                                                             vvl::String(command), string_SyncHazard(hazard.hazard), subpass, i,
+                                                             aspect, op_type_string, store_op_string,
                                                              exec_context.FormatHazard(hazard).c_str());
             }
         }
@@ -1345,8 +1344,8 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &exec_c
 
 bool AccessContext::ValidateResolveOperations(const CommandExecutionContext &exec_context, const RENDER_PASS_STATE &rp_state,
                                               const VkRect2D &render_area, const AttachmentViewGenVector &attachment_views,
-                                              CMD_TYPE cmd_type, uint32_t subpass) const {
-    ValidateResolveAction validate_action(rp_state.renderPass(), subpass, *this, exec_context, cmd_type);
+                                              vvl::Func command, uint32_t subpass) const {
+    ValidateResolveAction validate_action(rp_state.renderPass(), subpass, *this, exec_context, command);
     ResolveOperation(validate_action, rp_state, attachment_views, subpass);
     return validate_action.GetSkip();
 }
@@ -1967,7 +1966,8 @@ void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, u
     }
 }
 
-bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, CMD_TYPE cmd_type) const {
+bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
+                                                                   const Location &loc) const {
     bool skip = false;
     const PIPELINE_STATE *pipe = nullptr;
     const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
@@ -1975,7 +1975,6 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     if (!pipe || !per_sets) {
         return skip;
     }
-    const char *caller_name = CommandTypeString(cmd_type);
 
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
@@ -2041,11 +2040,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                img_view_state->image_view(), string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
+                                string_SyncHazardVUID(hazard.hazard), img_view_state->image_view(), loc,
+                                "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
                                 ", index %" PRIu32 ". Access info %s.",
-                                caller_name, string_SyncHazard(hazard.hazard),
-                                sync_state_->FormatHandle(img_view_state->image_view()).c_str(),
+                                string_SyncHazard(hazard.hazard), sync_state_->FormatHandle(img_view_state->image_view()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
@@ -2065,10 +2063,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                buf_view_state->buffer_view(), string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                caller_name, string_SyncHazard(hazard.hazard),
-                                sync_state_->FormatHandle(buf_view_state->buffer_view()).c_str(),
+                                string_SyncHazardVUID(hazard.hazard), buf_view_state->buffer_view(), loc,
+                                "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
+                                string_SyncHazard(hazard.hazard), sync_state_->FormatHandle(buf_view_state->buffer_view()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
@@ -2088,10 +2085,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.hazard && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
-                                buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                caller_name, string_SyncHazard(hazard.hazard),
-                                sync_state_->FormatHandle(buf_state->buffer()).c_str(),
+                                string_SyncHazardVUID(hazard.hazard), buf_state->buffer(), loc,
+                                "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
+                                string_SyncHazard(hazard.hazard), sync_state_->FormatHandle(buf_state->buffer()).c_str(),
                                 sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->FormatHandle(descriptor_set->GetSet()).c_str(),
@@ -2205,7 +2201,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 }
 
 bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
-                                                    CMD_TYPE cmd_type) const {
+                                                    const Location &loc) const {
     bool skip = false;
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
@@ -2226,11 +2222,11 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
             const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.hazard) {
-                skip |= sync_state_->LogError(
-                    buf_state->buffer(), string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s. Access info %s.",
-                    CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard),
-                    sync_state_->FormatHandle(buf_state->buffer()).c_str(),
-                    sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
+                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.hazard), buf_state->buffer(), loc,
+                                              "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.hazard),
+                                              sync_state_->FormatHandle(buf_state->buffer()).c_str(),
+                                              sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(),
+                                              FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2262,7 +2258,7 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
 }
 
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uint32_t> &index_count, uint32_t firstIndex,
-                                                         CMD_TYPE cmd_type) const {
+                                                         const Location &loc) const {
     bool skip = false;
     if (!cb_state_->index_buffer_binding.bound()) {
         return skip;
@@ -2275,16 +2271,15 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.hazard) {
-        skip |=
-            sync_state_->LogError(index_buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
-                                  "%s: Hazard %s for index %s in %s. Access info %s.", CommandTypeString(cmd_type),
-                                  string_SyncHazard(hazard.hazard), sync_state_->FormatHandle(index_buf_state->buffer()).c_str(),
-                                  sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
+        skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.hazard), index_buf_state->buffer(), loc,
+                                      "Hazard %s for index %s in %s. Access info %s.", string_SyncHazard(hazard.hazard),
+                                      sync_state_->FormatHandle(index_buf_state->buffer()).c_str(),
+                                      sync_state_->FormatHandle(cb_state_->commandBuffer()).c_str(), FormatHazard(hazard).c_str());
     }
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    skip |= ValidateDrawVertex(std::optional<uint32_t>(), 0, cmd_type);
+    skip |= ValidateDrawVertex(std::optional<uint32_t>(), 0, loc);
     return skip;
 }
 
@@ -2303,10 +2298,10 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint3
     RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
 }
 
-bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(CMD_TYPE cmd_type) const {
+bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const Location &loc) const {
     bool skip = false;
     if (!current_renderpass_context_) return skip;
-    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_, cmd_type);
+    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_, loc.function);
     return skip;
 }
 
@@ -2318,13 +2313,13 @@ void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsage
 
 QueueId CommandBufferAccessContext::GetQueueId() const { return QueueSyncState::kQueueIdInvalid; }
 
-ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd_type, const RENDER_PASS_STATE &rp_state,
+ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func command, const RENDER_PASS_STATE &rp_state,
                                                                    const VkRect2D &render_area,
                                                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views) {
     // Create an access context the current renderpass.
-    const auto barrier_tag = NextCommandTag(cmd_type, NamedHandle("renderpass", rp_state.Handle()),
+    const auto barrier_tag = NextCommandTag(command, NamedHandle("renderpass", rp_state.Handle()),
                                             ResourceUsageRecord::SubcommandType::kSubpassTransition);
-    const auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
+    const auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
     render_pass_contexts_.emplace_back(
         std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
@@ -2333,29 +2328,27 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd_
     return barrier_tag;
 }
 
-ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(const CMD_TYPE cmd_type) {
+ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(vvl::Func command) {
     assert(current_renderpass_context_);
-    if (!current_renderpass_context_) return NextCommandTag(cmd_type);
+    if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag =
-        NextCommandTag(cmd_type, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
-                       ResourceUsageRecord::SubcommandType::kStoreOp);
-    auto barrier_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
-    auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
+    auto store_tag = NextCommandTag(command, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
+                                    ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
 
     current_renderpass_context_->RecordNextSubpass(store_tag, barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
     return barrier_tag;
 }
 
-ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE cmd_type) {
+ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(vvl::Func command) {
     assert(current_renderpass_context_);
-    if (!current_renderpass_context_) return NextCommandTag(cmd_type);
+    if (!current_renderpass_context_) return NextCommandTag(command);
 
-    auto store_tag =
-        NextCommandTag(cmd_type, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
-                       ResourceUsageRecord::SubcommandType::kStoreOp);
-    auto barrier_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    auto store_tag = NextCommandTag(command, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
+                                    ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto barrier_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kSubpassTransition);
 
     current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
     current_context_ = &cb_access_context_;
@@ -2455,10 +2448,10 @@ void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBuf
     access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
     return NextSubcommandTag(command, NamedHandle(), subcommand);
 }
-ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, NamedHandle &&handle,
+ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, NamedHandle &&handle,
                                                                ResourceUsageRecord::SubcommandType subcommand) {
     ResourceUsageTag next = access_log_->size();
     access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_, reset_count_);
@@ -2472,11 +2465,11 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command,
     return next;
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
     return NextCommandTag(command, NamedHandle(), subcommand);
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, NamedHandle &&handle,
+ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, NamedHandle &&handle,
                                                             ResourceUsageRecord::SubcommandType subcommand) {
     command_number_++;
     command_handles_.clear();
@@ -2490,7 +2483,7 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, Na
     return next;
 }
 
-ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(CMD_TYPE command, uint32_t index) {
+ResourceUsageTag CommandBufferAccessContext::NextIndexedCommandTag(vvl::Func command, uint32_t index) {
     if (index == 0) {
         return NextCommandTag(command, ResourceUsageRecord::SubcommandType::kIndex);
     }
@@ -2538,7 +2531,7 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
 }
 
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecutionContext &exec_context,
-                                                            const CMD_BUFFER_STATE &cmd_buffer, CMD_TYPE cmd_type) const {
+                                                            const CMD_BUFFER_STATE &cmd_buffer, vvl::Func command) const {
     bool skip = false;
     const auto &sync_state = exec_context.GetSyncState();
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -2552,7 +2545,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
     if (raster_state && raster_state->rasterizerDiscardEnable) {
         return skip;
     }
-    const char *caller_name = CommandTypeString(cmd_type);
+    const char *caller_name = vvl::String(command);
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
 
@@ -2792,7 +2785,7 @@ std::optional<RenderPassAccessContext::ClearAttachmentInfo> RenderPassAccessCont
 }
 
 bool RenderPassAccessContext::ValidateClearAttachment(const CommandExecutionContext &exec_context,
-                                                      const CMD_BUFFER_STATE &cmd_buffer, CMD_TYPE cmd_type,
+                                                      const CMD_BUFFER_STATE &cmd_buffer, const Location &loc,
                                                       const VkClearAttachment &clear_attachment, const VkClearRect &rect,
                                                       uint32_t rect_index) const {
     const auto info = GetClearAttachmentInfo(clear_attachment, rect);
@@ -2814,12 +2807,12 @@ bool RenderPassAccessContext::ValidateClearAttachment(const CommandExecutionCont
             SyncOrdering::kColorAttachment, offset, extent, view_state.IsDepthSliced());
         if (hazard.hazard) {
             const LogObjectList objlist(cmd_buffer.commandBuffer(), view_state.image_view());
-            skip |= exec_context.GetSyncState().LogError(
-                objlist, string_SyncHazardVUID(hazard.hazard),
-                "%s: Hazard %s when clearing pRects[%" PRIu32 "] region of color attachment %" PRIu32 " in subpass %" PRIu32
-                ". Access info %s.",
-                CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard), rect_index, info->attachment_index,
-                cmd_buffer.GetActiveSubpass(), exec_context.FormatHazard(hazard).c_str());
+            skip |= exec_context.GetSyncState().LogError(string_SyncHazardVUID(hazard.hazard), objlist, loc,
+                                                         "Hazard %s when clearing pRects[%" PRIu32
+                                                         "] region of color attachment %" PRIu32 " in subpass %" PRIu32
+                                                         ". Access info %s.",
+                                                         string_SyncHazard(hazard.hazard), rect_index, info->attachment_index,
+                                                         cmd_buffer.GetActiveSubpass(), exec_context.FormatHazard(hazard).c_str());
         }
     }
 
@@ -2838,11 +2831,11 @@ bool RenderPassAccessContext::ValidateClearAttachment(const CommandExecutionCont
             if (hazard.hazard) {
                 const LogObjectList objlist(cmd_buffer.commandBuffer(), view_state.image_view());
                 skip |= exec_context.GetSyncState().LogError(
-                    objlist, string_SyncHazardVUID(hazard.hazard),
-                    "%s: Hazard %s when clearing pRects[%" PRIu32 "] region of %s aspect of depth-stencil attachment %" PRIu32
+                    string_SyncHazardVUID(hazard.hazard), objlist, loc,
+                    "Hazard %s when clearing pRects[%" PRIu32 "] region of %s aspect of depth-stencil attachment %" PRIu32
                     " in subpass %" PRIu32 ". Access info %s.",
-                    CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard), rect_index, string_VkImageAspectFlagBits(aspect),
-                    info->attachment_index, cmd_buffer.GetActiveSubpass(), exec_context.FormatHazard(hazard).c_str());
+                    string_SyncHazard(hazard.hazard), rect_index, string_VkImageAspectFlagBits(aspect), info->attachment_index,
+                    cmd_buffer.GetActiveSubpass(), exec_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -2876,13 +2869,13 @@ void RenderPassAccessContext::RecordClearAttachment(const CMD_BUFFER_STATE &cmd_
     }
 }
 
-bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext &exec_context, CMD_TYPE cmd_type) const {
+bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext &exec_context, vvl::Func command) const {
     // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
-    skip |= CurrentContext().ValidateResolveOperations(exec_context, *rp_state_, render_area_, attachment_views_, cmd_type,
+    skip |= CurrentContext().ValidateResolveOperations(exec_context, *rp_state_, render_area_, attachment_views_, command,
                                                        current_subpass_);
     skip |= CurrentContext().ValidateStoreOperation(exec_context, *rp_state_, render_area_, current_subpass_, attachment_views_,
-                                                    cmd_type);
+                                                    command);
 
     const auto next_subpass = current_subpass_ + 1;
     if (next_subpass >= subpass_contexts_.size()) {
@@ -2890,7 +2883,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext 
     }
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |=
-        next_context.ValidateLayoutTransitions(exec_context, *rp_state_, render_area_, next_subpass, attachment_views_, cmd_type);
+        next_context.ValidateLayoutTransitions(exec_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
@@ -2898,18 +2891,18 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext 
         AccessContext temp_context(next_context);
         temp_context.RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag);
         skip |=
-            temp_context.ValidateLoadOperation(exec_context, *rp_state_, render_area_, next_subpass, attachment_views_, cmd_type);
+            temp_context.ValidateLoadOperation(exec_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
     }
     return skip;
 }
-bool RenderPassAccessContext::ValidateEndRenderPass(const CommandExecutionContext &exec_context, CMD_TYPE cmd_type) const {
+bool RenderPassAccessContext::ValidateEndRenderPass(const CommandExecutionContext &exec_context, vvl::Func command) const {
     // PHASE1 TODO: Validate Preserve
     bool skip = false;
-    skip |= CurrentContext().ValidateResolveOperations(exec_context, *rp_state_, render_area_, attachment_views_, cmd_type,
+    skip |= CurrentContext().ValidateResolveOperations(exec_context, *rp_state_, render_area_, attachment_views_, command,
                                                        current_subpass_);
     skip |= CurrentContext().ValidateStoreOperation(exec_context, *rp_state_, render_area_, current_subpass_, attachment_views_,
-                                                    cmd_type);
-    skip |= ValidateFinalSubpassLayoutTransitions(exec_context, cmd_type);
+                                                    command);
+    skip |= ValidateFinalSubpassLayoutTransitions(exec_context, command);
     return skip;
 }
 
@@ -2918,7 +2911,7 @@ AccessContext *RenderPassAccessContext::CreateStoreResolveProxy() const {
 }
 
 bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &exec_context,
-                                                                    CMD_TYPE cmd_type) const {
+                                                                    vvl::Func command) const {
     bool skip = false;
 
     // As validation methods are const and precede the record/update phase, for any tranistions from the current (last)
@@ -2948,21 +2941,20 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         const auto merged_barrier = MergeBarriers(trackback.barriers);
         auto hazard = context->DetectImageBarrierHazard(view_gen, merged_barrier, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
-            const char *func_name = CommandTypeString(cmd_type);
             if (hazard.tag == kInvalidTag) {
                 // Hazard vs. ILT
                 skip |= exec_context.GetSyncState().LogError(
                     rp_state_->renderPass(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s).",
-                    func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
+                    vvl::String(command), string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout));
             } else {
                 skip |= exec_context.GetSyncState().LogError(
                     rp_state_->renderPass(), string_SyncHazardVUID(hazard.hazard),
                     "%s: Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                    func_name, string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
+                    vvl::String(command), string_SyncHazard(hazard.hazard), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
                     exec_context.FormatHazard(hazard).c_str());
             }
@@ -4412,7 +4404,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
-    const auto tag = cb_context->NextCommandTag(CMD_COPYBUFFER);
+    const auto tag = cb_context->NextCommandTag(Func::vkCmdCopyBuffer);
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<BUFFER_STATE>(srcBuffer);
@@ -4432,7 +4424,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                           CMD_TYPE cmd_type) const {
+                                           const ErrorObject &errorObj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -4452,10 +4444,9 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
             if (hazard.hazard) {
                 // TODO -- add tag information to log msg when useful.
                 skip |=
-                    LogError(pCopyBufferInfo->srcBuffer, string_SyncHazardVUID(hazard.hazard),
-                             "%s(): Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfo->srcBuffer).c_str(), region,
-                             cb_context->FormatHazard(hazard).c_str());
+                    LogError(string_SyncHazardVUID(hazard.hazard), pCopyBufferInfo->srcBuffer, errorObj.location,
+                             "Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                             FormatHandle(pCopyBufferInfo->srcBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (dst_buffer && !skip) {
@@ -4463,10 +4454,9 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |=
-                    LogError(pCopyBufferInfo->dstBuffer, string_SyncHazardVUID(hazard.hazard),
-                             "%s(): Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                             string_SyncHazard(hazard.hazard), FormatHandle(pCopyBufferInfo->dstBuffer).c_str(), region,
-                             cb_context->FormatHazard(hazard).c_str());
+                    LogError(string_SyncHazardVUID(hazard.hazard), pCopyBufferInfo->dstBuffer, errorObj.location,
+                             "Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                             FormatHandle(pCopyBufferInfo->dstBuffer).c_str(), region, cb_context->FormatHazard(hazard).c_str());
             }
         }
         if (skip) break;
@@ -4476,21 +4466,20 @@ bool SyncValidator::ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
                                                      const ErrorObject &errorObj) const {
-    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2KHR);
+    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, errorObj);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                                   const ErrorObject &errorObj) const {
-    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2);
+    return ValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, errorObj);
 }
 
-void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                         CMD_TYPE cmd_type) {
+void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
-    const auto tag = cb_context->NextCommandTag(cmd_type);
+    const auto tag = cb_context->NextCommandTag(command);
     auto *context = cb_context->GetCurrentAccessContext();
 
     auto src_buffer = Get<BUFFER_STATE>(pCopyBufferInfo->srcBuffer);
@@ -4510,11 +4499,11 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
 }
 
 void SyncValidator::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2KHR);
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, Func::vkCmdCopyBuffer2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, CMD_COPYBUFFER2);
+    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, Func::vkCmdCopyBuffer2);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -4568,7 +4557,7 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_COPYIMAGE);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdCopyImage);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -4589,7 +4578,7 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
 }
 
 bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                          CMD_TYPE cmd_type) const {
+                                          const ErrorObject &errorObj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -4609,9 +4598,9 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
             auto hazard = context->DetectHazard(*src_image, SYNC_COPY_TRANSFER_READ, copy_region.srcSubresource,
                                                 copy_region.srcOffset, copy_region.extent, false);
             if (hazard.hazard) {
-                skip |= LogError(pCopyImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(pCopyImageInfo->srcImage).c_str(), region,
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), pCopyImageInfo->srcImage, errorObj.location,
+                                 "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(pCopyImageInfo->srcImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
             }
         }
@@ -4620,9 +4609,9 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
             auto hazard = context->DetectHazard(*dst_image, SYNC_COPY_TRANSFER_WRITE, copy_region.dstSubresource,
                                                 copy_region.dstOffset, copy_region.extent, false);
             if (hazard.hazard) {
-                skip |= LogError(pCopyImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(pCopyImageInfo->dstImage).c_str(), region,
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), pCopyImageInfo->dstImage, errorObj.location,
+                                 "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(pCopyImageInfo->dstImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
@@ -4634,21 +4623,20 @@ bool SyncValidator::ValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
 
 bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
                                                     const ErrorObject &errorObj) const {
-    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2KHR);
+    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, errorObj);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
                                                  const ErrorObject &errorObj) const {
-    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2);
+    return ValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, errorObj);
 }
 
-void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                        CMD_TYPE cmd_type) {
+void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -4669,11 +4657,11 @@ void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkC
 }
 
 void SyncValidator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2KHR);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, Func::vkCmdCopyImage2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, Func::vkCmdCopyImage2);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier(
@@ -4687,7 +4675,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     if (!cb_state) return skip;
     const auto *cb_access_context = &cb_state->access_context;
 
-    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(), srcStageMask,
+    SyncOpPipelineBarrier pipeline_barrier(errorObj.location.function, *this, cb_access_context->GetQueueFlags(), srcStageMask,
                                            dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                            bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                            pImageMemoryBarriers);
@@ -4707,7 +4695,7 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER, *this, cb_access_context->GetQueueFlags(),
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier, *this, cb_access_context->GetQueueFlags(),
                                                            srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                            pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                            imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -4721,7 +4709,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
     if (!cb_state) return skip;
     const auto *cb_access_context = &cb_state->access_context;
 
-    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
+    SyncOpPipelineBarrier pipeline_barrier(errorObj.location.function, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
     skip = pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
@@ -4734,7 +4722,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBu
     if (!cb_state) return skip;
     const auto *cb_access_context = &cb_state->access_context;
 
-    SyncOpPipelineBarrier pipeline_barrier(CMD_PIPELINEBARRIER2, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
+    SyncOpPipelineBarrier pipeline_barrier(errorObj.location.function, *this, cb_access_context->GetQueueFlags(), *pDependencyInfo);
     skip = pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
@@ -4745,8 +4733,8 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandB
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER2KHR, *this, cb_access_context->GetQueueFlags(),
-                                                           *pDependencyInfo);
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier2KHR, *this,
+                                                           cb_access_context->GetQueueFlags(), *pDependencyInfo);
 }
 
 void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo) {
@@ -4755,7 +4743,7 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(CMD_PIPELINEBARRIER2, *this, cb_access_context->GetQueueFlags(),
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(Func::vkCmdPipelineBarrier2, *this, cb_access_context->GetQueueFlags(),
                                                            *pDependencyInfo);
 }
 
@@ -4772,11 +4760,11 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type) const {
+                                            const VkSubpassBeginInfo *pSubpassBeginInfo, const ErrorObject &errorObj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
-        SyncOpBeginRenderPass sync_op(cmd_type, *this, pRenderPassBegin, pSubpassBeginInfo);
+        SyncOpBeginRenderPass sync_op(errorObj.location.function, *this, pRenderPassBegin, pSubpassBeginInfo);
         skip = sync_op.Validate(cb_state->access_context);
     }
     return skip;
@@ -4787,7 +4775,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, errorObj);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, CMD_BEGINRENDERPASS);
+    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, errorObj);
     return skip;
 }
 
@@ -4795,7 +4783,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
                                                        const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                        const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
+    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     return skip;
 }
 
@@ -4804,7 +4792,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comman
                                                           const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                           const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
-    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2KHR);
+    skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
     return skip;
 }
 
@@ -4820,10 +4808,10 @@ void SyncValidator::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuff
 }
 
 void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                             const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type) {
+                                             const VkSubpassBeginInfo *pSubpassBeginInfo, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
-        cb_state->access_context.RecordSyncOp<SyncOpBeginRenderPass>(cmd_type, *this, pRenderPassBegin, pSubpassBeginInfo);
+        cb_state->access_context.RecordSyncOp<SyncOpBeginRenderPass>(command, *this, pRenderPassBegin, pSubpassBeginInfo);
     }
 }
 
@@ -4832,31 +4820,31 @@ void SyncValidator::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuff
     StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, CMD_BEGINRENDERPASS);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, Func::vkCmdBeginRenderPass);
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                       const VkSubpassBeginInfo *pSubpassBeginInfo) {
     StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, Func::vkCmdBeginRenderPass2);
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                          const VkRenderPassBeginInfo *pRenderPassBegin,
                                                          const VkSubpassBeginInfo *pSubpassBeginInfo) {
     StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, CMD_BEGINRENDERPASS2KHR);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, Func::vkCmdBeginRenderPass2KHR);
 }
 
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                           const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd_type) const {
+                                           const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
-    SyncOpNextSubpass sync_op(cmd_type, *this, pSubpassBeginInfo, pSubpassEndInfo);
+    SyncOpNextSubpass sync_op(errorObj.location.function, *this, pSubpassBeginInfo, pSubpassEndInfo);
     return sync_op.Validate(*cb_context);
 }
 
@@ -4867,55 +4855,55 @@ bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer,
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     auto subpass_end_info = LvlInitStruct<VkSubpassEndInfo>();
-    skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, &subpass_end_info, CMD_NEXTSUBPASS);
+    skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, &subpass_end_info, errorObj);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                       const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
-    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2KHR);
+    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                    const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
-    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
+    skip |= ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
     return skip;
 }
 
 void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                         const VkSubpassEndInfo *pSubpassEndInfo, CMD_TYPE cmd_type) {
+                                         const VkSubpassEndInfo *pSubpassEndInfo, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpNextSubpass>(cmd_type, *this, pSubpassBeginInfo, pSubpassEndInfo);
+    cb_context->RecordSyncOp<SyncOpNextSubpass>(command, *this, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, CMD_NEXTSUBPASS);
+    RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, Func::vkCmdNextSubpass);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                   const VkSubpassEndInfo *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, Func::vkCmdNextSubpass2);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                      const VkSubpassEndInfo *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, CMD_NEXTSUBPASS2KHR);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, Func::vkCmdNextSubpass2KHR);
 }
 
 bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                             CMD_TYPE cmd_type) const {
+                                             const ErrorObject &errorObj) const {
     bool skip = false;
 
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -4923,40 +4911,39 @@ bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     if (!cb_state) return skip;
     auto *cb_context = &cb_state->access_context;
 
-    SyncOpEndRenderPass sync_op(cmd_type, *this, pSubpassEndInfo);
+    SyncOpEndRenderPass sync_op(errorObj.location.function, *this, pSubpassEndInfo);
     skip |= sync_op.Validate(*cb_context);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer, errorObj);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, nullptr, CMD_ENDRENDERPASS);
+    skip |= ValidateCmdEndRenderPass(commandBuffer, nullptr, errorObj);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                      const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2);
+    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, errorObj);
     return skip;
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                         const ErrorObject &errorObj) const {
     bool skip = StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, errorObj);
-    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2KHR);
+    skip |= ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, errorObj);
     return skip;
 }
 
-void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                           CMD_TYPE cmd_type) {
+void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command) {
     // Resolve the all subpass contexts to the command buffer contexts
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpEndRenderPass>(cmd_type, *this, pSubpassEndInfo);
+    cb_context->RecordSyncOp<SyncOpEndRenderPass>(command, *this, pSubpassEndInfo);
 }
 
 // Simple heuristic rule to detect WAW operations representing algorithmically safe or increment
@@ -4968,24 +4955,24 @@ bool SyncValidator::SupressedBoundDescriptorWAW(const HazardResult &hazard) cons
 }
 
 void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
-    RecordCmdEndRenderPass(commandBuffer, nullptr, CMD_ENDRENDERPASS);
+    RecordCmdEndRenderPass(commandBuffer, nullptr, Func::vkCmdEndRenderPass);
     StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer);
 }
 
 void SyncValidator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2);
+    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, Func::vkCmdEndRenderPass2);
     StateTracker::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
 }
 
 void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, CMD_ENDRENDERPASS2KHR);
+    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, Func::vkCmdEndRenderPass2KHR);
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                  VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                                 CMD_TYPE cmd_type) const {
+                                                 const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -5009,20 +4996,19 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
                 if (hazard.hazard) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
-                    skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
-                                     "%s: Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
-                                     CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard), FormatHandle(srcBuffer).c_str(),
-                                     region, cb_access_context->FormatHazard(hazard).c_str());
+                    skip |= LogError(string_SyncHazardVUID(hazard.hazard), srcBuffer, loc,
+                                     "Hazard %s for srcBuffer %s, region %" PRIu32 ". Access info %s.",
+                                     string_SyncHazard(hazard.hazard), FormatHandle(srcBuffer).c_str(), region,
+                                     cb_access_context->FormatHazard(hazard).c_str());
                 }
             }
 
             hazard = context->DetectHazard(*dst_image, SYNC_COPY_TRANSFER_WRITE, copy_region.imageSubresource,
                                            copy_region.imageOffset, copy_region.imageExtent, false);
             if (hazard.hazard) {
-                skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatHazard(hazard).c_str());
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), dstImage, loc,
+                                 "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -5035,7 +5021,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
                                                         VkImageLayout dstImageLayout, uint32_t regionCount,
                                                         const VkBufferImageCopy *pRegions, const ErrorObject &errorObj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
-                                        CMD_COPYBUFFERTOIMAGE);
+                                        errorObj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -5043,7 +5029,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer comm
                                                             const ErrorObject &errorObj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                         pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                                        pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2KHR);
+                                        pCopyBufferToImageInfo->pRegions, errorObj.location.dot(Field::pCopyBufferToImageInfo));
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
@@ -5051,19 +5037,19 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer command
                                                          const ErrorObject &errorObj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                         pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                                        pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2);
+                                        pCopyBufferToImageInfo->pRegions, errorObj.location.dot(Field::pCopyBufferToImageInfo));
 }
 
 template <typename RegionType>
 void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                               CMD_TYPE cmd_type) {
+                                               Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5088,7 +5074,8 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuf
                                                       VkImageLayout dstImageLayout, uint32_t regionCount,
                                                       const VkBufferImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
-    RecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions, CMD_COPYBUFFERTOIMAGE);
+    RecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
+                               Func::vkCmdCopyBufferToImage);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -5096,7 +5083,7 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer comman
     StateTracker::PreCallRecordCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo);
     RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                               pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2KHR);
+                               pCopyBufferToImageInfo->pRegions, Func::vkCmdCopyBufferToImage2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
@@ -5104,13 +5091,13 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBu
     StateTracker::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo);
     RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                               pCopyBufferToImageInfo->pRegions, CMD_COPYBUFFERTOIMAGE2);
+                               pCopyBufferToImageInfo->pRegions, Func::vkCmdCopyBufferToImage2);
 }
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
-                                                 CMD_TYPE cmd_type) const {
+                                                 const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -5130,20 +5117,19 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*src_image, SYNC_COPY_TRANSFER_READ, copy_region.imageSubresource,
                                                 copy_region.imageOffset, copy_region.imageExtent, false);
             if (hazard.hazard) {
-                skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatHazard(hazard).c_str());
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), srcImage, loc,
+                                 "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
             if (dst_mem) {
                 ResourceAccessRange dst_range =
                     MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, src_image->createInfo.format));
                 hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.hazard) {
-                    skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
-                                     "%s: Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
-                                     CommandTypeString(cmd_type), string_SyncHazard(hazard.hazard), FormatHandle(dstBuffer).c_str(),
-                                     region, cb_access_context->FormatHazard(hazard).c_str());
+                    skip |= LogError(string_SyncHazardVUID(hazard.hazard), dstBuffer, loc,
+                                     "Hazard %s for dstBuffer %s, region %" PRIu32 ". Access info %s.",
+                                     string_SyncHazard(hazard.hazard), FormatHandle(dstBuffer).c_str(), region,
+                                     cb_access_context->FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -5156,7 +5142,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandB
                                                         VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
                                                         const VkBufferImageCopy *pRegions, const ErrorObject &errorObj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
-                                        CMD_COPYIMAGETOBUFFER);
+                                        errorObj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -5164,7 +5150,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer comm
                                                             const ErrorObject &errorObj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                                        pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2KHR);
+                                        pCopyImageToBufferInfo->pRegions, errorObj.location.dot(Field::pCopyImageToBufferInfo));
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
@@ -5172,19 +5158,18 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer command
                                                          const ErrorObject &errorObj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                                        pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2);
+                                        pCopyImageToBufferInfo->pRegions, errorObj.location.dot(Field::pCopyImageToBufferInfo));
 }
 
 template <typename RegionType>
 void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
-                                               CMD_TYPE cmd_type) {
+                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5210,7 +5195,8 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
-    RecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions, CMD_COPYIMAGETOBUFFER);
+    RecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
+                               Func::vkCmdCopyImageToBuffer);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -5218,7 +5204,7 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer comman
     StateTracker::PreCallRecordCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo);
     RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                               pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2KHR);
+                               pCopyImageToBufferInfo->pRegions, Func::vkCmdCopyImageToBuffer2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
@@ -5226,13 +5212,13 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBu
     StateTracker::PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
     RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                               pCopyImageToBufferInfo->pRegions, CMD_COPYIMAGETOBUFFER2);
+                               pCopyImageToBufferInfo->pRegions, Func::vkCmdCopyImageToBuffer2);
 }
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                         const RegionType *pRegions, VkFilter filter, CMD_TYPE cmd_type) const {
+                                         const RegionType *pRegions, VkFilter filter, const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -5242,8 +5228,6 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
     const auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
     if (!context) return skip;
-
-    const char *caller_name = CommandTypeString(cmd_type);
 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_image = Get<ImageState>(dstImage);
@@ -5260,10 +5244,9 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             auto hazard =
                 context->DetectHazard(*src_image, SYNC_BLIT_TRANSFER_READ, blit_region.srcSubresource, offset, extent, false);
             if (hazard.hazard) {
-                skip |= LogError(srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", caller_name,
-                                 string_SyncHazard(hazard.hazard), FormatHandle(srcImage).c_str(), region,
-                                 cb_access_context->FormatHazard(hazard).c_str());
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), srcImage, loc,
+                                 "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(srcImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
         }
 
@@ -5277,10 +5260,9 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             auto hazard =
                 context->DetectHazard(*dst_image, SYNC_BLIT_TRANSFER_WRITE, blit_region.dstSubresource, offset, extent, false);
             if (hazard.hazard) {
-                skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", caller_name,
-                                 string_SyncHazard(hazard.hazard), FormatHandle(dstImage).c_str(), region,
-                                 cb_access_context->FormatHazard(hazard).c_str());
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), dstImage, loc,
+                                 "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(dstImage).c_str(), region, cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
         }
@@ -5293,30 +5275,30 @@ bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, V
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageBlit *pRegions, VkFilter filter, const ErrorObject &errorObj) const {
     return ValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
-                                CMD_BLITIMAGE);
+                                errorObj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
                                                     const ErrorObject &errorObj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                pBlitImageInfo->filter, CMD_BLITIMAGE2KHR);
+                                pBlitImageInfo->filter, errorObj.location.dot(Field::pBlitImageInfo));
 }
 
 bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
                                                  const ErrorObject &errorObj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                pBlitImageInfo->filter, CMD_BLITIMAGE2);
+                                pBlitImageInfo->filter, errorObj.location.dot(Field::pBlitImageInfo));
 }
 
 template <typename RegionType>
 void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const RegionType *pRegions, VkFilter filter, CMD_TYPE cmd_type) {
+                                       const RegionType *pRegions, VkFilter filter, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
-    const auto tag = cb_state->access_context.NextCommandTag(cmd_type);
+    const auto tag = cb_state->access_context.NextCommandTag(command);
     auto *context = cb_state->access_context.GetCurrentAccessContext();
     assert(context);
 
@@ -5354,31 +5336,30 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions, filter);
     RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
-                       CMD_BLITIMAGE);
+                       Func::vkCmdBlitImage);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, CMD_BLITIMAGE2KHR);
+                       pBlitImageInfo->filter, Func::vkCmdBlitImage2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, CMD_BLITIMAGE2);
+                       pBlitImageInfo->filter, Func::vkCmdBlitImage2);
 }
 
 bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
                                            VkCommandBuffer commandBuffer, const VkDeviceSize struct_size, const VkBuffer buffer,
                                            const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
-                                           CMD_TYPE cmd_type) const {
+                                           const Location &loc) const {
     bool skip = false;
     if (drawCount == 0) return skip;
 
-    const char *caller_name = CommandTypeString(cmd_type);
     auto buf_state = Get<BUFFER_STATE>(buffer);
     VkDeviceSize size = struct_size;
     if (drawCount == 1 || stride == size) {
@@ -5386,8 +5367,8 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
         const ResourceAccessRange range = MakeRange(offset, size);
         auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
         if (hazard.hazard) {
-            skip |= LogError(buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
-                             "%s: Hazard %s for indirect %s in %s. Access info %s.", caller_name, string_SyncHazard(hazard.hazard),
+            skip |= LogError(string_SyncHazardVUID(hazard.hazard), buf_state->buffer(), loc,
+                             "Hazard %s for indirect %s in %s. Access info %s.", string_SyncHazard(hazard.hazard),
                              FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(),
                              cb_context.FormatHazard(hazard).c_str());
         }
@@ -5396,10 +5377,10 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.hazard) {
-                skip |= LogError(buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for indirect %s in %s. Access info %s.", caller_name,
-                                 string_SyncHazard(hazard.hazard), FormatHandle(buffer).c_str(),
-                                 FormatHandle(commandBuffer).c_str(), cb_context.FormatHazard(hazard).c_str());
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), buf_state->buffer(), loc,
+                                 "Hazard %s for indirect %s in %s. Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(),
+                                 cb_context.FormatHazard(hazard).c_str());
                 break;
             }
         }
@@ -5427,17 +5408,17 @@ void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceU
 
 bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
                                         VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                        CMD_TYPE cmd_type) const {
+                                        const Location &loc) const {
     bool skip = false;
 
     auto count_buf_state = Get<BUFFER_STATE>(buffer);
     const ResourceAccessRange range = MakeRange(offset, 4);
     auto hazard = context.DetectHazard(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
     if (hazard.hazard) {
-        skip |= LogError(count_buf_state->buffer(), string_SyncHazardVUID(hazard.hazard),
-                         "%s: Hazard %s for countBuffer %s in %s. Access info %s.", CommandTypeString(cmd_type),
-                         string_SyncHazard(hazard.hazard), FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(),
-                         cb_context.FormatHazard(hazard).c_str());
+        skip |=
+            LogError(string_SyncHazardVUID(hazard.hazard), count_buf_state->buffer(), loc,
+                     "Hazard %s for countBuffer %s in %s. Access info %s.", string_SyncHazard(hazard.hazard),
+                     FormatHandle(buffer).c_str(), FormatHandle(commandBuffer).c_str(), cb_context.FormatHazard(hazard).c_str());
     }
     return skip;
 }
@@ -5455,7 +5436,7 @@ bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
     assert(cb_state);
     if (!cb_state) return skip;
 
-    skip |= cb_state->access_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH);
+    skip |= cb_state->access_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, errorObj.location);
     return skip;
 }
 
@@ -5464,7 +5445,7 @@ void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DISPATCH);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDispatch);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
 }
@@ -5480,9 +5461,9 @@ bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBu
     assert(context);
     if (!context) return skip;
 
-    skip |= cb_state->access_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT);
+    skip |= cb_state->access_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, errorObj.location);
     skip |= ValidateIndirectBuffer(cb_state->access_context, *context, commandBuffer, sizeof(VkDispatchIndirectCommand), buffer,
-                                   offset, 1, sizeof(VkDispatchIndirectCommand), CMD_DISPATCHINDIRECT);
+                                   offset, 1, sizeof(VkDispatchIndirectCommand), errorObj.location);
     return skip;
 }
 
@@ -5491,7 +5472,7 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DISPATCHINDIRECT);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDispatchIndirect);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5507,9 +5488,9 @@ bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
     if (!cb_state) return skip;
     const auto *cb_access_context = &cb_state->access_context;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW);
-    skip |= cb_access_context->ValidateDrawVertex(vertexCount, firstVertex, CMD_DRAW);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(CMD_DRAW);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, errorObj.location);
+    skip |= cb_access_context->ValidateDrawVertex(vertexCount, firstVertex, errorObj.location);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(errorObj.location);
     return skip;
 }
 
@@ -5519,7 +5500,7 @@ void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DRAW);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDraw);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawVertex(vertexCount, firstVertex, tag);
@@ -5535,9 +5516,9 @@ bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     if (!cb_state) return skip;
     const auto *cb_access_context = &cb_state->access_context;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED);
-    skip |= cb_access_context->ValidateDrawVertexIndex(indexCount, firstIndex, CMD_DRAWINDEXED);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(CMD_DRAWINDEXED);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, errorObj.location);
+    skip |= cb_access_context->ValidateDrawVertexIndex(indexCount, firstIndex, errorObj.location);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(errorObj.location);
     return skip;
 }
 
@@ -5547,7 +5528,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDEXED);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndexed);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawVertexIndex(indexCount, firstIndex, tag);
@@ -5568,15 +5549,15 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     assert(context);
     if (!context) return skip;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(CMD_DRAWINDIRECT);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, errorObj.location);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(errorObj.location);
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset,
-                                   drawCount, stride, CMD_DRAWINDIRECT);
+                                   drawCount, stride, errorObj.location);
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, CMD_DRAWINDIRECT);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, errorObj.location);
     return skip;
 }
 
@@ -5587,7 +5568,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDIRECT);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndirect);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5614,15 +5595,15 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     assert(context);
     if (!context) return skip;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(CMD_DRAWINDEXEDINDIRECT);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, errorObj.location);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(errorObj.location);
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer,
-                                   offset, drawCount, stride, CMD_DRAWINDEXEDINDIRECT);
+                                   offset, drawCount, stride, errorObj.location);
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, CMD_DRAWINDEXEDINDIRECT);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, errorObj.location);
     return skip;
 }
 
@@ -5633,7 +5614,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDEXEDINDIRECT);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdDrawIndexedIndirect);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5649,7 +5630,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
 
 bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                 uint32_t stride, CMD_TYPE cmd_type) const {
+                                                 uint32_t stride, const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -5660,16 +5641,16 @@ bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
     assert(context);
     if (!context) return skip;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(cmd_type);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(loc);
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset,
-                                   maxDrawCount, stride, cmd_type);
-    skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, cmd_type);
+                                   maxDrawCount, stride, loc);
+    skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, loc);
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, cmd_type);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, loc);
     return skip;
 }
 
@@ -5677,17 +5658,17 @@ bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandB
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride, const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        CMD_DRAWINDIRECTCOUNT);
+                                        errorObj.location);
 }
 
 void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                               uint32_t stride, CMD_TYPE cmd_type) {
+                                               uint32_t stride, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5708,14 +5689,14 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuf
     StateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                     stride);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               CMD_DRAWINDIRECTCOUNT);
+                               Func::vkCmdDrawIndirectCount);
 }
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                            uint32_t maxDrawCount, uint32_t stride,
                                                            const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        CMD_DRAWINDIRECTCOUNTKHR);
+                                        errorObj.location);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5724,7 +5705,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer command
     StateTracker::PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               CMD_DRAWINDIRECTCOUNTKHR);
+                               Func::vkCmdDrawIndirectCountKHR);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5732,7 +5713,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer comma
                                                            uint32_t maxDrawCount, uint32_t stride,
                                                            const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        CMD_DRAWINDIRECTCOUNTAMD);
+                                        errorObj.location);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5741,12 +5722,12 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer command
     StateTracker::PreCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                               CMD_DRAWINDIRECTCOUNTAMD);
+                               Func::vkCmdDrawIndirectCountAMD);
 }
 
 bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, CMD_TYPE cmd_type) const {
+                                                        uint32_t stride, const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -5757,16 +5738,16 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
     assert(context);
     if (!context) return skip;
 
-    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
-    skip |= cb_access_context->ValidateDrawSubpassAttachment(cmd_type);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, loc);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(loc);
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer,
-                                   offset, maxDrawCount, stride, cmd_type);
-    skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, cmd_type);
+                                   offset, maxDrawCount, stride, loc);
+    skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, loc);
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, cmd_type);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, loc);
     return skip;
 }
 
@@ -5775,17 +5756,17 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
                                                                uint32_t maxDrawCount, uint32_t stride,
                                                                const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                               CMD_DRAWINDEXEDINDIRECTCOUNT);
+                                               errorObj.location);
 }
 
 void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, CMD_TYPE cmd_type) {
+                                                      uint32_t stride, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5806,7 +5787,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer com
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                            maxDrawCount, stride);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      CMD_DRAWINDEXEDINDIRECTCOUNT);
+                                      Func::vkCmdDrawIndexedIndirectCount);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -5814,7 +5795,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffe
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                   uint32_t stride, const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                               CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
+                                               errorObj.location);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5823,7 +5804,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer 
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
+                                      Func::vkCmdDrawIndexedIndirectCountKHR);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -5831,7 +5812,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffe
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                   uint32_t stride, const ErrorObject &errorObj) const {
     return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                               CMD_DRAWINDEXEDINDIRECTCOUNTAMD);
+                                               errorObj.location);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5840,7 +5821,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer 
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                               maxDrawCount, stride);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                      CMD_DRAWINDEXEDINDIRECTCOUNTAMD);
+                                      Func::vkCmdDrawIndexedIndirectCountAMD);
 }
 
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -5881,7 +5862,7 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_CLEARCOLORIMAGE);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearColorImage);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5935,7 +5916,7 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_CLEARDEPTHSTENCILIMAGE);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearDepthStencilImage);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5962,7 +5943,7 @@ bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         for (const auto &rect : vvl::make_span(pRects, rectCount)) {
             const auto rect_index = static_cast<uint32_t>(&rect - pRects);
             skip |= rp_access_context->ValidateClearAttachment(cb_access_context->GetExecutionContext(), *cb_state,
-                                                               CMD_CLEARATTACHMENTS, attachment, rect, rect_index);
+                                                               errorObj.location, attachment, rect, rect_index);
         }
     }
     return skip;
@@ -5973,7 +5954,7 @@ void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
                                                      const VkClearRect *pRects) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     auto cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_CLEARATTACHMENTS);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdClearAttachments);
     const auto rp_access_context = cb_access_context->GetCurrentRenderPassContext();
     if (!rp_access_context) return;
 
@@ -6024,7 +6005,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_COPYQUERYPOOLRESULTS);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdCopyQueryPoolResults);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6071,7 +6052,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_FILLBUFFER);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdFillBuffer);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6137,7 +6118,7 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_RESOLVEIMAGE);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdResolveImage);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6158,7 +6139,7 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo,
-                                             CMD_TYPE cmd_type) const {
+                                             const ErrorObject &errorObj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -6169,18 +6150,20 @@ bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
     assert(context);
     if (!context) return skip;
 
+    const Location loc = errorObj.location.dot(Field::pResolveImageInfo);
     auto src_image = Get<ImageState>(pResolveImageInfo->srcImage);
     auto dst_image = Get<ImageState>(pResolveImageInfo->dstImage);
 
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
+        const Location region_loc = loc.dot(Field::pRegions, region);
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, SYNC_RESOLVE_TRANSFER_READ, resolve_region.srcSubresource,
                                                 resolve_region.srcOffset, resolve_region.extent, false);
             if (hazard.hazard) {
-                skip |= LogError(pResolveImageInfo->srcImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(pResolveImageInfo->srcImage).c_str(), region,
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), pResolveImageInfo->srcImage, region_loc,
+                                 "Hazard %s for srcImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(pResolveImageInfo->srcImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
             }
         }
@@ -6189,9 +6172,9 @@ bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
             auto hazard = context->DetectHazard(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, resolve_region.dstSubresource,
                                                 resolve_region.dstOffset, resolve_region.extent, false);
             if (hazard.hazard) {
-                skip |= LogError(pResolveImageInfo->dstImage, string_SyncHazardVUID(hazard.hazard),
-                                 "%s: Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", CommandTypeString(cmd_type),
-                                 string_SyncHazard(hazard.hazard), FormatHandle(pResolveImageInfo->dstImage).c_str(), region,
+                skip |= LogError(string_SyncHazardVUID(hazard.hazard), pResolveImageInfo->dstImage, region_loc,
+                                 "Hazard %s for dstImage %s, region %" PRIu32 ". Access info %s.", string_SyncHazard(hazard.hazard),
+                                 FormatHandle(pResolveImageInfo->dstImage).c_str(), region,
                                  cb_access_context->FormatHazard(hazard).c_str());
             }
             if (skip) break;
@@ -6204,22 +6187,22 @@ bool SyncValidator::ValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
 bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkResolveImageInfo2KHR *pResolveImageInfo,
                                                        const ErrorObject &errorObj) const {
-    return ValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, CMD_RESOLVEIMAGE2KHR);
+    return ValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, errorObj);
 }
 
 bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
                                                     const ErrorObject &errorObj) const {
-    return ValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, CMD_RESOLVEIMAGE2);
+    return ValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, errorObj);
 }
 
 void SyncValidator::RecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo,
-                                           CMD_TYPE cmd_type) {
+                                           Func command) {
     StateTracker::PreCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(cmd_type);
+    const auto tag = cb_access_context->NextCommandTag(command);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6241,11 +6224,11 @@ void SyncValidator::RecordCmdResolveImage2(VkCommandBuffer commandBuffer, const 
 
 void SyncValidator::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                      const VkResolveImageInfo2KHR *pResolveImageInfo) {
-    RecordCmdResolveImage2(commandBuffer, pResolveImageInfo, CMD_RESOLVEIMAGE2KHR);
+    RecordCmdResolveImage2(commandBuffer, pResolveImageInfo, Func::vkCmdResolveImage2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo) {
-    RecordCmdResolveImage2(commandBuffer, pResolveImageInfo, CMD_RESOLVEIMAGE2);
+    RecordCmdResolveImage2(commandBuffer, pResolveImageInfo, Func::vkCmdResolveImage2);
 }
 
 bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
@@ -6282,7 +6265,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_UPDATEBUFFER);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdUpdateBuffer);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6314,10 +6297,9 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.hazard) {
-            skip |=
-                LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
-                         "vkCmdWriteBufferMarkerAMD: Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
-                         FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
+            skip |= LogError(string_SyncHazardVUID(hazard.hazard), dstBuffer, errorObj.location,
+                             "Hazard %s for dstBuffer %s. Access info %s.", string_SyncHazard(hazard.hazard),
+                             FormatHandle(dstBuffer).c_str(), cb_access_context->FormatHazard(hazard).c_str());
         }
     }
     return skip;
@@ -6330,7 +6312,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_WRITEBUFFERMARKERAMD);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdWriteBufferMarkerAMD);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -6353,7 +6335,7 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     assert(access_context);
     if (!access_context) return skip;
 
-    SyncOpSetEvent set_event_op(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask, nullptr);
+    SyncOpSetEvent set_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask, nullptr);
     return set_event_op.Validate(*cb_context);
 }
 
@@ -6364,7 +6346,7 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(CMD_SETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask,
+    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent, *this, cb_context->GetQueueFlags(), event, stageMask,
                                              cb_context->GetCurrentAccessContext());
 }
 
@@ -6381,7 +6363,7 @@ bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer
     assert(access_context);
     if (!access_context) return skip;
 
-    SyncOpSetEvent set_event_op(CMD_SETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo, nullptr);
+    SyncOpSetEvent set_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo, nullptr);
     return set_event_op.Validate(*cb_context);
 }
 
@@ -6394,7 +6376,7 @@ bool SyncValidator::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, V
     const auto *cb_context = &cb_state->access_context;
     if (!pDependencyInfo) return skip;
 
-    SyncOpSetEvent set_event_op(CMD_SETEVENT2, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo, nullptr);
+    SyncOpSetEvent set_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo, nullptr);
     return set_event_op.Validate(*cb_context);
 }
 
@@ -6407,7 +6389,7 @@ void SyncValidator::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer,
     auto *cb_context = &cb_state->access_context;
     if (!pDependencyInfo) return;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(CMD_SETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
+    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
                                              cb_context->GetCurrentAccessContext());
 }
 
@@ -6420,7 +6402,7 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
     auto *cb_context = &cb_state->access_context;
     if (!pDependencyInfo) return;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(CMD_SETEVENT2, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
+    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent2, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
                                              cb_context->GetCurrentAccessContext());
 }
 
@@ -6432,7 +6414,7 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpResetEvent reset_event_op(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
+    SyncOpResetEvent reset_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
     return reset_event_op.Validate(*cb_context);
 }
 
@@ -6443,7 +6425,7 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -6454,7 +6436,7 @@ bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpResetEvent reset_event_op(CMD_RESETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
+    SyncOpResetEvent reset_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
     return reset_event_op.Validate(*cb_context);
 }
 
@@ -6466,7 +6448,7 @@ bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer,
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpResetEvent reset_event_op(CMD_RESETEVENT2, *this, cb_context->GetQueueFlags(), event, stageMask);
+    SyncOpResetEvent reset_event_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
     return reset_event_op.Validate(*cb_context);
 }
 
@@ -6478,7 +6460,7 @@ void SyncValidator::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
@@ -6488,7 +6470,7 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(CMD_RESETEVENT2, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent2, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -6504,8 +6486,8 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask,
-                                    dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+    SyncOpWaitEvents wait_events_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                    srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                     pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     return wait_events_op.Validate(*cb_context);
 }
@@ -6526,9 +6508,10 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(
-        CMD_WAITEVENTS, *this, cb_context->GetQueueFlags(), eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
-        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                               srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                                               bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                               pImageMemoryBarriers);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -6540,7 +6523,8 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuff
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents, pDependencyInfos);
+    SyncOpWaitEvents wait_events_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                    pDependencyInfos);
     skip |= wait_events_op.Validate(*cb_context);
     return skip;
 }
@@ -6554,7 +6538,7 @@ void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(CMD_WAITEVENTS2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
                                                pDependencyInfos);
 }
 
@@ -6566,7 +6550,8 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     if (!cb_state) return skip;
     const auto *cb_context = &cb_state->access_context;
 
-    SyncOpWaitEvents wait_events_op(CMD_WAITEVENTS2, *this, cb_context->GetQueueFlags(), eventCount, pEvents, pDependencyInfos);
+    SyncOpWaitEvents wait_events_op(errorObj.location.function, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+                                    pDependencyInfos);
     skip |= wait_events_op.Validate(*cb_context);
     return skip;
 }
@@ -6580,7 +6565,7 @@ void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, 
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(CMD_WAITEVENTS2, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents2, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
                                                pDependencyInfos);
 }
 
@@ -6591,14 +6576,16 @@ void SyncEventState::ResetFirstScope() {
 }
 
 // Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
-SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR srcStageMask) const {
+SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const {
     IgnoreReason reason = NotIgnored;
 
-    if ((CMD_WAITEVENTS2KHR == cmd_type || CMD_WAITEVENTS2 == cmd_type) && (CMD_SETEVENT == last_command)) {
+    if ((vvl::Func::vkCmdWaitEvents2KHR == command || vvl::Func::vkCmdWaitEvents2 == command) &&
+        (vvl::Func::vkCmdSetEvent == last_command)) {
         reason = SetVsWait2;
-    } else if ((last_command == CMD_RESETEVENT || last_command == CMD_RESETEVENT2KHR) && !HasBarrier(0U, 0U)) {
-        reason = (last_command == CMD_RESETEVENT) ? ResetWaitRace : Reset2WaitRace;
-    } else if (unsynchronized_set) {
+    } else if ((last_command == vvl::Func::vkCmdResetEvent || last_command == vvl::Func::vkCmdResetEvent2KHR) &&
+               !HasBarrier(0U, 0U)) {
+        reason = (last_command == vvl::Func::vkCmdResetEvent) ? ResetWaitRace : Reset2WaitRace;
+    } else if (unsynchronized_set != vvl::Func::Empty) {
         reason = SetRace;
     } else if (first_scope) {
         const VkPipelineStageFlags2KHR missing_bits = scope.mask_param & ~srcStageMask;
@@ -6612,7 +6599,7 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(CMD_TYPE cmd_type, 
 }
 
 bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope_arg) const {
-    return (last_command == CMD_NONE) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
+    return (last_command == vvl::Func::Empty) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
            (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
@@ -6622,13 +6609,13 @@ void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {
     }
 }
 
-SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                                const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                                const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBase(cmd_type), barriers_(1) {
+    : SyncOpBase(command), barriers_(1) {
     auto &barrier_set = barriers_[0];
     barrier_set.dependency_flags = dependencyFlags;
     barrier_set.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, srcStageMask);
@@ -6642,9 +6629,9 @@ SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_stat
                                         imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
+SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
                                const VkDependencyInfoKHR *dep_infos)
-    : SyncOpBase(cmd_type), barriers_(event_count) {
+    : SyncOpBase(command), barriers_(event_count) {
     for (uint32_t i = 0; i < event_count; i++) {
         const auto &dep_info = dep_infos[i];
         auto &barrier_set = barriers_[i];
@@ -6662,19 +6649,19 @@ SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_stat
     }
 }
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                              VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                              VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                                              const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                                              const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                              const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBarriers(cmd_type, sync_state, queue_flags, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+    : SyncOpBarriers(command, sync_state, queue_flags, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                      pImageMemoryBarriers) {}
 
-SyncOpPipelineBarrier::SyncOpPipelineBarrier(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                              const VkDependencyInfoKHR &dep_info)
-    : SyncOpBarriers(cmd_type, sync_state, queue_flags, 1, &dep_info) {}
+    : SyncOpBarriers(command, sync_state, queue_flags, 1, &dep_info) {}
 
 bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
     bool skip = false;
@@ -6764,7 +6751,7 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
 }
 
 ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) {
-    const auto tag = cb_context->NextCommandTag(cmd_type_);
+    const auto tag = cb_context->NextCommandTag(command_);
     ReplayRecord(*cb_context, tag);
     return tag;
 }
@@ -6901,21 +6888,21 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
     }
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                    uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
                                    const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                    const VkImageMemoryBarrier *pImageMemoryBarriers)
-    : SyncOpBarriers(cmd_type, sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
+    : SyncOpBarriers(command, sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                      pImageMemoryBarriers) {
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                    uint32_t eventCount, const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo)
-    : SyncOpBarriers(cmd_type, sync_state, queue_flags, eventCount, pDependencyInfo) {
+    : SyncOpBarriers(command, sync_state, queue_flags, eventCount, pDependencyInfo) {
     MakeEventsList(sync_state, eventCount, pEvents);
     assert(events_.size() == barriers_.size());  // Just so nobody gets clever and decides to cull the event or barrier arrays
 }
@@ -6997,23 +6984,23 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
 
         const auto &src_exec_scope = barrier_set.src_exec_scope;
 
-        const auto ignore_reason = sync_event->IsIgnoredByWait(cmd_type_, src_exec_scope.mask_param);
+        const auto ignore_reason = sync_event->IsIgnoredByWait(command_, src_exec_scope.mask_param);
         if (ignore_reason) {
             switch (ignore_reason) {
                 case SyncEventState::ResetWaitRace:
                 case SyncEventState::Reset2WaitRace: {
                     // Four permuations of Reset and Wait calls...
-                    const char *vuid =
-                        (cmd_type_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent-event-03834" : "VUID-vkCmdResetEvent-event-03835";
+                    const char *vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent-event-03834"
+                                                                                : "VUID-vkCmdResetEvent-event-03835";
                     if (ignore_reason == SyncEventState::Reset2WaitRace) {
-                        vuid = (cmd_type_ == CMD_WAITEVENTS) ? "VUID-vkCmdResetEvent2-event-03831"
-                                                             : "VUID-vkCmdResetEvent2-event-03832";
+                        vuid = (command_ == vvl::Func::vkCmdWaitEvents) ? "VUID-vkCmdResetEvent2-event-03831"
+                                                                        : "VUID-vkCmdResetEvent2-event-03832";
                     }
                     const char *const message =
                         "%s: %s %s operation following %s without intervening execution barrier, may cause race condition. %s";
                     skip |=
                         sync_state.LogError(event_handle, vuid, message, CmdName(), sync_state.FormatHandle(event_handle).c_str(),
-                                            CmdName(), CommandTypeString(sync_event->last_command), kIgnored);
+                                            CmdName(), vvl::String(sync_event->last_command), kIgnored);
                     break;
                 }
                 case SyncEventState::SetRace: {
@@ -7025,7 +7012,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     const char *const reason = "First synchronization scope is undefined.";
                     skip |=
                         sync_state.LogError(event_handle, vuid, message, CmdName(), sync_state.FormatHandle(event_handle).c_str(),
-                                            CommandTypeString(sync_event->last_command), reason, kIgnored);
+                                            vvl::String(sync_event->last_command), reason, kIgnored);
                     break;
                 }
                 case SyncEventState::MissingStageBits: {
@@ -7043,7 +7030,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                 case SyncEventState::SetVsWait2: {
                     skip |= sync_state.LogError(
                         event_handle, "VUID-vkCmdWaitEvents2-pEvents-03837", "%s: Follows set of %s by %s. Disallowed.", CmdName(),
-                        sync_state.FormatHandle(event_handle).c_str(), CommandTypeString(sync_event->last_command));
+                        sync_state.FormatHandle(event_handle).c_str(), vvl::String(sync_event->last_command));
                     break;
                 }
                 case SyncEventState::MissingSetEvent: {
@@ -7087,8 +7074,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     if (extra_stage_bits) {
         // Issue error message that event waited for is not in wait events scope
         // NOTE: This isn't exactly the right VUID for WaitEvents2, but it's as close as we currently have support for
-        const char *const vuid =
-            (CMD_WAITEVENTS == cmd_type_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158" : "VUID-vkCmdWaitEvents2-pEvents-03838";
+        const char *const vuid = (vvl::Func::vkCmdWaitEvents == command_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158"
+                                                                          : "VUID-vkCmdWaitEvents2-pEvents-03838";
         const char *const message =
             "%s: srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto handle = exec_context.Handle();
@@ -7154,7 +7141,7 @@ struct SyncOpWaitEventsFunctorFactory {
 };
 
 ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) {
-    const auto tag = cb_context->NextCommandTag(cmd_type_);
+    const auto tag = cb_context->NextCommandTag(command_);
 
     ReplayRecord(*cb_context, tag);
     return tag;
@@ -7178,12 +7165,12 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
         if (!event_shared.get()) continue;
         auto *sync_event = events_context->GetFromShared(event_shared);
 
-        sync_event->last_command = cmd_type_;
+        sync_event->last_command = command_;
         sync_event->last_command_tag = tag;
 
         const auto &barrier_set = barriers_[barrier_set_index];
         const auto &dst = barrier_set.dst_exec_scope;
-        if (!sync_event->IsIgnoredByWait(cmd_type_, barrier_set.src_exec_scope.mask_param)) {
+        if (!sync_event->IsIgnoredByWait(command_, barrier_set.src_exec_scope.mask_param)) {
             // These apply barriers one at a time as the are restricted to the resource ranges specified per each barrier,
             // but do not update the dependency chain information (but set the "pending" state) // s.t. the order independence
             // of the barriers is maintained.
@@ -7248,9 +7235,9 @@ void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t 
     }
 }
 
-SyncOpResetEvent::SyncOpResetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                    VkPipelineStageFlags2KHR stageMask)
-    : SyncOpBase(cmd_type),
+    : SyncOpBase(command),
       event_(sync_state.Get<EVENT_STATE>(event)),
       exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
@@ -7277,35 +7264,35 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
     if (!sync_event->HasBarrier(exec_scope_.mask_param, exec_scope_.exec_scope)) {
         const char *vuid = nullptr;
         switch (sync_event->last_command) {
-            case CMD_SETEVENT:
-            case CMD_SETEVENT2KHR:
-            case CMD_SETEVENT2:
+            case vvl::Func::vkCmdSetEvent:
+            case vvl::Func::vkCmdSetEvent2KHR:
+            case vvl::Func::vkCmdSetEvent2:
                 // Needs a barrier between set and reset
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-set";
                 break;
-            case CMD_WAITEVENTS:
-            case CMD_WAITEVENTS2:
-            case CMD_WAITEVENTS2KHR: {
+            case vvl::Func::vkCmdWaitEvents:
+            case vvl::Func::vkCmdWaitEvents2KHR:
+            case vvl::Func::vkCmdWaitEvents2: {
                 // Needs to be in the barriers chain (either because of a barrier, or because of dstStageMask
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
                 break;
             }
             default:
                 // The only other valid last command that wasn't one.
-                assert((sync_event->last_command == CMD_NONE) || (sync_event->last_command == CMD_RESETEVENT) ||
-                       (sync_event->last_command == CMD_RESETEVENT2KHR));
+                assert((sync_event->last_command == vvl::Func::Empty) || (sync_event->last_command == vvl::Func::vkCmdResetEvent) ||
+                       (sync_event->last_command == vvl::Func::vkCmdResetEvent2KHR));
                 break;
         }
         if (vuid) {
             skip |= sync_state.LogError(event_->event(), vuid, message, CmdName(), sync_state.FormatHandle(event_->event()).c_str(),
-                                        CmdName(), CommandTypeString(sync_event->last_command));
+                                        CmdName(), vvl::String(sync_event->last_command));
         }
     }
     return skip;
 }
 
 ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) {
-    const auto tag = cb_context->NextCommandTag(cmd_type_);
+    const auto tag = cb_context->NextCommandTag(command_);
     ReplayRecord(*cb_context, tag);
     return tag;
 }
@@ -7323,16 +7310,16 @@ void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resou
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
     // Update the event state
-    sync_event->last_command = cmd_type_;
+    sync_event->last_command = command_;
     sync_event->last_command_tag = tag;
-    sync_event->unsynchronized_set = CMD_NONE;
+    sync_event->unsynchronized_set = vvl::Func::Empty;
     sync_event->ResetFirstScope();
     sync_event->barriers = 0U;
 }
 
-SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                VkPipelineStageFlags2KHR stageMask, const AccessContext *access_context)
-    : SyncOpBase(cmd_type),
+    : SyncOpBase(command),
       event_(sync_state.Get<EVENT_STATE>(event)),
       recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)),
@@ -7346,9 +7333,9 @@ SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_stat
     }
 }
 
-SyncOpSetEvent::SyncOpSetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
+SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
                                const VkDependencyInfoKHR &dep_info, const AccessContext *access_context)
-    : SyncOpBase(cmd_type),
+    : SyncOpBase(command),
       event_(sync_state.Get<EVENT_STATE>(event)),
       recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetGlobalStageMasks(dep_info).src)),
@@ -7389,30 +7376,30 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
         const char *vuid_stem = nullptr;
         const char *message = nullptr;
         switch (sync_event->last_command) {
-            case CMD_RESETEVENT:
-            case CMD_RESETEVENT2KHR:
-            case CMD_RESETEVENT2:
+            case vvl::Func::vkCmdResetEvent:
+            case vvl::Func::vkCmdResetEvent2KHR:
+            case vvl::Func::vkCmdResetEvent2:
                 // Needs a barrier between reset and set
                 vuid_stem = "-missingbarrier-reset";
                 message = reset_set;
                 break;
-            case CMD_SETEVENT:
-            case CMD_SETEVENT2KHR:
-            case CMD_SETEVENT2:
+            case vvl::Func::vkCmdSetEvent:
+            case vvl::Func::vkCmdSetEvent2KHR:
+            case vvl::Func::vkCmdSetEvent2:
                 // Needs a barrier between set and set
                 vuid_stem = "-missingbarrier-set";
                 message = reset_set;
                 break;
-            case CMD_WAITEVENTS:
-            case CMD_WAITEVENTS2:
-            case CMD_WAITEVENTS2KHR:
+            case vvl::Func::vkCmdWaitEvents:
+            case vvl::Func::vkCmdWaitEvents2KHR:
+            case vvl::Func::vkCmdWaitEvents2:
                 // Needs a barrier or is in second execution scope
                 vuid_stem = "-missingbarrier-wait";
                 message = wait;
                 break;
             default:
                 // The only other valid last command that wasn't one.
-                assert(sync_event->last_command == CMD_NONE);
+                assert(sync_event->last_command == vvl::Func::Empty);
                 break;
         }
         if (vuid_stem) {
@@ -7421,7 +7408,7 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
             vuid.append(CmdName()).append(vuid_stem);
             skip |= sync_state.LogError(event_->event(), vuid.c_str(), message, CmdName(),
                                         sync_state.FormatHandle(event_->event()).c_str(), CmdName(),
-                                        CommandTypeString(sync_event->last_command));
+                                        vvl::String(sync_event->last_command));
         }
     }
 
@@ -7429,7 +7416,7 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
 }
 
 ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) {
-    const auto tag = cb_context->NextCommandTag(cmd_type_);
+    const auto tag = cb_context->NextCommandTag(command_);
     auto *events_context = cb_context->GetCurrentEventsContext();
     const QueueId queue_id = cb_context->GetQueueId();
     assert(recorded_context_);
@@ -7477,19 +7464,19 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
 
         // Save the shared_ptr to copy of the access_context present at set time (sent us by the caller)
         sync_event->first_scope = access_context;
-        sync_event->unsynchronized_set = CMD_NONE;
+        sync_event->unsynchronized_set = vvl::Func::Empty;
         sync_event->first_scope_tag = tag;
     }
     // TODO: Store dep_info_ shared ptr in sync_state for WaitEvents2 validation
-    sync_event->last_command = cmd_type_;
+    sync_event->last_command = command_;
     sync_event->last_command_tag = tag;
     sync_event->barriers = 0U;
 }
 
-SyncOpBeginRenderPass::SyncOpBeginRenderPass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
+SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValidator &sync_state,
                                              const VkRenderPassBeginInfo *pRenderPassBegin,
                                              const VkSubpassBeginInfo *pSubpassBeginInfo)
-    : SyncOpBase(cmd_type), rp_context_(nullptr) {
+    : SyncOpBase(command), rp_context_(nullptr) {
     if (pRenderPassBegin) {
         rp_state_ = sync_state.Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
         renderpass_begin_info_ = safe_VkRenderPassBeginInfo(pRenderPassBegin);
@@ -7534,12 +7521,12 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // More broadly we could look at thread specific state shared between Validate and Record as is done for other heavyweight
     // operations (though it's currently a messy approach)
     AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachments_);
-    skip |= temp_context.ValidateLayoutTransitions(cb_context, rp_state, render_area, subpass, view_gens, cmd_type_);
+    skip |= temp_context.ValidateLayoutTransitions(cb_context, rp_state, render_area, subpass, view_gens, command_);
 
     // Validate load operations if there were no layout transition hazards
     if (!skip) {
         temp_context.RecordLayoutTransitions(rp_state, subpass, view_gens, kInvalidTag);
-        skip |= temp_context.ValidateLoadOperation(cb_context, rp_state, render_area, subpass, view_gens, cmd_type_);
+        skip |= temp_context.ValidateLoadOperation(cb_context, rp_state, render_area, subpass, view_gens, command_);
     }
 
     return skip;
@@ -7547,9 +7534,9 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
 
 ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) {
     assert(rp_state_.get());
-    if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(cmd_type_);
+    if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(command_);
     const ResourceUsageTag begin_tag =
-        cb_context->RecordBeginRenderPass(cmd_type_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
+        cb_context->RecordBeginRenderPass(command_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
 
     // Note: this state update must be after RecordBeginRenderPass as there is no current render pass until that function runs
     rp_context_ = cb_context->GetCurrentRenderPassContext();
@@ -7572,9 +7559,9 @@ void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext &exec_context, 
     exec_context.BeginRenderPassReplay(*this, tag);
 }
 
-SyncOpNextSubpass::SyncOpNextSubpass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
+SyncOpNextSubpass::SyncOpNextSubpass(vvl::Func command, const SyncValidator &sync_state,
                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo)
-    : SyncOpBase(cmd_type) {
+    : SyncOpBase(command) {
     if (pSubpassBeginInfo) {
         subpass_begin_info_.initialize(pSubpassBeginInfo);
     }
@@ -7588,12 +7575,12 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) c
     const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
     if (!renderpass_context) return skip;
 
-    skip |= renderpass_context->ValidateNextSubpass(cb_context.GetExecutionContext(), cmd_type_);
+    skip |= renderpass_context->ValidateNextSubpass(cb_context.GetExecutionContext(), command_);
     return skip;
 }
 
 ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) {
-    return cb_context->RecordNextSubpass(cmd_type_);
+    return cb_context->RecordNextSubpass(command_);
 }
 
 bool SyncOpNextSubpass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -7601,9 +7588,9 @@ bool SyncOpNextSubpass::ReplayValidate(ResourceUsageTag recorded_tag, const Comm
     return false;
 }
 
-SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
+SyncOpEndRenderPass::SyncOpEndRenderPass(vvl::Func command, const SyncValidator &sync_state,
                                          const VkSubpassEndInfo *pSubpassEndInfo)
-    : SyncOpBase(cmd_type) {
+    : SyncOpBase(command) {
     if (pSubpassEndInfo) {
         subpass_end_info_.initialize(pSubpassEndInfo);
     }
@@ -7618,12 +7605,12 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context)
     const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
 
     if (!renderpass_context) return skip;
-    skip |= renderpass_context->ValidateEndRenderPass(cb_context.GetExecutionContext(), cmd_type_);
+    skip |= renderpass_context->ValidateEndRenderPass(cb_context.GetExecutionContext(), command_);
     return skip;
 }
 
 ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) {
-    return cb_context->RecordEndRenderPass(cmd_type_);
+    return cb_context->RecordEndRenderPass(command_);
 }
 
 bool SyncOpEndRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -7642,7 +7629,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
-    const auto tag = cb_access_context->NextCommandTag(CMD_WRITEBUFFERMARKERAMD);
+    const auto tag = cb_access_context->NextCommandTag(Func::vkCmdWriteBufferMarker2AMD);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -7667,7 +7654,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        proxy_cb_context.NextIndexedCommandTag(errorObj.cmd_type, cb_index);
+        proxy_cb_context.NextIndexedCommandTag(errorObj.location.function, cb_index);
 
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
@@ -7693,7 +7680,7 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
+        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(vvl::Func::vkCmdExecuteCommands, cb_index);
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
         cb_context->AddHandle(cb_tag, "pCommandBuffers", recorded_cb->Handle(), cb_index);

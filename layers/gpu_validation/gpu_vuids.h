@@ -164,41 +164,42 @@ struct GpuVuidsCmdDispatchBase : GpuVuid {
     }
 };
 
+using Func = vvl::Func;
 // This LUT is created to allow a static listing of each VUID that is covered by drawdispatch commands
-static const std::map<CMD_TYPE, GpuVuid> gpu_vuid = {
-    {CMD_DRAW, GpuVuidsCmdDraw()},
-    {CMD_DRAWMULTIEXT, GpuVuidsCmdDrawMultiEXT()},
-    {CMD_DRAWINDEXED, GpuVuidsCmdDrawIndexed()},
-    {CMD_DRAWMULTIINDEXEDEXT, GpuVuidsCmdDrawMultiIndexedEXT()},
-    {CMD_DRAWINDIRECT, GpuVuidsCmdDrawIndirect()},
-    {CMD_DRAWINDEXEDINDIRECT, GpuVuidsCmdDrawIndexedIndirect()},
-    {CMD_DISPATCH, GpuVuidsCmdDispatch()},
-    {CMD_DISPATCHINDIRECT, GpuVuidsCmdDispatchIndirect()},
-    {CMD_DRAWINDIRECTCOUNT, GpuVuidsCmdDrawIndirectCount()},
-    {CMD_DRAWINDIRECTCOUNTKHR, GpuVuidsCmdDrawIndirectCount()},
-    {CMD_DRAWINDEXEDINDIRECTCOUNT, GpuVuidsCmdDrawIndexedIndirectCount()},
-    {CMD_DRAWINDEXEDINDIRECTCOUNTKHR, GpuVuidsCmdDrawIndexedIndirectCount()},
-    {CMD_TRACERAYSNV, GpuVuidsCmdTraceRaysNV()},
-    {CMD_TRACERAYSKHR, GpuVuidsCmdTraceRaysKHR()},
-    {CMD_TRACERAYSINDIRECTKHR, GpuVuidsCmdTraceRaysIndirectKHR()},
-    {CMD_TRACERAYSINDIRECT2KHR, GpuVuidsCmdTraceRaysIndirect2KHR()},
-    {CMD_DRAWMESHTASKSNV, GpuVuidsCmdDrawMeshTasksNV()},
-    {CMD_DRAWMESHTASKSINDIRECTNV, GpuVuidsCmdDrawMeshTasksIndirectNV()},
-    {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, GpuVuidsCmdDrawMeshTasksIndirectCountNV()},
-    {CMD_DRAWINDIRECTBYTECOUNTEXT, GpuVuidsCmdDrawIndirectByteCountEXT()},
-    {CMD_DISPATCHBASE, GpuVuidsCmdDispatchBase()},
-    {CMD_DISPATCHBASEKHR, GpuVuidsCmdDispatchBase()},
-    // Used if invalid cmd_type is used
-    {CMD_NONE, GpuVuid()}
+static const std::map<Func, GpuVuid> gpu_vuid = {
+    {Func::vkCmdDraw, GpuVuidsCmdDraw()},
+    {Func::vkCmdDrawMultiEXT, GpuVuidsCmdDrawMultiEXT()},
+    {Func::vkCmdDrawIndexed, GpuVuidsCmdDrawIndexed()},
+    {Func::vkCmdDrawMultiIndexedEXT, GpuVuidsCmdDrawMultiIndexedEXT()},
+    {Func::vkCmdDrawIndirect, GpuVuidsCmdDrawIndirect()},
+    {Func::vkCmdDrawIndexedIndirect, GpuVuidsCmdDrawIndexedIndirect()},
+    {Func::vkCmdDispatch, GpuVuidsCmdDispatch()},
+    {Func::vkCmdDispatchIndirect, GpuVuidsCmdDispatchIndirect()},
+    {Func::vkCmdDrawIndirectCount, GpuVuidsCmdDrawIndirectCount()},
+    {Func::vkCmdDrawIndirectCountKHR, GpuVuidsCmdDrawIndirectCount()},
+    {Func::vkCmdDrawIndexedIndirectCount, GpuVuidsCmdDrawIndexedIndirectCount()},
+    {Func::vkCmdDrawIndexedIndirectCountKHR, GpuVuidsCmdDrawIndexedIndirectCount()},
+    {Func::vkCmdTraceRaysNV, GpuVuidsCmdTraceRaysNV()},
+    {Func::vkCmdTraceRaysKHR, GpuVuidsCmdTraceRaysKHR()},
+    {Func::vkCmdTraceRaysIndirectKHR, GpuVuidsCmdTraceRaysIndirectKHR()},
+    {Func::vkCmdTraceRaysIndirect2KHR, GpuVuidsCmdTraceRaysIndirect2KHR()},
+    {Func::vkCmdDrawMeshTasksNV, GpuVuidsCmdDrawMeshTasksNV()},
+    {Func::vkCmdDrawMeshTasksIndirectNV, GpuVuidsCmdDrawMeshTasksIndirectNV()},
+    {Func::vkCmdDrawMeshTasksIndirectCountNV, GpuVuidsCmdDrawMeshTasksIndirectCountNV()},
+    {Func::vkCmdDrawIndirectByteCountEXT, GpuVuidsCmdDrawIndirectByteCountEXT()},
+    {Func::vkCmdDispatchBase, GpuVuidsCmdDispatchBase()},
+    {Func::vkCmdDispatchBaseKHR, GpuVuidsCmdDispatchBase()},
+    // Used if invalid function is used
+    {Func::Empty, GpuVuid()}
 };
 
-// Getter function to provide kVUIDUndefined in case an invalid cmd_type is passed in
-const GpuVuid &GetGpuVuid(CMD_TYPE cmd_type) {
-    if (gpu_vuid.find(cmd_type) != gpu_vuid.cend()) {
-        return gpu_vuid.at(cmd_type);
+// Getter function to provide kVUIDUndefined in case an invalid function is passed in
+const GpuVuid &GetGpuVuid(Func command) {
+    if (gpu_vuid.find(command) != gpu_vuid.cend()) {
+        return gpu_vuid.at(command);
     }
     else {
-        return gpu_vuid.at(CMD_NONE);
+        return gpu_vuid.at(Func::Empty);
     }
 }
 // clang-format on

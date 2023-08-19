@@ -156,7 +156,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
 
     if (!pInfos || !ppBuildRangeInfos) {
         return skip;
@@ -769,7 +769,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     assert(cb_state);
     bool skip = false;
 
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
 
     if (pInfo != nullptr && pInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
         for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
@@ -925,7 +925,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     assert(cb_state);
     bool skip = false;
 
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
     auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
 
@@ -983,15 +983,15 @@ void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkComm
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    CMD_TYPE cmd_type = CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR;
-    cb_state->queryUpdates.emplace_back([accelerationStructureCount, firstQuery, queryPool, cmd_type](
+    cb_state->queryUpdates.emplace_back([accelerationStructureCount, firstQuery, queryPool](
                                             CMD_BUFFER_STATE &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
         for (uint32_t i = 0; i < accelerationStructureCount; i++) {
             QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
-            skip |= VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+            skip |= VerifyQueryIsReset(cb_state_arg, query_obj, Func::vkCmdWriteAccelerationStructuresPropertiesKHR,
+                                       firstPerfQueryPool, perfPass, localQueryToStateMap);
         }
         return skip;
     });
@@ -1026,7 +1026,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     const auto &query_pool_ci = query_pool_state->createInfo;
     if (query_pool_ci.queryType != queryType) {
@@ -1056,7 +1056,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCom
                                                                            uint32_t firstQuery, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     const auto &query_pool_ci = query_pool_state->createInfo;
     if (query_pool_ci.queryType != queryType) {
@@ -1088,9 +1088,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     // TODO - This is not called in vkCmdBuildAccelerationStructuresKHR and only seems used for ValidateActionState
-    skip |= ValidateCmdRayQueryState(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
+    skip |= ValidateCmdRayQueryState(*cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, errorObj.location);
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].srcAccelerationStructure);
         auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[i].dstAccelerationStructure);
@@ -1189,7 +1189,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer 
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     if (pInfo) {
         skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, errorObj.handle, errorObj.location.dot(Field::pInfo));
         auto src_accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
@@ -1233,7 +1233,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkComman
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
 
     auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->src);
     if (accel_state) {
@@ -1264,7 +1264,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
 
     auto accel_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
     if (accel_state) {
@@ -1275,9 +1275,10 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkComman
     return skip;
 }
 
-bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, const VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, const VkPipelineBindPoint bind_point,
+                                          const Location &loc) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound = cb_state.lastBound[lv_bind_point];
     const auto *pipe = last_bound.pipeline_state;
@@ -1292,8 +1293,8 @@ bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, cons
     }
 
     if (cb_state.unprotected == false && ray_query_shader) {
-        skip |= LogError(cb_state.commandBuffer(), vuid.ray_query_protected_cb_03635,
-                         "%s(): can't use in protected command buffers for RayQuery operations.", CommandTypeString(cmd_type));
+        skip |= LogError(vuid.ray_query_protected_cb_03635, cb_state.commandBuffer(), loc,
+                         "can't use in protected command buffers for RayQuery operations.");
     }
 
     return skip;
@@ -1416,7 +1417,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
 bool CoreChecks::PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
                                                                      const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETRAYTRACINGPIPELINESTACKSIZEKHR, VK_TRUE, nullptr, nullptr);
+    return ValidateExtendedDynamicState(*cb_state, errorObj.location, VK_TRUE, nullptr, nullptr);
 }
 
 bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
@@ -1482,10 +1483,9 @@ bool CoreChecks::ValidateGeometryNV(const VkGeometryNV &geometry, const char *fu
     return skip;
 }
 
-bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const char *rt_func_name,
+bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const Location &table_loc,
                                                       const char *vuid_single_device_memory, const char *vuid_binding_table_flag,
-                                                      const VkStridedDeviceAddressRegionKHR &binding_table,
-                                                      const char *binding_table_name) const {
+                                                      const VkStridedDeviceAddressRegionKHR &binding_table) const {
     bool skip = false;
 
     if (binding_table.deviceAddress == 0 || binding_table.size == 0) {
@@ -1494,21 +1494,21 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
     const auto buffer_states = GetBuffersByAddress(binding_table.deviceAddress);
     if (buffer_states.empty()) {
-        skip |= LogError(device, "VUID-VkStridedDeviceAddressRegionKHR-size-04631",
-                         "%s: no buffer is associated with %s->deviceAddress (0x%" PRIx64 ").", rt_func_name, binding_table_name,
-                         binding_table.deviceAddress);
+        skip |= LogError("VUID-VkStridedDeviceAddressRegionKHR-size-04631", commandBuffer, table_loc.dot(Field::deviceAddress),
+                         "(0x%" PRIx64 ") has no buffer associated with it.", binding_table.deviceAddress);
     } else {
         const sparse_container::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
                                                                     binding_table.deviceAddress + binding_table.size - 1);
         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<4> buffer_address_validator = {{{
             {vuid_single_device_memory, LogObjectList(commandBuffer),
-             [this, commandBuffer, rt_func_name, vuid_single_device_memory](const BUFFER_STATE_PTR &buffer_state,
-                                                                            std::string *out_error_msg) {
+             [this, commandBuffer, table_loc, vuid_single_device_memory](const BUFFER_STATE_PTR &buffer_state,
+                                                                         std::string *out_error_msg) {
                  if (!out_error_msg) {
                      return !buffer_state->sparse && buffer_state->IsMemoryBound();
                  } else {
-                     return ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, rt_func_name, vuid_single_device_memory);
+                     return ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, table_loc.StringFunc(),
+                                                          vuid_single_device_memory);
                  }
              }},
 
@@ -1540,9 +1540,9 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
                  return true;
              },
-             [binding_table_name, requested_range_string = string_range_hex(requested_range)]() {
-                 return "The following buffers do not include " + std::string(binding_table_name) +
-                        " buffer device address range " + requested_range_string + ":\n";
+             [table_loc, requested_range_string = string_range_hex(requested_range)]() {
+                 return "The following buffers do not include " + table_loc.Fields() + " buffer device address range " +
+                        requested_range_string + ":\n";
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04632", LogObjectList(commandBuffer),
@@ -1555,15 +1555,15 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                  }
                  return true;
              },
-             [binding_table_name, &binding_table]() {
-                 return "The following buffers have a size inferior to " + std::string(binding_table_name) + "->stride (" +
+             [table_loc, &binding_table]() {
+                 return "The following buffers have a size inferior to " + table_loc.Fields() + "->stride (" +
                         std::to_string(binding_table.stride) + "):\n";
                  ;
              }},
         }}};
 
-        const std::string binding_table_address = std::string(binding_table_name) + "->deviceAddress";
-        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, rt_func_name, binding_table_address,
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, table_loc.StringFunc(),
+                                                                  table_loc.dot(Field::deviceAddress).Fields(),
                                                                   binding_table.deviceAddress);
     }
 

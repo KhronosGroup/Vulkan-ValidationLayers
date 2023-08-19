@@ -51,173 +51,102 @@ class CommandValidationOutputGenerator(BaseGenerator):
 ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'command_validation.h':
-            self.generateHeader()
-        elif self.filename == 'command_validation.cpp':
+        if self.filename == 'command_validation.cpp':
             self.generateSource()
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
-    def generateHeader(self):
-        out = []
-        out.append('''
-#pragma once
-#include <array>
-''')
-        #
-        # List the enum for the commands
-        out.append('''
-// Used as key for maps of all vkCmd* calls
-// Does not include vkBeginCommandBuffer/vkEndCommandBuffer
-typedef enum CMD_TYPE {
-    CMD_NONE = 0,\n''')
-        counter = 1
-        for name in [x.name for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            out.append(f'    CMD_{name[5:].upper()} = {str(counter)},\n')
-            counter += 1
-        out.append(f'    CMD_RANGE_SIZE = {str(counter)}\n')
-        out.append('} CMD_TYPE;\n')
-        out.append('\n')
-
-        #
-        # For each CMD_TYPE give a string name
-        out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList = {{\n')
-        out.append('    "Command_Undefined",\n')
-        for name in [x.name for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            out.append(f'    "{name}",\n')
-        out.append('}};')
-        self.write("".join(out))
-
     def generateSource(self):
         out = []
         out.append('''
 #include "error_message/logging.h"
 #include "core_checks/core_validation.h"
-''')
-        #
-        # For each CMD_TYPE give a string name add a *-recording VUID
-        # Each vkCmd* will have one
-        out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{\n')
-        out.append('    kVUIDUndefined,\n')
-        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            name = command.name if command.alias is None else command.alias
-            vuid = getVUID(self.valid_vuids, f'VUID-{name}-commandBuffer-recording')
-            out.append(f'    {vuid},\n')
-        out.append('}};\n')
 
-        #
-        # For each CMD_TYPE give a queue type and string name add a *-commandBuffer-cmdpool VUID
-        # Each vkCmd* will have one
-        out.append('''
-struct CommandSupportedQueueType {
-    VkQueueFlags flags;
-    const char* vuid;
-};
-static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQueueTypeList = {{
-    {VK_QUEUE_FLAG_BITS_MAX_ENUM, kVUIDUndefined},\n''')
-        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            name = command.name if command.alias is None else command.alias
-            flags = []
-            flags.extend(["VK_QUEUE_GRAPHICS_BIT"] if Queues.GRAPHICS & command.queues else [])
-            flags.extend(["VK_QUEUE_COMPUTE_BIT"] if Queues.COMPUTE & command.queues else [])
-            flags.extend(["VK_QUEUE_TRANSFER_BIT"] if Queues.TRANSFER & command.queues else [])
-            flags.extend(["VK_QUEUE_SPARSE_BINDING_BIT"] if Queues.SPARSE_BINDING & command.queues else [])
-            flags.extend(["VK_QUEUE_PROTECTED_BIT"] if Queues.PROTECTED & command.queues else [])
-            flags.extend(["VK_QUEUE_VIDEO_DECODE_BIT_KHR"] if Queues.DECODE & command.queues else [])
-            flags.extend(["VK_QUEUE_VIDEO_ENCODE_BIT_KHR"] if Queues.ENCODE & command.queues else [])
-            flags.extend(["VK_QUEUE_OPTICAL_FLOW_BIT_NV"] if Queues.OPTICAL_FLOW & command.queues else [])
-            flags = ' | '.join(flags)
-
-            vuid = f'VUID-{name}-commandBuffer-cmdpool'
-            if vuid not in self.valid_vuids:
-                print(f'Warning: Could not find {vuid} in validusage.json')
-                vuid = vuid.replace('VUID-', 'UNASSIGNED-')
-            out.append(f'    {{{flags}, "{vuid}"}},\n')
-        out.append('}};\n')
-
-        #
-        # For each CMD_TYPE give a the renderpass restriction and a *-renderpass VUID
-        out.append('''
 enum CMD_SCOPE_TYPE {
     CMD_SCOPE_INSIDE,
     CMD_SCOPE_OUTSIDE,
     CMD_SCOPE_BOTH
 };
 
-struct CommandSupportedRenderPass {
-    CMD_SCOPE_TYPE renderPass;
-    const char* vuid;
+struct CommandValidationInfo {
+    const char* recording_vuid;
+    const char* buffer_level_vuid;
+
+    VkQueueFlags queue_flags;
+    const char* queue_vuid;
+
+    CMD_SCOPE_TYPE render_pass;
+    const char* render_pass_vuid;
+
+    CMD_SCOPE_TYPE video_coding;
+    const char* video_coding_vuid;
 };
-static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRenderPassList = {{
-    {CMD_SCOPE_BOTH, kVUIDUndefined}, // CMD_NONE\n''')
+
+using Func = vvl::Func;
+''')
+
+        out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            name = command.name if command.alias is None else command.alias
-            vuid = f'"VUID-{name}-renderpass"'
-            renderPassType = ''
+            out.append(f'{{Func::{command.name}, {{\n')
+            # recording_vuid
+            alias_name = command.name if command.alias is None else command.alias
+            vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-commandBuffer-recording')
+            out.append(f'    {vuid},\n')
 
-            if command.renderPass is CommandScope.INSIDE:
-                renderPassType = 'CMD_SCOPE_INSIDE'
-            elif command.renderPass is CommandScope.OUTSIDE:
-                renderPassType = 'CMD_SCOPE_OUTSIDE'
-            elif command.renderPass is CommandScope.BOTH:
-                renderPassType = 'CMD_SCOPE_BOTH'
-                vuid = 'kVUIDUndefined' # Only will be a VUID if not BOTH
-
-            # Remove string quotes from VUID
-            if vuid[1:-1] not in self.valid_vuids and command.renderPass is not CommandScope.BOTH:
-                print(f'Warning: Could not find {vuid} in validusage.json')
-                vuid = vuid.replace('VUID-', 'UNASSIGNED-')
-            out.append(f'    {{{renderPassType}, {vuid}}},\n')
-        out.append('}};\n')
-
-        #
-        # For each CMD_TYPE give a videocoding restriction and a *-videocoding VUID
-        out.append('''
-struct CommandSupportedVideoCoding {
-    CMD_SCOPE_TYPE videoCoding;
-    const char* vuid;
-};
-static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedVideoCodingList = {{
-    {CMD_SCOPE_BOTH, kVUIDUndefined}, // CMD_NONE\n''')
-        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            name = command.name if command.alias is None else command.alias
-            vuid = f'"VUID-{name}-videocoding"'
-            VideoCodingType = ''
-
-            if command.videoCoding is CommandScope.INSIDE:
-                VideoCodingType = 'CMD_SCOPE_INSIDE'
-            elif command.videoCoding is CommandScope.OUTSIDE or command.videoCoding is CommandScope.NONE:
-                VideoCodingType = 'CMD_SCOPE_OUTSIDE'
-            elif command.videoCoding is CommandScope.BOTH:
-                VideoCodingType = 'CMD_SCOPE_BOTH'
-                vuid = 'kVUIDUndefined' # Only will be a VUID if not BOTH
-
-            # Remove string quotes from VUID
-            if vuid[1:-1] not in self.valid_vuids and command.videoCoding is not CommandScope.BOTH:
-                print(f'Warning: Could not find {vuid} in validusage.json')
-                vuid = vuid.replace('VUID-', 'UNASSIGNED-')
-            out.append(f'    {{{VideoCodingType}, {vuid}}},\n')
-        out.append('}};\n')
-
-        #
-        # For each CMD_TYPE give a buffer level restriction and add a *-bufferlevel VUID
-        out.append('static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedBufferLevelList = {{\n')
-        out.append('    kVUIDUndefined, // CMD_NONE\n')
-        for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
-            name = command.name if command.alias is None else command.alias
+            # buffer_level_vuid
             if command.primary and command.secondary:
                 out.append('    nullptr,\n')
             elif command.primary:
-                vuid = getVUID(self.valid_vuids, f'VUID-{name}-bufferlevel')
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-bufferlevel')
                 out.append(f'    {vuid},\n')
             else:
                 # Currently there is only "primary" or "primary,secondary" in XML
                 # Hard to predict what might change, so will error out instead if assumption breaks
                 print('cmdbufferlevel attribute was and not known, need to update generation code')
                 sys.exit(1)
-        out.append('}};\n')
+
+            # queue_flags / queue_vuid
+            queue_flags = []
+            queue_flags.extend(["VK_QUEUE_GRAPHICS_BIT"] if Queues.GRAPHICS & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_COMPUTE_BIT"] if Queues.COMPUTE & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_TRANSFER_BIT"] if Queues.TRANSFER & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_SPARSE_BINDING_BIT"] if Queues.SPARSE_BINDING & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_PROTECTED_BIT"] if Queues.PROTECTED & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_VIDEO_DECODE_BIT_KHR"] if Queues.DECODE & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_VIDEO_ENCODE_BIT_KHR"] if Queues.ENCODE & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_OPTICAL_FLOW_BIT_NV"] if Queues.OPTICAL_FLOW & command.queues else [])
+            queue_flags = ' | '.join(queue_flags)
+
+            vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-commandBuffer-cmdpool')
+            out.append(f'    {queue_flags}, {vuid},\n')
+
+            # render_pass / render_pass_vuid
+            renderPassType = 'CMD_SCOPE_BOTH'
+            vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
+            if command.renderPass is CommandScope.INSIDE:
+                renderPassType = 'CMD_SCOPE_INSIDE'
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-renderpass')
+            elif command.renderPass is CommandScope.OUTSIDE:
+                renderPassType = 'CMD_SCOPE_OUTSIDE'
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-renderpass')
+            out.append(f'    {renderPassType}, {vuid},\n')
+
+            # video_coding / video_coding_vuid
+            videoCodingType = 'CMD_SCOPE_BOTH'
+            vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
+            if command.videoCoding is CommandScope.INSIDE:
+                videoCodingType = 'CMD_SCOPE_INSIDE'
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-videocoding')
+            elif command.videoCoding is CommandScope.OUTSIDE or command.videoCoding is CommandScope.NONE:
+                videoCodingType = 'CMD_SCOPE_OUTSIDE'
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-videocoding')
+            out.append(f'    {videoCodingType}, {vuid},\n')
+
+            out.append('}},\n')
+        out.append('};\n')
+
 
         #
         # The main function to validate all the commands
@@ -226,53 +155,52 @@ static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedV
 // Ran on all vkCmd* commands
 // Because it validate the implicit VUs that stateless can't, if this fails, it is likely
 // the input is very bad and other checks will crash dereferencing null pointers
-bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cmd) const {
+bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const Location& loc) const {
     bool skip = false;
-    const char *caller_name = CommandTypeString(cmd);
+
+    auto info_it = kCommandValidationTable.find(loc.function);
+    if (info_it == kCommandValidationTable.end()) {
+        assert(false);
+    }
+    const auto& info = info_it->second;
 
     // Validate the given command being added to the specified cmd buffer,
     // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
     switch (cb_state.state) {
         case CbState::Recording:
-            skip |= ValidateCmdSubpassState(cb_state, cmd);
+            skip |= ValidateCmdSubpassState(cb_state, loc);
             break;
 
         case CbState::InvalidComplete:
         case CbState::InvalidIncomplete:
-            skip |= ReportInvalidCommandBuffer(cb_state, caller_name);
+            skip |= ReportInvalidCommandBuffer(cb_state, loc);
             break;
 
         default:
-            assert(cmd != CMD_NONE);
-            const auto error = kGeneratedMustBeRecordingList[cmd];
-            skip |= LogError(cb_state.commandBuffer(), error, "You must call vkBeginCommandBuffer() before this call to %s.",
-                            caller_name);
+            assert(loc.function != Func::Empty);
+            skip |= LogError(info.recording_vuid, cb_state.commandBuffer(), loc, "was called before vkBeginCommandBuffer().");
     }
 
     // Validate the command pool from which the command buffer is from that the command is allowed for queue type
-    const auto supportedQueueType = kGeneratedQueueTypeList[cmd];
-    skip |= ValidateCmdQueueFlags(cb_state, caller_name, supportedQueueType.flags, supportedQueueType.vuid);
+    skip |= ValidateCmdQueueFlags(cb_state, loc, info.queue_flags, info.queue_vuid);
 
     // Validate if command is inside or outside a render pass if applicable
-    const auto supportedRenderPass = kGeneratedRenderPassList[cmd];
-    if (supportedRenderPass.renderPass == CMD_SCOPE_INSIDE) {
-        skip |= OutsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
-    } else if (supportedRenderPass.renderPass == CMD_SCOPE_OUTSIDE) {
-        skip |= InsideRenderPass(cb_state, caller_name, supportedRenderPass.vuid);
+    if (info.render_pass == CMD_SCOPE_INSIDE) {
+        skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
+    } else if (info.render_pass == CMD_SCOPE_OUTSIDE) {
+        skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
     }
 
     // Validate if command is inside or outside a video coding scope if applicable
-    const auto supportedVideoCoding = kGeneratedVideoCodingList[cmd];
-    if (supportedVideoCoding.videoCoding == CMD_SCOPE_INSIDE) {
-        skip |= OutsideVideoCodingScope(cb_state, caller_name, supportedVideoCoding.vuid);
-    } else if (supportedVideoCoding.videoCoding == CMD_SCOPE_OUTSIDE) {
-        skip |= InsideVideoCodingScope(cb_state, caller_name, supportedVideoCoding.vuid);
+    if (info.video_coding == CMD_SCOPE_INSIDE) {
+        skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
+    } else if (info.video_coding == CMD_SCOPE_OUTSIDE) {
+        skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
     }
 
     // Validate if command has to be recorded in a primary command buffer
-    const auto supportedBufferLevel = kGeneratedBufferLevelList[cmd];
-    if (supportedBufferLevel != nullptr) {
-        skip |= ValidatePrimaryCommandBuffer(cb_state, caller_name, supportedBufferLevel);
+    if (info.buffer_level_vuid != nullptr) {
+        skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
     }
 
     return skip;

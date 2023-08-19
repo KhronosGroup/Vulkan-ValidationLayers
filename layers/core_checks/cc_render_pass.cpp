@@ -390,7 +390,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                                             const VkRenderPassBeginInfo *pRenderPassBegin, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    const char *function_name = CommandTypeString(errorObj.cmd_type);
+    const char *function_name = errorObj.location.StringFunc();
     assert(cb_state);
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     auto fb_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
@@ -472,7 +472,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             skip |= ValidateDependencies(*fb_state, *rp_state, errorObj);
         }
 
-        skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+        skip |= ValidateCmd(*cb_state, errorObj.location);
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -780,7 +780,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
         }
     }
 
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }
 
@@ -3044,7 +3044,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
 
     const auto *chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     const bool non_zero_device_render_area = chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount != 0;
@@ -3657,10 +3657,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
-bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char *apiName, const char *msgCode) const {
+bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
     if (cb_state.activeRenderPass) {
-        inside = LogError(cb_state.commandBuffer(), msgCode, "%s: It is invalid to issue this call inside an active %s.", apiName,
+        inside = LogError(vuid, cb_state.commandBuffer(), loc, "It is invalid to issue this call inside an active %s.",
                           FormatHandle(cb_state.activeRenderPass->renderPass()).c_str());
     }
     return inside;
@@ -3668,13 +3668,12 @@ bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char *
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
 // routine should ONLY be called inside a render pass.
-bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char *apiName, const char *msgCode) const {
+bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
     if (((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!cb_state.activeRenderPass)) ||
         ((cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!cb_state.activeRenderPass) &&
          !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
-        outside =
-            LogError(cb_state.commandBuffer(), msgCode, "%s: This call must be issued inside an active render pass.", apiName);
+        outside = LogError(vuid, cb_state.commandBuffer(), loc, "This call must be issued inside an active render pass.");
     }
     return outside;
 }
@@ -3683,7 +3682,7 @@ bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, const Er
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
     if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
@@ -3763,17 +3762,17 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
-bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const Location &loc) const {
     if (!cb_state.activeRenderPass || cb_state.activeRenderPass->UsesDynamicRendering()) return false;
     bool skip = false;
     if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY &&
         cb_state.activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-        (cmd_type != CMD_EXECUTECOMMANDS && cmd_type != CMD_NEXTSUBPASS && cmd_type != CMD_ENDRENDERPASS &&
-         cmd_type != CMD_NEXTSUBPASS2 && cmd_type != CMD_NEXTSUBPASS2KHR && cmd_type != CMD_ENDRENDERPASS2 &&
-         cmd_type != CMD_ENDRENDERPASS2KHR)) {
-        skip |=
-            LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidCommandBuffer,
-                     "%s() cannot be called in a subpass using secondary command buffers.", kGeneratedCommandNameList[cmd_type]);
+        (loc.function != Func::vkCmdExecuteCommands && loc.function != Func::vkCmdNextSubpass &&
+         loc.function != Func::vkCmdEndRenderPass && loc.function != Func::vkCmdNextSubpass2 &&
+         loc.function != Func::vkCmdNextSubpass2KHR && loc.function != Func::vkCmdEndRenderPass2 &&
+         loc.function != Func::vkCmdEndRenderPass2KHR)) {
+        skip |= LogError(kVUID_Core_DrawState_InvalidCommandBuffer, cb_state.commandBuffer(), loc,
+                         "cannot be called in a subpass using secondary command buffers.");
     }
     return skip;
 }
@@ -3786,7 +3785,7 @@ bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCo
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
 
-    skip |= ValidateCmd(*cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
     auto subpass_count = cb_state->activeRenderPass->createInfo.subpassCount;

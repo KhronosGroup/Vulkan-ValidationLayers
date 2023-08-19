@@ -580,10 +580,10 @@ void GpuAssistedBase::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitC
 
 // Just gives a warning about a possible deadlock.
 bool GpuAssistedBase::ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask,
-                                            CMD_TYPE cmd_type) const {
+                                            const Location &loc) const {
     if (src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) {
         std::ostringstream error_msg;
-        error_msg << CommandTypeString(cmd_type)
+        error_msg << loc.Message()
                   << ": recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
                      "could block the host's signaling of this event, resulting in deadlock.";
         ReportSetupProblem(command_buffer, error_msg.str().c_str());
@@ -599,7 +599,7 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents(
     ValidationStateTracker::PreCallValidateCmdWaitEvents(
         commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
         bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, errorObj);
-    return ValidateCmdWaitEvents(commandBuffer, static_cast<VkPipelineStageFlags2>(srcStageMask), CMD_WAITEVENTS);
+    return ValidateCmdWaitEvents(commandBuffer, static_cast<VkPipelineStageFlags2>(srcStageMask), errorObj.location);
 }
 
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -613,7 +613,7 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBu
     }
 
     ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
-    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2KHR);
+    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, errorObj.location);
 }
 
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -626,7 +626,7 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
     }
 
     ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
-    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2);
+    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, errorObj.location);
 }
 
 void GpuAssistedBase::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,

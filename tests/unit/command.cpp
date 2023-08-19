@@ -600,7 +600,7 @@ TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
 TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdClearAttachments: This call must be issued inside an active render pass");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-renderpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -3473,8 +3473,7 @@ TEST_F(NegativeCommand, CopyImageAspectMismatch) {
     copyRegion.extent = {64, 128, 1};
 
     // Submitting command before command buffer is in recording state
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "You must call vkBeginCommandBuffer");  // "VUID-vkCmdCopyImage-commandBuffer-recording");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-commandBuffer-recording");
     vk::CmdCopyImage(m_commandBuffer->handle(), depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
@@ -4739,10 +4738,8 @@ TEST_F(NegativeCommand, PushDescriptorSetCmdPush) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    // This is a test for VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording
     // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "You must call vkBeginCommandBuffer() before this call to vkCmdPushDescriptorSetKHR");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00330");
     vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);

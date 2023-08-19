@@ -69,12 +69,12 @@ struct GpuAssistedBufferInfo {
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
     bool uses_robustness;
-    CMD_TYPE cmd_type;
+    vvl::Func command;
     uint32_t desc_binding_index;
     GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
                           GpuAssistedPreDispatchResources pre_dispatch_resources, VkDescriptorSet desc_set,
                           VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness,
-                          CMD_TYPE cmd_type, uint32_t desc_binding_index)
+                          vvl::Func command, uint32_t desc_binding_index)
         : output_mem_block(output_mem_block),
           pre_draw_resources(pre_draw_resources),
           pre_dispatch_resources(pre_dispatch_resources),
@@ -82,7 +82,7 @@ struct GpuAssistedBufferInfo {
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
           uses_robustness(uses_robustness),
-          cmd_type(cmd_type),
+          command(command),
           desc_binding_index(desc_binding_index){};
 };
 
@@ -189,6 +189,8 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav_state::DescriptorSet, cvdescriptorset::DescriptorSet)
 
 class GpuAssisted : public GpuAssistedBase {
+    using Func = vvl::Func;
+
   public:
     GpuAssisted() {
         setup_vuid = "UNASSIGNED-GPU-Assisted-Validation";
@@ -308,7 +310,7 @@ class GpuAssisted : public GpuAssistedBase {
                                               const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                               VkDeviceAddress indirectDeviceAddress) override;
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) override;
-    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd,
+    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, Func command,
                                      const GpuAssistedCmdIndirectState* indirect_state = nullptr);
     void AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
                                             GpuAssistedPreDrawResources& resources, const VkRenderPass render_pass,
