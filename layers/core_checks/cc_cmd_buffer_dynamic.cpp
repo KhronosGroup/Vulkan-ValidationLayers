@@ -148,10 +148,10 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE &last_boun
                                           vuid.dynamic_coverage_reduction_mode_07649);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, objlist, cmd_type,
                                           vuid.dynamic_sample_locations_06666);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, objlist, cmd_type,
-                                          vuid.dynamic_exclusive_scissor_07878);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, objlist, cmd_type,
-                                          vuid.dynamic_exclusive_scissor_enable_07879);
+                                          vuid.dynamic_exclusive_scissor_enable_07878);
+        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, objlist, cmd_type,
+                                          vuid.dynamic_exclusive_scissor_07879);
     }
 
     // VK_EXT_discard_rectangles
