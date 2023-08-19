@@ -700,7 +700,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     return result;
 }
 
-bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state_ptr) {
@@ -708,7 +708,7 @@ bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_
     }
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer);
-    skip |= ValidateExtendedDynamicState(cb_state, cmd_type, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateExtendedDynamicState(cb_state, errorObj.location, VK_TRUE, nullptr, nullptr);
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, objlist, "VUID-vkCmdSetDeviceMask-deviceMask-00108");
     skip |= ValidateDeviceMaskToZero(deviceMask, objlist, "VUID-vkCmdSetDeviceMask-deviceMask-00109");
     skip |= ValidateDeviceMaskToCommandBuffer(cb_state, deviceMask, objlist, "VUID-vkCmdSetDeviceMask-deviceMask-00110");
@@ -720,12 +720,12 @@ bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
                                                  const ErrorObject &errorObj) const {
-    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, CMD_SETDEVICEMASK);
+    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
                                                     const ErrorObject &errorObj) const {
-    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, CMD_SETDEVICEMASKKHR);
+    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,

@@ -246,11 +246,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
             'genCombined': False,
             'generator' : SpirvToolCommitIdOutputGenerator,
         },
-        'command_validation.h' : {
-            'generator' : CommandValidationOutputGenerator,
-            'genCombined': True,
-            'options' : [valid_usage_file],
-        },
         'command_validation.cpp' : {
             'generator' : CommandValidationOutputGenerator,
             'genCombined': True,

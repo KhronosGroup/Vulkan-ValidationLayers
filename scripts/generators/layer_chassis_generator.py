@@ -1753,8 +1753,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
             # Set up skip and locking
             out.append('    bool skip = false;\n')
 
-            cmd_type = f', CMD_{command.name[5:].upper()}' if command.name.startswith('vkCmd') else ''
-            out.append(f'    ErrorObject errorObj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}){cmd_type});\n')
+            out.append(f'    ErrorObject errorObj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
 
             # Generate pre-call validation source code
             if not command.instance:

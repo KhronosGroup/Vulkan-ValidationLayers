@@ -2866,7 +2866,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(
     VkPipeline                                  pipeline) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindPipeline, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDPIPELINE);
+    ErrorObject errorObj(vvl::Func::vkCmdBindPipeline, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindPipeline]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, errorObj);
@@ -2890,7 +2890,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(
     const VkViewport*                           pViewports) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewport, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewport, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewport]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports, errorObj);
@@ -2914,7 +2914,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(
     const VkRect2D*                             pScissors) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetScissor, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSCISSOR);
+    ErrorObject errorObj(vvl::Func::vkCmdSetScissor, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetScissor]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors, errorObj);
@@ -2936,7 +2936,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(
     float                                       lineWidth) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLineWidth, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLINEWIDTH);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLineWidth, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLineWidth]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth, errorObj);
@@ -2960,7 +2960,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(
     float                                       depthBiasSlopeFactor) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBias, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBIAS);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBias, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBias]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor, errorObj);
@@ -2982,7 +2982,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(
     const float                                 blendConstants[4]) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetBlendConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETBLENDCONSTANTS);
+    ErrorObject errorObj(vvl::Func::vkCmdSetBlendConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetBlendConstants]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetBlendConstants(commandBuffer, blendConstants, errorObj);
@@ -3005,7 +3005,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(
     float                                       maxDepthBounds) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBounds, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBOUNDS);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBounds, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBounds]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds, errorObj);
@@ -3028,7 +3028,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(
     uint32_t                                    compareMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilCompareMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILCOMPAREMASK);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilCompareMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilCompareMask]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask, errorObj);
@@ -3051,7 +3051,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(
     uint32_t                                    writeMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilWriteMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILWRITEMASK);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilWriteMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilWriteMask]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask, errorObj);
@@ -3074,7 +3074,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(
     uint32_t                                    reference) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilReference, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILREFERENCE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilReference, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilReference]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilReference(commandBuffer, faceMask, reference, errorObj);
@@ -3102,7 +3102,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(
     const uint32_t*                             pDynamicOffsets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorSets, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDDESCRIPTORSETS);
+    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorSets, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindDescriptorSets]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, errorObj);
@@ -3126,7 +3126,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(
     VkIndexType                                 indexType) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindIndexBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDINDEXBUFFER);
+    ErrorObject errorObj(vvl::Func::vkCmdBindIndexBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindIndexBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, errorObj);
@@ -3151,7 +3151,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(
     const VkDeviceSize*                         pOffsets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDVERTEXBUFFERS);
+    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindVertexBuffers]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, errorObj);
@@ -3176,7 +3176,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(
     uint32_t                                    firstInstance) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDraw, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAW);
+    ErrorObject errorObj(vvl::Func::vkCmdDraw, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDraw]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, errorObj);
@@ -3202,7 +3202,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(
     uint32_t                                    firstInstance) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexed, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDEXED);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexed, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexed]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance, errorObj);
@@ -3227,7 +3227,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDIRECT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirect]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, errorObj);
@@ -3252,7 +3252,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDEXEDINDIRECT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirect]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, errorObj);
@@ -3276,7 +3276,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(
     uint32_t                                    groupCountZ) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatch, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCH);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatch, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatch]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, errorObj);
@@ -3299,7 +3299,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(
     VkDeviceSize                                offset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHINDIRECT);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchIndirect, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchIndirect]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset, errorObj);
@@ -3324,7 +3324,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(
     const VkBufferCopy*                         pRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFER);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, errorObj);
@@ -3351,7 +3351,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage(
     const VkImageCopy*                          pRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, errorObj);
@@ -3379,7 +3379,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage(
     VkFilter                                    filter) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBlitImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BLITIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdBlitImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBlitImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter, errorObj);
@@ -3405,7 +3405,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(
     const VkBufferImageCopy*                    pRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFERTOIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBufferToImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions, errorObj);
@@ -3431,7 +3431,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(
     const VkBufferImageCopy*                    pRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGETOBUFFER);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImageToBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions, errorObj);
@@ -3456,7 +3456,7 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(
     const void*                                 pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdUpdateBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_UPDATEBUFFER);
+    ErrorObject errorObj(vvl::Func::vkCmdUpdateBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdUpdateBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData, errorObj);
@@ -3481,7 +3481,7 @@ VKAPI_ATTR void VKAPI_CALL CmdFillBuffer(
     uint32_t                                    data) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdFillBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_FILLBUFFER);
+    ErrorObject errorObj(vvl::Func::vkCmdFillBuffer, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdFillBuffer]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, errorObj);
@@ -3507,7 +3507,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearColorImage(
     const VkImageSubresourceRange*              pRanges) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdClearColorImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_CLEARCOLORIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdClearColorImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdClearColorImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, errorObj);
@@ -3533,7 +3533,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearDepthStencilImage(
     const VkImageSubresourceRange*              pRanges) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdClearDepthStencilImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_CLEARDEPTHSTENCILIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdClearDepthStencilImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdClearDepthStencilImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges, errorObj);
@@ -3558,7 +3558,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(
     const VkClearRect*                          pRects) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdClearAttachments, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_CLEARATTACHMENTS);
+    ErrorObject errorObj(vvl::Func::vkCmdClearAttachments, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdClearAttachments]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects, errorObj);
@@ -3585,7 +3585,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage(
     const VkImageResolve*                       pRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResolveImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESOLVEIMAGE);
+    ErrorObject errorObj(vvl::Func::vkCmdResolveImage, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResolveImage]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, errorObj);
@@ -3608,7 +3608,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(
     VkPipelineStageFlags                        stageMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEVENT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetEvent]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetEvent(commandBuffer, event, stageMask, errorObj);
@@ -3631,7 +3631,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent(
     VkPipelineStageFlags                        stageMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESETEVENT);
+    ErrorObject errorObj(vvl::Func::vkCmdResetEvent, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResetEvent]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResetEvent(commandBuffer, event, stageMask, errorObj);
@@ -3662,7 +3662,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(
     const VkImageMemoryBarrier*                 pImageMemoryBarriers) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WAITEVENTS);
+    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWaitEvents]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, errorObj);
@@ -3692,7 +3692,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(
     const VkImageMemoryBarrier*                 pImageMemoryBarriers) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PIPELINEBARRIER);
+    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPipelineBarrier]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, errorObj);
@@ -3716,7 +3716,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(
     VkQueryControlFlags                         flags) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINQUERY);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginQuery]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginQuery(commandBuffer, queryPool, query, flags, errorObj);
@@ -3739,7 +3739,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQuery(
     uint32_t                                    query) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDQUERY);
+    ErrorObject errorObj(vvl::Func::vkCmdEndQuery, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndQuery]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndQuery(commandBuffer, queryPool, query, errorObj);
@@ -3763,7 +3763,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(
     uint32_t                                    queryCount) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResetQueryPool, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESETQUERYPOOL);
+    ErrorObject errorObj(vvl::Func::vkCmdResetQueryPool, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResetQueryPool]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, errorObj);
@@ -3787,7 +3787,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(
     uint32_t                                    query) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITETIMESTAMP);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteTimestamp]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query, errorObj);
@@ -3815,7 +3815,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(
     VkQueryResultFlags                          flags) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyQueryPoolResults, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYQUERYPOOLRESULTS);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyQueryPoolResults, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyQueryPoolResults]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags, errorObj);
@@ -3841,7 +3841,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(
     const void*                                 pValues) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPushConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PUSHCONSTANTS);
+    ErrorObject errorObj(vvl::Func::vkCmdPushConstants, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPushConstants]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, errorObj);
@@ -3864,7 +3864,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(
     VkSubpassContents                           contents) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINRENDERPASS);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRenderPass]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, errorObj);
@@ -3886,7 +3886,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(
     VkSubpassContents                           contents) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_NEXTSUBPASS);
+    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdNextSubpass]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdNextSubpass(commandBuffer, contents, errorObj);
@@ -3907,7 +3907,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDRENDERPASS);
+    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRenderPass]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndRenderPass(commandBuffer, errorObj);
@@ -3930,7 +3930,7 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(
     const VkCommandBuffer*                      pCommandBuffers) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdExecuteCommands, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_EXECUTECOMMANDS);
+    ErrorObject errorObj(vvl::Func::vkCmdExecuteCommands, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdExecuteCommands]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, errorObj);
@@ -4025,7 +4025,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMask(
     uint32_t                                    deviceMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDeviceMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEVICEMASK);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDeviceMask, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDeviceMask]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
@@ -4052,7 +4052,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBase(
     uint32_t                                    groupCountZ) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchBase, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHBASE);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchBase, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchBase]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ, errorObj);
@@ -4591,7 +4591,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDIRECTCOUNT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirectCount]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -4618,7 +4618,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDEXEDINDIRECTCOUNT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirectCount]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -4666,7 +4666,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(
     const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINRENDERPASS2);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRenderPass2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
@@ -4689,7 +4689,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2(
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_NEXTSUBPASS2);
+    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdNextSubpass2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
@@ -4711,7 +4711,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDRENDERPASS2);
+    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRenderPass2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
@@ -5021,7 +5021,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2(
     const VkDependencyInfo*                     pDependencyInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEVENT2);
+    ErrorObject errorObj(vvl::Func::vkCmdSetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetEvent2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, errorObj);
@@ -5044,7 +5044,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2(
     VkPipelineStageFlags2                       stageMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESETEVENT2);
+    ErrorObject errorObj(vvl::Func::vkCmdResetEvent2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResetEvent2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, errorObj);
@@ -5068,7 +5068,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2(
     const VkDependencyInfo*                     pDependencyInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WAITEVENTS2);
+    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWaitEvents2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
@@ -5090,7 +5090,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2(
     const VkDependencyInfo*                     pDependencyInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PIPELINEBARRIER2);
+    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPipelineBarrier2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, errorObj);
@@ -5114,7 +5114,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2(
     uint32_t                                    query) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITETIMESTAMP2);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteTimestamp2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, errorObj);
@@ -5161,7 +5161,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2(
     const VkCopyBufferInfo2*                    pCopyBufferInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFER2);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBuffer2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, errorObj);
@@ -5183,7 +5183,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2(
     const VkCopyImageInfo2*                     pCopyImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGE2);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImage2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, errorObj);
@@ -5205,7 +5205,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2(
     const VkCopyBufferToImageInfo2*             pCopyBufferToImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFERTOIMAGE2);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBufferToImage2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, errorObj);
@@ -5227,7 +5227,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2(
     const VkCopyImageToBufferInfo2*             pCopyImageToBufferInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGETOBUFFER2);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImageToBuffer2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, errorObj);
@@ -5249,7 +5249,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2(
     const VkBlitImageInfo2*                     pBlitImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBlitImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BLITIMAGE2);
+    ErrorObject errorObj(vvl::Func::vkCmdBlitImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBlitImage2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, errorObj);
@@ -5271,7 +5271,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2(
     const VkResolveImageInfo2*                  pResolveImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResolveImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESOLVEIMAGE2);
+    ErrorObject errorObj(vvl::Func::vkCmdResolveImage2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResolveImage2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, errorObj);
@@ -5293,7 +5293,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(
     const VkRenderingInfo*                      pRenderingInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINRENDERING);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRendering]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
@@ -5314,7 +5314,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDRENDERING);
+    ErrorObject errorObj(vvl::Func::vkCmdEndRendering, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRendering]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndRendering(commandBuffer, errorObj);
@@ -5336,7 +5336,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullMode(
     VkCullModeFlags                             cullMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCullMode, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCULLMODE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCullMode, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCullMode]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCullMode(commandBuffer, cullMode, errorObj);
@@ -5358,7 +5358,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFace(
     VkFrontFace                                 frontFace) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetFrontFace, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETFRONTFACE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetFrontFace, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetFrontFace]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetFrontFace(commandBuffer, frontFace, errorObj);
@@ -5380,7 +5380,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopology(
     VkPrimitiveTopology                         primitiveTopology) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveTopology, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPRIMITIVETOPOLOGY);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveTopology, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPrimitiveTopology]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, errorObj);
@@ -5403,7 +5403,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCount(
     const VkViewport*                           pViewports) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTWITHCOUNT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportWithCount]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, errorObj);
@@ -5426,7 +5426,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCount(
     const VkRect2D*                             pScissors) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetScissorWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSCISSORWITHCOUNT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetScissorWithCount, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetScissorWithCount]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, errorObj);
@@ -5453,7 +5453,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2(
     const VkDeviceSize*                         pStrides) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDVERTEXBUFFERS2);
+    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindVertexBuffers2]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
@@ -5475,7 +5475,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnable(
     VkBool32                                    depthTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHTESTENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthTestEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthTestEnable(commandBuffer, depthTestEnable, errorObj);
@@ -5497,7 +5497,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnable(
     VkBool32                                    depthWriteEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthWriteEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHWRITEENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthWriteEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthWriteEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, errorObj);
@@ -5519,7 +5519,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOp(
     VkCompareOp                                 depthCompareOp) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthCompareOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHCOMPAREOP);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthCompareOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthCompareOp]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthCompareOp(commandBuffer, depthCompareOp, errorObj);
@@ -5541,7 +5541,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnable(
     VkBool32                                    depthBoundsTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBoundsTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBOUNDSTESTENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBoundsTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBoundsTestEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, errorObj);
@@ -5563,7 +5563,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnable(
     VkBool32                                    stencilTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILTESTENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilTestEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilTestEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, errorObj);
@@ -5589,7 +5589,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOp(
     VkCompareOp                                 compareOp) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILOP);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilOp, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilOp]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, errorObj);
@@ -5611,7 +5611,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnable(
     VkBool32                                    rasterizerDiscardEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizerDiscardEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETRASTERIZERDISCARDENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizerDiscardEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRasterizerDiscardEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, errorObj);
@@ -5633,7 +5633,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnable(
     VkBool32                                    depthBiasEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBiasEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBIASENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBiasEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBiasEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, errorObj);
@@ -5655,7 +5655,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnable(
     VkBool32                                    primitiveRestartEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveRestartEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPRIMITIVERESTARTENABLE);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveRestartEnable, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPrimitiveRestartEnable]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, errorObj);
@@ -6747,7 +6747,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginVideoCodingKHR(
     const VkVideoBeginCodingInfoKHR*            pBeginInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINVIDEOCODINGKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginVideoCodingKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo, errorObj);
@@ -6769,7 +6769,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndVideoCodingKHR(
     const VkVideoEndCodingInfoKHR*              pEndCodingInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDVIDEOCODINGKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdEndVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndVideoCodingKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo, errorObj);
@@ -6791,7 +6791,7 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdControlVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_CONTROLVIDEOCODINGKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdControlVideoCodingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdControlVideoCodingKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo, errorObj);
@@ -6813,7 +6813,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
     const VkVideoDecodeInfoKHR*                 pDecodeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDecodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DECODEVIDEOKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdDecodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDecodeVideoKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDecodeVideoKHR(commandBuffer, pDecodeInfo, errorObj);
@@ -6835,7 +6835,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
     const VkRenderingInfo*                      pRenderingInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINRENDERINGKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRenderingKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, errorObj);
@@ -6856,7 +6856,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDRENDERINGKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdEndRenderingKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRenderingKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndRenderingKHR(commandBuffer, errorObj);
@@ -7063,7 +7063,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDeviceMaskKHR(
     uint32_t                                    deviceMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDeviceMaskKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEVICEMASKKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDeviceMaskKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDeviceMaskKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDeviceMaskKHR(commandBuffer, deviceMask, errorObj);
@@ -7090,7 +7090,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchBaseKHR(
     uint32_t                                    groupCountZ) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchBaseKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHBASEKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchBaseKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchBaseKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ, errorObj);
@@ -7409,7 +7409,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(
     const VkWriteDescriptorSet*                 pDescriptorWrites) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPushDescriptorSetKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PUSHDESCRIPTORSETKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdPushDescriptorSetKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSetKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites, errorObj);
@@ -7434,7 +7434,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(
     const void*                                 pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdPushDescriptorSetWithTemplateKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSetWithTemplateKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData, errorObj);
@@ -7554,7 +7554,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(
     const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINRENDERPASS2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginRenderPass2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
@@ -7577,7 +7577,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_NEXTSUBPASS2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdNextSubpass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdNextSubpass2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
@@ -7599,7 +7599,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(
     const VkSubpassEndInfo*                     pSubpassEndInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDRENDERPASS2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdEndRenderPass2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndRenderPass2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, errorObj);
@@ -8198,7 +8198,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDIRECTCOUNTKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirectCountKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -8225,7 +8225,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCountKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirectCountKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -8343,7 +8343,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetFragmentShadingRateKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETFRAGMENTSHADINGRATEKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdSetFragmentShadingRateKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetFragmentShadingRateKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetFragmentShadingRateKHR(commandBuffer, pFragmentSize, combinerOps, errorObj);
@@ -8752,7 +8752,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEncodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENCODEVIDEOKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdEncodeVideoKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEncodeVideoKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEncodeVideoKHR(commandBuffer, pEncodeInfo, errorObj);
@@ -8776,7 +8776,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent2KHR(
     const VkDependencyInfo*                     pDependencyInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEVENT2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdSetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetEvent2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, errorObj);
@@ -8799,7 +8799,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResetEvent2KHR(
     VkPipelineStageFlags2                       stageMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESETEVENT2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdResetEvent2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResetEvent2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResetEvent2KHR(commandBuffer, event, stageMask, errorObj);
@@ -8823,7 +8823,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents2KHR(
     const VkDependencyInfo*                     pDependencyInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WAITEVENTS2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdWaitEvents2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWaitEvents2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
@@ -8845,7 +8845,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier2KHR(
     const VkDependencyInfo*                     pDependencyInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PIPELINEBARRIER2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdPipelineBarrier2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPipelineBarrier2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, errorObj);
@@ -8869,7 +8869,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(
     uint32_t                                    query) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITETIMESTAMP2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteTimestamp2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteTimestamp2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteTimestamp2KHR(commandBuffer, stage, queryPool, query, errorObj);
@@ -8919,7 +8919,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(
     uint32_t                                    marker) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITEBUFFERMARKER2AMD);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteBufferMarker2AMD]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, errorObj);
@@ -8964,7 +8964,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(
     const VkCopyBufferInfo2*                    pCopyBufferInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFER2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBuffer2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo, errorObj);
@@ -8986,7 +8986,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(
     const VkCopyImageInfo2*                     pCopyImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGE2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImage2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImage2KHR(commandBuffer, pCopyImageInfo, errorObj);
@@ -9008,7 +9008,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(
     const VkCopyBufferToImageInfo2*             pCopyBufferToImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYBUFFERTOIMAGE2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyBufferToImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyBufferToImage2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyBufferToImage2KHR(commandBuffer, pCopyBufferToImageInfo, errorObj);
@@ -9030,7 +9030,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer2KHR(
     const VkCopyImageToBufferInfo2*             pCopyImageToBufferInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYIMAGETOBUFFER2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyImageToBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyImageToBuffer2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyImageToBuffer2KHR(commandBuffer, pCopyImageToBufferInfo, errorObj);
@@ -9052,7 +9052,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBlitImage2KHR(
     const VkBlitImageInfo2*                     pBlitImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBlitImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BLITIMAGE2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBlitImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBlitImage2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBlitImage2KHR(commandBuffer, pBlitImageInfo, errorObj);
@@ -9074,7 +9074,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
     const VkResolveImageInfo2*                  pResolveImageInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdResolveImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_RESOLVEIMAGE2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdResolveImage2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdResolveImage2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdResolveImage2KHR(commandBuffer, pResolveImageInfo, errorObj);
@@ -9096,7 +9096,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(
     VkDeviceAddress                             indirectDeviceAddress) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_TRACERAYSINDIRECT2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysIndirect2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdTraceRaysIndirect2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, errorObj);
@@ -9191,7 +9191,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(
     VkIndexType                                 indexType) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindIndexBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDINDEXBUFFER2KHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBindIndexBuffer2KHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindIndexBuffer2KHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType, errorObj);
@@ -9432,7 +9432,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(
     const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerBeginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DEBUGMARKERBEGINEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerBeginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDebugMarkerBeginEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo, errorObj);
@@ -9453,7 +9453,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerEndEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DEBUGMARKERENDEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerEndEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDebugMarkerEndEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDebugMarkerEndEXT(commandBuffer, errorObj);
@@ -9475,7 +9475,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerInsertEXT(
     const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerInsertEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DEBUGMARKERINSERTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDebugMarkerInsertEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDebugMarkerInsertEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDebugMarkerInsertEXT(commandBuffer, pMarkerInfo, errorObj);
@@ -9501,7 +9501,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffersEXT(
     const VkDeviceSize*                         pSizes) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDTRANSFORMFEEDBACKBUFFERSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBindTransformFeedbackBuffersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindTransformFeedbackBuffersEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, errorObj);
@@ -9526,7 +9526,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedbackEXT(
     const VkDeviceSize*                         pCounterBufferOffsets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginTransformFeedbackEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINTRANSFORMFEEDBACKEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginTransformFeedbackEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginTransformFeedbackEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets, errorObj);
@@ -9551,7 +9551,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedbackEXT(
     const VkDeviceSize*                         pCounterBufferOffsets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndTransformFeedbackEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDTRANSFORMFEEDBACKEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdEndTransformFeedbackEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndTransformFeedbackEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets, errorObj);
@@ -9576,7 +9576,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQueryIndexedEXT(
     uint32_t                                    index) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINQUERYINDEXEDEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginQueryIndexedEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index, errorObj);
@@ -9600,7 +9600,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQueryIndexedEXT(
     uint32_t                                    index) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDQUERYINDEXEDEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdEndQueryIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndQueryIndexedEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index, errorObj);
@@ -9627,7 +9627,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCountEXT(
     uint32_t                                    vertexStride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectByteCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDIRECTBYTECOUNTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectByteCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirectByteCountEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride, errorObj);
@@ -9745,7 +9745,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(
     const VkCuLaunchInfoNVX*                    pLaunchInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCuLaunchKernelNVX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_CULAUNCHKERNELNVX);
+    ErrorObject errorObj(vvl::Func::vkCmdCuLaunchKernelNVX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCuLaunchKernelNVX]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCuLaunchKernelNVX(commandBuffer, pLaunchInfo, errorObj);
@@ -9819,7 +9819,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDIRECTCOUNTAMD);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndirectCountAMD]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -9846,7 +9846,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWINDEXEDINDIRECTCOUNTAMD);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawIndexedIndirectCountAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawIndexedIndirectCountAMD]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -10005,7 +10005,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(
     const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginConditionalRenderingEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINCONDITIONALRENDERINGEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginConditionalRenderingEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginConditionalRenderingEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin, errorObj);
@@ -10026,7 +10026,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndConditionalRenderingEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDCONDITIONALRENDERINGEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdEndConditionalRenderingEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndConditionalRenderingEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndConditionalRenderingEXT(commandBuffer, errorObj);
@@ -10050,7 +10050,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingNV(
     const VkViewportWScalingNV*                 pViewportWScalings) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWScalingNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTWSCALINGNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWScalingNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportWScalingNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings, errorObj);
@@ -10323,7 +10323,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(
     const VkRect2D*                             pDiscardRectangles) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDISCARDRECTANGLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDiscardRectangleEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles, errorObj);
@@ -10345,7 +10345,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(
     VkBool32                                    discardRectangleEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDISCARDRECTANGLEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDiscardRectangleEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, errorObj);
@@ -10367,7 +10367,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(
     VkDiscardRectangleModeEXT                   discardRectangleMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDISCARDRECTANGLEMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDiscardRectangleModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDiscardRectangleModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode, errorObj);
@@ -10582,7 +10582,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BEGINDEBUGUTILSLABELEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBeginDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBeginDebugUtilsLabelEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo, errorObj);
@@ -10603,7 +10603,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdEndDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_ENDDEBUGUTILSLABELEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdEndDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdEndDebugUtilsLabelEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdEndDebugUtilsLabelEXT(commandBuffer, errorObj);
@@ -10625,7 +10625,7 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_INSERTDEBUGUTILSLABELEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdInsertDebugUtilsLabelEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdInsertDebugUtilsLabelEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo, errorObj);
@@ -10856,7 +10856,7 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(
     VkDeviceAddress                             scratch) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_INITIALIZEGRAPHSCRATCHMEMORYAMDX);
+    ErrorObject errorObj(vvl::Func::vkCmdInitializeGraphScratchMemoryAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdInitializeGraphScratchMemoryAMDX]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, errorObj);
@@ -10881,7 +10881,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(
     const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHGRAPHAMDX);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphAMDX]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, errorObj);
@@ -10906,7 +10906,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(
     const VkDispatchGraphCountInfoAMDX*         pCountInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphIndirectAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHGRAPHINDIRECTAMDX);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphIndirectAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectAMDX]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, errorObj);
@@ -10931,7 +10931,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(
     VkDeviceAddress                             countInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DISPATCHGRAPHINDIRECTCOUNTAMDX);
+    ErrorObject errorObj(vvl::Func::vkCmdDispatchGraphIndirectCountAMDX, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectCountAMDX]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, errorObj);
@@ -10954,7 +10954,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetSampleLocationsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSAMPLELOCATIONSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetSampleLocationsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetSampleLocationsEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo, errorObj);
@@ -11024,7 +11024,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(
     VkImageLayout                               imageLayout) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindShadingRateImageNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDSHADINGRATEIMAGENV);
+    ErrorObject errorObj(vvl::Func::vkCmdBindShadingRateImageNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindShadingRateImageNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout, errorObj);
@@ -11048,7 +11048,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(
     const VkShadingRatePaletteNV*               pShadingRatePalettes) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTSHADINGRATEPALETTENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportShadingRatePaletteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportShadingRatePaletteNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes, errorObj);
@@ -11072,7 +11072,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoarseSampleOrderNV(
     const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoarseSampleOrderNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOARSESAMPLEORDERNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoarseSampleOrderNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoarseSampleOrderNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders, errorObj);
@@ -11196,7 +11196,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructureNV(
     VkDeviceSize                                scratchOffset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructureNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BUILDACCELERATIONSTRUCTURENV);
+    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructureNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBuildAccelerationStructureNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset, errorObj);
@@ -11220,7 +11220,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureNV(
     VkCopyAccelerationStructureModeKHR          mode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYACCELERATIONSTRUCTURENV);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyAccelerationStructureNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode, errorObj);
@@ -11255,7 +11255,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysNV(
     uint32_t                                    depth) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_TRACERAYSNV);
+    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdTraceRaysNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width, height, depth, errorObj);
@@ -11360,7 +11360,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesNV(
     uint32_t                                    firstQuery) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESNV);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteAccelerationStructuresPropertiesNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, errorObj);
@@ -11434,7 +11434,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(
     uint32_t                                    marker) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteBufferMarkerAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITEBUFFERMARKERAMD);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteBufferMarkerAMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteBufferMarkerAMD]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, errorObj);
@@ -11507,7 +11507,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(
     uint32_t                                    firstTask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSNV);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, errorObj);
@@ -11532,7 +11532,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSINDIRECTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, errorObj);
@@ -11559,7 +11559,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectCountNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCountNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
@@ -11583,7 +11583,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(
     const VkBool32*                             pExclusiveScissorEnables) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetExclusiveScissorEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEXCLUSIVESCISSORENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetExclusiveScissorEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetExclusiveScissorEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables, errorObj);
@@ -11607,7 +11607,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(
     const VkRect2D*                             pExclusiveScissors) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetExclusiveScissorNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEXCLUSIVESCISSORNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetExclusiveScissorNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetExclusiveScissorNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors, errorObj);
@@ -11629,7 +11629,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(
     const void*                                 pCheckpointMarker) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCheckpointNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCHECKPOINTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCheckpointNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCheckpointNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCheckpointNV(commandBuffer, pCheckpointMarker, errorObj);
@@ -11718,7 +11718,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceMarkerINTEL(
     const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceMarkerINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPERFORMANCEMARKERINTEL);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceMarkerINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPerformanceMarkerINTEL]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, errorObj);
@@ -11741,7 +11741,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceStreamMarkerINTEL(
     const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPERFORMANCESTREAMMARKERINTEL);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceStreamMarkerINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPerformanceStreamMarkerINTEL]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, errorObj);
@@ -11764,7 +11764,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CmdSetPerformanceOverrideINTEL(
     const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceOverrideINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPERFORMANCEOVERRIDEINTEL);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPerformanceOverrideINTEL, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPerformanceOverrideINTEL]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, errorObj);
@@ -12158,7 +12158,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEXT(
     uint16_t                                    lineStipplePattern) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLineStippleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLINESTIPPLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLineStippleEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLineStippleEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern, errorObj);
@@ -12204,7 +12204,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCullModeEXT(
     VkCullModeFlags                             cullMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCullModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCULLMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCullModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCullModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCullModeEXT(commandBuffer, cullMode, errorObj);
@@ -12226,7 +12226,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFrontFaceEXT(
     VkFrontFace                                 frontFace) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetFrontFaceEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETFRONTFACEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetFrontFaceEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetFrontFaceEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetFrontFaceEXT(commandBuffer, frontFace, errorObj);
@@ -12248,7 +12248,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveTopologyEXT(
     VkPrimitiveTopology                         primitiveTopology) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveTopologyEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPRIMITIVETOPOLOGYEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveTopologyEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPrimitiveTopologyEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPrimitiveTopologyEXT(commandBuffer, primitiveTopology, errorObj);
@@ -12271,7 +12271,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWithCountEXT(
     const VkViewport*                           pViewports) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTWITHCOUNTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportWithCountEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportWithCountEXT(commandBuffer, viewportCount, pViewports, errorObj);
@@ -12294,7 +12294,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissorWithCountEXT(
     const VkRect2D*                             pScissors) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetScissorWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSCISSORWITHCOUNTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetScissorWithCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetScissorWithCountEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetScissorWithCountEXT(commandBuffer, scissorCount, pScissors, errorObj);
@@ -12321,7 +12321,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers2EXT(
     const VkDeviceSize*                         pStrides) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDVERTEXBUFFERS2EXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBindVertexBuffers2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindVertexBuffers2EXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
@@ -12343,7 +12343,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthTestEnableEXT(
     VkBool32                                    depthTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHTESTENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthTestEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthTestEnableEXT(commandBuffer, depthTestEnable, errorObj);
@@ -12365,7 +12365,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthWriteEnableEXT(
     VkBool32                                    depthWriteEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHWRITEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthWriteEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthWriteEnableEXT(commandBuffer, depthWriteEnable, errorObj);
@@ -12387,7 +12387,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthCompareOpEXT(
     VkCompareOp                                 depthCompareOp) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthCompareOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHCOMPAREOPEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthCompareOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthCompareOpEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthCompareOpEXT(commandBuffer, depthCompareOp, errorObj);
@@ -12409,7 +12409,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBoundsTestEnableEXT(
     VkBool32                                    depthBoundsTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBOUNDSTESTENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBoundsTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBoundsTestEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBoundsTestEnableEXT(commandBuffer, depthBoundsTestEnable, errorObj);
@@ -12431,7 +12431,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilTestEnableEXT(
     VkBool32                                    stencilTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILTESTENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilTestEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilTestEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilTestEnableEXT(commandBuffer, stencilTestEnable, errorObj);
@@ -12457,7 +12457,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
     VkCompareOp                                 compareOp) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetStencilOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSTENCILOPEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetStencilOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetStencilOpEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, errorObj);
@@ -12642,7 +12642,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsNV(
     const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_PREPROCESSGENERATEDCOMMANDSNV);
+    ErrorObject errorObj(vvl::Func::vkCmdPreprocessGeneratedCommandsNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdPreprocessGeneratedCommandsNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo, errorObj);
@@ -12665,7 +12665,7 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsNV(
     const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdExecuteGeneratedCommandsNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_EXECUTEGENERATEDCOMMANDSNV);
+    ErrorObject errorObj(vvl::Func::vkCmdExecuteGeneratedCommandsNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdExecuteGeneratedCommandsNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo, errorObj);
@@ -12689,7 +12689,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipelineShaderGroupNV(
     uint32_t                                    groupIndex) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindPipelineShaderGroupNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDPIPELINESHADERGROUPNV);
+    ErrorObject errorObj(vvl::Func::vkCmdBindPipelineShaderGroupNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindPipelineShaderGroupNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex, errorObj);
@@ -12759,7 +12759,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(
     const VkDepthBiasInfoEXT*                   pDepthBiasInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBias2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBIAS2EXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBias2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBias2EXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo, errorObj);
@@ -13025,7 +13025,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(
     const VkDescriptorBufferBindingInfoEXT*     pBindingInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorBuffersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDDESCRIPTORBUFFERSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorBuffersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindDescriptorBuffersEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, errorObj);
@@ -13052,7 +13052,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsetsEXT(
     const VkDeviceSize*                         pOffsets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDESCRIPTORBUFFEROFFSETSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDescriptorBufferOffsetsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDescriptorBufferOffsetsEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices, pOffsets, errorObj);
@@ -13076,7 +13076,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplersEXT(
     uint32_t                                    set) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDDESCRIPTORBUFFEREMBEDDEDSAMPLERSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, errorObj);
@@ -13219,7 +13219,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETFRAGMENTSHADINGRATEENUMNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetFragmentShadingRateEnumNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps, errorObj);
@@ -13372,7 +13372,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
     const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetVertexInputEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVERTEXINPUTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetVertexInputEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetVertexInputEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions, errorObj);
@@ -13651,7 +13651,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSubpassShadingHUAWEI(
     VkCommandBuffer                             commandBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSubpassShadingHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SUBPASSSHADINGHUAWEI);
+    ErrorObject errorObj(vvl::Func::vkCmdSubpassShadingHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSubpassShadingHUAWEI]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSubpassShadingHUAWEI(commandBuffer, errorObj);
@@ -13674,7 +13674,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindInvocationMaskHUAWEI(
     VkImageLayout                               imageLayout) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindInvocationMaskHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDINVOCATIONMASKHUAWEI);
+    ErrorObject errorObj(vvl::Func::vkCmdBindInvocationMaskHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindInvocationMaskHUAWEI]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindInvocationMaskHUAWEI(commandBuffer, imageView, imageLayout, errorObj);
@@ -13744,7 +13744,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
     uint32_t                                    patchControlPoints) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPatchControlPointsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPATCHCONTROLPOINTSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPatchControlPointsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPatchControlPointsEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPatchControlPointsEXT(commandBuffer, patchControlPoints, errorObj);
@@ -13766,7 +13766,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizerDiscardEnableEXT(
     VkBool32                                    rasterizerDiscardEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETRASTERIZERDISCARDENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizerDiscardEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRasterizerDiscardEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRasterizerDiscardEnableEXT(commandBuffer, rasterizerDiscardEnable, errorObj);
@@ -13788,7 +13788,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBiasEnableEXT(
     VkBool32                                    depthBiasEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBiasEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHBIASENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthBiasEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBiasEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthBiasEnableEXT(commandBuffer, depthBiasEnable, errorObj);
@@ -13810,7 +13810,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEXT(
     VkLogicOp                                   logicOp) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLogicOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLOGICOPEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLogicOpEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLogicOpEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLogicOpEXT(commandBuffer, logicOp, errorObj);
@@ -13832,7 +13832,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(
     VkBool32                                    primitiveRestartEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPRIMITIVERESTARTENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPrimitiveRestartEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPrimitiveRestartEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPrimitiveRestartEnableEXT(commandBuffer, primitiveRestartEnable, errorObj);
@@ -13908,7 +13908,7 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
     const VkBool32*                             pColorWriteEnables) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetColorWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOLORWRITEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetColorWriteEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetColorWriteEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables, errorObj);
@@ -13934,7 +13934,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiEXT(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMultiEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMULTIEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMultiEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMultiEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride, errorObj);
@@ -13961,7 +13961,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
     const int32_t*                              pVertexOffset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMultiIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMULTIINDEXEDEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMultiIndexedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMultiIndexedEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset, errorObj);
@@ -14032,7 +14032,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildMicromapsEXT(
     const VkMicromapBuildInfoEXT*               pInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBuildMicromapsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BUILDMICROMAPSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBuildMicromapsEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBuildMicromapsEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, errorObj);
@@ -14179,7 +14179,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapEXT(
     const VkCopyMicromapInfoEXT*                pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMICROMAPEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMicromapEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMicromapEXT(commandBuffer, pInfo, errorObj);
@@ -14201,7 +14201,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMicromapToMemoryEXT(
     const VkCopyMicromapToMemoryInfoEXT*        pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMicromapToMemoryEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMICROMAPTOMEMORYEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMicromapToMemoryEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMicromapToMemoryEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, errorObj);
@@ -14223,7 +14223,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToMicromapEXT(
     const VkCopyMemoryToMicromapInfoEXT*        pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMEMORYTOMICROMAPEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToMicromapEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryToMicromapEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, errorObj);
@@ -14249,7 +14249,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteMicromapsPropertiesEXT(
     uint32_t                                    firstQuery) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITEMICROMAPSPROPERTIESEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteMicromapsPropertiesEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteMicromapsPropertiesEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool, firstQuery, errorObj);
@@ -14320,7 +14320,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(
     uint32_t                                    groupCountZ) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawClusterHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWCLUSTERHUAWEI);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawClusterHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawClusterHUAWEI]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ, errorObj);
@@ -14343,7 +14343,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(
     VkDeviceSize                                offset) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWCLUSTERINDIRECTHUAWEI);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawClusterIndirectHUAWEI, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawClusterIndirectHUAWEI]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset, errorObj);
@@ -14436,7 +14436,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMEMORYINDIRECTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryIndirectNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMemoryIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, errorObj);
@@ -14463,7 +14463,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(
     const VkImageSubresourceLayers*             pImageSubresources) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMEMORYTOIMAGEINDIRECTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToImageIndirectNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryToImageIndirectNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMemoryToImageIndirectNV(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout, pImageSubresources, errorObj);
@@ -14486,7 +14486,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(
     const VkDecompressMemoryRegionNV*           pDecompressMemoryRegions) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDecompressMemoryNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DECOMPRESSMEMORYNV);
+    ErrorObject errorObj(vvl::Func::vkCmdDecompressMemoryNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDecompressMemoryNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDecompressMemoryNV(commandBuffer, decompressRegionCount, pDecompressMemoryRegions, errorObj);
@@ -14510,7 +14510,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DECOMPRESSMEMORYINDIRECTCOUNTNV);
+    ErrorObject errorObj(vvl::Func::vkCmdDecompressMemoryIndirectCountNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDecompressMemoryIndirectCountNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride, errorObj);
@@ -14556,7 +14556,7 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(
     VkPipeline                                  pipeline) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_UPDATEPIPELINEINDIRECTBUFFERNV);
+    ErrorObject errorObj(vvl::Func::vkCmdUpdatePipelineIndirectBufferNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdUpdatePipelineIndirectBufferNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline, errorObj);
@@ -14601,7 +14601,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
     VkTessellationDomainOrigin                  domainOrigin) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetTessellationDomainOriginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETTESSELLATIONDOMAINORIGINEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetTessellationDomainOriginEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetTessellationDomainOriginEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin, errorObj);
@@ -14623,7 +14623,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(
     VkBool32                                    depthClampEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClampEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHCLAMPENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClampEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthClampEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable, errorObj);
@@ -14645,7 +14645,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(
     VkPolygonMode                               polygonMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetPolygonModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPOLYGONMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetPolygonModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetPolygonModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetPolygonModeEXT(commandBuffer, polygonMode, errorObj);
@@ -14667,7 +14667,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(
     VkSampleCountFlagBits                       rasterizationSamples) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizationSamplesEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETRASTERIZATIONSAMPLESEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizationSamplesEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRasterizationSamplesEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRasterizationSamplesEXT(commandBuffer, rasterizationSamples, errorObj);
@@ -14690,7 +14690,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleMaskEXT(
     const VkSampleMask*                         pSampleMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetSampleMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSAMPLEMASKEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetSampleMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetSampleMaskEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetSampleMaskEXT(commandBuffer, samples, pSampleMask, errorObj);
@@ -14712,7 +14712,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToCoverageEnableEXT(
     VkBool32                                    alphaToCoverageEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETALPHATOCOVERAGEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetAlphaToCoverageEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetAlphaToCoverageEnableEXT(commandBuffer, alphaToCoverageEnable, errorObj);
@@ -14734,7 +14734,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAlphaToOneEnableEXT(
     VkBool32                                    alphaToOneEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetAlphaToOneEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETALPHATOONEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetAlphaToOneEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetAlphaToOneEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetAlphaToOneEnableEXT(commandBuffer, alphaToOneEnable, errorObj);
@@ -14756,7 +14756,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLogicOpEnableEXT(
     VkBool32                                    logicOpEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLogicOpEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLOGICOPENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLogicOpEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLogicOpEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLogicOpEnableEXT(commandBuffer, logicOpEnable, errorObj);
@@ -14780,7 +14780,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEnableEXT(
     const VkBool32*                             pColorBlendEnables) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOLORBLENDENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetColorBlendEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables, errorObj);
@@ -14804,7 +14804,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendEquationEXT(
     const VkColorBlendEquationEXT*              pColorBlendEquations) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendEquationEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOLORBLENDEQUATIONEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendEquationEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetColorBlendEquationEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations, errorObj);
@@ -14828,7 +14828,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteMaskEXT(
     const VkColorComponentFlags*                pColorWriteMasks) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetColorWriteMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOLORWRITEMASKEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetColorWriteMaskEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetColorWriteMaskEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks, errorObj);
@@ -14850,7 +14850,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationStreamEXT(
     uint32_t                                    rasterizationStream) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizationStreamEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETRASTERIZATIONSTREAMEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRasterizationStreamEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRasterizationStreamEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRasterizationStreamEXT(commandBuffer, rasterizationStream, errorObj);
@@ -14872,7 +14872,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetConservativeRasterizationModeEXT(
     VkConservativeRasterizationModeEXT          conservativeRasterizationMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCONSERVATIVERASTERIZATIONMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetConservativeRasterizationModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetConservativeRasterizationModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetConservativeRasterizationModeEXT(commandBuffer, conservativeRasterizationMode, errorObj);
@@ -14894,7 +14894,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExtraPrimitiveOverestimationSizeEXT(
     float                                       extraPrimitiveOverestimationSize) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETEXTRAPRIMITIVEOVERESTIMATIONSIZEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer, extraPrimitiveOverestimationSize, errorObj);
@@ -14916,7 +14916,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipEnableEXT(
     VkBool32                                    depthClipEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClipEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHCLIPENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClipEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthClipEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthClipEnableEXT(commandBuffer, depthClipEnable, errorObj);
@@ -14938,7 +14938,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEnableEXT(
     VkBool32                                    sampleLocationsEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetSampleLocationsEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSAMPLELOCATIONSENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetSampleLocationsEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetSampleLocationsEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetSampleLocationsEnableEXT(commandBuffer, sampleLocationsEnable, errorObj);
@@ -14962,7 +14962,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetColorBlendAdvancedEXT(
     const VkColorBlendAdvancedEXT*              pColorBlendAdvanced) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendAdvancedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOLORBLENDADVANCEDEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetColorBlendAdvancedEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetColorBlendAdvancedEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendAdvanced, errorObj);
@@ -14984,7 +14984,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetProvokingVertexModeEXT(
     VkProvokingVertexModeEXT                    provokingVertexMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetProvokingVertexModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETPROVOKINGVERTEXMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetProvokingVertexModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetProvokingVertexModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetProvokingVertexModeEXT(commandBuffer, provokingVertexMode, errorObj);
@@ -15006,7 +15006,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineRasterizationModeEXT(
     VkLineRasterizationModeEXT                  lineRasterizationMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLineRasterizationModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLINERASTERIZATIONMODEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLineRasterizationModeEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLineRasterizationModeEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLineRasterizationModeEXT(commandBuffer, lineRasterizationMode, errorObj);
@@ -15028,7 +15028,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineStippleEnableEXT(
     VkBool32                                    stippledLineEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetLineStippleEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETLINESTIPPLEENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetLineStippleEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetLineStippleEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetLineStippleEnableEXT(commandBuffer, stippledLineEnable, errorObj);
@@ -15050,7 +15050,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthClipNegativeOneToOneEXT(
     VkBool32                                    negativeOneToOne) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETDEPTHCLIPNEGATIVEONETOONEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthClipNegativeOneToOneEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(commandBuffer, negativeOneToOne, errorObj);
@@ -15072,7 +15072,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportWScalingEnableNV(
     VkBool32                                    viewportWScalingEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWScalingEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTWSCALINGENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportWScalingEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportWScalingEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportWScalingEnableNV(commandBuffer, viewportWScalingEnable, errorObj);
@@ -15096,7 +15096,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportSwizzleNV(
     const VkViewportSwizzleNV*                  pViewportSwizzles) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetViewportSwizzleNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETVIEWPORTSWIZZLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetViewportSwizzleNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetViewportSwizzleNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetViewportSwizzleNV(commandBuffer, firstViewport, viewportCount, pViewportSwizzles, errorObj);
@@ -15118,7 +15118,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorEnableNV(
     VkBool32                                    coverageToColorEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageToColorEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGETOCOLORENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageToColorEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageToColorEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageToColorEnableNV(commandBuffer, coverageToColorEnable, errorObj);
@@ -15140,7 +15140,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageToColorLocationNV(
     uint32_t                                    coverageToColorLocation) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageToColorLocationNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGETOCOLORLOCATIONNV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageToColorLocationNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageToColorLocationNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageToColorLocationNV(commandBuffer, coverageToColorLocation, errorObj);
@@ -15162,7 +15162,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationModeNV(
     VkCoverageModulationModeNV                  coverageModulationMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationModeNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGEMODULATIONMODENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationModeNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageModulationModeNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageModulationModeNV(commandBuffer, coverageModulationMode, errorObj);
@@ -15184,7 +15184,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableEnableNV(
     VkBool32                                    coverageModulationTableEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGEMODULATIONTABLEENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationTableEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageModulationTableEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageModulationTableEnableNV(commandBuffer, coverageModulationTableEnable, errorObj);
@@ -15207,7 +15207,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageModulationTableNV(
     const float*                                pCoverageModulationTable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationTableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGEMODULATIONTABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageModulationTableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageModulationTableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageModulationTableNV(commandBuffer, coverageModulationTableCount, pCoverageModulationTable, errorObj);
@@ -15229,7 +15229,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetShadingRateImageEnableNV(
     VkBool32                                    shadingRateImageEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetShadingRateImageEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETSHADINGRATEIMAGEENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetShadingRateImageEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetShadingRateImageEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetShadingRateImageEnableNV(commandBuffer, shadingRateImageEnable, errorObj);
@@ -15251,7 +15251,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(
     VkBool32                                    representativeFragmentTestEnable) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETREPRESENTATIVEFRAGMENTTESTENABLENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRepresentativeFragmentTestEnableNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable, errorObj);
@@ -15273,7 +15273,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(
     VkCoverageReductionModeNV                   coverageReductionMode) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageReductionModeNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETCOVERAGEREDUCTIONMODENV);
+    ErrorObject errorObj(vvl::Func::vkCmdSetCoverageReductionModeNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetCoverageReductionModeNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode, errorObj);
@@ -15441,7 +15441,7 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
     const VkOpticalFlowExecuteInfoNV*           pExecuteInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdOpticalFlowExecuteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_OPTICALFLOWEXECUTENV);
+    ErrorObject errorObj(vvl::Func::vkCmdOpticalFlowExecuteNV, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdOpticalFlowExecuteNV]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdOpticalFlowExecuteNV(commandBuffer, session, pExecuteInfo, errorObj);
@@ -15513,7 +15513,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(
     const VkShaderEXT*                          pShaders) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBindShadersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BINDSHADERSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdBindShadersEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindShadersEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders, errorObj);
@@ -15584,7 +15584,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
     VkImageAspectFlags                          aspectMask) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETATTACHMENTFEEDBACKLOOPENABLEEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask, errorObj);
@@ -15682,7 +15682,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructuresKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BUILDACCELERATIONSTRUCTURESKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructuresKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBuildAccelerationStructuresKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, errorObj);
@@ -15708,7 +15708,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(
     const uint32_t* const*                      ppMaxPrimitiveCounts) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_BUILDACCELERATIONSTRUCTURESINDIRECTKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdBuildAccelerationStructuresIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBuildAccelerationStructuresIndirectKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(commandBuffer, infoCount, pInfos, pIndirectDeviceAddresses, pIndirectStrides, ppMaxPrimitiveCounts, errorObj);
@@ -15856,7 +15856,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureKHR(
     const VkCopyAccelerationStructureInfoKHR*   pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYACCELERATIONSTRUCTUREKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyAccelerationStructureKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureKHR(commandBuffer, pInfo, errorObj);
@@ -15878,7 +15878,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyAccelerationStructureToMemoryKHR(
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYACCELERATIONSTRUCTURETOMEMORYKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyAccelerationStructureToMemoryKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyAccelerationStructureToMemoryKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo, errorObj);
@@ -15900,7 +15900,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToAccelerationStructureKHR(
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdCopyMemoryToAccelerationStructureKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryToAccelerationStructureKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo, errorObj);
@@ -15949,7 +15949,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteAccelerationStructuresPropertiesKHR(
     uint32_t                                    firstQuery) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_WRITEACCELERATIONSTRUCTURESPROPERTIESKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteAccelerationStructuresPropertiesKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, errorObj);
@@ -16025,7 +16025,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysKHR(
     uint32_t                                    depth) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_TRACERAYSKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdTraceRaysKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, errorObj);
@@ -16078,7 +16078,7 @@ VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirectKHR(
     VkDeviceAddress                             indirectDeviceAddress) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_TRACERAYSINDIRECTKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdTraceRaysIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdTraceRaysIndirectKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress, errorObj);
@@ -16125,7 +16125,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(
     uint32_t                                    pipelineStackSize) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_SETRAYTRACINGPIPELINESTACKSIZEKHR);
+    ErrorObject errorObj(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetRayTracingPipelineStackSizeKHR]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize, errorObj);
@@ -16149,7 +16149,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(
     uint32_t                                    groupCountZ) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, errorObj);
@@ -16174,7 +16174,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSINDIRECTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, errorObj);
@@ -16201,7 +16201,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(
     uint32_t                                    stride) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer), CMD_DRAWMESHTASKSINDIRECTCOUNTEXT);
+    ErrorObject errorObj(vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
     for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCountEXT]) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);

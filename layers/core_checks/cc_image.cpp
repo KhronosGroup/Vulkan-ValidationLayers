@@ -680,7 +680,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
 
     skip |=
         ValidateMemoryIsBoundToImage(commandBuffer, image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
-    skip |= ValidateCmd(cb_state, CMD_CLEARCOLORIMAGE);
+    skip |= ValidateCmd(cb_state, errorObj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR,
                                                 "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993");
@@ -772,7 +772,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const VkFormat image_format = image_state.createInfo.format;
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, image_state, "vkCmdClearDepthStencilImage()",
                                          "VUID-vkCmdClearDepthStencilImage-image-00010");
-    skip |= ValidateCmd(cb_state, CMD_CLEARDEPTHSTENCILIMAGE);
+    skip |= ValidateCmd(cb_state, errorObj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR,
                                                 "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994");
@@ -914,7 +914,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     }
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
 
-    skip |= ValidateCmd(cb_state, CMD_CLEARATTACHMENTS);
+    skip |= ValidateCmd(cb_state, errorObj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
     // Validate that attachments are in reference list of active subpass

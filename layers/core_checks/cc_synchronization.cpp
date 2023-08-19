@@ -586,7 +586,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
                                             const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
-    skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETEVENT, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateExtendedDynamicState(*cb_state, errorObj.location, VK_TRUE, nullptr, nullptr);
     Location loc(Func::vkCmdSetEvent, Field::stageMask);
     const LogObjectList objlist(commandBuffer);
     skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
@@ -595,12 +595,12 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
 }
 
 bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
-                                      CMD_TYPE cmd_type) const {
+                                      const ErrorObject &errorObj) const {
     const LogObjectList objlist(commandBuffer, event);
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
-    skip |= ValidateExtendedDynamicState(*cb_state, cmd_type, enabled_features.core13.synchronization2,
+    skip |= ValidateExtendedDynamicState(*cb_state, errorObj.location, enabled_features.core13.synchronization2,
                                          "VUID-vkCmdSetEvent2-synchronization2-03824", "synchronization2");
     Location loc(Func::vkCmdSetEvent2, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
@@ -614,12 +614,12 @@ bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent eve
 
 bool CoreChecks::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfoKHR *pDependencyInfo, const ErrorObject &errorObj) const {
-    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2KHR);
+    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
                                              const ErrorObject &errorObj) const {
-    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, CMD_SETEVENT2);
+    return ValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -630,14 +630,14 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     Location loc(Func::vkCmdResetEvent, Field::stageMask);
 
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, CMD_RESETEVENT);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
 
 bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                        CMD_TYPE cmd_type) const {
+                                        const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     const LogObjectList objlist(commandBuffer);
@@ -648,7 +648,7 @@ bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent e
         skip |= LogError(commandBuffer, "VUID-vkCmdResetEvent2-synchronization2-03829",
                          "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
     }
-    skip |= ValidateCmd(*cb_state, cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
@@ -656,12 +656,12 @@ bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent e
 
 bool CoreChecks::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
                                                   const ErrorObject &errorObj) const {
-    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2KHR);
+    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                                const ErrorObject &errorObj) const {
-    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, CMD_RESETEVENT2);
+    return ValidateCmdResetEvent2(commandBuffer, event, stageMask, errorObj);
 }
 
 struct RenderPassDepState {
@@ -1054,7 +1054,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     skip |= ValidatePipelineStage(objlist, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
     skip |= ValidatePipelineStage(objlist, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
 
-    skip |= ValidateCmd(*cb_state, CMD_WAITEVENTS);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     skip |= ValidateBarriers(loc.dot(Field::pDependencyInfo), cb_state.get(), srcStageMask, dstStageMask, memoryBarrierCount,
                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                              pImageMemoryBarriers);
@@ -1078,45 +1078,43 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
 }
 
 bool CoreChecks::ValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                        const VkDependencyInfo *pDependencyInfos, CMD_TYPE cmd_type) const {
+                                        const VkDependencyInfo *pDependencyInfos, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
-    const char *func_name = CommandTypeString(cmd_type);
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdWaitEvents2-synchronization2-03836",
-                         "%s(): Synchronization2 feature is not enabled", func_name);
+        skip |= LogError("VUID-vkCmdWaitEvents2-synchronization2-03836", commandBuffer, errorObj.location,
+                         "Synchronization2 feature was not enabled");
     }
     for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
         const LogObjectList objlist(commandBuffer, pEvents[i]);
         Location loc(Func::vkCmdWaitEvents2, Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
-            skip |= LogError(objlist, "VUID-vkCmdWaitEvents2-dependencyFlags-03844", "%s (%s) must be 0.",
-                             loc.dot(Field::dependencyFlags).Message().c_str(),
-                             string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
+            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-03844", objlist, loc.dot(Field::dependencyFlags),
+                             "(%s) must be 0.", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
         skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), &pDependencyInfos[i]);
     }
-    skip |= ValidateCmd(*cb_state, cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                   const VkDependencyInfoKHR *pDependencyInfos, const ErrorObject &errorObj) const {
-    return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2KHR);
+    return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                const VkDependencyInfo *pDependencyInfos, const ErrorObject &errorObj) const {
-    return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2);
+    return ValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
 }
 
-void CORE_CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent *pEvents,
+void CORE_CMD_BUFFER_STATE::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents,
                                              VkPipelineStageFlags2KHR srcStageMask) {
     // CMD_BUFFER_STATE will add to the events vector.
     auto first_event_index = events.size();
-    CMD_BUFFER_STATE::RecordWaitEvents(cmd_type, eventCount, pEvents, srcStageMask);
+    CMD_BUFFER_STATE::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
     eventUpdates.emplace_back([event_added_count, first_event_index, srcStageMask](CMD_BUFFER_STATE &cb_state, bool do_validate,
                                                                                    EventToStageMap *localEventToStageMap) {
@@ -1139,7 +1137,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
 }
 
 void CoreChecks::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                      const VkDependencyInfo *pDependencyInfos, CMD_TYPE cmd_type) {
+                                      const VkDependencyInfo *pDependencyInfos, Func command) {
     // don't hold read lock during the base class method
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
@@ -1151,13 +1149,13 @@ void CoreChecks::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t ev
 void CoreChecks::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                 const VkDependencyInfoKHR *pDependencyInfos) {
     StateTracker::PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2KHR);
+    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2KHR);
 }
 
 void CoreChecks::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                              const VkDependencyInfo *pDependencyInfos) {
     StateTracker::PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, CMD_WAITEVENTS2);
+    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2);
 }
 
 void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -1202,7 +1200,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
 
     skip |= ValidatePipelineStage(objlist, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
     skip |= ValidatePipelineStage(objlist, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
-    skip |= ValidateCmd(*cb_state, CMD_PIPELINEBARRIER);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering()) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, dependencyFlags,
                                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
@@ -1226,27 +1224,25 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
 }
 
 bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
-                                             CMD_TYPE cmd_type) const {
+                                             const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     const LogObjectList objlist(commandBuffer);
-    const char *func_name = CommandTypeString(cmd_type);
 
     Location loc(Func::vkCmdPipelineBarrier2, Field::pDependencyInfo);
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-synchronization2-03848",
-                         "%s(): Synchronization2 feature is not enabled", func_name);
+        skip |= LogError("VUID-vkCmdPipelineBarrier2-synchronization2-03848", commandBuffer, errorObj.location,
+                         "Synchronization2 feature was not enabled");
     }
-    skip |= ValidateCmd(*cb_state, cmd_type);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     if (cb_state->activeRenderPass) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state.get(), pDependencyInfo);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
         if (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-            skip = LogError(objlist, "VUID-vkCmdPipelineBarrier2-dependencyFlags-01186",
-                            "%s VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance",
-                            loc.dot(Field::dependencyFlags).Message().c_str());
+            skip = LogError("VUID-vkCmdPipelineBarrier2-dependencyFlags-01186", objlist, loc.dot(Field::dependencyFlags),
+                            "VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance");
         }
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
@@ -1261,12 +1257,12 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
 
 bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
                                                        const ErrorObject &errorObj) const {
-    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2KHR);
+    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
                                                     const ErrorObject &errorObj) const {
-    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, CMD_PIPELINEBARRIER2);
+    return ValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, errorObj);
 }
 
 void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,

@@ -439,7 +439,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     skip |=
         ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
-    skip |= ValidateCmd(cb_state, errorObj.cmd_type);
+    skip |= ValidateCmd(cb_state, errorObj.location);
     // Validate that DST buffer has correct usage flags set
     skip |=
         ValidateBufferUsageFlags(commandBuffer, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
@@ -462,7 +462,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        skip |= ValidateCmdQueueFlags(cb_state, "vkCmdFillBuffer()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+        skip |= ValidateCmdQueueFlags(cb_state, errorObj.location, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdFillBuffer-apiVersion-07894");
     }
 

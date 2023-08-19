@@ -60,9 +60,9 @@ struct CommandBufferSubmitState {
 
                 std::string function = std::string(loc.StringFunc());
                 function += ", ";
-                function += CommandTypeString(cmd_info.cmd_type);
+                function += vvl::String(cmd_info.command);
                 CoreChecks::DescriptorContext context{function.c_str(),
-                                                      core->GetDrawDispatchVuid(cmd_info.cmd_type),
+                                                      core->GetDrawDispatchVuid(cmd_info.command),
                                                       cb_state,
                                                       *set_node,
                                                       cmd_info.framebuffer,
@@ -483,7 +483,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
     switch (cb_state.state) {
         case CbState::InvalidIncomplete:
         case CbState::InvalidComplete:
-            skip |= ReportInvalidCommandBuffer(cb_state, loc.StringFunc());
+            skip |= ReportInvalidCommandBuffer(cb_state, loc);
             break;
 
         case CbState::New:

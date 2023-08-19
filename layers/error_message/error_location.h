@@ -25,7 +25,6 @@
 #include "generated/error_location_helper.h"
 #include "logging.h"
 #include "containers/custom_containers.h"
-#include "generated/command_validation.h"
 
 // Holds the 'Location' of where the code is inside a function/struct/etc
 // see docs/error_object.md for more details
@@ -88,9 +87,7 @@ struct ErrorObject {
     const Location location;   // starting location (Always the function entrypoint)
     const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
     const LogObjectList objlist;
-    const CMD_TYPE cmd_type;  // for vkCmd* functions
-    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, CMD_TYPE cmd_type_ = CMD_NONE)
-        : location(Location(command_)), handle(handle_), objlist(handle), cmd_type(cmd_type_) {}
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_) : location(Location(command_)), handle(handle_), objlist(handle) {}
 };
 
 namespace vvl {

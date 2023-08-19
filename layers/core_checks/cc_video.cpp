@@ -23,21 +23,20 @@
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.
-bool CoreChecks::InsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const char *apiName, const char *msgCode) const {
+bool CoreChecks::InsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
     if (cb_state.bound_video_session) {
-        inside = LogError(cb_state.commandBuffer(), msgCode, "%s: It is invalid to issue this call inside a video coding block.",
-                          apiName);
+        inside = LogError(vuid, cb_state.commandBuffer(), loc, "It is invalid to issue this call inside a video coding block.");
     }
     return inside;
 }
 
 // Flags validation error if the associated call is made outside a video coding block.
 // The apiName routine should ONLY be called inside a video coding block.
-bool CoreChecks::OutsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const char *apiName, const char *msgCode) const {
+bool CoreChecks::OutsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
     if (!cb_state.bound_video_session) {
-        outside = LogError(cb_state.commandBuffer(), msgCode, "%s: This call must be issued inside a video coding block.", apiName);
+        outside = LogError(vuid, cb_state.commandBuffer(), loc, "This call must be issued inside a video coding block.");
     }
     return outside;
 }
@@ -1411,7 +1410,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                          string_VkVideoCodecOperationFlagBitsKHR(vs_state->GetCodecOp()));
     }
 
-    skip |= ValidateCmd(*cb_state, CMD_BEGINVIDEOCODINGKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }
 
@@ -1426,7 +1425,7 @@ bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuff
                          FormatHandle(commandBuffer).c_str());
     }
 
-    skip |= ValidateCmd(*cb_state, CMD_ENDVIDEOCODINGKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }
 
@@ -1437,7 +1436,7 @@ bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer command
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
 
-    skip |= ValidateCmd(*cb_state, CMD_CONTROLVIDEOCODINGKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }
 
@@ -1763,6 +1762,6 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
             break;
     }
 
-    skip |= ValidateCmd(*cb_state, CMD_DECODEVIDEOKHR);
+    skip |= ValidateCmd(*cb_state, errorObj.location);
     return skip;
 }

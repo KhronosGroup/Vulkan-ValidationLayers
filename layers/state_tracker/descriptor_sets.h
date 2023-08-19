@@ -30,7 +30,6 @@
 #include "generated/vk_safe_struct.h"
 #include "vulkan/vk_layer.h"
 #include "generated/vk_object_types.h"
-#include "generated/command_validation.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -869,7 +868,7 @@ class DescriptorSet : public BASE_NODE {
     VkDescriptorSet GetSet() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type, const PIPELINE_STATE *,
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, vvl::Func command, const PIPELINE_STATE *,
                          const BindingVariableMap &);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays

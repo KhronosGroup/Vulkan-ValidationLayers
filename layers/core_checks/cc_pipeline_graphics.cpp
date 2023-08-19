@@ -2536,21 +2536,21 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
-    const char *caller = CommandTypeString(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+    const char *caller = loc.StringFunc();
 
     if (cb_state.activeRenderPass->UsesDynamicRendering()) {
         if (pipeline) {
-            ValidatePipelineDynamicRenderpassDraw(last_bound_state, cmd_type);
+            ValidatePipelineDynamicRenderpassDraw(last_bound_state, loc);
         }
     } else {
         if (pipeline) {
-            ValidatePipelineRenderpassDraw(last_bound_state, cmd_type);
+            ValidatePipelineRenderpassDraw(last_bound_state, loc);
         } else if (last_bound_state.HasShaderObjects()) {
             skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDraw-None-08876",
                              "%s: Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.", caller,
@@ -2685,8 +2685,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                                          "The pStrides[%" PRIu32 "] (%" PRIu32
                                          ") parameter in the last call to %s is not 0 "
                                          "and less than the extent of the binding for attribute  %" PRIu32 " (%" PRIu32 ").",
-                                         vertex_binding, vertex_buffer_stride, CommandTypeString(cmd_type), i,
-                                         attribute_binding_extent);
+                                         vertex_binding, vertex_buffer_stride, caller, i, attribute_binding_extent);
                     }
                 }
                 const VkDeviceSize vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
@@ -2870,12 +2869,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
-    const char *caller = CommandTypeString(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+    const char *caller = loc.StringFunc();
 
     if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
         skip |= LogError(objlist, vuid.vertex_shader_08684,
@@ -3075,22 +3074,21 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
         }
     }
 
-    if (cmd_type != CMD_DRAWMESHTASKSNV && cmd_type != CMD_DRAWMESHTASKSINDIRECTNV &&
-        cmd_type != CMD_DRAWMESHTASKSINDIRECTCOUNTNV && cmd_type != CMD_DRAWMESHTASKSEXT &&
-        cmd_type != CMD_DRAWMESHTASKSINDIRECTEXT && cmd_type != CMD_DRAWMESHTASKSINDIRECTCOUNTEXT) {
-        ValidateShaderObjectGraphicsDrawtimeState(last_bound_state, cmd_type);
+    if (loc.function != Func::vkCmdDrawMeshTasksNV && loc.function != Func::vkCmdDrawMeshTasksIndirectNV &&
+        loc.function != Func::vkCmdDrawMeshTasksIndirectCountNV && loc.function != Func::vkCmdDrawMeshTasksEXT &&
+        loc.function != Func::vkCmdDrawMeshTasksIndirectEXT && loc.function != Func::vkCmdDrawMeshTasksIndirectCountEXT) {
+        ValidateShaderObjectGraphicsDrawtimeState(last_bound_state, loc);
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
 
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
-    const char *caller = CommandTypeString(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
 
     bool validTaskShader = last_bound_state.GetShader(ShaderObjectStage::TASK);
     bool validMeshShader = last_bound_state.GetShader(ShaderObjectStage::MESH);
@@ -3103,19 +3101,19 @@ bool CoreChecks::ValidateShaderObjectGraphicsDrawtimeState(const LAST_BOUND_STAT
         } else {
             msg << "Mesh shader is bound.";
         }
-        skip |= LogError(objlist, vuid.draw_shaders_no_task_mesh_08885, "%s(): %s", caller, msg.str().c_str());
+        skip |= LogError(vuid.draw_shaders_no_task_mesh_08885, objlist, loc, "%s", msg.str().c_str());
     }
 
     return skip;
 }
 
 // Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
-bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
-    const char *caller = CommandTypeString(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+    const char *caller = loc.StringFunc();
 
     const auto &rp_state = pipeline.RenderPassState();
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
@@ -3202,12 +3200,12 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, const Location &loc) const {
     bool skip = false;
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
-    const char *caller = CommandTypeString(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+    const char *caller = loc.StringFunc();
     const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
     const auto &rp_state = pipeline->RenderPassState();
     if (rp_state) {
