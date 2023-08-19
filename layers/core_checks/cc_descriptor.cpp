@@ -968,11 +968,17 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                   "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                 if (hit_error) {
                     auto set = context.descriptor_set.GetSet();
-                    return LogError(
-                        set, context.vuids.descriptor_buffer_bit_set_08114,
-                        "%s: Descriptor set %s Image layout specified at vkCmdBindDescriptorSets time doesn't match actual image "
-                        "layout at time descriptor is used. See previous error callback for specific details.",
-                        context.caller, FormatHandle(set).c_str());
+                    std::stringstream msg;
+                    if (!context.descriptor_set.IsPushDescriptor()) {
+                        msg << "Descriptor set " << FormatHandle(set)
+                            << " Image layout specified by vkCmdBindDescriptorSets doesn't match actual image layout at time "
+                               "descriptor is used.";
+                    } else {
+                        msg << "Image layout specified by vkCmdPushDescriptorSetKHR doesn't match actual image layout at time "
+                               "descriptor is used";
+                    }
+                    return LogError(set, context.vuids.descriptor_buffer_bit_set_08114,
+                                    "%s: %s. See previous error callback for specific details.", context.caller, msg.str().c_str());
                 }
                 if (context.checked_layouts) {
                     context.checked_layouts->emplace(image_view, image_layout);
