@@ -88,8 +88,8 @@ struct DrawDispatchVuid {
     const char* dynamic_discard_rectangle_07751 = kVUIDUndefined;
     const char* dynamic_discard_rectangle_enable_07880 = kVUIDUndefined;
     const char* dynamic_discard_rectangle_mode_07881 = kVUIDUndefined;
-    const char* dynamic_exclusive_scissor_07878 = kVUIDUndefined;
-    const char* dynamic_exclusive_scissor_enable_07879 = kVUIDUndefined;
+    const char* dynamic_exclusive_scissor_enable_07878 = kVUIDUndefined;
+    const char* dynamic_exclusive_scissor_07879 = kVUIDUndefined;
     const char* dynamic_color_write_enable_07749 = kVUIDUndefined;
     const char* dynamic_color_write_enable_count_07750 = kVUIDUndefined;
     const char* dynamic_attachment_feedback_loop_08877 = kVUIDUndefined;
