@@ -5065,3 +5065,73 @@ TEST_F(NegativeDynamicState, CoverageReductionModeNotSet) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
+    TEST_DESCRIPTION("Validate dynamic exclusive scissor.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto exclusiveScissorFeatures = LvlInitStruct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
+    auto features2 = GetPhysicalDeviceFeatures2(exclusiveScissorFeatures);
+    if (exclusiveScissorFeatures.exclusiveScissor == VK_FALSE) {
+        GTEST_SKIP() << "exclusiveScissor not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    uint32_t count;
+    vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
+    std::vector<VkExtensionProperties> properties(count);
+    vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, properties.data());
+    for (const auto &p : properties) {
+        if (std::strcmp(p.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
+            if (p.specVersion < 2) {
+                GTEST_SKIP() << "exclusiveScissor specVersion 2 not supported.";
+            }
+        }
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitInfo();
+    pipe1.InitState();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    pipe2.InitState();
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe1.dyn_state_ci_ = dyn_state_ci;
+    dyn_state_ci.dynamicStateCount = 2;
+    pipe2.dyn_state_ci_ = dyn_state_ci;
+
+    pipe1.CreateGraphicsPipeline();
+    pipe2.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07878");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07879");
+    VkBool32 exclusiveScissorEnable = VK_TRUE;
+    vk::CmdSetExclusiveScissorEnableNV(m_commandBuffer->handle(), 0u, 1u, &exclusiveScissorEnable);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
