@@ -46,6 +46,7 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
     ${API_TYPE}/generated/vk_enum_string_helper.h
     ${API_TYPE}/generated/vk_object_types.h
+    ${API_TYPE}/generated/vk_api_version.h
     ${API_TYPE}/generated/vk_extension_helper.h
     ${API_TYPE}/generated/vk_typemap_helper.h
     utils/cast_utils.h
@@ -109,6 +110,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_vendor.cpp
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_enum_string_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_object_types.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_api_version.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_extension_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_typemap_helper.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/generated)
