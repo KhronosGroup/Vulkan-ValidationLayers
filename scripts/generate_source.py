@@ -45,6 +45,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
     from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
     from generators.extension_helper_generator import ExtensionHelperOutputGenerator
+    from generators.api_version_generator import ApiVersionOutputGenerator
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
     from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
@@ -186,6 +187,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         },
         'vk_extension_helper.h' : {
             'generator' : ExtensionHelperOutputGenerator,
+            'genCombined': True,
+        },
+        'vk_api_version.h' : {
+            'generator' : ApiVersionOutputGenerator,
             'genCombined': True,
         },
         'vk_typemap_helper.h' : {

@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 #include <bitset>
-#include <iomanip>
 #include "cast_utils.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_format_utils.h"
@@ -61,17 +60,6 @@ static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
 static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
     VkOffset3D d3 = {d2.x, d2.y, 0};
     return d3;
-}
-
-// Convert integer API version to a string
-static inline std::string StringAPIVersion(APIVersion version) {
-    std::stringstream version_name;
-    if (!version.Valid()) {
-        return "<unrecognized>";
-    }
-    version_name << version.Major() << "." << version.Minor() << "." << version.Patch() << " (0x" << std::setfill('0')
-                 << std::setw(8) << std::hex << version.Value() << ")";
-    return version_name.str();
 }
 
 // Traits objects to allow string_join to operate on collections of const char *

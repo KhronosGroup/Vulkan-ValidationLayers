@@ -73,54 +73,6 @@ def exprToCpp(pr: ParseResults, opt = lambda x: x) -> str:
 # interfaces or their use in the generator script will have downstream effects and thus
 # should be avoided unless absolutely necessary.
 class APISpecific:
-    # Generates source code for APIVersion class and related utilities
-    @staticmethod
-    def genAPIVersionSource(targetApiName: str) -> str:
-        match targetApiName:
-
-            # Vulkan specific APIVersion class and related utilities
-            case 'vulkan':
-                return '''
-class APIVersion {
-  public:
-    APIVersion() : api_version_(VVL_UNRECOGNIZED_API_VERSION) {}
-
-    APIVersion(uint32_t api_version) : api_version_(api_version) {}
-
-    APIVersion& operator=(uint32_t api_version) {
-        api_version_ = api_version;
-        return *this;
-    }
-
-    bool Valid() const { return api_version_ != VVL_UNRECOGNIZED_API_VERSION; }
-    uint32_t Value() const { return api_version_; }
-    uint32_t Major() const { return VK_API_VERSION_MAJOR(api_version_); }
-    uint32_t Minor() const { return VK_API_VERSION_MINOR(api_version_); }
-    uint32_t Patch() const { return VK_API_VERSION_PATCH(api_version_); }
-
-    bool operator<(APIVersion api_version) const { return api_version_ < api_version.api_version_; }
-    bool operator<=(APIVersion api_version) const { return api_version_ <= api_version.api_version_; }
-    bool operator>(APIVersion api_version) const { return api_version_ > api_version.api_version_; }
-    bool operator>=(APIVersion api_version) const { return api_version_ >= api_version.api_version_; }
-    bool operator==(APIVersion api_version) const { return api_version_ == api_version.api_version_; }
-    bool operator!=(APIVersion api_version) const { return api_version_ != api_version.api_version_; }
-
-  private:
-    uint32_t api_version_;
-};
-
-static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
-    if (specified_version < VK_API_VERSION_1_1)
-        return VK_API_VERSION_1_0;
-    else if (specified_version < VK_API_VERSION_1_2)
-        return VK_API_VERSION_1_1;
-    else if (specified_version < VK_API_VERSION_1_3)
-        return VK_API_VERSION_1_2;
-    else
-        return VK_API_VERSION_1_3;
-}
-'''
-
     # Returns dictionary of version field names
     @staticmethod
     def getVersionFieldNameDict(targetApiName: str) -> dict[str, str]:
@@ -207,6 +159,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
+#include "generated/vk_api_version.h"
 
 enum ExtEnabled : unsigned char {
     kNotEnabled,
@@ -243,14 +196,7 @@ Times to NOT use it
 [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
 };
-#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
-#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
-#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
-
-#define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
 ''')
-
-        out.append(APISpecific.genAPIVersionSource(self.targetApiName))
 
         out.append('\nstruct InstanceExtensions {\n')
         for name in APISpecific.getVersionFieldNameDict(self.targetApiName).values():
