@@ -165,14 +165,16 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &loc, VkSemaph
         case VK_SEMAPHORE_TYPE_BINARY: {
             if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
-                const char *other_func = nullptr;
-                if (CannotSignal(*semaphore_state, other_queue, other_func)) {
+                vvl::Func other_command = vvl::Func::Empty;
+                if (CannotSignal(*semaphore_state, other_queue, other_command)) {
                     std::stringstream initiator;
-                    if (other_func) {
-                        initiator << other_func;
+                    if (other_command != vvl::Func::Empty) {
+                        initiator << String(other_command);
                     }
                     if (other_queue != VK_NULL_HANDLE) {
-                        if (other_func) initiator << " on ";
+                        if (other_command != vvl::Func::Empty) {
+                            initiator << " on ";
+                        }
                         initiator << core->FormatHandle(other_queue);
                         objlist.add(other_queue);
                     }
