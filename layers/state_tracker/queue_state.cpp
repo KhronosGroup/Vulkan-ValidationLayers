@@ -352,7 +352,7 @@ void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64
     }
     auto result = timeline_.emplace(payload, TimePoint(wait_op));
     if (!result.second) {
-        result.first->second.wait_ops.emplace_back(wait_op);
+        result.first->second.AddWaitOp(wait_op);
     }
 }
 
@@ -371,6 +371,7 @@ std::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemO
     for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
         auto &timepoint = pos->second;
         for (auto &op : timepoint.wait_ops) {
+            assert(op.payload == timepoint.wait_ops[0].payload);
             if (!filter || filter(op, true)) {
                 result.emplace(op);
                 break;
@@ -420,6 +421,7 @@ void SEMAPHORE_STATE::TimePoint::Notify() const {
         signal_op->Notify();
     }
     for (auto &wait : wait_ops) {
+        assert(wait.payload == wait_ops[0].payload);
         wait.Notify();
     }
 }
@@ -463,6 +465,7 @@ void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
             completed_ = *timepoint.signal_op;
         }
         for (auto &wait : timepoint.wait_ops) {
+            assert(wait.payload == timepoint.wait_ops[0].payload);
             completed_ = wait;
         }
         timepoint.completed.set_value();
@@ -499,7 +502,7 @@ std::shared_future<void> SEMAPHORE_STATE::Wait(uint64_t payload) {
     auto result = timeline_.emplace(payload, TimePoint(wait_op));
     auto &timepoint = result.first->second;
     if (!result.second) {
-        timepoint.wait_ops.emplace_back(wait_op);
+        timepoint.AddWaitOp(wait_op);
     }
     return timepoint.waiter;
 }
