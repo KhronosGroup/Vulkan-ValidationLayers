@@ -142,10 +142,15 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     struct TimePoint {
         TimePoint(SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
             if (op.op_type == kWait) {
-                wait_ops.emplace_back(op);
+                AddWaitOp(op);
             } else {
                 signal_op.emplace(op);
             }
+        }
+        void AddWaitOp(const SemOp &op) {
+            assert(op.op_type == kWait);
+            assert(wait_ops.empty() || wait_ops[0].payload == op.payload);
+            wait_ops.emplace_back(op);
         }
         std::optional<SemOp> signal_op;
         small_vector<SemOp, 1, uint32_t> wait_ops;
