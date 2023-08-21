@@ -21,9 +21,9 @@
 #include <condition_variable>
 #include <deque>
 #include <future>
-#include <set>
 #include <thread>
 #include <vector>
+#include "containers/custom_containers.h"
 #include "error_message/error_location.h"
 #include "utils/vk_layer_utils.h"
 
@@ -142,13 +142,13 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     struct TimePoint {
         TimePoint(SemOp &op) : signal_op(), completed(), waiter(completed.get_future()) {
             if (op.op_type == kWait) {
-                wait_ops.emplace(op);
+                wait_ops.emplace_back(op);
             } else {
                 signal_op.emplace(op);
             }
         }
         std::optional<SemOp> signal_op;
-        std::set<SemOp> wait_ops;
+        small_vector<SemOp, 1, uint32_t> wait_ops;
         std::promise<void> completed;
         std::shared_future<void> waiter;
 

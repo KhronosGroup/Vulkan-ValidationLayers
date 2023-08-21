@@ -352,7 +352,7 @@ void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64
     }
     auto result = timeline_.emplace(payload, TimePoint(wait_op));
     if (!result.second) {
-        result.first->second.wait_ops.emplace(wait_op);
+        result.first->second.wait_ops.emplace_back(wait_op);
     }
 }
 
@@ -499,7 +499,7 @@ std::shared_future<void> SEMAPHORE_STATE::Wait(uint64_t payload) {
     auto result = timeline_.emplace(payload, TimePoint(wait_op));
     auto &timepoint = result.first->second;
     if (!result.second) {
-        timepoint.wait_ops.emplace(wait_op);
+        timepoint.wait_ops.emplace_back(wait_op);
     }
     return timepoint.waiter;
 }
