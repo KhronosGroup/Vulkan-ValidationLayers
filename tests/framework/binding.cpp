@@ -38,14 +38,15 @@ namespace {
         }                                                                                                   \
     } while (0)
 
-#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func) \
-    void cls::destroy() noexcept {                      \
-        if (!initialized()) {                           \
-            return;                                     \
-        }                                               \
-        destroy_func(device(), handle(), NULL);         \
-        handle_ = VK_NULL_HANDLE;                       \
-    }                                                   \
+#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)        \
+    void cls::destroy() noexcept {                             \
+        if (!initialized()) {                                  \
+            return;                                            \
+        }                                                      \
+        destroy_func(device(), handle(), NULL);                \
+        handle_ = VK_NULL_HANDLE;                              \
+        internal::NonDispHandle<decltype(handle_)>::destroy(); \
+    }                                                          \
     cls::~cls() noexcept { destroy(); }
 
 #define STRINGIFY(x) #x
