@@ -356,11 +356,11 @@ void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64
     }
 }
 
-void SEMAPHORE_STATE::EnqueueAcquire(const char *func_name) {
+void SEMAPHORE_STATE::EnqueueAcquire(vvl::Func command) {
     auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto payload = next_payload_++;
-    SemOp acquire(kBinaryAcquire, nullptr, 0, payload, func_name);
+    SemOp acquire(kBinaryAcquire, nullptr, 0, payload, command);
     timeline_.emplace(payload, acquire);
 }
 
