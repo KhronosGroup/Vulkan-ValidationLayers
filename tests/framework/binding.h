@@ -140,6 +140,8 @@ class NonDispHandle : public Handle<T> {
         dev_handle_ = dev;
     }
 
+    void destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
+
   private:
     VkDevice dev_handle_;
 };
