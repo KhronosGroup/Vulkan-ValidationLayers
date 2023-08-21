@@ -1135,33 +1135,31 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
     return skip;
 }
 
-bool CoreChecks::ValidateDepthBiasRepresentationInfo(const char *caller, const LogObjectList &objlist,
-                                                     const VkDepthBiasRepresentationInfoEXT &depth_bias_representation) const {
+bool CoreChecks::ValidateDepthBiasRepresentationInfo(const Location& loc, const LogObjectList& objlist,
+                                                     const VkDepthBiasRepresentationInfoEXT& depth_bias_representation) const {
     bool skip = false;
 
     if ((depth_bias_representation.depthBiasRepresentation ==
          VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT) &&
         !enabled_features.depth_bias_control_features.leastRepresentableValueForceUnormRepresentation) {
-        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-leastRepresentableValueForceUnormRepresentation-08947",
-                         "%s: the "
-                         "VkPhysicalDeviceDepthBiasControlFeaturesEXT::leastRepresentableValueForceUnormRepresentation device "
-                         "feature is disabled but depthBiasRepresentation is %s.",
-                         caller, string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
+        skip |= LogError("VUID-VkDepthBiasRepresentationInfoEXT-leastRepresentableValueForceUnormRepresentation-08947", objlist,
+                         loc.pNext(Struct::VkDepthBiasRepresentationInfoEXT, Field::depthBiasRepresentation),
+                         "is %s, but the leastRepresentableValueForceUnormRepresentation feature was not enabled.",
+                         string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
     }
 
     if ((depth_bias_representation.depthBiasRepresentation == VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT) &&
         !enabled_features.depth_bias_control_features.floatRepresentation) {
-        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948",
-                         "%s: the VkPhysicalDeviceDepthBiasControlFeaturesEXT::floatReprensentation "
-                         "device feature is disabled but depthBiasRepresentation is %s.",
-                         caller, string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
+        skip |= LogError("VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948", objlist,
+                         loc.pNext(Struct::VkDepthBiasRepresentationInfoEXT, Field::depthBiasRepresentation),
+                         "is %s but the floatRepresentation feature was not enabled.",
+                         string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
     }
 
-    if ((depth_bias_representation.depthBiasExact != VK_FALSE) && !enabled_features.depth_bias_control_features.depthBiasExact) {
-        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-depthBiasExact-08949",
-                         "%s: the VkPhysicalDeviceDepthBiasControlFeaturesEXT::depthBiasExact device "
-                         "feature is disabled but depthBiasExact is %" PRIu32 ".",
-                         caller, depth_bias_representation.depthBiasExact);
+    if ((depth_bias_representation.depthBiasExact == VK_TRUE) && !enabled_features.depth_bias_control_features.depthBiasExact) {
+        skip |= LogError("VUID-VkDepthBiasRepresentationInfoEXT-depthBiasExact-08949", objlist,
+                         loc.pNext(Struct::VkDepthBiasRepresentationInfoEXT, Field::depthBiasExact),
+                         "is VK_TRUE, but the depthBiasExact feature was not enabled.");
     }
 
     return skip;
@@ -1178,8 +1176,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
     }
 
     if (const auto *depth_bias_representation = LvlFindInChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
-        skip |= ValidateDepthBiasRepresentationInfo("vkCmdSetDepthBias2EXT()", LogObjectList(commandBuffer),
-                                                    *depth_bias_representation);
+        skip |= ValidateDepthBiasRepresentationInfo(errorObj.location, errorObj.objlist, *depth_bias_representation);
     }
 
     return skip;

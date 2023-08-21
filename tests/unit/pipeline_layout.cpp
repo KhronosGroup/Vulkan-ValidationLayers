@@ -943,7 +943,7 @@ TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
         "layout");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "not declared in pipeline layout");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 

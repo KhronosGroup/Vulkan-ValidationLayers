@@ -203,22 +203,6 @@ class PIPELINE_STATE : public BASE_NODE {
 
     void SetHandle(VkPipeline p) { handle_.handle = CastToUint64(p); }
 
-    inline const char *GetCreateFunctionName() const {
-        switch (create_info.graphics.sType) {
-            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                return "vkCreateGraphicsPipelines";
-            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                return "vkCreateComputePipelines";
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-                return "vkCreateRayTracingPipelinesNV";
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                return "vkCreateRayTracingPipelinesKHR";
-            default:
-                assert(false);
-                return "";
-        }
-    }
-
     bool IsGraphicsLibrary() const { return !HasFullState(); }
     bool HasFullState() const {
         // First make sure that this pipeline is a "classic" pipeline, or is linked together with the appropriate sub-state

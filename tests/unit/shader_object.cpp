@@ -4945,7 +4945,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingEntryPoint) {
+TEST_F(NegativeShaderObject, MissingEntrypoint) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-pName-08440");

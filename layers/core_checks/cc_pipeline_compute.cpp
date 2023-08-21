@@ -22,9 +22,9 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
-bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline, const Location &loc) const {
     StageCreateInfo stage_create_info("vkCreateComputePipelines", &pipeline);
-    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0]);
+    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], loc.dot(Field::stage));
 }
 
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -40,16 +40,15 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         if (!pipeline) {
             continue;
         }
-        skip |= ValidateComputePipelineShaderState(*pipeline);
-        skip |= ValidateShaderModuleId(*pipeline);
-        skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateComputePipelines",
+        const Location loc = errorObj.location.dot(Field::pCreateInfos, i);
+        skip |= ValidateComputePipelineShaderState(*pipeline, loc);
+        skip |= ValidateShaderModuleId(*pipeline, loc);
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, loc.dot(Field::flags),
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
 
         if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
             pipeline_robustness_info) {
-            std::stringstream parameter_name;
-            parameter_name << "vkCreateComputePipelines(): pCreateInfos[" << i << "]";
-            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, parameter_name.str().c_str(), *pipeline_robustness_info);
+            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, loc);
         }
     }
     return skip;
