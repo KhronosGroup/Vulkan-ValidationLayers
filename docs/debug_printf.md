@@ -40,7 +40,7 @@ debugPrintfEXT("My float is %f", myfloat);
 }
 ```
 Then use glslangValidator to generate SPIR-V to use in vkCreateShaderModule.
-"glslangvalidator --target-env vulkan1.2 -x -e main -o shader.vert.spv shader.vert" would be one
+"glslangvalidator --target-env vulkan1.2 -e main -o shader.vert.spv shader.vert" would be one
 example of compiling shader.vert
 
 Note that every time this shader is executed, "My float is 3.141500" will be printed. If this were
@@ -60,7 +60,7 @@ printf("My float is %f", myfloat);
 ```
 Use glslangValidator or dxc to generate SPIR-V for this shader.
 For instance:
-glslangValidator.exe -D --target-env vulkan1.2 -e main -x -o shader.vert.spvx shader.vert
+glslangValidator.exe -D --target-env vulkan1.2 -e main -o shader.vert.spvx shader.vert
 dxc.exe -spirv -E main -T ps_6_0 -fspv-target-env=vulkan1.2 shader.vert -Fo shader.vert.spv
 
 Note that the VK_KHR_shader_non_semantic_info device extension must also be enabled in
