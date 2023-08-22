@@ -28,6 +28,11 @@ on:
         branches:
             - main
 
+env:
+  CMAKE_GENERATOR: Ninja
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+
 permissions:
   contents: read
 
@@ -95,8 +100,6 @@ jobs:
           CFLAGS: ${{ matrix.flags.c }}
           CXXFLAGS: ${{ matrix.flags.c }}
           LDFLAGS: ${{ matrix.flags.ld }}
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
         run: python scripts/tests.py --test
         env:
@@ -172,11 +175,7 @@ jobs:
             -D CMAKE_BUILD_TYPE=Debug \
             -D BUILD_TESTS=${{ matrix.build_tests }} \
             -D UPDATE_DEPS=ON \
-            -D BUILD_WERROR=ON \
-            -G "Ninja"
-          env:
-            CMAKE_C_COMPILER_LAUNCHER: ccache
-            CMAKE_CXX_COMPILER_LAUNCHER: ccache
+            -D BUILD_WERROR=ON
         - name: Build
           run: cmake --build build/
         - name: Test
@@ -200,9 +199,6 @@ jobs:
           key: macos-${{ matrix.macos_version }}
       - name: Build
         run: python3 scripts/macos.py --config release --osx ${{ matrix.macos_version }}
-        env:
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
   mingw:
     runs-on: windows-latest
@@ -225,9 +221,6 @@ jobs:
         run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
         env:
           LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-          CMAKE_GENERATOR: Ninja
       - name: Build
         run: cmake --build build -- --quiet
       - name: Install
@@ -252,10 +245,6 @@ jobs:
         run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Configure SDK Integration Test
         run: cmake -S tests/integration -B tests/integration/build
-        env:
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-          CMAKE_GENERATOR: Ninja
       - name: Build SDK Integration Test
         run: cmake --build tests/integration/build
       - name: Test chromium build
