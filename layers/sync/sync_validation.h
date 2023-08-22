@@ -266,7 +266,42 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
 
 // The resource tag index is relative to the command buffer or queue in which it's found
 using ResourceUsageTag = ResourceUsageRecord::TagIndex;
-using ResourceUsageTagSet = std::set<ResourceUsageTag>;
+
+// Notes:
+//  * Key must be integral.
+//  * We aren't interested as of this implementation in caching lookups, only inserts
+//  * using a raw C-style array instead of std::array intentionally for size/performance reasons
+//
+// The following were shown to not improve hit rate for current usage (tag set gathering).  For general use YMMV.
+//  * More complicated index construction (at >> LogSize ^ at)
+//  * Multi-way LRU eviction caching (equivalent hit rate to 1-way direct replacement of same total cache slots) but with
+//    higher complexity.
+template <typename IntegralKey, size_t LogSize = 4U, IntegralKey kInvalidKey = IntegralKey(0)>
+class CachedInsertSet : public std::set<IntegralKey> {
+  public:
+    using Base = std::set<IntegralKey>;
+    using key_type = typename Base::key_type;
+    using Index = unsigned;
+    static constexpr Index kSize = 1 << LogSize;
+    static constexpr key_type kMask = static_cast<key_type>(kSize) - 1;
+
+    void CachedInsert(const key_type key) {
+        // 1-way direct replacement
+        const Index index = static_cast<Index>(key & kMask);  // Simplest
+
+        if (entries_[index] != key) {
+            entries_[index] = key;
+            Base::insert(key);
+        }
+    }
+
+    CachedInsertSet() { std::fill(entries_, entries_ + kSize, kInvalidKey); }
+
+  private:
+    key_type entries_[kSize];
+};
+
+using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
 
 struct HazardResult {
