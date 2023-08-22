@@ -54,9 +54,10 @@ const char* DepReasonToString(ExtDeprecationReason reason) {
     }
 }
 
-bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, APIVersion version,
+bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version,
                                                  const char* vuid) const {
     bool skip = false;
+    const char* api_name = loc.StringFunc();
     auto dep_info_it = deprecated_extensions.find(extension_name);
     if (dep_info_it != deprecated_extensions.end()) {
         auto dep_info = dep_info_it->second;
@@ -82,9 +83,10 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
     return skip;
 }
 
-bool BestPractices::ValidateSpecialUseExtensions(const char* api_name, const char* extension_name,
+bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char* extension_name,
                                                  const SpecialUseVUIDs& special_use_vuids) const {
     bool skip = false;
+    const char* api_name = loc.StringFunc();
     auto dep_info_it = special_use_extensions.find(extension_name);
 
     if (dep_info_it != special_use_extensions.end()) {
@@ -131,9 +133,9 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
         }
         uint32_t specified_version =
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-        skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], specified_version,
+        skip |= ValidateDeprecatedExtensions(errorObj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version,
                                              kVUID_BestPractices_CreateInstance_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
+        skip |= ValidateSpecialUseExtensions(errorObj.location, pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
     }
 
     return skip;
@@ -186,9 +188,9 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
             extension_api_version = api_version;
         }
 
-        skip |= ValidateDeprecatedExtensions("CreateDevice", extension_name, extension_api_version,
+        skip |= ValidateDeprecatedExtensions(errorObj.location, extension_name, extension_api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions("CreateDevice", extension_name, kSpecialUseDeviceVUIDs);
+        skip |= ValidateSpecialUseExtensions(errorObj.location, extension_name, kSpecialUseDeviceVUIDs);
     }
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
@@ -224,9 +226,9 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* bp_pd_state,
                                                                          uint32_t requested_queue_family_property_count,
-                                                                         const CALL_STATE call_state,
-                                                                         const char* caller_name) const {
+                                                                         const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;
+    const char* caller_name = loc.StringFunc();
     // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
     if (UNCALLED == call_state) {
         skip |= LogWarning(
@@ -258,7 +260,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
-                                                                    "vkGetPhysicalDeviceQueueFamilyProperties()");
+                                                                    errorObj.location);
     }
     return false;
 }
@@ -271,7 +273,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
-                                                                    "vkGetPhysicalDeviceQueueFamilyProperties2()");
+                                                                    errorObj.location);
     }
     return false;
 }
@@ -284,7 +286,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(Vk
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
-                                                                    "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
+                                                                    errorObj.location);
     }
     return false;
 }

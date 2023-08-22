@@ -145,7 +145,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     return skip;
 }
 
-bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const {
+bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
@@ -157,7 +157,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller buffers like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      api_name, FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize,
+                                      loc.Message().c_str(), FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -169,21 +169,18 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
 bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
                                                     VkDeviceSize memoryOffset, const ErrorObject& errorObj) const {
     bool skip = false;
-    const char* api_name = "BindBufferMemory()";
 
-    skip |= ValidateBindBufferMemory(buffer, memory, api_name);
+    skip |= ValidateBindBufferMemory(buffer, memory, errorObj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                      const VkBindBufferMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
-    char api_name[64];
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        snprintf(api_name, sizeof(api_name), "vkBindBufferMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, api_name);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, errorObj.location.dot(Field::pBindInfos, i));
     }
 
     return skip;
@@ -192,18 +189,10 @@ bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t b
 bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                                         const VkBindBufferMemoryInfo* pBindInfos,
                                                         const ErrorObject& errorObj) const {
-    char api_name[64];
-    bool skip = false;
-
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        snprintf(api_name, sizeof(api_name), "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, api_name);
-    }
-
-    return skip;
+    return PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, errorObj);
 }
 
-bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const {
+bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(image);
     auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
@@ -215,7 +204,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller images like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      api_name, FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize,
+                                      loc.Message().c_str(), FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -245,7 +234,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                 "%s: Attempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
                 "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
                 "%" PRIu64 " bytes of physical memory.",
-                api_name, mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
+                loc.Message().c_str(), mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
         }
     }
 
@@ -257,22 +246,19 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
 bool BestPractices::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                    const ErrorObject& errorObj) const {
     bool skip = false;
-    const char* api_name = "vkBindImageMemory()";
 
-    skip |= ValidateBindImageMemory(image, memory, api_name);
+    skip |= ValidateBindImageMemory(image, memory, errorObj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                                     const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
-    char api_name[64];
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        snprintf(api_name, sizeof(api_name), "vkBindImageMemory2() pBindInfos[%u]", i);
         if (!LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
-            skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, api_name);
+            skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, errorObj.location.dot(Field::pBindInfos, i));
         }
     }
 
@@ -281,15 +267,7 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
 
 bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                                        const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
-    char api_name[64];
-    bool skip = false;
-
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        snprintf(api_name, sizeof(api_name), "vkBindImageMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, api_name);
-    }
-
-    return skip;
+    return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, errorObj);
 }
 
 void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
