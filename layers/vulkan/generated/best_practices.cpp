@@ -32,7 +32,7 @@ void BestPractices::PostCallRecordCreateInstance(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateInstance", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER
+        LogErrorCode(Func::vkCreateInstance, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER
     }
 }
 
@@ -43,11 +43,11 @@ void BestPractices::PostCallRecordEnumeratePhysicalDevices(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumeratePhysicalDevices", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumeratePhysicalDevices, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumeratePhysicalDevices", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkEnumeratePhysicalDevices, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -62,7 +62,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, pImageFormatProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceImageFormatProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
+        LogErrorCode(Func::vkGetPhysicalDeviceImageFormatProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
     }
 }
 
@@ -74,7 +74,7 @@ void BestPractices::PostCallRecordCreateDevice(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDevice", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkCreateDevice, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -85,11 +85,11 @@ void BestPractices::PostCallRecordEnumerateInstanceExtensionProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumerateInstanceExtensionProperties", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumerateInstanceExtensionProperties, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumerateInstanceExtensionProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_LAYER_NOT_PRESENT
+        LogErrorCode(Func::vkEnumerateInstanceExtensionProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_LAYER_NOT_PRESENT
     }
 }
 
@@ -101,11 +101,11 @@ void BestPractices::PostCallRecordEnumerateDeviceExtensionProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumerateDeviceExtensionProperties", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumerateDeviceExtensionProperties, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumerateDeviceExtensionProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_LAYER_NOT_PRESENT
+        LogErrorCode(Func::vkEnumerateDeviceExtensionProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_LAYER_NOT_PRESENT
     }
 }
 
@@ -115,11 +115,11 @@ void BestPractices::PostCallRecordEnumerateInstanceLayerProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumerateInstanceLayerProperties(pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumerateInstanceLayerProperties", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumerateInstanceLayerProperties, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumerateInstanceLayerProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkEnumerateInstanceLayerProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -130,11 +130,11 @@ void BestPractices::PostCallRecordEnumerateDeviceLayerProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumerateDeviceLayerProperties(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumerateDeviceLayerProperties", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumerateDeviceLayerProperties, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumerateDeviceLayerProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkEnumerateDeviceLayerProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -147,7 +147,7 @@ void BestPractices::PostCallRecordQueueSubmit(
     ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
     ManualPostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueSubmit", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkQueueSubmit, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -156,7 +156,7 @@ void BestPractices::PostCallRecordQueueWaitIdle(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordQueueWaitIdle(queue, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueWaitIdle", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkQueueWaitIdle, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -165,7 +165,7 @@ void BestPractices::PostCallRecordDeviceWaitIdle(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordDeviceWaitIdle(device, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkDeviceWaitIdle", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkDeviceWaitIdle, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -177,7 +177,7 @@ void BestPractices::PostCallRecordAllocateMemory(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAllocateMemory", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkAllocateMemory, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -191,7 +191,7 @@ void BestPractices::PostCallRecordMapMemory(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordMapMemory(device, memory, offset, size, flags, ppData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkMapMemory", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkMapMemory, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -202,7 +202,7 @@ void BestPractices::PostCallRecordFlushMappedMemoryRanges(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkFlushMappedMemoryRanges", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkFlushMappedMemoryRanges, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -213,7 +213,7 @@ void BestPractices::PostCallRecordInvalidateMappedMemoryRanges(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkInvalidateMappedMemoryRanges", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkInvalidateMappedMemoryRanges, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -225,7 +225,7 @@ void BestPractices::PostCallRecordBindBufferMemory(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindBufferMemory", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkBindBufferMemory, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -237,7 +237,7 @@ void BestPractices::PostCallRecordBindImageMemory(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindImageMemory", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBindImageMemory, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -250,7 +250,7 @@ void BestPractices::PostCallRecordQueueBindSparse(
     ValidationStateTracker::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
     ManualPostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueBindSparse", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkQueueBindSparse, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -262,7 +262,7 @@ void BestPractices::PostCallRecordCreateFence(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateFence", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateFence, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -273,7 +273,7 @@ void BestPractices::PostCallRecordResetFences(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordResetFences(device, fenceCount, pFences, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkResetFences", result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkResetFences, result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -283,11 +283,11 @@ void BestPractices::PostCallRecordGetFenceStatus(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetFenceStatus(device, fence, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetFenceStatus", result); // VK_NOT_READY
+        LogPositiveSuccessCode(Func::vkGetFenceStatus, result); // VK_NOT_READY
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetFenceStatus", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkGetFenceStatus, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -300,11 +300,11 @@ void BestPractices::PostCallRecordWaitForFences(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkWaitForFences", result); // VK_TIMEOUT
+        LogPositiveSuccessCode(Func::vkWaitForFences, result); // VK_TIMEOUT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWaitForFences", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkWaitForFences, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -316,7 +316,7 @@ void BestPractices::PostCallRecordCreateSemaphore(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSemaphore", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateSemaphore, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -328,7 +328,7 @@ void BestPractices::PostCallRecordCreateEvent(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateEvent", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateEvent, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -338,11 +338,11 @@ void BestPractices::PostCallRecordGetEventStatus(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetEventStatus(device, event, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetEventStatus", result); // VK_EVENT_SET, VK_EVENT_RESET
+        LogPositiveSuccessCode(Func::vkGetEventStatus, result); // VK_EVENT_SET, VK_EVENT_RESET
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetEventStatus", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkGetEventStatus, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -352,7 +352,7 @@ void BestPractices::PostCallRecordSetEvent(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetEvent(device, event, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetEvent", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkSetEvent, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -362,7 +362,7 @@ void BestPractices::PostCallRecordResetEvent(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordResetEvent(device, event, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkResetEvent", result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkResetEvent, result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -374,7 +374,7 @@ void BestPractices::PostCallRecordCreateQueryPool(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateQueryPool", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateQueryPool, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -390,11 +390,11 @@ void BestPractices::PostCallRecordGetQueryPoolResults(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetQueryPoolResults", result); // VK_NOT_READY
+        LogPositiveSuccessCode(Func::vkGetQueryPoolResults, result); // VK_NOT_READY
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetQueryPoolResults", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkGetQueryPoolResults, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -406,7 +406,7 @@ void BestPractices::PostCallRecordCreateBuffer(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateBuffer", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateBuffer, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -418,7 +418,7 @@ void BestPractices::PostCallRecordCreateBufferView(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateBufferView", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateBufferView, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -430,7 +430,7 @@ void BestPractices::PostCallRecordCreateImage(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateImage", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_COMPRESSION_EXHAUSTED_EXT, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateImage, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_COMPRESSION_EXHAUSTED_EXT, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -442,7 +442,7 @@ void BestPractices::PostCallRecordCreateImageView(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateImageView", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateImageView, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -455,7 +455,7 @@ void BestPractices::PostCallRecordCreateShaderModule(
     void*                                       state_data) {
     ValidationStateTracker::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result, state_data);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateShaderModule", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
+        LogErrorCode(Func::vkCreateShaderModule, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
     }
 }
 
@@ -467,7 +467,7 @@ void BestPractices::PostCallRecordCreatePipelineCache(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreatePipelineCache", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreatePipelineCache, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -479,11 +479,11 @@ void BestPractices::PostCallRecordGetPipelineCacheData(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPipelineCacheData", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPipelineCacheData, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPipelineCacheData", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPipelineCacheData, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -495,7 +495,7 @@ void BestPractices::PostCallRecordMergePipelineCaches(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkMergePipelineCaches", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkMergePipelineCaches, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -511,11 +511,11 @@ void BestPractices::PostCallRecordCreateGraphicsPipelines(
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     ManualPostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCreateGraphicsPipelines", result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
+        LogPositiveSuccessCode(Func::vkCreateGraphicsPipelines, result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateGraphicsPipelines", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
+        LogErrorCode(Func::vkCreateGraphicsPipelines, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
     }
 }
 
@@ -531,11 +531,11 @@ void BestPractices::PostCallRecordCreateComputePipelines(
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     ManualPostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCreateComputePipelines", result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
+        LogPositiveSuccessCode(Func::vkCreateComputePipelines, result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateComputePipelines", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
+        LogErrorCode(Func::vkCreateComputePipelines, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
     }
 }
 
@@ -547,7 +547,7 @@ void BestPractices::PostCallRecordCreatePipelineLayout(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreatePipelineLayout", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreatePipelineLayout, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -559,7 +559,7 @@ void BestPractices::PostCallRecordCreateSampler(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSampler", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateSampler, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -571,7 +571,7 @@ void BestPractices::PostCallRecordCreateDescriptorSetLayout(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDescriptorSetLayout", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateDescriptorSetLayout, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -583,7 +583,7 @@ void BestPractices::PostCallRecordCreateDescriptorPool(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDescriptorPool", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FRAGMENTATION_EXT
+        LogErrorCode(Func::vkCreateDescriptorPool, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FRAGMENTATION_EXT
     }
 }
 
@@ -596,7 +596,7 @@ void BestPractices::PostCallRecordAllocateDescriptorSets(
     ValidationStateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, state_data);
     ManualPostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, state_data);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAllocateDescriptorSets", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_OUT_OF_POOL_MEMORY
+        LogErrorCode(Func::vkAllocateDescriptorSets, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_OUT_OF_POOL_MEMORY
     }
 }
 
@@ -608,7 +608,7 @@ void BestPractices::PostCallRecordCreateFramebuffer(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateFramebuffer", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateFramebuffer, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -620,7 +620,7 @@ void BestPractices::PostCallRecordCreateRenderPass(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateRenderPass", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateRenderPass, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -632,7 +632,7 @@ void BestPractices::PostCallRecordCreateCommandPool(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateCommandPool", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateCommandPool, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -643,7 +643,7 @@ void BestPractices::PostCallRecordResetCommandPool(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordResetCommandPool(device, commandPool, flags, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkResetCommandPool", result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkResetCommandPool, result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -654,7 +654,7 @@ void BestPractices::PostCallRecordAllocateCommandBuffers(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAllocateCommandBuffers", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkAllocateCommandBuffers, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -664,7 +664,7 @@ void BestPractices::PostCallRecordBeginCommandBuffer(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBeginCommandBuffer", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBeginCommandBuffer, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -673,7 +673,7 @@ void BestPractices::PostCallRecordEndCommandBuffer(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEndCommandBuffer(commandBuffer, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEndCommandBuffer", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
+        LogErrorCode(Func::vkEndCommandBuffer, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
     }
 }
 
@@ -683,7 +683,7 @@ void BestPractices::PostCallRecordResetCommandBuffer(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordResetCommandBuffer(commandBuffer, flags, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkResetCommandBuffer", result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkResetCommandBuffer, result); // VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -694,7 +694,7 @@ void BestPractices::PostCallRecordBindBufferMemory2(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindBufferMemory2", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkBindBufferMemory2, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -705,7 +705,7 @@ void BestPractices::PostCallRecordBindImageMemory2(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindImageMemory2", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBindImageMemory2, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -716,11 +716,11 @@ void BestPractices::PostCallRecordEnumeratePhysicalDeviceGroups(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumeratePhysicalDeviceGroups", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumeratePhysicalDeviceGroups, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumeratePhysicalDeviceGroups", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkEnumeratePhysicalDeviceGroups, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -731,7 +731,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties2(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceImageFormatProperties2", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceImageFormatProperties2, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
     }
 }
 
@@ -743,7 +743,7 @@ void BestPractices::PostCallRecordCreateSamplerYcbcrConversion(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSamplerYcbcrConversion", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateSamplerYcbcrConversion, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -755,7 +755,7 @@ void BestPractices::PostCallRecordCreateDescriptorUpdateTemplate(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDescriptorUpdateTemplate", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateDescriptorUpdateTemplate, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -767,7 +767,7 @@ void BestPractices::PostCallRecordCreateRenderPass2(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateRenderPass2", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateRenderPass2, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -778,7 +778,7 @@ void BestPractices::PostCallRecordGetSemaphoreCounterValue(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSemaphoreCounterValue", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkGetSemaphoreCounterValue, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -789,11 +789,11 @@ void BestPractices::PostCallRecordWaitSemaphores(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkWaitSemaphores", result); // VK_TIMEOUT
+        LogPositiveSuccessCode(Func::vkWaitSemaphores, result); // VK_TIMEOUT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWaitSemaphores", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkWaitSemaphores, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -803,7 +803,7 @@ void BestPractices::PostCallRecordSignalSemaphore(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSignalSemaphore(device, pSignalInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSignalSemaphore", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkSignalSemaphore, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -814,11 +814,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceToolProperties(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceToolProperties", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceToolProperties, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceToolProperties", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceToolProperties, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -830,7 +830,7 @@ void BestPractices::PostCallRecordCreatePrivateDataSlot(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreatePrivateDataSlot", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreatePrivateDataSlot, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -843,7 +843,7 @@ void BestPractices::PostCallRecordSetPrivateData(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetPrivateData", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkSetPrivateData, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -855,7 +855,7 @@ void BestPractices::PostCallRecordQueueSubmit2(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueSubmit2", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkQueueSubmit2, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -867,7 +867,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceSupportKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceSupportKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -879,7 +879,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, result);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -892,11 +892,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats, result);
     ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceSurfaceFormatsKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceSurfaceFormatsKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceFormatsKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceFormatsKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -909,11 +909,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes, result);
     ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceSurfacePresentModesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceSurfacePresentModesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfacePresentModesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfacePresentModesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -925,7 +925,7 @@ void BestPractices::PostCallRecordCreateSwapchainKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSwapchainKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_COMPRESSION_EXHAUSTED_EXT
+        LogErrorCode(Func::vkCreateSwapchainKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_COMPRESSION_EXHAUSTED_EXT
     }
 }
 
@@ -938,11 +938,11 @@ void BestPractices::PostCallRecordGetSwapchainImagesKHR(
     ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
     ManualPostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetSwapchainImagesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetSwapchainImagesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSwapchainImagesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetSwapchainImagesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -956,11 +956,11 @@ void BestPractices::PostCallRecordAcquireNextImageKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkAcquireNextImageKHR", result); // VK_TIMEOUT, VK_NOT_READY, VK_SUBOPTIMAL_KHR
+        LogPositiveSuccessCode(Func::vkAcquireNextImageKHR, result); // VK_TIMEOUT, VK_NOT_READY, VK_SUBOPTIMAL_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireNextImageKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
+        LogErrorCode(Func::vkAcquireNextImageKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
     }
 }
 
@@ -971,11 +971,11 @@ void BestPractices::PostCallRecordQueuePresentKHR(
     ValidationStateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
     ManualPostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkQueuePresentKHR", result); // VK_SUBOPTIMAL_KHR
+        LogPositiveSuccessCode(Func::vkQueuePresentKHR, result); // VK_SUBOPTIMAL_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueuePresentKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
+        LogErrorCode(Func::vkQueuePresentKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
     }
 }
 
@@ -985,7 +985,7 @@ void BestPractices::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDeviceGroupPresentCapabilitiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDeviceGroupPresentCapabilitiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -996,7 +996,7 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDeviceGroupSurfacePresentModesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetDeviceGroupSurfacePresentModesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -1008,11 +1008,11 @@ void BestPractices::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDevicePresentRectanglesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDevicePresentRectanglesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDevicePresentRectanglesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDevicePresentRectanglesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1023,11 +1023,11 @@ void BestPractices::PostCallRecordAcquireNextImage2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkAcquireNextImage2KHR", result); // VK_TIMEOUT, VK_NOT_READY, VK_SUBOPTIMAL_KHR
+        LogPositiveSuccessCode(Func::vkAcquireNextImage2KHR, result); // VK_TIMEOUT, VK_NOT_READY, VK_SUBOPTIMAL_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireNextImage2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
+        LogErrorCode(Func::vkAcquireNextImage2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
     }
 }
 
@@ -1038,11 +1038,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceDisplayPropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceDisplayPropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceDisplayPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceDisplayPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1054,11 +1054,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
     ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceDisplayPlanePropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceDisplayPlanePropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1070,11 +1070,11 @@ void BestPractices::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDisplayPlaneSupportedDisplaysKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetDisplayPlaneSupportedDisplaysKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDisplayPlaneSupportedDisplaysKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDisplayPlaneSupportedDisplaysKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1086,11 +1086,11 @@ void BestPractices::PostCallRecordGetDisplayModePropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDisplayModePropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetDisplayModePropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDisplayModePropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDisplayModePropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1103,7 +1103,7 @@ void BestPractices::PostCallRecordCreateDisplayModeKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDisplayModeKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkCreateDisplayModeKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -1115,7 +1115,7 @@ void BestPractices::PostCallRecordGetDisplayPlaneCapabilitiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDisplayPlaneCapabilitiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDisplayPlaneCapabilitiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1127,7 +1127,7 @@ void BestPractices::PostCallRecordCreateDisplayPlaneSurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDisplayPlaneSurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateDisplayPlaneSurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1140,7 +1140,7 @@ void BestPractices::PostCallRecordCreateSharedSwapchainsKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSharedSwapchainsKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkCreateSharedSwapchainsKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -1153,7 +1153,7 @@ void BestPractices::PostCallRecordCreateXlibSurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateXlibSurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateXlibSurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_XLIB_KHR
@@ -1167,7 +1167,7 @@ void BestPractices::PostCallRecordCreateXcbSurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateXcbSurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateXcbSurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_XCB_KHR
@@ -1181,7 +1181,7 @@ void BestPractices::PostCallRecordCreateWaylandSurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateWaylandSurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateWaylandSurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
@@ -1195,7 +1195,7 @@ void BestPractices::PostCallRecordCreateAndroidSurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateAndroidSurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateAndroidSurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
@@ -1209,7 +1209,7 @@ void BestPractices::PostCallRecordCreateWin32SurfaceKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateWin32SurfaceKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateWin32SurfaceKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1221,7 +1221,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceVideoCapabilitiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceVideoCapabilitiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
     }
 }
 
@@ -1233,11 +1233,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceVideoFormatPropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceVideoFormatPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceVideoFormatPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
     }
 }
 
@@ -1249,7 +1249,7 @@ void BestPractices::PostCallRecordCreateVideoSessionKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateVideoSessionKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
+        LogErrorCode(Func::vkCreateVideoSessionKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
     }
 }
 
@@ -1261,7 +1261,7 @@ void BestPractices::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetVideoSessionMemoryRequirementsKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetVideoSessionMemoryRequirementsKHR, result); // VK_INCOMPLETE
         return;
     }
 }
@@ -1274,7 +1274,7 @@ void BestPractices::PostCallRecordBindVideoSessionMemoryKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindVideoSessionMemoryKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBindVideoSessionMemoryKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1286,7 +1286,7 @@ void BestPractices::PostCallRecordCreateVideoSessionParametersKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateVideoSessionParametersKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
+        LogErrorCode(Func::vkCreateVideoSessionParametersKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
     }
 }
 
@@ -1297,7 +1297,7 @@ void BestPractices::PostCallRecordUpdateVideoSessionParametersKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkUpdateVideoSessionParametersKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
+        LogErrorCode(Func::vkUpdateVideoSessionParametersKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR
     }
 }
 
@@ -1308,7 +1308,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceImageFormatProperties2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceImageFormatProperties2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
     }
 }
 
@@ -1319,11 +1319,11 @@ void BestPractices::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumeratePhysicalDeviceGroupsKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumeratePhysicalDeviceGroupsKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumeratePhysicalDeviceGroupsKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkEnumeratePhysicalDeviceGroupsKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -1335,7 +1335,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryWin32HandleKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetMemoryWin32HandleKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1349,7 +1349,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryWin32HandlePropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkGetMemoryWin32HandlePropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1361,7 +1361,7 @@ void BestPractices::PostCallRecordGetMemoryFdKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryFdKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetMemoryFdKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1373,7 +1373,7 @@ void BestPractices::PostCallRecordGetMemoryFdPropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryFdPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkGetMemoryFdPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 
@@ -1384,7 +1384,7 @@ void BestPractices::PostCallRecordImportSemaphoreWin32HandleKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkImportSemaphoreWin32HandleKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkImportSemaphoreWin32HandleKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1397,7 +1397,7 @@ void BestPractices::PostCallRecordGetSemaphoreWin32HandleKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSemaphoreWin32HandleKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetSemaphoreWin32HandleKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1408,7 +1408,7 @@ void BestPractices::PostCallRecordImportSemaphoreFdKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkImportSemaphoreFdKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkImportSemaphoreFdKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 
@@ -1419,7 +1419,7 @@ void BestPractices::PostCallRecordGetSemaphoreFdKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSemaphoreFdKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetSemaphoreFdKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1431,7 +1431,7 @@ void BestPractices::PostCallRecordCreateDescriptorUpdateTemplateKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDescriptorUpdateTemplateKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateDescriptorUpdateTemplateKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1443,7 +1443,7 @@ void BestPractices::PostCallRecordCreateRenderPass2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateRenderPass2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateRenderPass2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1453,11 +1453,11 @@ void BestPractices::PostCallRecordGetSwapchainStatusKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSwapchainStatusKHR(device, swapchain, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetSwapchainStatusKHR", result); // VK_SUBOPTIMAL_KHR
+        LogPositiveSuccessCode(Func::vkGetSwapchainStatusKHR, result); // VK_SUBOPTIMAL_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSwapchainStatusKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
+        LogErrorCode(Func::vkGetSwapchainStatusKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
     }
 }
 
@@ -1468,7 +1468,7 @@ void BestPractices::PostCallRecordImportFenceWin32HandleKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkImportFenceWin32HandleKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkImportFenceWin32HandleKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1481,7 +1481,7 @@ void BestPractices::PostCallRecordGetFenceWin32HandleKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetFenceWin32HandleKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetFenceWin32HandleKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -1492,7 +1492,7 @@ void BestPractices::PostCallRecordImportFenceFdKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkImportFenceFdKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkImportFenceFdKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 
@@ -1503,7 +1503,7 @@ void BestPractices::PostCallRecordGetFenceFdKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetFenceFdKHR", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetFenceFdKHR, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1516,11 +1516,11 @@ void BestPractices::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQ
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -1530,7 +1530,7 @@ void BestPractices::PostCallRecordAcquireProfilingLockKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(device, pInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireProfilingLockKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_TIMEOUT
+        LogErrorCode(Func::vkAcquireProfilingLockKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_TIMEOUT
     }
 }
 
@@ -1542,7 +1542,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities, result);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceCapabilities2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceCapabilities2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -1555,11 +1555,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats, result);
     ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceSurfaceFormats2KHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceSurfaceFormats2KHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceFormats2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceFormats2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -1570,11 +1570,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceDisplayProperties2KHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceDisplayProperties2KHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceDisplayProperties2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceDisplayProperties2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1585,11 +1585,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1601,11 +1601,11 @@ void BestPractices::PostCallRecordGetDisplayModeProperties2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDisplayModeProperties2KHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetDisplayModeProperties2KHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDisplayModeProperties2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDisplayModeProperties2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1616,7 +1616,7 @@ void BestPractices::PostCallRecordGetDisplayPlaneCapabilities2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDisplayPlaneCapabilities2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetDisplayPlaneCapabilities2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1628,7 +1628,7 @@ void BestPractices::PostCallRecordCreateSamplerYcbcrConversionKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateSamplerYcbcrConversionKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateSamplerYcbcrConversionKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1639,7 +1639,7 @@ void BestPractices::PostCallRecordBindBufferMemory2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindBufferMemory2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkBindBufferMemory2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -1650,7 +1650,7 @@ void BestPractices::PostCallRecordBindImageMemory2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindImageMemory2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBindImageMemory2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1661,7 +1661,7 @@ void BestPractices::PostCallRecordGetSemaphoreCounterValueKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSemaphoreCounterValueKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkGetSemaphoreCounterValueKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -1672,11 +1672,11 @@ void BestPractices::PostCallRecordWaitSemaphoresKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkWaitSemaphoresKHR", result); // VK_TIMEOUT
+        LogPositiveSuccessCode(Func::vkWaitSemaphoresKHR, result); // VK_TIMEOUT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWaitSemaphoresKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkWaitSemaphoresKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -1686,7 +1686,7 @@ void BestPractices::PostCallRecordSignalSemaphoreKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(device, pSignalInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSignalSemaphoreKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkSignalSemaphoreKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1697,11 +1697,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceFragmentShadingRatesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceFragmentShadingRatesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceFragmentShadingRatesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceFragmentShadingRatesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1713,11 +1713,11 @@ void BestPractices::PostCallRecordWaitForPresentKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkWaitForPresentKHR", result); // VK_TIMEOUT, VK_SUBOPTIMAL_KHR
+        LogPositiveSuccessCode(Func::vkWaitForPresentKHR, result); // VK_TIMEOUT, VK_SUBOPTIMAL_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWaitForPresentKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
+        LogErrorCode(Func::vkWaitForPresentKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT
     }
 }
 
@@ -1728,7 +1728,7 @@ void BestPractices::PostCallRecordCreateDeferredOperationKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDeferredOperationKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreateDeferredOperationKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1738,7 +1738,7 @@ void BestPractices::PostCallRecordGetDeferredOperationResultKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeferredOperationResultKHR(device, operation, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDeferredOperationResultKHR", result); // VK_NOT_READY
+        LogPositiveSuccessCode(Func::vkGetDeferredOperationResultKHR, result); // VK_NOT_READY
         return;
     }
 }
@@ -1749,11 +1749,11 @@ void BestPractices::PostCallRecordDeferredOperationJoinKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordDeferredOperationJoinKHR(device, operation, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkDeferredOperationJoinKHR", result); // VK_THREAD_DONE_KHR, VK_THREAD_IDLE_KHR
+        LogPositiveSuccessCode(Func::vkDeferredOperationJoinKHR, result); // VK_THREAD_DONE_KHR, VK_THREAD_IDLE_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkDeferredOperationJoinKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkDeferredOperationJoinKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1765,11 +1765,11 @@ void BestPractices::PostCallRecordGetPipelineExecutablePropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPipelineExecutablePropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPipelineExecutablePropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPipelineExecutablePropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPipelineExecutablePropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1781,11 +1781,11 @@ void BestPractices::PostCallRecordGetPipelineExecutableStatisticsKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPipelineExecutableStatisticsKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPipelineExecutableStatisticsKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPipelineExecutableStatisticsKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPipelineExecutableStatisticsKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1797,11 +1797,11 @@ void BestPractices::PostCallRecordGetPipelineExecutableInternalRepresentationsKH
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPipelineExecutableInternalRepresentationsKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPipelineExecutableInternalRepresentationsKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPipelineExecutableInternalRepresentationsKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPipelineExecutableInternalRepresentationsKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1812,7 +1812,7 @@ void BestPractices::PostCallRecordMapMemory2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkMapMemory2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkMapMemory2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -1824,7 +1824,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelProper
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo, pQualityLevelProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR, VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -1839,11 +1839,11 @@ void BestPractices::PostCallRecordGetEncodedVideoSessionParametersKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetEncodedVideoSessionParametersKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetEncodedVideoSessionParametersKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetEncodedVideoSessionParametersKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetEncodedVideoSessionParametersKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -1856,7 +1856,7 @@ void BestPractices::PostCallRecordQueueSubmit2KHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueSubmit2KHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
+        LogErrorCode(Func::vkQueueSubmit2KHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_DEVICE_LOST
     }
 }
 
@@ -1867,11 +1867,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKH
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1883,7 +1883,7 @@ void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDebugReportCallbackEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreateDebugReportCallbackEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1893,7 +1893,7 @@ void BestPractices::PostCallRecordDebugMarkerSetObjectTagEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkDebugMarkerSetObjectTagEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkDebugMarkerSetObjectTagEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1903,7 +1903,7 @@ void BestPractices::PostCallRecordDebugMarkerSetObjectNameEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkDebugMarkerSetObjectNameEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkDebugMarkerSetObjectNameEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -1915,7 +1915,7 @@ void BestPractices::PostCallRecordCreateCuModuleNVX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateCuModuleNVX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkCreateCuModuleNVX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -1927,7 +1927,7 @@ void BestPractices::PostCallRecordCreateCuFunctionNVX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateCuFunctionNVX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkCreateCuFunctionNVX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -1938,7 +1938,7 @@ void BestPractices::PostCallRecordGetImageViewAddressNVX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetImageViewAddressNVX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_UNKNOWN
+        LogErrorCode(Func::vkGetImageViewAddressNVX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_UNKNOWN
     }
 }
 
@@ -1952,11 +1952,11 @@ void BestPractices::PostCallRecordGetShaderInfoAMD(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetShaderInfoAMD", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetShaderInfoAMD, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetShaderInfoAMD", result); // VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetShaderInfoAMD, result); // VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -1969,7 +1969,7 @@ void BestPractices::PostCallRecordCreateStreamDescriptorSurfaceGGP(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateStreamDescriptorSurfaceGGP", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateStreamDescriptorSurfaceGGP, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_GGP
@@ -1986,7 +1986,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalImageFormatProperties
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceExternalImageFormatPropertiesNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
+        LogErrorCode(Func::vkGetPhysicalDeviceExternalImageFormatPropertiesNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
     }
 }
 
@@ -1999,7 +1999,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryWin32HandleNV", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetMemoryWin32HandleNV, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2013,7 +2013,7 @@ void BestPractices::PostCallRecordCreateViSurfaceNN(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateViSurfaceNN", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateViSurfaceNN, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_VI_NN
@@ -2026,7 +2026,7 @@ void BestPractices::PostCallRecordAcquireXlibDisplayEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireXlibDisplayEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkAcquireXlibDisplayEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -2040,7 +2040,7 @@ void BestPractices::PostCallRecordGetRandROutputDisplayEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetRandROutputDisplayEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetRandROutputDisplayEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -2053,7 +2053,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, result);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfaceCapabilities2EXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfaceCapabilities2EXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -2064,7 +2064,7 @@ void BestPractices::PostCallRecordDisplayPowerControlEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkDisplayPowerControlEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkDisplayPowerControlEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2076,7 +2076,7 @@ void BestPractices::PostCallRecordRegisterDeviceEventEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkRegisterDeviceEventEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkRegisterDeviceEventEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2089,7 +2089,7 @@ void BestPractices::PostCallRecordRegisterDisplayEventEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkRegisterDisplayEventEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkRegisterDisplayEventEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2101,7 +2101,7 @@ void BestPractices::PostCallRecordGetSwapchainCounterEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSwapchainCounterEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR
+        LogErrorCode(Func::vkGetSwapchainCounterEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR
     }
 }
 
@@ -2112,7 +2112,7 @@ void BestPractices::PostCallRecordGetRefreshCycleDurationGOOGLE(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetRefreshCycleDurationGOOGLE", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetRefreshCycleDurationGOOGLE, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -2124,11 +2124,11 @@ void BestPractices::PostCallRecordGetPastPresentationTimingGOOGLE(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPastPresentationTimingGOOGLE", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPastPresentationTimingGOOGLE, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPastPresentationTimingGOOGLE", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPastPresentationTimingGOOGLE, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -2141,7 +2141,7 @@ void BestPractices::PostCallRecordCreateIOSSurfaceMVK(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateIOSSurfaceMVK", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateIOSSurfaceMVK, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_IOS_MVK
@@ -2155,7 +2155,7 @@ void BestPractices::PostCallRecordCreateMacOSSurfaceMVK(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateMacOSSurfaceMVK", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateMacOSSurfaceMVK, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_MACOS_MVK
@@ -2166,7 +2166,7 @@ void BestPractices::PostCallRecordSetDebugUtilsObjectNameEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetDebugUtilsObjectNameEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkSetDebugUtilsObjectNameEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2176,7 +2176,7 @@ void BestPractices::PostCallRecordSetDebugUtilsObjectTagEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetDebugUtilsObjectTagEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkSetDebugUtilsObjectTagEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2188,7 +2188,7 @@ void BestPractices::PostCallRecordCreateDebugUtilsMessengerEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDebugUtilsMessengerEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreateDebugUtilsMessengerEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2200,7 +2200,7 @@ void BestPractices::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetAndroidHardwareBufferPropertiesANDROID", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR
+        LogErrorCode(Func::vkGetAndroidHardwareBufferPropertiesANDROID, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
@@ -2213,7 +2213,7 @@ void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryAndroidHardwareBufferANDROID", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetMemoryAndroidHardwareBufferANDROID, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
@@ -2229,11 +2229,11 @@ void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCreateExecutionGraphPipelinesAMDX", result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
+        LogPositiveSuccessCode(Func::vkCreateExecutionGraphPipelinesAMDX, result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateExecutionGraphPipelinesAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateExecutionGraphPipelinesAMDX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2246,7 +2246,7 @@ void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetExecutionGraphPipelineScratchSizeAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetExecutionGraphPipelineScratchSizeAMDX, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2260,7 +2260,7 @@ void BestPractices::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetExecutionGraphPipelineNodeIndexAMDX", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetExecutionGraphPipelineNodeIndexAMDX, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -2272,7 +2272,7 @@ void BestPractices::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetImageDrmFormatModifierPropertiesEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetImageDrmFormatModifierPropertiesEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2284,7 +2284,7 @@ void BestPractices::PostCallRecordCreateAccelerationStructureNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateAccelerationStructureNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreateAccelerationStructureNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2295,7 +2295,7 @@ void BestPractices::PostCallRecordBindAccelerationStructureMemoryNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindAccelerationStructureMemoryNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBindAccelerationStructureMemoryNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2310,11 +2310,11 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(
     void*                                       state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCreateRayTracingPipelinesNV", result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
+        LogPositiveSuccessCode(Func::vkCreateRayTracingPipelinesNV, result); // VK_PIPELINE_COMPILE_REQUIRED_EXT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateRayTracingPipelinesNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
+        LogErrorCode(Func::vkCreateRayTracingPipelinesNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_SHADER_NV
     }
 }
 
@@ -2328,7 +2328,7 @@ void BestPractices::PostCallRecordGetRayTracingShaderGroupHandlesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetRayTracingShaderGroupHandlesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetRayTracingShaderGroupHandlesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2342,7 +2342,7 @@ void BestPractices::PostCallRecordGetRayTracingShaderGroupHandlesNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetRayTracingShaderGroupHandlesNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetRayTracingShaderGroupHandlesNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2354,7 +2354,7 @@ void BestPractices::PostCallRecordGetAccelerationStructureHandleNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetAccelerationStructureHandleNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetAccelerationStructureHandleNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2365,7 +2365,7 @@ void BestPractices::PostCallRecordCompileDeferredNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCompileDeferredNV(device, pipeline, shader, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCompileDeferredNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCompileDeferredNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2377,7 +2377,7 @@ void BestPractices::PostCallRecordGetMemoryHostPointerPropertiesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryHostPointerPropertiesEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkGetMemoryHostPointerPropertiesEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 
@@ -2388,11 +2388,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceCalibrateableTimeDomainsEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2405,7 +2405,7 @@ void BestPractices::PostCallRecordGetCalibratedTimestampsEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetCalibratedTimestampsEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetCalibratedTimestampsEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2415,7 +2415,7 @@ void BestPractices::PostCallRecordInitializePerformanceApiINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkInitializePerformanceApiINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkInitializePerformanceApiINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2425,7 +2425,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceMarkerINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCmdSetPerformanceMarkerINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCmdSetPerformanceMarkerINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2435,7 +2435,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCmdSetPerformanceStreamMarkerINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCmdSetPerformanceStreamMarkerINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2445,7 +2445,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceOverrideINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCmdSetPerformanceOverrideINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCmdSetPerformanceOverrideINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2456,7 +2456,7 @@ void BestPractices::PostCallRecordAcquirePerformanceConfigurationINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquirePerformanceConfigurationINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkAcquirePerformanceConfigurationINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2466,7 +2466,7 @@ void BestPractices::PostCallRecordReleasePerformanceConfigurationINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordReleasePerformanceConfigurationINTEL(device, configuration, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkReleasePerformanceConfigurationINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkReleasePerformanceConfigurationINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2476,7 +2476,7 @@ void BestPractices::PostCallRecordQueueSetPerformanceConfigurationINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkQueueSetPerformanceConfigurationINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkQueueSetPerformanceConfigurationINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2487,7 +2487,7 @@ void BestPractices::PostCallRecordGetPerformanceParameterINTEL(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPerformanceParameterINTEL", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetPerformanceParameterINTEL, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2500,7 +2500,7 @@ void BestPractices::PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateImagePipeSurfaceFUCHSIA", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateImagePipeSurfaceFUCHSIA, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2514,7 +2514,7 @@ void BestPractices::PostCallRecordCreateMetalSurfaceEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateMetalSurfaceEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+        LogErrorCode(Func::vkCreateMetalSurfaceEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
@@ -2526,11 +2526,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceToolPropertiesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceToolPropertiesEXT", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceToolPropertiesEXT, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceToolPropertiesEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceToolPropertiesEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2541,11 +2541,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceCooperativeMatrixPropertiesNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2556,11 +2556,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamp
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount, pCombinations, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2573,11 +2573,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceSurfacePresentModes2EXT", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceSurfacePresentModes2EXT, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceSurfacePresentModes2EXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetPhysicalDeviceSurfacePresentModes2EXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2589,7 +2589,7 @@ void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireFullScreenExclusiveModeEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkAcquireFullScreenExclusiveModeEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2601,7 +2601,7 @@ void BestPractices::PostCallRecordReleaseFullScreenExclusiveModeEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkReleaseFullScreenExclusiveModeEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkReleaseFullScreenExclusiveModeEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2614,7 +2614,7 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDeviceGroupSurfacePresentModes2EXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetDeviceGroupSurfacePresentModes2EXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2627,7 +2627,7 @@ void BestPractices::PostCallRecordCreateHeadlessSurfaceEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateHeadlessSurfaceEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateHeadlessSurfaceEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2637,7 +2637,7 @@ void BestPractices::PostCallRecordCopyMemoryToImageEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMemoryToImageEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkCopyMemoryToImageEXT, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -2647,7 +2647,7 @@ void BestPractices::PostCallRecordCopyImageToMemoryEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyImageToMemoryEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkCopyImageToMemoryEXT, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -2657,7 +2657,7 @@ void BestPractices::PostCallRecordCopyImageToImageEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyImageToImageEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkCopyImageToImageEXT, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -2668,7 +2668,7 @@ void BestPractices::PostCallRecordTransitionImageLayoutEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkTransitionImageLayoutEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
+        LogErrorCode(Func::vkTransitionImageLayoutEXT, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
     }
 }
 
@@ -2678,7 +2678,7 @@ void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkReleaseSwapchainImagesEXT", result); // VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkReleaseSwapchainImagesEXT, result); // VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -2690,7 +2690,7 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateIndirectCommandsLayoutNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateIndirectCommandsLayoutNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2701,7 +2701,7 @@ void BestPractices::PostCallRecordAcquireDrmDisplayEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireDrmDisplayEXT", result); // VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkAcquireDrmDisplayEXT, result); // VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -2713,7 +2713,7 @@ void BestPractices::PostCallRecordGetDrmDisplayEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDrmDisplayEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetDrmDisplayEXT, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2725,7 +2725,7 @@ void BestPractices::PostCallRecordCreatePrivateDataSlotEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreatePrivateDataSlotEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkCreatePrivateDataSlotEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2738,7 +2738,7 @@ void BestPractices::PostCallRecordSetPrivateDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetPrivateDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkSetPrivateDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2749,7 +2749,7 @@ void BestPractices::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetBufferOpaqueCaptureDescriptorDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetBufferOpaqueCaptureDescriptorDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2760,7 +2760,7 @@ void BestPractices::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetImageOpaqueCaptureDescriptorDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetImageOpaqueCaptureDescriptorDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2771,7 +2771,7 @@ void BestPractices::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetImageViewOpaqueCaptureDescriptorDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetImageViewOpaqueCaptureDescriptorDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2782,7 +2782,7 @@ void BestPractices::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSamplerOpaqueCaptureDescriptorDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetSamplerOpaqueCaptureDescriptorDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2793,7 +2793,7 @@ void BestPractices::PostCallRecordGetAccelerationStructureOpaqueCaptureDescripto
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -2804,11 +2804,11 @@ void BestPractices::PostCallRecordGetDeviceFaultInfoEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDeviceFaultInfoEXT", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetDeviceFaultInfoEXT, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDeviceFaultInfoEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetDeviceFaultInfoEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -2819,7 +2819,7 @@ void BestPractices::PostCallRecordAcquireWinrtDisplayNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkAcquireWinrtDisplayNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkAcquireWinrtDisplayNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2832,7 +2832,7 @@ void BestPractices::PostCallRecordGetWinrtDisplayNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetWinrtDisplayNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkGetWinrtDisplayNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_DEVICE_LOST, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -2846,7 +2846,7 @@ void BestPractices::PostCallRecordCreateDirectFBSurfaceEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateDirectFBSurfaceEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateDirectFBSurfaceEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
@@ -2859,7 +2859,7 @@ void BestPractices::PostCallRecordGetMemoryZirconHandleFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryZirconHandleFUCHSIA", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetMemoryZirconHandleFUCHSIA, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2873,7 +2873,7 @@ void BestPractices::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryZirconHandlePropertiesFUCHSIA", result); // VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkGetMemoryZirconHandlePropertiesFUCHSIA, result); // VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2885,7 +2885,7 @@ void BestPractices::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkImportSemaphoreZirconHandleFUCHSIA", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkImportSemaphoreZirconHandleFUCHSIA, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2898,7 +2898,7 @@ void BestPractices::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetSemaphoreZirconHandleFUCHSIA", result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetSemaphoreZirconHandleFUCHSIA, result); // VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2912,7 +2912,7 @@ void BestPractices::PostCallRecordCreateBufferCollectionFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateBufferCollectionFUCHSIA", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkCreateBufferCollectionFUCHSIA, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2925,7 +2925,7 @@ void BestPractices::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetBufferCollectionImageConstraintsFUCHSIA", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
+        LogErrorCode(Func::vkSetBufferCollectionImageConstraintsFUCHSIA, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2938,7 +2938,7 @@ void BestPractices::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkSetBufferCollectionBufferConstraintsFUCHSIA", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
+        LogErrorCode(Func::vkSetBufferCollectionBufferConstraintsFUCHSIA, result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_FORMAT_NOT_SUPPORTED
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2951,7 +2951,7 @@ void BestPractices::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetBufferCollectionPropertiesFUCHSIA", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkGetBufferCollectionPropertiesFUCHSIA, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -2963,11 +2963,11 @@ void BestPractices::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
+        LogErrorCode(Func::vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_SURFACE_LOST_KHR
     }
 }
 
@@ -2978,7 +2978,7 @@ void BestPractices::PostCallRecordGetMemoryRemoteAddressNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetMemoryRemoteAddressNV", result); // VK_ERROR_INVALID_EXTERNAL_HANDLE
+        LogErrorCode(Func::vkGetMemoryRemoteAddressNV, result); // VK_ERROR_INVALID_EXTERNAL_HANDLE
     }
 }
 
@@ -2989,7 +2989,7 @@ void BestPractices::PostCallRecordGetPipelinePropertiesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPipelinePropertiesEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY
+        LogErrorCode(Func::vkGetPipelinePropertiesEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY
     }
 }
 
@@ -3002,7 +3002,7 @@ void BestPractices::PostCallRecordCreateScreenSurfaceQNX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateScreenSurfaceQNX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCreateScreenSurfaceQNX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
@@ -3015,7 +3015,7 @@ void BestPractices::PostCallRecordCreateMicromapEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateMicromapEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateMicromapEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -3027,11 +3027,11 @@ void BestPractices::PostCallRecordBuildMicromapsEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkBuildMicromapsEXT", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkBuildMicromapsEXT, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBuildMicromapsEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBuildMicromapsEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3042,11 +3042,11 @@ void BestPractices::PostCallRecordCopyMicromapEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyMicromapEXT", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyMicromapEXT, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMicromapEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyMicromapEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3057,11 +3057,11 @@ void BestPractices::PostCallRecordCopyMicromapToMemoryEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyMicromapToMemoryEXT", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyMicromapToMemoryEXT, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMicromapToMemoryEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyMicromapToMemoryEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3072,11 +3072,11 @@ void BestPractices::PostCallRecordCopyMemoryToMicromapEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyMemoryToMicromapEXT", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyMemoryToMicromapEXT, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMemoryToMicromapEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyMemoryToMicromapEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3091,7 +3091,7 @@ void BestPractices::PostCallRecordWriteMicromapsPropertiesEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWriteMicromapsPropertiesEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkWriteMicromapsPropertiesEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3103,11 +3103,11 @@ void BestPractices::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetPhysicalDeviceOpticalFlowImageFormatsNV", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetPhysicalDeviceOpticalFlowImageFormatsNV", result); // VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_FORMAT_NOT_SUPPORTED
+        LogErrorCode(Func::vkGetPhysicalDeviceOpticalFlowImageFormatsNV, result); // VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_FORMAT_NOT_SUPPORTED
     }
 }
 
@@ -3119,7 +3119,7 @@ void BestPractices::PostCallRecordCreateOpticalFlowSessionNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateOpticalFlowSessionNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkCreateOpticalFlowSessionNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -3132,7 +3132,7 @@ void BestPractices::PostCallRecordBindOpticalFlowSessionImageNV(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBindOpticalFlowSessionImageNV", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
+        LogErrorCode(Func::vkBindOpticalFlowSessionImageNV, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INITIALIZATION_FAILED
     }
 }
 
@@ -3145,7 +3145,7 @@ void BestPractices::PostCallRecordCreateShadersEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateShadersEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT
+        LogErrorCode(Func::vkCreateShadersEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT
     }
 }
 
@@ -3157,11 +3157,11 @@ void BestPractices::PostCallRecordGetShaderBinaryDataEXT(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetShaderBinaryDataEXT", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetShaderBinaryDataEXT, result); // VK_INCOMPLETE
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetShaderBinaryDataEXT", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetShaderBinaryDataEXT, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3173,7 +3173,7 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkGetFramebufferTilePropertiesQCOM", result); // VK_INCOMPLETE
+        LogPositiveSuccessCode(Func::vkGetFramebufferTilePropertiesQCOM, result); // VK_INCOMPLETE
         return;
     }
 }
@@ -3186,7 +3186,7 @@ void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetScreenBufferPropertiesQNX", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR
+        LogErrorCode(Func::vkGetScreenBufferPropertiesQNX, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR
     }
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
@@ -3199,7 +3199,7 @@ void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateAccelerationStructureKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
+        LogErrorCode(Func::vkCreateAccelerationStructureKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR
     }
 }
 
@@ -3212,11 +3212,11 @@ void BestPractices::PostCallRecordBuildAccelerationStructuresKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkBuildAccelerationStructuresKHR", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkBuildAccelerationStructuresKHR, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkBuildAccelerationStructuresKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkBuildAccelerationStructuresKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3227,11 +3227,11 @@ void BestPractices::PostCallRecordCopyAccelerationStructureKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyAccelerationStructureKHR", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyAccelerationStructureKHR, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyAccelerationStructureKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyAccelerationStructureKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3242,11 +3242,11 @@ void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyAccelerationStructureToMemoryKHR", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyAccelerationStructureToMemoryKHR, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyAccelerationStructureToMemoryKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyAccelerationStructureToMemoryKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3257,11 +3257,11 @@ void BestPractices::PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, result);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCopyMemoryToAccelerationStructureKHR", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
+        LogPositiveSuccessCode(Func::vkCopyMemoryToAccelerationStructureKHR, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMemoryToAccelerationStructureKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkCopyMemoryToAccelerationStructureKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3276,7 +3276,7 @@ void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkWriteAccelerationStructuresPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkWriteAccelerationStructuresPropertiesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 
@@ -3292,11 +3292,11 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
     void*                                       state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result > VK_SUCCESS) {
-        LogPositiveSuccessCode("vkCreateRayTracingPipelinesKHR", result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR, VK_PIPELINE_COMPILE_REQUIRED_EXT
+        LogPositiveSuccessCode(Func::vkCreateRayTracingPipelinesKHR, result); // VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR, VK_PIPELINE_COMPILE_REQUIRED_EXT
         return;
     }
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkCreateRayTracingPipelinesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS
+        LogErrorCode(Func::vkCreateRayTracingPipelinesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS
     }
 }
 
@@ -3310,7 +3310,7 @@ void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKH
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData, result);
     if (result < VK_SUCCESS) {
-        LogErrorCode("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+        LogErrorCode(Func::vkGetRayTracingCaptureReplayShaderGroupHandlesKHR, result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
     }
 }
 

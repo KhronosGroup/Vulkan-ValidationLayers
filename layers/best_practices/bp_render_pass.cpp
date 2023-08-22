@@ -404,7 +404,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
             }
 
-            QueueValidateImageView(cb->queue_submit_functions, "vkCmdBeginRenderPass()", image_view.get(), usage);
+            QueueValidateImageView(cb->queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
         }
 
         // Check store ops
@@ -441,7 +441,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 image_view = Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[att]);
             }
 
-            QueueValidateImageView(cb->queue_submit_functions_after_render_pass, "vkCmdEndRenderPass()", image_view.get(), usage);
+            QueueValidateImageView(cb->queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(), usage);
         }
     }
 }

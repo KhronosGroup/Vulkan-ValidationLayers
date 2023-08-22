@@ -21,7 +21,7 @@
 #include "best_practices/best_practices_error_enums.h"
 
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
-                                                                            const char* api_name) const {
+                                                                            const Location& loc) const {
     bool skip = false;
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
 
@@ -30,7 +30,7 @@ bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPh
             skip |= LogWarning(physicalDevice, kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
                                "Potential problem with calling %s() without first retrieving properties from "
                                "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
-                               api_name);
+                               loc.StringFunc());
         }
     }
 
@@ -42,7 +42,7 @@ bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysica
                                                                        const ErrorObject& errorObj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneSupportedDisplaysKHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
 
     return skip;
 }
@@ -52,7 +52,7 @@ bool BestPractices::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevi
                                                                   const ErrorObject& errorObj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneCapabilitiesKHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
 
     return skip;
 }
@@ -63,7 +63,7 @@ bool BestPractices::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDev
                                                                    const ErrorObject& errorObj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneCapabilities2KHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
 
     return skip;
 }

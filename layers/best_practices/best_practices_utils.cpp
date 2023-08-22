@@ -102,13 +102,14 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 }
 
 // Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
-void BestPractices::LogPositiveSuccessCode(const char* api_name, VkResult result) const {
+void BestPractices::LogPositiveSuccessCode(Func command, VkResult result) const {
     assert(result > VK_SUCCESS);
 
-    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", api_name, string_VkResult(result));
+    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", String(command),
+               string_VkResult(result));
 }
 
-void BestPractices::LogErrorCode(const char* api_name, VkResult result) const {
+void BestPractices::LogErrorCode(Func command, VkResult result) const {
     assert(result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
 
     // Despite being error codes log these results as informational.
@@ -118,9 +119,9 @@ void BestPractices::LogErrorCode(const char* api_name, VkResult result) const {
     const auto result_string = string_VkResult(result);
 
     if (IsValueIn(result, common_failure_codes)) {
-        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", api_name, result_string);
+        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", String(command), result_string);
     } else {
-        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, result_string);
+        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", String(command), result_string);
     }
 }
 
@@ -482,15 +483,15 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
     return skip;
 }
 
-void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, const char* function_name, IMAGE_VIEW_STATE* view,
+void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, Func command, IMAGE_VIEW_STATE* view,
                                            IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
         auto image_state = std::static_pointer_cast<bp_state::Image>(view->image_state);
-        QueueValidateImage(funcs, function_name, image_state, usage, view->normalized_subresource_range);
+        QueueValidateImage(funcs, command, image_state, usage, view->normalized_subresource_range);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
@@ -503,35 +504,32 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* functi
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
-            QueueValidateImage(funcs, function_name, state, usage, layer + base_array_layer,
-                               level + subresource_range.baseMipLevel);
+            QueueValidateImage(funcs, command, state, usage, layer + base_array_layer, level + subresource_range.baseMipLevel);
         }
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
     const uint32_t max_layers = state->createInfo.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
-        QueueValidateImage(funcs, function_name, state, usage, layer + subresource_layers.baseArrayLayer,
-                           subresource_layers.mipLevel);
+        QueueValidateImage(funcs, command, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
-                        const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs) -> bool {
-        ValidateImageInQueue(qs, cbs, function_name, *state, usage, array_layer, mip_level);
+    funcs.push_back([this, command, state, usage, array_layer, mip_level](const ValidationStateTracker& vst, const QUEUE_STATE& qs,
+                                                                          const CMD_BUFFER_STATE& cbs) -> bool {
+        ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
         return false;
     });
 }
 
-void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const bp_state::Image& image,
-                                               IMAGE_SUBRESOURCE_USAGE_BP last_usage, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                               uint32_t array_layer, uint32_t mip_level) {
+void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+                                               IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image.IsSwapchainImage()) {
@@ -541,7 +539,7 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
             "image was used, it was written to with STORE_OP_STORE. "
             "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
             "architectures.",
-            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             device, kVUID_BestPractices_RenderPass_RedundantClear,
@@ -549,7 +547,7 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures.",
-            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
@@ -598,14 +596,13 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
             device, vuid,
             "%s %s: %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
             "time image was used, it was written to with %s. %s",
-            function_name, VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
+            String(command), VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
             suggestion);
     }
 }
 
-void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, const char* function_name,
-                                         bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
-                                         uint32_t mip_level) {
+void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, Func command, bp_state::Image& state,
+                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     auto queue_family = qs.queueFamilyIndex;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
@@ -626,7 +623,7 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
                     "queue family index %" PRIu32
                     ", "
                     "but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer operation",
-                    function_name, array_layer, mip_level, queue_family, last_usage.queue_family_index);
+                    String(command), array_layer, mip_level, queue_family, last_usage.queue_family_index);
             }
         }
     }
@@ -640,7 +637,7 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
-        ValidateImageInQueueArmImg(function_name, state, last_usage.type, usage, array_layer, mip_level);
+        ValidateImageInQueueArmImg(command, state, last_usage.type, usage, array_layer, mip_level);
     }
 }
 

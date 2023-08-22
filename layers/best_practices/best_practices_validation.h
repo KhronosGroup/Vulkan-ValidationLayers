@@ -373,16 +373,16 @@ class BestPractices : public ValidationStateTracker {
 
     std::string GetAPIVersionName(uint32_t version) const;
 
-    void LogPositiveSuccessCode(const char* api_name, VkResult result) const;
-    void LogErrorCode(const char* api_name, VkResult result) const;
+    void LogPositiveSuccessCode(Func command, VkResult result) const;
+    void LogErrorCode(Func command, VkResult result) const;
 
-    bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
+    bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const;
 
-    void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
+    void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count);
 
-    bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, APIVersion version, const char* vuid) const;
+    bool ValidateDeprecatedExtensions(const Location& loc, const char* extension_name, APIVersion version, const char* vuid) const;
 
-    bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name,
+    bool ValidateSpecialUseExtensions(const Location& loc, const char* extension_name,
                                       const SpecialUseVUIDs& special_use_vuids) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -423,14 +423,14 @@ class BestPractices : public ValidationStateTracker {
                                      const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) override;
     void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
-    bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
+    bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const Location& loc) const;
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                          const ErrorObject& errorObj) const override;
     bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                           const ErrorObject& errorObj) const override;
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                              const ErrorObject& errorObj) const override;
-    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const;
+    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const;
     bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                         const ErrorObject& errorObj) const override;
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
@@ -569,8 +569,7 @@ class BestPractices : public ValidationStateTracker {
                                           const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                              const ErrorObject& errorObj) const override;
-    void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, VkPipelineBindPoint bind_point,
-                                     const char* function_name);
+    void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, VkPipelineBindPoint bind_point, Func command);
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const override;
 
@@ -687,7 +686,7 @@ class BestPractices : public ValidationStateTracker {
                                              uint32_t drawCount, uint32_t stride) override;
     void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) override;
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) override;
-    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const char* api_name) const;
+    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const Location& loc) const;
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
                                                             const ErrorObject& errorObj) const override;
@@ -716,7 +715,7 @@ class BestPractices : public ValidationStateTracker {
                                                            const ErrorObject& errorObj) const override;
     bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* pd_state,
                                                               uint32_t requested_queue_family_property_count,
-                                                              const CALL_STATE call_state, const char* caller_name) const;
+                                                              const CALL_STATE call_state, const Location& loc) const;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                           const ErrorObject& errorObj) const override;
@@ -738,17 +737,16 @@ class BestPractices : public ValidationStateTracker {
 
     using QueueCallbacks = std::vector<CMD_BUFFER_STATE::QueueCallback>;
 
-    void QueueValidateImageView(QueueCallbacks& func, const char* function_name, IMAGE_VIEW_STATE* view,
-                                IMAGE_SUBRESOURCE_USAGE_BP usage);
-    void QueueValidateImage(QueueCallbacks& func, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+    void QueueValidateImageView(QueueCallbacks& func, Func command, IMAGE_VIEW_STATE* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
+    void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<bp_state::Image>& state,
                             IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range);
-    void QueueValidateImage(QueueCallbacks& func, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+    void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<bp_state::Image>& state,
                             IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& range);
-    void QueueValidateImage(QueueCallbacks& func, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+    void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<bp_state::Image>& state,
                             IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
-    void ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, const char* function_name, bp_state::Image& state,
+    void ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, Func command, bp_state::Image& state,
                               IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
-    void ValidateImageInQueueArmImg(const char* function_name, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+    void ValidateImageInQueueArmImg(Func command, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                     IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
 
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -1008,7 +1006,7 @@ class BestPractices : public ValidationStateTracker {
     bool VendorCheckEnabled(BPVendorFlags vendors) const;
     const char* VendorSpecificTag(BPVendorFlags vendors) const;
 
-    void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cmd_state, uint32_t draw_count, const char* caller);
+    void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cmd_state, uint32_t draw_count);
     void RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state);
 
     void AddDeferredQueueOperations(bp_state::CommandBuffer& cb);
