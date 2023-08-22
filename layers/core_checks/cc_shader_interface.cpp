@@ -647,12 +647,16 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
         const auto &producer = pipeline.stage_states[i - 1];
         const auto &consumer = pipeline.stage_states[i];
-        assert(producer.spirv_state);
+        const std::shared_ptr<const SPIRV_MODULE_STATE> &producer_spirv =
+            producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
+        const std::shared_ptr<const SPIRV_MODULE_STATE> &consumer_spirv =
+            consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
+        assert(producer.module_state);
         if (&producer == fragment_stage) {
             break;
         }
-        if (consumer.spirv_state && producer.spirv_state && consumer.entrypoint && producer.entrypoint) {
-            skip |= ValidateInterfaceBetweenStages(*producer.spirv_state.get(), *producer.entrypoint, *consumer.spirv_state.get(),
+        if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
+            skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
                                                    *consumer.entrypoint, pipeline.create_index);
         }
     }
