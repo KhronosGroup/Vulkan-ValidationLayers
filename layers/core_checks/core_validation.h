@@ -2609,7 +2609,7 @@ class CoreChecks : public ValidationStateTracker {
                                            size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                            VkResult result) override;
     bool ValidateGetImageSubresourceLayout(const IMAGE_STATE& image_state, const VkImageSubresource& subresource,
-                                           const Location& loc) const;
+                                           const Location& subresource_loc) const;
     bool PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                  const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                  const ErrorObject& errorObj) const override;
@@ -2617,8 +2617,8 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions, VkResult result) override;
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout, const ErrorObject& errorObj) const override;
-    bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource,
-                                                      VkSubresourceLayout2EXT* pLayout, const ErrorObject& errorObj) const override;
+    bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
+                                                      VkSubresourceLayout2KHR* pLayout, const ErrorObject& errorObj) const override;
     bool PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource,
                                                       VkSubresourceLayout2EXT* pLayout, const ErrorObject& errorObj) const override;
 
