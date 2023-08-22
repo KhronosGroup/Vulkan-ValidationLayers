@@ -4000,11 +4000,11 @@ void ResourceAccessState::Normalize() {
 
 void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const {
     if (last_write.has_value()) {
-        used.insert(last_write->Tag());
+        used.CachedInsert(last_write->Tag());
     }
 
     for (const auto &read_access : last_reads) {
-        used.insert(read_access.tag);
+        used.CachedInsert(read_access.tag);
     }
 }
 
