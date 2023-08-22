@@ -209,7 +209,7 @@ class GpuAssisted : public GpuAssistedBase {
                                                          VkResult result) override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
-    void CreateAccelerationStructureBuildValidationState();
+    void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
     void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
