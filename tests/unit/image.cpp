@@ -5598,6 +5598,51 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     }
 }
 
+TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
+    TEST_DESCRIPTION("Test vkGetImageSubresourceLayout2KHR with VK_KHR_maintenance5");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&maintenance5_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageObj image(m_device);
+    auto image_create_info = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
+    image.init(&image_create_info);
+
+    // Exceed MipmapLevel
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-mipLevel-01716");
+    auto subresource = LvlInitStruct<VkImageSubresource2KHR>();
+    subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
+    auto layout = LvlInitStruct<VkSubresourceLayout2KHR>();
+    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
+    m_errorMonitor->VerifyFound();
+
+    // Exceed ArrayLayers
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-arrayLayer-01717");
+    subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
+    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
+    m_errorMonitor->VerifyFound();
+
+    // Color format aspect
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-08886");
+    subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
+    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     TEST_DESCRIPTION("Try to change layout of non sparse image with no memory bound.");
 
