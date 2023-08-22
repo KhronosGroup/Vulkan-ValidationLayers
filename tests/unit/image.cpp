@@ -5452,7 +5452,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-mipLevel-01716");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-mipLevel-01716");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
 
@@ -5468,7 +5468,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-arrayLayer-01717");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-arrayLayer-01717");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
 
@@ -5484,7 +5484,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-08886");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-08886");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
 
@@ -5501,7 +5501,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
         VkImageObj image(m_device);
         if (create_compressed_image(depth_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04462");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-04462");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
@@ -5517,7 +5517,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     if (stencil_format != VK_FORMAT_UNDEFINED) {
         VkImageObj image(m_device);
         if (create_compressed_image(stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04463");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-04463");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
@@ -5534,7 +5534,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
         VkImageObj image(m_device);
         if (create_compressed_image(depth_stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-aspectMask-00997");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-aspectMask-00997");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
@@ -5550,8 +5550,8 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-08886");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04464");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-08886");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-format-04464");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
@@ -5568,7 +5568,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     if (multi_plane_extensions) {
         VkImageObj image(m_device);
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0};
 
@@ -5585,7 +5585,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     if (multi_plane_extensions) {
         VkImageObj image(m_device);
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
 
