@@ -81,6 +81,12 @@ class ValidationJSON:
             '\u2026' : '...',# HORIZONTAL ELLIPSIS
             '\u2032' : "'",  # PRIME
             '\u2192' : '->', # RIGHTWARDS ARROW
+            '\u2308' : '⌈', # LEFT CEILING
+            '\u2309' : '⌉', # RIGHT CEILING
+            '\u230a' : '⌊', # LEFT FLOOR
+            '\u230b' : '⌋', # RIGHT FLOOR
+            '\u00d7' : '×', # MULTIPLICATION SIGN
+            '\u2264' : '≤', # LESS-THAN OR EQUAL TO
         }
 
     def sanitize(self, text, location):
