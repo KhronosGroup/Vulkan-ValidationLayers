@@ -194,7 +194,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         }
     }
 
-    CreateAccelerationStructureBuildValidationState();
+    CreateAccelerationStructureBuildValidationState(pCreateInfo);
 }
 
 void GpuAssistedPreDrawValidationState::Destroy(VkDevice device) {
@@ -249,7 +249,7 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
-void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
+void GpuAssisted::CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo *pCreateInfo) {
     if (aborted) {
         return;
     }
@@ -260,6 +260,24 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
     }
 
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
+        return;
+    }
+
+    // Cannot use this validation without a queue that supports graphics
+    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physical_device);
+    bool graphics_queue_exists = false;
+    uint32_t graphics_queue_family = 0;
+    for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
+        auto qfi = pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex;
+        if (pd_state->queue_family_properties[qfi].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            graphics_queue_family = qfi;
+            graphics_queue_exists = true;
+            break;
+        }
+    }
+    if (!graphics_queue_exists) {
+        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning", "No queue that supports graphics, GPU-AV aborted.");
+        aborted = true;
         return;
     }
 
@@ -479,7 +497,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
 
     VkQueue queue = VK_NULL_HANDLE;
     if (result == VK_SUCCESS) {
-        DispatchGetDeviceQueue(device, 0, 0, &queue);
+        DispatchGetDeviceQueue(device, graphics_queue_family, 0, &queue);
 
         // Hook up queue dispatch
         vkSetDeviceLoaderData(device, queue);
