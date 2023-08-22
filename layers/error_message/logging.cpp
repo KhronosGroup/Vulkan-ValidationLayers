@@ -95,8 +95,10 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_infos;
     object_name_infos.reserve(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
-        // If only one VkDevice was created, it is just noise to print it out in the error message
-        if (objects.object_list[i].type == kVulkanObjectTypeDevice && debug_data->device_created <= 1) {
+        // If only one VkDevice was created, it is just noise to print it out in the error message.
+        // Also avoid printing unknown objects, likely if new function is calling error with null LogObjectList
+        if ((objects.object_list[i].type == kVulkanObjectTypeDevice && debug_data->device_created <= 1) ||
+            (objects.object_list[i].type == kVulkanObjectTypeUnknown) || (objects.object_list[i].handle == 0)) {
             continue;
         }
 
