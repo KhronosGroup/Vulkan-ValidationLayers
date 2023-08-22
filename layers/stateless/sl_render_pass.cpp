@@ -380,8 +380,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice devic
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass, const ErrorObject &errorObj) const {
-    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2, errorObj);
+    return manual_PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
 void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {

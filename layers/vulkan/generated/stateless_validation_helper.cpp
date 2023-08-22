@@ -8925,6 +8925,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBase(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ, errorObj);
     return skip;
 }
 
@@ -10887,6 +10888,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirements(
 
         skip |= ValidateStructPnext("vkGetDeviceImageMemoryRequirements", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, allowed_structs_VkMemoryRequirements2.size(), allowed_structs_VkMemoryRequirements2.data(), GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique", false, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, errorObj);
     return skip;
 }
 
@@ -10939,6 +10941,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
             skip |= ValidateStructPnext("vkGetDeviceImageSparseMemoryRequirements", ParameterName("pSparseMemoryRequirements[%i].pNext", ParameterName::IndexVector{ pSparseMemoryRequirementIndex }), nullptr, pSparseMemoryRequirements[pSparseMemoryRequirementIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion, "VUID-VkSparseImageMemoryRequirements2-pNext-pNext", kVUIDUndefined, false, false);
         }
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements, errorObj);
     return skip;
 }
 

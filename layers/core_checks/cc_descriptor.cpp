@@ -4486,8 +4486,11 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     return skip;
 }
 
-bool CoreChecks::ValidateDescriptorUpdateTemplate(const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                  const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
+                                                               const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
+                                                               const ErrorObject &errorObj) const {
     bool skip = false;
     const Location &loc = errorObj.location.dot(Field::pCreateInfo);
     auto layout = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->descriptorSetLayout);
@@ -4552,27 +4555,17 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const VkDescriptorUpdateTempla
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
-                                                               const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
-                                                               const ErrorObject &errorObj) const {
-    bool skip = ValidateDescriptorUpdateTemplate(pCreateInfo, errorObj);
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
                                                                   const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
                                                                   const ErrorObject &errorObj) const {
-    bool skip = ValidateDescriptorUpdateTemplate(pCreateInfo, errorObj);
-    return skip;
+    return PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, errorObj);
 }
 
-bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
-                                                         VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                         const void *pData) const {
+bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                                VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                const void *pData, const ErrorObject &errorObj) const {
     bool skip = false;
     auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
     // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
@@ -4585,16 +4578,10 @@ bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descrip
     return skip;
 }
 
-bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
-                                                                VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                const void *pData, const ErrorObject &errorObj) const {
-    return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
-}
-
 bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                    const void *pData, const ErrorObject &errorObj) const {
-    return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
+    return PreCallValidateUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,

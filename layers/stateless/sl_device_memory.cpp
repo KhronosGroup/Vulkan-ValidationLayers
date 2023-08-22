@@ -220,10 +220,27 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
+                                                                                 const VkDeviceImageMemoryRequirements *pInfo,
+                                                                                 VkMemoryRequirements2 *pMemoryRequirements,
+                                                                                 const ErrorObject &errorObj) const {
+    bool skip = false;
+
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
                                                                                     const VkDeviceImageMemoryRequirements *pInfo,
                                                                                     VkMemoryRequirements2 *pMemoryRequirements,
                                                                                     const ErrorObject &errorObj) const {
+    return manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, errorObj);
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
@@ -234,9 +251,6 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &errorObj) const {
-    bool skip = false;
-
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
-
-    return skip;
+    return manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
+                                                                        pSparseMemoryRequirements, errorObj);
 }

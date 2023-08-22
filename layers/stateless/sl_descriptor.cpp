@@ -1019,11 +1019,11 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
-                                                               const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                               const ErrorObject &errorObj) const {
+bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
+                                                                             const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                                             const VkAllocationCallbacks *pAllocator,
+                                                                             VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                                             const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
@@ -1152,16 +1152,8 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
-                                                                             const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                                             const VkAllocationCallbacks *pAllocator,
-                                                                             VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                             const ErrorObject &errorObj) const {
-    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
-}
-
 bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
     VkSamplerYcbcrConversion *pYcbcrConversion, const ErrorObject &errorObj) const {
-    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
+    return manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
 }
