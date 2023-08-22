@@ -41,7 +41,7 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
         }
     }
     if (!completed_by_get_results) {
-        skip |= ValidateObjectNotInUse(query_pool_state.get(), "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
+        skip |= ValidateObjectNotInUse(query_pool_state.get(), errorObj.location, "VUID-vkDestroyQueryPool-queryPool-00793");
     }
     return skip;
 }

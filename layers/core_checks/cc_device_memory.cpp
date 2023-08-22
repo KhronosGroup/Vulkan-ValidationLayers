@@ -386,7 +386,7 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memor
     auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
     bool skip = false;
     if (mem_info) {
-        skip |= ValidateObjectNotInUse(mem_info.get(), "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
+        skip |= ValidateObjectNotInUse(mem_info.get(), errorObj.location, "VUID-vkFreeMemory-memory-00677");
     }
     return skip;
 }

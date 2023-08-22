@@ -957,7 +957,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
     auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
     bool skip = false;
     if (as_state) {
-        skip |= ValidateObjectNotInUse(as_state.get(), "vkDestroyAccelerationStructureNV",
+        skip |= ValidateObjectNotInUse(as_state.get(), errorObj.location,
                                        "VUID-vkDestroyAccelerationStructureNV-accelerationStructure-03752");
     }
     return skip;
@@ -969,7 +969,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
     auto as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(accelerationStructure);
     bool skip = false;
     if (as_state) {
-        skip |= ValidateObjectNotInUse(as_state.get(), "vkDestroyAccelerationStructureKHR",
+        skip |= ValidateObjectNotInUse(as_state.get(), errorObj.location,
                                        "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
     }
     return skip;

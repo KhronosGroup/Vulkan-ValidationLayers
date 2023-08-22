@@ -4365,8 +4365,8 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
     auto desc_pool_state = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
     bool skip = false;
     if (desc_pool_state) {
-        skip |= ValidateObjectNotInUse(desc_pool_state.get(), "vkDestroyDescriptorPool",
-                                       "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
+        skip |=
+            ValidateObjectNotInUse(desc_pool_state.get(), errorObj.location, "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
     }
     return skip;
 }

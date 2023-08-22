@@ -887,7 +887,7 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoS
     auto video_session_state = Get<VIDEO_SESSION_STATE>(videoSession);
     bool skip = false;
     if (video_session_state) {
-        skip |= ValidateObjectNotInUse(video_session_state.get(), "vkDestroyVideoSessionKHR",
+        skip |= ValidateObjectNotInUse(video_session_state.get(), errorObj.location,
                                        "VUID-vkDestroyVideoSessionKHR-videoSession-07192");
     }
     return skip;
@@ -1200,7 +1200,7 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device
     auto video_session_parameters_state = Get<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters);
     bool skip = false;
     if (video_session_parameters_state) {
-        skip |= ValidateObjectNotInUse(video_session_parameters_state.get(), "vkDestroyVideoSessionParametersKHR",
+        skip |= ValidateObjectNotInUse(video_session_parameters_state.get(), errorObj.location,
                                        "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-07212");
     }
     return skip;
