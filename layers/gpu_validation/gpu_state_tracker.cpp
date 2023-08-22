@@ -605,15 +605,7 @@ bool GpuAssistedBase::PreCallValidateCmdWaitEvents(
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                        const VkDependencyInfoKHR *pDependencyInfos,
                                                        const ErrorObject &errorObj) const {
-    VkPipelineStageFlags2 src_stage_mask = 0;
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
-    }
-
-    ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
-    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, errorObj.location);
+    return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, errorObj);
 }
 
 bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,

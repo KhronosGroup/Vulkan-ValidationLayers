@@ -330,7 +330,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                 VkFence fence, const ErrorObject &errorObj) const {
-    return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
+    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,

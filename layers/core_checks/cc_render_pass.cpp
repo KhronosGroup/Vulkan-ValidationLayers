@@ -514,8 +514,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                        const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin, errorObj);
-    return skip;
+    return PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -791,8 +790,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                      const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer, pSubpassEndInfo, errorObj);
-    return skip;
+    return PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -2622,9 +2620,9 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
     return skip;
 }
 
-bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                           const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                  const ErrorObject &errorObj) const {
     bool skip = false;
 
     skip |= ValidateDepthStencilResolve(pCreateInfo, errorObj);
@@ -2844,13 +2842,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                      const ErrorObject &errorObj) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
-}
-
-bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                  const ErrorObject &errorObj) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
+    return PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
 }
 
 bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view,
@@ -3039,8 +3031,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                           const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                  const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
@@ -3678,7 +3670,7 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Locat
     return outside;
 }
 
-bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
@@ -3697,11 +3689,7 @@ bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, const Er
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
-    return ValidateCmdEndRendering(commandBuffer, errorObj);
-}
-
-bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
-    return ValidateCmdEndRendering(commandBuffer, errorObj);
+    return PreCallValidateCmdEndRendering(commandBuffer, errorObj);
 }
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
@@ -3753,12 +3741,7 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
 
 bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
                                                      const ErrorObject &errorObj) const {
-    return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
-}
-
-bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                  const ErrorObject &errorObj) const {
-    return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
+    return PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
@@ -3807,7 +3790,7 @@ bool CoreChecks::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, Vk
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                    const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
-    return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer, errorObj);
+    return PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,

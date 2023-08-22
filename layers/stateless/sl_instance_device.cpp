@@ -708,10 +708,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     return skip;
 }
 
-bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                                          const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                          VkImageFormatProperties2 *pImageFormatProperties,
-                                                                          const ErrorObject &errorObj) const {
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &errorObj) const {
     bool skip = false;
 
     if (pImageFormatInfo != nullptr) {
@@ -764,16 +763,11 @@ bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhys
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &errorObj) const {
-    return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, errorObj);
-}
-
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
     VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &errorObj) const {
-    return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, errorObj);
+    return manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                                         errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(

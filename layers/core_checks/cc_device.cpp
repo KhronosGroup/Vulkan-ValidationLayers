@@ -634,10 +634,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
                                                                            const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                            VkImageFormatProperties2 *pImageFormatProperties,
                                                                            const ErrorObject &errorObj) const {
-    // Can't wrap AHB-specific validation in a device extension check here, but no harm
-    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties, errorObj);
-    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties, errorObj);
-    return skip;
+    return PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                                  errorObj);
 }
 
 // Access helper functions for external modules
@@ -700,7 +698,8 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     return result;
 }
 
-bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
+                                                 const ErrorObject &errorObj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state_ptr) {
@@ -718,26 +717,16 @@ bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                 const ErrorObject &errorObj) const {
-    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
-}
-
 bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
                                                     const ErrorObject &errorObj) const {
-    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
+    return PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,
                                                          VkPrivateDataSlotEXT *pPrivateDataSlot,
                                                          const ErrorObject &errorObj) const {
-    bool skip = false;
-    if (!enabled_features.core13.privateData) {
-        skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
-                         "vkCreatePrivateDataSlotEXT(): The privateData feature must be enabled.");
-    }
-    return skip;
+    return PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, errorObj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo *pCreateInfo,
@@ -745,8 +734,8 @@ bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkP
                                                       const ErrorObject &errorObj) const {
     bool skip = false;
     if (!enabled_features.core13.privateData) {
-        skip |= LogError(device, "VUID-vkCreatePrivateDataSlot-privateData-04564",
-                         "vkCreatePrivateDataSlot(): The privateData feature must be enabled.");
+        skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, errorObj.location,
+                         "The privateData feature was not enabled.");
     }
     return skip;
 }

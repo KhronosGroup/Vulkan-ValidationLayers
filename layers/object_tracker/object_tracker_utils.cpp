@@ -610,7 +610,7 @@ bool ObjectLifetimes::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice devi
                                                                    VkDescriptorSetLayoutSupport *pSupport,
                                                                    const ErrorObject &errorObj) const {
     bool skip = ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDescriptorSetLayoutSupport-device-parameter",
-                               kVUIDUndefined, "vkGetDescriptorSetLayoutSupport");
+                               kVUIDUndefined, vvl::String(errorObj.location.function));
     if (pCreateInfo) {
         skip |= ValidateSamplerObjects(pCreateInfo);
     }
@@ -620,12 +620,7 @@ bool ObjectLifetimes::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice d
                                                                       const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                       VkDescriptorSetLayoutSupport *pSupport,
                                                                       const ErrorObject &errorObj) const {
-    bool skip = ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDescriptorSetLayoutSupport-device-parameter",
-                               kVUIDUndefined, "vkGetDescriptorSetLayoutSupportKHR");
-    if (pCreateInfo) {
-        skip |= ValidateSamplerObjects(pCreateInfo);
-    }
-    return skip;
+    return PreCallValidateGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, errorObj);
 }
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
@@ -870,16 +865,15 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkP
                                                                              const ErrorObject &errorObj) const {
     return ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false,
                           "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter", kVUIDUndefined,
-                          "vkGetPhysicalDeviceQueueFamilyProperties2");
+                          vvl::String(errorObj.location.function));
 }
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pQueueFamilyPropertyCount,
                                                                                 VkQueueFamilyProperties2 *pQueueFamilyProperties,
                                                                                 const ErrorObject &errorObj) const {
-    return ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false,
-                          "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter", kVUIDUndefined,
-                          "vkGetPhysicalDeviceQueueFamilyProperties2");
+    return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
+                                                                  errorObj);
 }
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,

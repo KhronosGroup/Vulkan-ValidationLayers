@@ -219,10 +219,11 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCo
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                        const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
-                                                        const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
-                                                        const ErrorObject &errorObj) const {
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                      const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                      const VkDeviceSize *pStrides,
+                                                                      const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Check VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength
@@ -287,19 +288,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkComma
                                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                          const VkDeviceSize *pStrides,
                                                                          const ErrorObject &errorObj) const {
-    bool skip = false;
-    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                      const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                                      const VkDeviceSize *pStrides,
-                                                                      const ErrorObject &errorObj) const {
-    bool skip = false;
-    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
-    return skip;
+    return manual_PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes,
+                                                       pStrides, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -362,12 +352,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer,
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                       const VkSubpassBeginInfo *,
+                                                                       const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                                        const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, errorObj);
-    return skip;
+    return manual_PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -410,8 +399,9 @@ static bool UniqueRenderingInfoImageViews(const VkRenderingInfo *pRenderingInfo,
     return unique_views;
 }
 
-bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                    const ErrorObject &errorObj) const {
+bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
+                                                                  const VkRenderingInfo *pRenderingInfo,
+                                                                  const ErrorObject &errorObj) const {
     bool skip = false;
     const Location loc = errorObj.location.dot(Field::pRenderingInfo);
 
@@ -722,15 +712,7 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                                                      const VkRenderingInfo *pRenderingInfo,
                                                                      const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
-    return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
-                                                                  const VkRenderingInfo *pRenderingInfo,
-                                                                  const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
-    return skip;
+    return manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
@@ -802,62 +784,56 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                       VkDeviceSize countBufferOffset, const Location &loc) const {
-    bool skip = false;
-    if (offset & 3) {
-        skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", commandBuffer, loc.dot(Field::offset),
-                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
-    }
-
-    if (countBufferOffset & 3) {
-        skip |= LogError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716", commandBuffer, loc.dot(Field::countBufferOffset),
-                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", countBufferOffset);
-    }
-    return skip;
-}
-
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                      VkDeviceSize offset, VkBuffer countBuffer,
                                                                      VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                      uint32_t stride, const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
+    bool skip = false;
+    if (offset & 3) {
+        skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
+    }
+
+    if (countBufferOffset & 3) {
+        skip |= LogError("VUID-vkCmdDrawIndirectCount-countBufferOffset-02716", commandBuffer,
+                         errorObj.location.dot(Field::countBufferOffset), "(0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         countBufferOffset);
+    }
+    return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                         VkDeviceSize offset, VkBuffer countBuffer,
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                         uint32_t stride, const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
+    return manual_PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
+                                                      stride, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                         VkDeviceSize offset, VkBuffer countBuffer,
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                         uint32_t stride, const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
-}
-
-bool StatelessValidation::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                              VkDeviceSize countBufferOffset, const Location &loc) const {
-    bool skip = false;
-    if (offset & 3) {
-        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", commandBuffer, loc.dot(Field::offset),
-                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
-    }
-
-    if (countBufferOffset & 3) {
-        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716", commandBuffer,
-                         loc.dot(Field::countBufferOffset), "(0x%" PRIxLEAST64 "), is not a multiple of 4.", countBufferOffset);
-    }
-    return skip;
+    return manual_PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
+                                                      stride, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                             VkDeviceSize offset, VkBuffer countBuffer,
                                                                             VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                             uint32_t stride, const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
+    bool skip = false;
+    if (offset & 3) {
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", commandBuffer, errorObj.location.dot(Field::offset),
+                         "(0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
+    }
+
+    if (countBufferOffset & 3) {
+        skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716", commandBuffer,
+                         errorObj.location.dot(Field::countBufferOffset), "(0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         countBufferOffset);
+    }
+    return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -865,7 +841,8 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(V
                                                                                VkDeviceSize countBufferOffset,
                                                                                uint32_t maxDrawCount, uint32_t stride,
                                                                                const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
+    return manual_PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                             maxDrawCount, stride, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -873,7 +850,8 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(V
                                                                                VkDeviceSize countBufferOffset,
                                                                                uint32_t maxDrawCount, uint32_t stride,
                                                                                const ErrorObject &errorObj) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, errorObj.location);
+    return manual_PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                             maxDrawCount, stride, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -1051,6 +1029,14 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuff
                                                                    uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX,
                                                                    uint32_t groupCountY, uint32_t groupCountZ,
                                                                    const ErrorObject &errorObj) const {
+    return manual_PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
+                                                 groupCountZ, errorObj);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
+                                                                uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX,
+                                                                uint32_t groupCountY, uint32_t groupCountZ,
+                                                                const ErrorObject &errorObj) const {
     bool skip = false;
 
     // Paired if {} else if {} tests used to avoid any possible uint underflow

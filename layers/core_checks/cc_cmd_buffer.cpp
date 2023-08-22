@@ -1563,9 +1563,10 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
     return skip;
 }
 
-bool CoreChecks::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                               const VkBuffer *pBuffers, const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                               const VkDeviceSize *pStrides, const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
+                                                      const ErrorObject &errorObj) const {
     const char *api_call = errorObj.location.StringFunc();
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
@@ -1616,18 +1617,8 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
                                                          uint32_t bindingCount, const VkBuffer *pBuffers,
                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                          const VkDeviceSize *pStrides, const ErrorObject &errorObj) const {
-    bool skip =
-        ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
-                                                      const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
-                                                      const ErrorObject &errorObj) const {
-    bool skip =
-        ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, errorObj);
-    return skip;
+    return PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
+                                                errorObj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(

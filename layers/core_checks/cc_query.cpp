@@ -1047,8 +1047,8 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                            uint32_t slot, const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                   VkQueryPool queryPool, uint32_t slot, const ErrorObject &errorObj) const {
     if (disabled[query_validation]) return false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
@@ -1071,12 +1071,7 @@ bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPip
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                       VkQueryPool queryPool, uint32_t query, const ErrorObject &errorObj) const {
-    return ValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, errorObj);
-}
-
-bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                   VkQueryPool queryPool, uint32_t query, const ErrorObject &errorObj) const {
-    return ValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, errorObj);
+    return PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, errorObj);
 }
 
 void CoreChecks::RecordCmdWriteTimestamp2(CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t slot, Func command) const {
@@ -1264,8 +1259,8 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     return skip;
 }
 
-bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                        const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                               const ErrorObject &errorObj) const {
     if (disabled[query_validation]) return false;
 
     bool skip = false;
@@ -1292,12 +1287,7 @@ bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, 
 
 bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                   const ErrorObject &errorObj) const {
-    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount, errorObj);
-}
-
-bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                               const ErrorObject &errorObj) const {
-    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount, errorObj);
+    return PreCallValidateResetQueryPool(device, queryPool, firstQuery, queryCount, errorObj);
 }
 
 bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
