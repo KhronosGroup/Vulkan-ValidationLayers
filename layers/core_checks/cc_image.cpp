@@ -639,7 +639,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
                              "with vkDestroySwapchainKHR.",
                              FormatHandle(image_state->image()).c_str());
         }
-        skip |= ValidateObjectNotInUse(image_state.get(), "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
+        skip |= ValidateObjectNotInUse(image_state.get(), errorObj.location, "VUID-vkDestroyImage-image-01000");
     }
     return skip;
 }
@@ -2064,7 +2064,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
 
     bool skip = false;
     if (image_view_state) {
-        skip |= ValidateObjectNotInUse(image_view_state.get(), "vkDestroyImageView", "VUID-vkDestroyImageView-imageView-01026");
+        skip |= ValidateObjectNotInUse(image_view_state.get(), errorObj.location, "VUID-vkDestroyImageView-imageView-01026");
     }
     return skip;
 }

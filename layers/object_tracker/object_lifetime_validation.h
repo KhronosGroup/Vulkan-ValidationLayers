@@ -45,6 +45,10 @@ struct ObjTrackState {
 typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
 
 class ObjectLifetimes : public ValidationObject {
+    using Func = vvl::Func;
+    using Struct = vvl::Struct;
+    using Field = vvl::Field;
+
   public:
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -91,11 +95,13 @@ class ObjectLifetimes : public ValidationObject {
         }
     }
 
-    bool ReportUndestroyedInstanceObjects(VkInstance instance) const;
-    bool ReportUndestroyedDeviceObjects(VkDevice device) const;
+    bool ReportUndestroyedInstanceObjects(VkInstance instance, const Location &loc) const;
+    bool ReportUndestroyedDeviceObjects(VkDevice device, const Location &loc) const;
 
-    bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) const;
-    bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code) const;
+    bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code,
+                                   const Location &loc) const;
+    bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code,
+                                     const Location &loc) const;
 
     void DestroyUndestroyedObjects(VulkanObjectType object_type);
 
@@ -105,16 +111,16 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
     void DestroyLeakedInstanceObjects();
     void DestroyLeakedDeviceObjects();
-    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code, const char *api_name) const;
+    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code, const Location &loc) const;
     void DestroyQueueDataStructures();
-    bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer) const;
-    bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) const;
-    bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo) const;
-    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const char *api_name) const;
+    bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer, const Location &loc) const;
+    bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const;
+    bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const;
+    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
     bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_code,
-                                 const char *wrong_device_code, const char *api_name) const;
+                                 const char *wrong_device_code, const Location &loc) const;
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
-                                        const VkAccelerationStructureBuildGeometryInfoKHR *infos, const char *api_name) const;
+                                        const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
     ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) const {
         for (auto *layer_object : object_dispatch) {
@@ -126,7 +132,7 @@ class ObjectLifetimes : public ValidationObject {
     };
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_code,
-                             const char *wrong_device_code, const char *api_name) const {
+                             const char *wrong_device_code, const Location &loc) const {
         // Look for object in object map
         if (!object_map[object_type].contains(object_handle)) {
             // If object is an image, also look for it in the swapchain image map
@@ -145,12 +151,11 @@ class ObjectLifetimes : public ValidationObject {
                                     // Object found on other device, report an error if object has a device parent error code
                                     if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
                                         const LogObjectList objlist(instance, device, layer_object_data->device);
-                                        return LogError(
-                                            objlist, wrong_device_code,
-                                            "%s(): Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
-                                            ") was created, allocated or retrieved from %s.",
-                                            api_name, FormatHandle(device).c_str(), object_string[object_type], object_handle,
-                                            FormatHandle(layer_object_data->device).c_str());
+                                        return LogError(wrong_device_code, objlist, loc,
+                                                        "Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
+                                                        ") was created, allocated or retrieved from %s.",
+                                                        FormatHandle(device).c_str(), object_string[object_type], object_handle,
+                                                        FormatHandle(layer_object_data->device).c_str());
 
                                     } else {
                                         return false;
@@ -161,7 +166,7 @@ class ObjectLifetimes : public ValidationObject {
                     }
                 }
                 // Report an error if object was not found anywhere
-                return LogError(instance, invalid_handle_code, "%s(): Invalid %s Object 0x%" PRIxLEAST64 ".", api_name,
+                return LogError(invalid_handle_code, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
                                 object_string[object_type], object_handle);
             }
         }
@@ -170,16 +175,16 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
-                        const char *wrong_device_code, const char *api_name) const {
+                        const char *wrong_device_code, const Location &loc) const {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
 
         if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, api_name);
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, loc);
         }
 
-        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_code, wrong_device_code, api_name);
+        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_code, wrong_device_code, loc);
     }
 
     template <typename T1>
@@ -236,7 +241,8 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1>
     bool ValidateDestroyObject(T1 object_handle, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
-                               const char *expected_custom_allocator_code, const char *expected_default_allocator_code) const {
+                               const char *expected_custom_allocator_code, const char *expected_default_allocator_code,
+                               const Location &loc) const {
         auto object = HandleToUint64(object_handle);
         const bool custom_allocator = pAllocator != nullptr;
         bool skip = false;
@@ -249,13 +255,13 @@ class ObjectLifetimes : public ValidationObject {
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                     // it cannot verify that these allocation callbacks are compatible with each other.
-                    skip |= LogError(object_handle, expected_custom_allocator_code,
+                    skip |= LogError(expected_custom_allocator_code, object_handle, loc,
                                      "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but specified at creation.",
                                      object_string[object_type], object);
 
                 } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
-                    skip |= LogError(object_handle, expected_default_allocator_code,
+                    skip |= LogError(expected_default_allocator_code, object_handle, loc,
                                      "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
                                      " but not specified at creation.",
                                      object_string[object_type], object);

@@ -367,7 +367,7 @@ bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass 
     auto rp_state = Get<RENDER_PASS_STATE>(renderPass);
     bool skip = false;
     if (rp_state) {
-        skip |= ValidateObjectNotInUse(rp_state.get(), "vkDestroyRenderPass", "VUID-vkDestroyRenderPass-renderPass-00873");
+        skip |= ValidateObjectNotInUse(rp_state.get(), errorObj.location, "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
 }
@@ -4577,8 +4577,7 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
     auto framebuffer_state = Get<FRAMEBUFFER_STATE>(framebuffer);
     bool skip = false;
     if (framebuffer_state) {
-        skip |=
-            ValidateObjectNotInUse(framebuffer_state.get(), "vkDestroyFramebuffer", "VUID-vkDestroyFramebuffer-framebuffer-00892");
+        skip |= ValidateObjectNotInUse(framebuffer_state.get(), errorObj.location, "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
 }

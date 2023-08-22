@@ -413,7 +413,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 
     bool skip = false;
     if (buffer_state) {
-        skip |= ValidateObjectNotInUse(buffer_state.get(), "vkDestroyBuffer", "VUID-vkDestroyBuffer-buffer-00922");
+        skip |= ValidateObjectNotInUse(buffer_state.get(), errorObj.location, "VUID-vkDestroyBuffer-buffer-00922");
     }
     return skip;
 }
@@ -423,7 +423,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
     auto buffer_view_state = Get<BUFFER_VIEW_STATE>(bufferView);
     bool skip = false;
     if (buffer_view_state) {
-        skip |= ValidateObjectNotInUse(buffer_view_state.get(), "vkDestroyBufferView", "VUID-vkDestroyBufferView-bufferView-00936");
+        skip |= ValidateObjectNotInUse(buffer_view_state.get(), errorObj.location, "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;
 }

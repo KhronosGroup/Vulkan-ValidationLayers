@@ -272,7 +272,7 @@ ReadLockGuard ObjectLifetimes::ReadLock() const { return ReadLockGuard(validatio
 WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 // ObjectTracker undestroyed objects validation function
-bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) const {
+bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const Location& loc) const {
     bool skip = false;
     const std::string error_code = "%s";
 ''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'instance'))
@@ -280,12 +280,12 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) cons
             comment_prefix = ''
             if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
                 comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-            out.append(f'    {comment_prefix}skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectType{handle.name[2:]}, error_code);\n')
+            out.append(f'    {comment_prefix}skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
         out.append('    return skip;\n')
         out.append('}\n')
 
         out.append('''
-bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
+bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Location& loc) const {
     bool skip = false;
     const std::string error_code = "%s";
 ''' % APISpecific.getUndestroyedObjectVUID(self.targetApiName, 'device'))
@@ -293,13 +293,13 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
         comment_prefix = ''
         if APISpecific.IsImplicitlyDestroyed(self.targetApiName, 'VkCommandBuffer'):
             comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-        out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n')
+        out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code, loc);\n')
 
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and self.isParentDevice(x)]:
             comment_prefix = ''
             if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
                 comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-            out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectType{handle.name[2:]}, error_code);\n')
+            out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
         out.append('    return skip;\n')
         out.append('}\n')
 
@@ -453,7 +453,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
                     pre_call_validate += addIndent(indent,
 f'''if (({countName} > 0) && ({prefix}{member.name})) {{
     for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
-        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, "{parentName}");
+        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, errorObj.location);
     }}
 }}''')
                 else:
@@ -464,7 +464,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         nullAllowed = 'false'
                         manual_vuid_index = parentName + '-' + member.name
                         paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-                    pre_call_validate += f'{bonus_indent}{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, "{parentName}");\n'
+                    pre_call_validate += f'{bonus_indent}{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, errorObj.location);\n'
                     if 'pSampler' in member.name:
                         pre_call_validate = ''
 
@@ -569,7 +569,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
             nullallocVUID = self.getAllocVUID(handle_param, "nullalloc")
             if handle_param.type in self.vk.handles:
                 # Call Destroy a single time
-                pre_call_validate += f'{indent}skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID});\n'
+                pre_call_validate += f'{indent}skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, errorObj.location);\n'
                 pre_call_record += f'{indent}RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]});\n'
 
         return pre_call_validate, pre_call_record, post_call_record

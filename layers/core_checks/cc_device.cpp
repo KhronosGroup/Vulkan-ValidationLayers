@@ -776,12 +776,12 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const char *caller_name, const char *error_code) const {
+bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const Location &loc, const char *error_code) const {
     if (disabled[object_in_use]) return false;
     auto obj_struct = obj_node->Handle();
     bool skip = false;
     if (obj_node->InUse()) {
-        skip |= LogError(device, error_code, "Cannot call %s on %s that is currently in use by a command buffer.", caller_name,
+        skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by a command buffer.",
                          FormatHandle(obj_struct).c_str());
     }
     return skip;

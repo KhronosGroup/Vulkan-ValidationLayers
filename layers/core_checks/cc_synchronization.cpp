@@ -554,7 +554,7 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
     auto sema_node = Get<SEMAPHORE_STATE>(semaphore);
     bool skip = false;
     if (sema_node) {
-        skip |= ValidateObjectNotInUse(sema_node.get(), "vkDestroySemaphore", "VUID-vkDestroySemaphore-semaphore-01137");
+        skip |= ValidateObjectNotInUse(sema_node.get(), errorObj.location, "VUID-vkDestroySemaphore-semaphore-01137");
     }
     return skip;
 }
@@ -564,7 +564,7 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
     auto event_state = Get<EVENT_STATE>(event);
     bool skip = false;
     if (event_state) {
-        skip |= ValidateObjectNotInUse(event_state.get(), "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
+        skip |= ValidateObjectNotInUse(event_state.get(), errorObj.location, "VUID-vkDestroyEvent-event-01145");
     }
     return skip;
 }
@@ -574,7 +574,7 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
     auto sampler_state = Get<SAMPLER_STATE>(sampler);
     bool skip = false;
     if (sampler_state) {
-        skip |= ValidateObjectNotInUse(sampler_state.get(), "vkDestroySampler", "VUID-vkDestroySampler-sampler-01082");
+        skip |= ValidateObjectNotInUse(sampler_state.get(), errorObj.location, "VUID-vkDestroySampler-sampler-01082");
     }
     return skip;
 }
