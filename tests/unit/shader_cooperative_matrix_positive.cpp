@@ -112,7 +112,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     uint32_t props_count = 1;
     VkResult props_result = vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, &props);
 
-    if (props_result != VK_SUCCESS && props_result != VK_INCOMPLETE && props_count != 1) {
+    if ((props_result != VK_SUCCESS && props_result != VK_INCOMPLETE) || props_count != 1) {
         GTEST_SKIP() << "GetPhysicalDeviceCooperativeMatrixPropertiesKHR does not report any matrices supported";
     }
 
