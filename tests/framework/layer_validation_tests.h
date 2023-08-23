@@ -562,8 +562,10 @@ class NegativeShaderStorageTexel : public ShaderStorageTexelTest {};
 class PositiveShaderStorageTexel : public ShaderStorageTexelTest {};
 
 class SparseTest : public VkLayerTest {};
-class NegativeSparse : public SparseTest {};
-class PositiveSparse : public SparseTest {};
+class NegativeSparseImage : public SparseTest {};
+class PositiveSparseImage : public SparseTest {};
+class NegativeSparseBuffer : public SparseTest {};
+class PositiveSparseBuffer : public SparseTest {};
 
 class NegativeSubgroup : public VkLayerTest {};
 

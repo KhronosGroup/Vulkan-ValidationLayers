@@ -133,8 +133,10 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_storage_image_positive.cpp
     unit/shader_storage_texel.cpp
     unit/shader_storage_texel_positive.cpp
-    unit/sparse.cpp
-    unit/sparse_positive.cpp
+    unit/sparse_buffer.cpp
+    unit/sparse_buffer_positive.cpp
+    unit/sparse_image.cpp
+    unit/sparse_image_positive.cpp
     unit/subgroups.cpp
     unit/subpass.cpp
     unit/subpass_positive.cpp
