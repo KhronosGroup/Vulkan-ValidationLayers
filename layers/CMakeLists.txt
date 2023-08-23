@@ -368,7 +368,7 @@ elseif(APPLE)
     message(STATUS "Functions are exported via VVL_EXPORT")
     set_target_properties(vvl PROPERTIES SUFFIX ".dylib")
 elseif(ANDROID)
-    message(STATUS "Functions are exported via VVL_EXPORT")
+    target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}-android.map)
 else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
@@ -414,7 +414,18 @@ endif()
 target_include_directories(vvl SYSTEM PRIVATE external)
 
 if (ANDROID)
-    add_subdirectory(android)
+    # https://gitlab.kitware.com/cmake/cmake/issues/18787
+    # https://github.com/android-ndk/ndk/issues/463
+    # "Users should be able to reliably use the toolchain provided by the NDK r23 or later when using CMake 3.21 or later" - Professional CMake
+    if (CMAKE_VERSION VERSION_LESS "3.21")
+        message(FATAL_ERROR "Android build requires at least CMake 3.21!")
+    endif()
+
+    # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
+    target_link_libraries(VkLayer_utils PUBLIC log)
+
+    install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
     return()
 endif()
 
