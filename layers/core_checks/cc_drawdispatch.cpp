@@ -4775,9 +4775,9 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     skip |=
         ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, caller_name, vuid.indirect_count_contiguous_memory_02714);
-    skip |= ValidateBufferUsageFlags(commandBuffer, *count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     vuid.indirect_count_buffer_bit_02715, "vkCmdDrawMeshTasksIndirectCountEXT()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, countBuffer), *count_buffer_state,
+                                     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
+                                     errorObj.location.dot(Field::countBuffer));
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
                                             "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
                                             errorObj.location);
@@ -4795,7 +4795,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
 bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkPipelineBindPoint bind_point,
                                      const Location &loc) const {
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const char *function = loc.StringFunc();
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
     const auto *last_pipeline = last_bound_state.pipeline_state;
@@ -4837,10 +4836,10 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                         // Some Functions could not be protected. See VUID 02711.
                         if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
                             vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                            skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, function,
+                            skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, loc,
                                                              vuid.protected_command_buffer_02712, image_desc.c_str());
                         }
-                        skip |= ValidateProtectedImage(cb_state, *view_state->image_state, function,
+                        skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc,
                                                        vuid.unprotected_command_buffer_02707, image_desc.c_str());
                     }
                     ++i;
@@ -4961,11 +4960,11 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                                                     set_info.validated_set_binding_req_map.begin(),
                                                     set_info.validated_set_binding_req_map.end(),
                                                     vvl::insert_iterator<BindingVariableMap>(delta_reqs, delta_reqs.begin()));
-                                skip |= ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function,
-                                                          vuid);
+                                skip |=
+                                    ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, loc, vuid);
                             } else {
-                                skip |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state,
-                                                          function, vuid);
+                                skip |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state, loc,
+                                                          vuid);
                             }
                         }
                     }
@@ -5054,11 +5053,11 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                                                     set_info.validated_set_binding_req_map.begin(),
                                                     set_info.validated_set_binding_req_map.end(),
                                                     vvl::insert_iterator<BindingVariableMap>(delta_reqs, delta_reqs.begin()));
-                                skip |= ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function,
-                                                          vuid);
+                                skip |=
+                                    ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, loc, vuid);
                             } else {
-                                skip |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state,
-                                                          function, vuid);
+                                skip |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state, loc,
+                                                          vuid);
                             }
                         }
                     }
@@ -5134,13 +5133,13 @@ bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUF
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const char *caller_name = loc.StringFunc();
+    const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
 
     skip |=
         ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, caller_name, vuid.indirect_contiguous_memory_02708);
-    skip |= ValidateBufferUsageFlags(cb_state.commandBuffer(), buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     vuid.indirect_buffer_bit_02290, caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     vuid.indirect_buffer_bit_02290, loc.dot(Field::buffer));
     if (cb_state.unprotected == false) {
-        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
         skip |= LogError(vuid.indirect_protected_cb_02646, objlist, loc,
                          "Indirect commands can't be used in protected command buffers.");
     }
@@ -5152,13 +5151,13 @@ bool CoreChecks::ValidateIndirectCountCmd(const CMD_BUFFER_STATE &cb_state, cons
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const char *caller_name = loc.StringFunc();
+    const LogObjectList objlist(cb_state.Handle(), count_buffer_state.Handle());
 
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), count_buffer_state, caller_name,
                                           vuid.indirect_count_contiguous_memory_02714);
-    skip |= ValidateBufferUsageFlags(cb_state.commandBuffer(), count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     vuid.indirect_count_buffer_bit_02715, caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     vuid.indirect_count_buffer_bit_02715, loc.dot(Field::countBuffer));
     if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.createInfo.size) {
-        const LogObjectList objlist(cb_state.Handle(), count_buffer_state.Handle());
         skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,
                          "countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
                          count_buffer_offset, count_buffer_state.createInfo.size);

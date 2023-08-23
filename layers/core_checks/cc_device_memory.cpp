@@ -1761,9 +1761,9 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
             skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, apiName, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
         }
 
-        skip |= ValidateBufferUsageFlags(device, *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
-                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", apiName,
-                                         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT");
+        skip |= ValidateBufferUsageFlags(LogObjectList(device), *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601",
+                                         errorObj.location.dot(Field::pInfo).dot(Field::buffer));
     }
 
     return skip;

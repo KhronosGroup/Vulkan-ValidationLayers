@@ -904,15 +904,15 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     if (instanceData != VK_NULL_HANDLE) {
         auto buffer_state = Get<BUFFER_STATE>(instanceData);
         if (buffer_state) {
-            skip |= ValidateBufferUsageFlags(commandBuffer, *buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
-                                             "VUID-VkAccelerationStructureInfoNV-instanceData-02782",
-                                             "vkCmdBuildAccelerationStructureNV()", "VK_BUFFER_USAGE_RAY_TRACING_BIT_NV");
+            skip |= ValidateBufferUsageFlags(
+                LogObjectList(commandBuffer, instanceData), *buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+                "VUID-VkAccelerationStructureInfoNV-instanceData-02782", errorObj.location.dot(Field::instanceData));
         }
     }
     if (scratch_buffer_state) {
-        skip |= ValidateBufferUsageFlags(commandBuffer, *scratch_buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
-                                         "VUID-VkAccelerationStructureInfoNV-scratch-02781", "vkCmdBuildAccelerationStructureNV()",
-                                         "VK_BUFFER_USAGE_RAY_TRACING_BIT_NV");
+        skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, scratch), *scratch_buffer_state,
+                                         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+                                         "VUID-VkAccelerationStructureInfoNV-scratch-02781", errorObj.location.dot(Field::scratch));
     }
     return skip;
 }

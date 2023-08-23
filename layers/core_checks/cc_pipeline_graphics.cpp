@@ -2409,12 +2409,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     if (enabled_features.core11.protectedMemory == VK_TRUE) {
         for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
             if (buffer_binding.buffer_state && !buffer_binding.buffer_state->Destroyed()) {
-                skip |= ValidateProtectedBuffer(cb_state, *buffer_binding.buffer_state, caller,
-                                                vuid.unprotected_command_buffer_02707, "Buffer is vertex buffer");
+                skip |= ValidateProtectedBuffer(cb_state, *buffer_binding.buffer_state, loc, vuid.unprotected_command_buffer_02707,
+                                                "Buffer is vertex buffer");
             }
         }
         if (cb_state.index_buffer_binding.bound()) {
-            skip |= ValidateProtectedBuffer(cb_state, *cb_state.index_buffer_binding.buffer_state, caller,
+            skip |= ValidateProtectedBuffer(cb_state, *cb_state.index_buffer_binding.buffer_state, loc,
                                             vuid.unprotected_command_buffer_02707, "Buffer is index buffer");
         }
     }

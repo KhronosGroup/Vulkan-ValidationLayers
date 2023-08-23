@@ -1134,16 +1134,16 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subr
 
 bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLayout expected_layout,
                                                const VkImageSubresourceLayers &subres_layers, uint32_t region_index,
-                                               const IMAGE_STATE &image_state, const char *func_name, const char *image_label,
-                                               const char *field_name, const char *vuid) const {
-    return ValidateHostCopyCurrentLayout(device, expected_layout, RangeFromLayers(subres_layers), region_index, image_state,
-                                         func_name, image_label, field_name, vuid);
+                                               const IMAGE_STATE &image_state, const Location &loc, const char *image_label,
+                                               const char *vuid) const {
+    return ValidateHostCopyCurrentLayout(device, expected_layout, RangeFromLayers(subres_layers), region_index, image_state, loc,
+                                         image_label, vuid);
 }
 
 bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLayout expected_layout,
                                                const VkImageSubresourceRange &validate_range, uint32_t region_index,
-                                               const IMAGE_STATE &image_state, const char *func_name, const char *image_label,
-                                               const char *field_name, const char *vuid) const {
+                                               const IMAGE_STATE &image_state, const Location &loc, const char *image_label,
+                                               const char *vuid) const {
     using Map = GlobalImageLayoutRangeMap;
     bool skip = false;
     if (disabled[image_layout_validation]) return false;
@@ -1183,11 +1183,11 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(VkDevice device, const VkImageLay
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
         LogObjectList objlist(device, image_state.image());
         skip |=
-            LogError(objlist, vuid,
-                     "%s: Incorrect image layout for %s %s. Expected %s=%s. Current layout is %s for subresource in region %" PRIu32
+            LogError(vuid, objlist, loc,
+                     "expected to be %s. Incorrect image layout for %s %s. Current layout is %s for subresource in region %" PRIu32
                      " (aspectMask=%s, mipLevel=%" PRIu32 ", arrayLayer=%" PRIu32 ")",
-                     func_name, image_label, report_data->FormatHandle(image_state.Handle()).c_str(), field_name,
-                     string_VkImageLayout(expected_layout), string_VkImageLayout(check_state.found_layout), region_index,
+                     string_VkImageLayout(expected_layout), image_label, report_data->FormatHandle(image_state.Handle()).c_str(),
+                     string_VkImageLayout(check_state.found_layout), region_index,
                      string_VkImageAspectFlags(subres.aspectMask).c_str(), subres.mipLevel, subres.arrayLayer);
     }
     return skip;

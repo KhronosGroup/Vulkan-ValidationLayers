@@ -906,23 +906,23 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     auto dst_buff_state = Get<BUFFER_STATE>(dstBuffer);
     assert(cb_state);
     assert(dst_buff_state);
+    const LogObjectList buffer_objlist(commandBuffer, dstBuffer);
     bool skip = ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buff_state, "vkCmdCopyQueryPoolResults()",
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
     skip |= ValidateQueryPoolStride("VUID-vkCmdCopyQueryPoolResults-flags-00822", "VUID-vkCmdCopyQueryPoolResults-flags-00823",
                                     stride, "dstOffset", dstOffset, flags, errorObj.location);
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(commandBuffer, *dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                     "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", "vkCmdCopyQueryPoolResults()",
-                                     "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+    skip |= ValidateBufferUsageFlags(buffer_objlist, *dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+                                     "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", errorObj.location.dot(Field::dstBuffer));
     skip |= ValidateCmd(*cb_state, errorObj.location);
 
     if (dstOffset >= dst_buff_state->requirements.size) {
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819", commandBuffer, errorObj.location.dot(Field::dstOffset),
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819", buffer_objlist, errorObj.location.dot(Field::dstOffset),
                          "(0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64 ") of buffer (%s).", dstOffset,
                          dst_buff_state->requirements.size, FormatHandle(dst_buff_state->buffer()).c_str());
     } else if (dstOffset + (queryCount * stride) > dst_buff_state->requirements.size) {
         skip |= LogError(
-            "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", commandBuffer, errorObj.location,
+            "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824", buffer_objlist, errorObj.location,
             "storage required (0x%" PRIxLEAST64
             ") equal to dstOffset + (queryCount * stride) is greater than the size (0x%" PRIxLEAST64 ") of buffer (%s).",
             dstOffset + (queryCount * stride), dst_buff_state->requirements.size, FormatHandle(dst_buff_state->buffer()).c_str());
