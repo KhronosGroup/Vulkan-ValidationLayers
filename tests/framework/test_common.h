@@ -29,18 +29,6 @@
 
 #include "generated/vk_enum_string_helper.h"
 
-#ifdef _MSC_VER
-#pragma warning(push)
-/*
-    warnings 4251 and 4275 have to do with potential dll-interface mismatch
-    between library (gtest) and users. Since we build the gtest library
-    as part of the test build we know that the dll-interface will match and
-    can disable these warnings.
- */
-#pragma warning(disable : 4251)
-#pragma warning(disable : 4275)
-#endif
-
 // GTest and Xlib collide due to redefinitions of "None" and "Bool"
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 #pragma push_macro("None")
@@ -57,9 +45,6 @@
 #pragma pop_macro("None")
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 #include "binding.h"
 
 #define ASSERT_VK_SUCCESS(err)                                                \
