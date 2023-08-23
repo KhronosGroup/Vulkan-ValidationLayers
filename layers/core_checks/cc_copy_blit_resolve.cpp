@@ -2821,7 +2821,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                          ") must all be zero",
                          info_type, i, region.imageOffset.x, region.imageOffset.y, region.imageOffset.z);
             }
-            if (!IsExtentEqual(region.imageExtent, image_state->createInfo.extent)) {
+            const VkExtent3D subresource_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
+            if (!IsExtentEqual(region.imageExtent, subresource_extent)) {
                 const char *vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-09115"
                                               : "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-09115";
                 LogObjectList objlist(device, image_state->image());
@@ -2831,8 +2832,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                                  "extents (w=%" PRIu32 ", h=%" PRIu32 ", d=%" PRIu32
                                  ") %s->flags contains VK_HOST_IMAGE_COPY_MEMCPY_EXT",
                                  i, region.imageExtent.width, region.imageExtent.height, region.imageExtent.depth,
-                                 image_state->createInfo.extent.width, image_state->createInfo.extent.height,
-                                 image_state->createInfo.extent.depth, info_type);
+                                 subresource_extent.width, subresource_extent.height, subresource_extent.depth, info_type);
             }
         }
         skip |= ValidateHostCopyCurrentLayout(device, image_layout, region.imageSubresource, i, *image_state, func_name,
