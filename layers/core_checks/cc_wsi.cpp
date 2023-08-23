@@ -610,8 +610,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     }
 
     if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
-        bool skip1 = ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                         "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+        bool skip1 = ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, loc,
                                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428");
         if (skip1) return true;
     }
@@ -881,7 +880,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     }
                     if ((rect.offset.x + rect.extent.width) > swapchain_data->createInfo.imageExtent.width) {
                         skip |= LogError("VUID-VkRectLayerKHR-offset-04864", pPresentInfo->pSwapchains[i], rect_loc,
-                                         "sum of offset.x (%" PRIi32 ") and extent.width (%" PRIu32
+                                         "sum of offset.x (%" PRId32 ") and extent.width (%" PRIu32
                                          ") after applying preTransform (%s) is greater "
                                          "than the corresponding swapchain's imageExtent.width (%" PRIu32 ").",
                                          rect.offset.x, rect.extent.width,
@@ -890,7 +889,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     }
                     if ((rect.offset.y + rect.extent.height) > swapchain_data->createInfo.imageExtent.height) {
                         skip |= LogError("VUID-VkRectLayerKHR-offset-04864", pPresentInfo->pSwapchains[i], rect_loc,
-                                         "sum of offset.y (%" PRIi32 ") and extent.height (%" PRIu32
+                                         "sum of offset.y (%" PRId32 ") and extent.height (%" PRIu32
                                          ") after applying preTransform (%s) is greater "
                                          "than the corresponding swapchain's imageExtent.height (%" PRIu32 ").",
                                          rect.offset.y, rect.extent.height,
@@ -1149,9 +1148,11 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
                                                      uint32_t *pImageIndex, const ErrorObject &errorObj) const {
     bool skip = false;
     const LogObjectList objlist(pAcquireInfo->swapchain);
-    skip |= ValidateDeviceMaskToPhysicalDeviceCount(pAcquireInfo->deviceMask, objlist,
+    const Location loc = errorObj.location.dot(Field::pAcquireInfo);
+    skip |= ValidateDeviceMaskToPhysicalDeviceCount(pAcquireInfo->deviceMask, objlist, loc.dot(Field::deviceMask),
                                                     "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290");
-    skip |= ValidateDeviceMaskToZero(pAcquireInfo->deviceMask, objlist, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
+    skip |= ValidateDeviceMaskToZero(pAcquireInfo->deviceMask, objlist, loc.dot(Field::deviceMask),
+                                     "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
     skip |= ValidateAcquireNextImage(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                      pAcquireInfo->fence, pImageIndex, errorObj.location,
                                      "VUID-VkAcquireNextImageInfoKHR-semaphore-03266");
@@ -1194,7 +1195,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
-                                    "vkGetPhysicalDeviceWaylandPresentationSupportKHR", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -1205,7 +1206,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
-                                    "vkGetPhysicalDeviceWin32PresentationSupportKHR", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1217,7 +1218,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
-                                    "vkGetPhysicalDeviceXcbPresentationSupportKHR", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
@@ -1228,7 +1229,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
-                                    "vkGetPhysicalDeviceXlibPresentationSupportKHR", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
@@ -1240,7 +1241,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(Vk
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-queueFamilyIndex-04743",
-                                    "vkGetPhysicalDeviceScreenPresentationSupportQNX", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -1250,7 +1251,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
-                                    "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
+                                    errorObj.location.dot(Field::queueFamilyIndex));
 }
 
 bool CoreChecks::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
@@ -1258,7 +1259,7 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDe
                                                                     const ErrorObject &errorObj) const {
     bool skip = false;
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
-                                                                    "vkGetDisplayPlaneSupportedDisplaysKHR");
+                                                                    errorObj.location.dot(Field::planeIndex));
     return skip;
 }
 
@@ -1266,7 +1267,8 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice 
                                                                uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities,
                                                                const ErrorObject &errorObj) const {
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex, "vkGetDisplayPlaneCapabilitiesKHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
+                                                                    errorObj.location.dot(Field::planeIndex));
     return skip;
 }
 
@@ -1275,8 +1277,8 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice
                                                                 VkDisplayPlaneCapabilities2KHR *pCapabilities,
                                                                 const ErrorObject &errorObj) const {
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, pDisplayPlaneInfo->planeIndex,
-                                                                    "vkGetDisplayPlaneCapabilities2KHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(
+        physicalDevice, pDisplayPlaneInfo->planeIndex, errorObj.location.dot(Field::pDisplayPlaneInfo).dot(Field::planeIndex));
     return skip;
 }
 
@@ -1612,16 +1614,15 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
 }
 
 bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                         const char *api_name) const {
+                                                                         const Location &loc) const {
     bool skip = false;
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
     if (pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {
         if (planeIndex >= pd_state->display_plane_property_count) {
-            skip |= LogError(physicalDevice, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
-                             "%s(): planeIndex (%u) must be in the range [0, %d] that was returned by "
-                             "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                             "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
-                             api_name, planeIndex, pd_state->display_plane_property_count - 1);
+            skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, loc,
+                             "is %" PRIu32 ", but vkGetPhysicalDeviceDisplayPlaneProperties(2)KHR returned %" PRIu32
+                             ". (Do you have the plane index hardcoded?).",
+                             planeIndex, pd_state->display_plane_property_count);
         }
     }
 

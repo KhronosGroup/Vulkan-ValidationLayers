@@ -1242,12 +1242,12 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     for (uint32_t i = 0; i < discardRectangleCount; ++i) {
         if (pDiscardRectangles[i].offset.x < 0) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
-                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].x (%" PRIi32 ") is negative.", i,
+                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].x (%" PRId32 ") is negative.", i,
                              pDiscardRectangles[i].offset.x);
         }
         if (pDiscardRectangles[i].offset.y < 0) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
-                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].y (%" PRIi32 ") is negative.", i,
+                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].y (%" PRId32 ") is negative.", i,
                              pDiscardRectangles[i].offset.y);
         }
     }
@@ -1268,7 +1268,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     // Minimal validation for command buffer state
     skip |= ValidateExtendedDynamicState(*cb_state, errorObj.location, VK_TRUE, nullptr, nullptr);
-    skip |= ValidateSampleLocationsInfo(pSampleLocationsInfo, "vkCmdSetSampleLocationsEXT");
+    skip |= ValidateSampleLocationsInfo(pSampleLocationsInfo, errorObj.location.dot(Field::pSampleLocationsInfo));
 
     return skip;
 }

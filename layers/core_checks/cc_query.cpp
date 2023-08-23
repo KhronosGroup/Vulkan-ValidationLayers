@@ -97,7 +97,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     if (disabled[query_validation]) return false;
     bool skip = false;
     const auto &query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
-    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, "vkGetQueryPoolResults()",
+    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, errorObj.location,
                                    "VUID-vkGetQueryPoolResults-firstQuery-00813", "VUID-vkGetQueryPoolResults-firstQuery-00816");
 
     if (query_pool_state.createInfo.queryType != VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
@@ -824,31 +824,34 @@ void CoreChecks::PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuery
 }
 
 bool CoreChecks::ValidateQueryPoolIndex(const QUERY_POOL_STATE &query_pool_state, uint32_t firstQuery, uint32_t queryCount,
-                                        const char *func_name, const char *first_vuid, const char *sum_vuid) const {
+                                        const Location &loc, const char *first_vuid, const char *sum_vuid) const {
     bool skip = false;
     const uint32_t available_query_count = query_pool_state.createInfo.queryCount;
     if (firstQuery >= available_query_count) {
-        skip |= LogError(query_pool_state.pool(), first_vuid,
-                         "%s: In Query %s the firstQuery (%u) is greater or equal to the queryPool size (%u).", func_name,
+        skip |= LogError(first_vuid, query_pool_state.pool(), loc,
+                         "In Query %s the firstQuery (%" PRIu32 ") is greater or equal to the queryPool size (%" PRIu32 ").",
                          FormatHandle(query_pool_state).c_str(), firstQuery, available_query_count);
     }
     if ((firstQuery + queryCount) > available_query_count) {
-        skip |= LogError(query_pool_state.pool(), sum_vuid,
-                         "%s: In Query %s the sum of firstQuery (%u) + queryCount (%u) is greater than the queryPool size (%u).",
-                         func_name, FormatHandle(query_pool_state).c_str(), firstQuery, queryCount, available_query_count);
+        skip |= LogError(sum_vuid, query_pool_state.pool(), loc,
+                         "In Query %s the sum of firstQuery (%" PRIu32 ") + queryCount (%" PRIu32
+                         ") is greater than the queryPool size (%" PRIu32 ").",
+                         FormatHandle(query_pool_state).c_str(), firstQuery, queryCount, available_query_count);
     }
     return skip;
 }
 
 bool CoreChecks::ValidateQueriesNotActive(const CMD_BUFFER_STATE &cb_state, VkQueryPool queryPool, uint32_t firstQuery,
-                                          uint32_t queryCount, const char *func_name, const char *vuid) const {
+                                          uint32_t queryCount, const Location &loc, const char *vuid) const {
     bool skip = false;
     for (uint32_t i = 0; i < queryCount; i++) {
         const uint32_t slot = firstQuery + i;
         QueryObject query_obj = {queryPool, slot};
         if (cb_state.activeQueries.count(query_obj)) {
             const LogObjectList objlist(cb_state.commandBuffer(), queryPool);
-            skip |= LogError(objlist, vuid, "%s: Query index %" PRIu32 " is still active.", func_name, slot);
+            skip |= LogError(vuid, objlist, loc,
+                             "Query index %" PRIu32 " is still active (firstQuery = %" PRIu32 ", queryCount = %" PRIu32 ").", slot,
+                             firstQuery, queryCount);
         }
     }
     return skip;
@@ -863,9 +866,9 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
     bool skip = false;
     skip |= ValidateCmd(*cb_state, errorObj.location);
     const auto &query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
-    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, "vkCmdResetQueryPool()",
+    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, errorObj.location,
                                    "VUID-vkCmdResetQueryPool-firstQuery-00796", "VUID-vkCmdResetQueryPool-firstQuery-00797");
-    skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, "vkCmdResetQueryPool()",
+    skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, errorObj.location,
                                      "VUID-vkCmdResetQueryPool-None-02841");
     return skip;
 }
@@ -934,10 +937,10 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     }
 
     const auto &query_pool_state = *Get<QUERY_POOL_STATE>(queryPool);
-    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, "vkCmdCopyQueryPoolResults()",
+    skip |= ValidateQueryPoolIndex(query_pool_state, firstQuery, queryCount, errorObj.location,
                                    "VUID-vkCmdCopyQueryPoolResults-firstQuery-00820",
                                    "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
-    skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, "vkCmdCopyQueryPoolResults()",
+    skip |= ValidateQueriesNotActive(*cb_state, queryPool, firstQuery, queryCount, errorObj.location,
                                      "VUID-vkCmdCopyQueryPoolResults-None-07429");
 
     if (query_pool_state.createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
@@ -1297,13 +1300,13 @@ bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const s
     if (flags & VK_QUERY_RESULT_64_BIT) {
         static const int condition_multiples = 0b0111;
         if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
-            skip |= LogError(vuid_64, device, loc, "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name,
+            skip |= LogError(vuid_64, device, loc, "stride %" PRIu64 " or %s %" PRIu64 " is invalid.", stride, parameter_name,
                              parameter_value);
         }
     } else {
         static const int condition_multiples = 0b0011;
         if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
-            skip |= LogError(vuid_not_64, device, loc, "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name,
+            skip |= LogError(vuid_not_64, device, loc, "stride %" PRIu64 " or %s %" PRIu64 " is invalid.", stride, parameter_name,
                              parameter_value);
         }
     }

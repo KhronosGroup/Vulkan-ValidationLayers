@@ -84,18 +84,19 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
     return skip;
 }
 
-bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char *caller_name) const {
+bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const Location &loc) const {
     auto fence_node = Get<FENCE_STATE>(fence);
     bool skip = false;
     if (fence_node && fence_node->Scope() == kSyncScopeInternal && fence_node->State() == FENCE_INFLIGHT) {
-        skip |= LogError(fence, vuid, "%s: Fence %s that is currently in use.", caller_name, FormatHandle(fence).c_str());
+        skip |= LogError(vuid, fence, loc.dot(Field::fence), "(%s) is currently in use.", FormatHandle(fence).c_str());
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
                                                  const ErrorObject &errorObj) const {
-    return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463", "vkImportFenceFdKHR");
+    return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463",
+                               errorObj.location.dot(Field::pImportFenceFdInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd,
@@ -157,7 +158,7 @@ bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                           const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
                                                           const ErrorObject &errorObj) const {
     return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "VUID-vkImportFenceWin32HandleKHR-fence-04448",
-                               "vkImportFenceWin32HandleKHR");
+                               errorObj.location.dot(Field::pImportFenceWin32HandleInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info, HANDLE *pHandle,

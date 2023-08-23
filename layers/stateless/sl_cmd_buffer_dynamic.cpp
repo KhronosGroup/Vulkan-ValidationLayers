@@ -102,25 +102,25 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
 
             if (scissor.offset.x < 0) {
                 skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer, loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.x);
+                                 "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
                 skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer, loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.y);
+                                 "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03400", commandBuffer, loc,
-                                 "offset.x (%" PRIi32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03401", commandBuffer, loc,
-                                 "offset.y (%" PRIi32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }
         }
@@ -306,7 +306,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
                 static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
             if (x_sum > std::numeric_limits<int32_t>::max()) {
                 skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588", commandBuffer, loc,
-                                 "offset.x (%" PRIi32 ") + extent.width (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
+                                 "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
                                  pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum);
             }
 
@@ -315,7 +315,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
             if (y_sum > std::numeric_limits<int32_t>::max()) {
                 skip |=
                     LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589", commandBuffer, loc,
-                             "offset.y (%" PRIi32 ") + extent.height (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
+                             "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
                              pDiscardRectangles[i].offset.y, pDiscardRectangles[i].extent.height, y_sum);
             }
         }
@@ -394,25 +394,25 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
 
             if (scissor.offset.x < 0) {
                 skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer, loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.x);
+                                 "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
                 skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer, loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.y);
+                                 "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02038", commandBuffer, loc,
-                                 "offset.x (%" PRIi32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02039", commandBuffer, loc,
-                                 "offset.y (%" PRIi32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }
         }
@@ -553,25 +553,25 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
 
             if (scissor.offset.x < 0) {
                 skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.x);
+                                 "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
                 skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRIi32 ") is negative.", scissor.offset.y);
+                                 "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetScissor-offset-00596", commandBuffer, loc,
-                                 "offset.x (%" PRIi32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
                 skip |= LogError("VUID-vkCmdSetScissor-offset-00597", commandBuffer, loc,
-                                 "offset.y (%" PRIi32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
+                                 "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }
         }

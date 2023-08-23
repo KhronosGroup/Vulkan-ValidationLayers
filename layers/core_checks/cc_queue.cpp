@@ -167,24 +167,28 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
             for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
                 const LogObjectList objlist(queue);
-                skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->pCommandBufferDeviceMasks[i], objlist,
-                                                                "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
+                skip |= ValidateDeviceMaskToPhysicalDeviceCount(
+                    chained_device_group_struct->pCommandBufferDeviceMasks[i], objlist,
+                    loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::pCommandBufferDeviceMasks, i),
+                    "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
             }
             if (chained_device_group_struct->signalSemaphoreCount != submit.signalSemaphoreCount) {
-                skip |=
-                    LogError("VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084", queue, loc.dot(Field::signalSemaphoreCount),
-                             "(%" PRIu32 ") is different than VkDeviceGroupSubmitInfo::signalSemaphoreCount (%" PRIu32 ").",
-                             submit.signalSemaphoreCount, chained_device_group_struct->signalSemaphoreCount);
+                skip |= LogError("VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084", queue,
+                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::signalSemaphoreCount),
+                                 "(%" PRIu32 ") is different than signalSemaphoreCount (%" PRIu32 ").",
+                                 chained_device_group_struct->signalSemaphoreCount, submit.signalSemaphoreCount);
             }
             if (chained_device_group_struct->waitSemaphoreCount != submit.waitSemaphoreCount) {
-                skip |= LogError("VUID-VkDeviceGroupSubmitInfo-waitSemaphoreCount-00082", queue, loc.dot(Field::waitSemaphoreCount),
-                                 "(%" PRIu32 ") is different than VkDeviceGroupSubmitInfo::waitSemaphoreCount (%" PRIu32 ").",
-                                 submit.waitSemaphoreCount, chained_device_group_struct->waitSemaphoreCount);
+                skip |= LogError("VUID-VkDeviceGroupSubmitInfo-waitSemaphoreCount-00082", queue,
+                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::waitSemaphoreCount),
+                                 "(%" PRIu32 ") is different than waitSemaphoreCount (%" PRIu32 ").",
+                                 chained_device_group_struct->waitSemaphoreCount, submit.waitSemaphoreCount);
             }
             if (chained_device_group_struct->commandBufferCount != submit.commandBufferCount) {
-                skip |= LogError("VUID-VkDeviceGroupSubmitInfo-commandBufferCount-00083", queue, loc.dot(Field::commandBufferCount),
-                                 "(%" PRIu32 ") is different than VkDeviceGroupSubmitInfo::commandBufferCount (%" PRIu32 ").",
-                                 submit.commandBufferCount, chained_device_group_struct->commandBufferCount);
+                skip |= LogError("VUID-VkDeviceGroupSubmitInfo-commandBufferCount-00083", queue,
+                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::commandBufferCount),
+                                 "(%" PRIu32 ") is different than commandBufferCount (%" PRIu32 ").",
+                                 chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
         }
 
@@ -277,6 +281,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             {
                 const LogObjectList objlist(queue);
                 skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit.pCommandBufferInfos[i].deviceMask, queue,
+                                                                info_loc.dot(Field::deviceMask),
                                                                 "VUID-VkCommandBufferSubmitInfo-deviceMask-03891");
             }
 

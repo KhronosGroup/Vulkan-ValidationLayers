@@ -169,8 +169,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, loc,
                                                     "VUID-VkBufferCreateInfo-sharingMode-01419");
     }
 

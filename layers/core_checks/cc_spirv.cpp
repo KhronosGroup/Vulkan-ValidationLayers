@@ -1376,7 +1376,7 @@ bool CoreChecks::ValidateExecutionModes(const SPIRV_MODULE_STATE &module_state, 
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies a maximum output vertex count that is greater than 0 and less "
                              "than or equal to maxGeometryOutputVertices. "
-                             "OutputVertices=%d, maxGeometryOutputVertices=%d.",
+                             "OutputVertices=%" PRIu32 ", maxGeometryOutputVertices=%" PRIu32 ".",
                              vertices_out, phys_dev_props.limits.maxGeometryOutputVertices);
         }
 
@@ -1387,7 +1387,7 @@ bool CoreChecks::ValidateExecutionModes(const SPIRV_MODULE_STATE &module_state, 
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies an invocation count that is greater than 0 and less "
                              "than or equal to maxGeometryShaderInvocations. "
-                             "Invocations=%d, maxGeometryShaderInvocations=%d.",
+                             "Invocations=%" PRIu32 ", maxGeometryShaderInvocations=%" PRIu32 ".",
                              invocations, phys_dev_props.limits.maxGeometryShaderInvocations);
         }
     } else if (entrypoint.stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
@@ -1984,8 +1984,8 @@ bool CoreChecks::ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE &module_stat
                                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
                                             skip |= LogError(
                                                 "VUID-RuntimeSpirv-OpImage-06376", module_state.handle(), loc,
-                                                "SPIR-V uses\n%s\nwith offset (%" PRIi32
-                                                ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRIi32 ").",
+                                                "SPIR-V uses\n%s\nwith offset (%" PRId32
+                                                ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRId32 ").",
                                                 insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelGatherOffset);
                                         } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
                                                    (!use_signed || (use_signed && signed_offset > 0))) {
@@ -1999,8 +1999,8 @@ bool CoreChecks::ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE &module_stat
                                         // min/maxTexelOffset
                                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
                                             skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06435", module_state.handle(), loc,
-                                                             "SPIR-V uses\n%s\nwith offset (%" PRIi32
-                                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRIi32 ").",
+                                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
+                                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRId32 ").",
                                                              insn.Describe().c_str(), signed_offset,
                                                              phys_dev_props.limits.minTexelOffset);
                                         } else if ((offset > phys_dev_props.limits.maxTexelOffset) &&

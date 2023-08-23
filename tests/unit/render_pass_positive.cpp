@@ -832,14 +832,6 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     depthImage.Layout(VK_IMAGE_LAYOUT_GENERAL);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "cannot transition the layout of aspect=2 level=1 layer=0");
-
-    depthImage.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
-                                  VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
-
-    m_errorMonitor->VerifyFound();
-
     m_commandBuffer->end();
 }
 

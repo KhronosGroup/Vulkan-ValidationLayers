@@ -4159,7 +4159,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 }
 
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_state, uint32_t indexCount, uint32_t firstIndex,
-                                                  const char *caller, const char *first_index_vuid) const {
+                                                  const Location &loc, const char *first_index_vuid) const {
     bool skip = false;
     if (!enabled_features.robustness2_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
@@ -4169,11 +4169,12 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_sta
         // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
         VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
         if (end_offset > index_buffer_binding.size) {
-            skip |= LogError(index_buffer_binding.buffer_state->buffer(), first_index_vuid,
-                             "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
+            skip |= LogError(first_index_vuid, index_buffer_binding.buffer_state->buffer(), loc,
+                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
+                             ")) "
                              "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
                              " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                             caller, index_size, firstIndex, indexCount, index_buffer_binding.offset,
+                             index_size, firstIndex, indexCount, index_buffer_binding.offset,
                              end_offset + index_buffer_binding.offset, index_buffer_binding.size + index_buffer_binding.offset);
         }
     }
@@ -4191,7 +4192,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, errorObj.location);
     skip |= ValidateGraphicsIndexedCmd(*cb_state, errorObj.location);
     skip |= ValidateActionState(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, errorObj.location);
-    skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, indexCount, firstIndex, "vkCmdDrawIndexed()",
+    skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, indexCount, firstIndex, errorObj.location,
                                              "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     skip |= ValidateVTGShaderStages(*cb_state, errorObj.location);
     return skip;
@@ -4221,9 +4222,9 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
     for (uint32_t i = 0; i < drawCount; i++) {
         const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
-        skip |=
-            ValidateCmdDrawIndexedBufferSize(*cb_state, info_ptr->indexCount, info_ptr->firstIndex, "vkCmdDrawMultiIndexedEXT()",
-                                             "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
+        skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, info_ptr->indexCount, info_ptr->firstIndex,
+                                                 errorObj.location.dot(Field::pIndexInfo, i),
+                                                 "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     }
     skip |= ValidateVTGShaderStages(*cb_state, errorObj.location);
     return skip;
@@ -4241,9 +4242,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), errorObj.location);
+                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), errorObj.location);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), drawCount, offset,
+                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), drawCount, offset,
                                                 buffer_state.get(), errorObj.location);
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-00487", commandBuffer, errorObj.location.dot(Field::drawCount),
@@ -4271,11 +4272,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand),
+                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                                 errorObj.location);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), drawCount,
-                                                offset, buffer_state.get(), errorObj.location);
+                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                drawCount, offset, buffer_state.get(), errorObj.location);
     } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->createInfo.size) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-00539", commandBuffer, errorObj.location.dot(Field::drawCount),
                          "is 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
@@ -4371,11 +4372,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                          apiName);
     }
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
-                                            "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), errorObj.location);
+                                            Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), errorObj.location);
     if (maxDrawCount > 1) {
         auto buffer_state = Get<BUFFER_STATE>(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
+                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
                                                 buffer_state.get(), errorObj.location);
     }
 
@@ -4412,14 +4413,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                          "call this command.",
                          apiName);
     }
-    skip |=
-        ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
-                                        "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), errorObj.location);
+    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
+                                            Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                            errorObj.location);
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
-                                                "VkDrawIndexedIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount,
-                                                offset, buffer_state.get(), errorObj.location);
+                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                maxDrawCount, offset, buffer_state.get(), errorObj.location);
     }
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     skip |= ValidateCmd(*cb_state, errorObj.location);
@@ -4676,7 +4677,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
-                                                "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
+                                                Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 drawCount, offset, buffer_state.get(), errorObj.location);
     } else if (drawCount == 1 && ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > buffer_state.get()->createInfo.size)) {
         skip |=
@@ -4703,11 +4704,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     skip |= ValidateIndirectCountCmd(*cb_state, *count_buffer_state, countBufferOffset, errorObj.location);
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
-                                            "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
+                                            Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                             errorObj.location);
     if (maxDrawCount > 1) {
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
-                                                "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
+                                                Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 maxDrawCount, offset, buffer_state.get(), errorObj.location);
     }
     skip |= ValidateMeshShaderStage(*cb_state, errorObj.location, true);
@@ -4739,11 +4740,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, errorObj.location);
     if (drawCount > 1) {
         skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088", stride,
-                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                                errorObj.location);
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride,
-                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                                drawCount, offset, buffer_state.get(), errorObj.location);
+                                                Struct::VkDrawMeshTasksIndirectCommandEXT,
+                                                sizeof(VkDrawMeshTasksIndirectCommandEXT), errorObj.location);
+        skip |= ValidateCmdDrawStrideWithBuffer(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride, Struct::VkDrawMeshTasksIndirectCommandEXT,
+            sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, buffer_state.get(), errorObj.location);
     }
     if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->createInfo.size) {
         skip |=
@@ -4779,12 +4780,13 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
                                      VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
                                      errorObj.location.dot(Field::countBuffer));
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
-                                            "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                            Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
                                             errorObj.location);
     if (maxDrawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
-                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                                maxDrawCount, offset, buffer_state.get(), errorObj.location);
+        skip |=
+            ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
+                                            Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                            maxDrawCount, offset, buffer_state.get(), errorObj.location);
     }
     skip |= ValidateMeshShaderStage(*cb_state, errorObj.location, false);
     return skip;
@@ -4916,7 +4918,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
                         const LogObjectList objlist(set_handle, pipeline_layout->layout());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
-                                         "%s bound as set #%u is not compatible with overlapping %s due to: %s",
+                                         "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
                                          error_string.c_str());
                     } else {  // Valid set is bound and layout compatible, validate that it's updated
@@ -5009,7 +5011,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
                         const LogObjectList objlist(set_handle, shader_state->shader());
                         skip |= LogError(vuid.compatible_pipeline_08600, objlist, loc,
-                                         "%s bound as set #%u is not compatible with overlapping %s due to: %s",
+                                         "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                          FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->shader()).c_str(),
                                          error_string.c_str());
                     } else {  // Valid set is bound and layout compatible, validate that it's updated
