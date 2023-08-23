@@ -211,3 +211,48 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     image_format_info.flags = 0;
     vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
 }
+
+TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
+    TEST_DESCRIPTION("Use only selected image mip level to memory");
+
+    constexpr uint32_t width = 32;
+    constexpr uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 4, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_IMAGE_TILING_OPTIMAL);
+    InitHostImageCopyTest(image_ci);
+    if (::testing::Test::IsSkipped()) return;
+
+    VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+
+    const uint32_t bufferSize = width * height * 4u;
+    std::vector<uint8_t> data(bufferSize);
+
+    VkImageSubresourceLayers imageSubresource;
+    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageSubresource.mipLevel = 3u;
+    imageSubresource.baseArrayLayer = 0u;
+    imageSubresource.layerCount = 1u;
+
+    auto region = LvlInitStruct<VkImageToMemoryCopyEXT>();
+    region.pHostPointer = data.data();
+    region.memoryRowLength = 0u;
+    region.memoryImageHeight = 0u;
+    region.imageSubresource = imageSubresource;
+    region.imageOffset = {0u, 0u, 0u};
+    region.imageExtent = {4u, 4u, 1u};
+
+    auto copyImageToMemory = LvlInitStruct<VkCopyImageToMemoryInfoEXT>();
+    copyImageToMemory.flags = VK_HOST_IMAGE_COPY_MEMCPY_EXT;
+    copyImageToMemory.srcImage = image.handle();
+    copyImageToMemory.srcImageLayout = layout;
+    copyImageToMemory.regionCount = 1u;
+    copyImageToMemory.pRegions = &region;
+
+    vk::CopyImageToMemoryEXT(*m_device, &copyImageToMemory);
+}
