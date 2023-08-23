@@ -441,7 +441,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
 
                 if (FormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
                     skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
-                                                           function_name);
+                                                           loc.dot(Field::pClearValues, i).dot(Field::depthStencil));
                 }
             }
         }

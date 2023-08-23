@@ -26,18 +26,24 @@
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-template <typename HandleT>
-bool CoreChecks::ValidateBufferUsageFlags(HandleT handle, BUFFER_STATE const &buffer_state, VkFlags desired, bool strict,
-                                          const char *msgCode, char const *func_name, char const *usage_string) const {
-    const LogObjectList objlist(handle, buffer_state.Handle());
-    return ValidateUsageFlags(buffer_state.usage, desired, strict, objlist, buffer_state.Handle(), msgCode, func_name,
-                              usage_string);
+bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, BUFFER_STATE const &buffer_state,
+                                          VkBufferUsageFlags desired, bool strict, const char *vuid,
+                                          const Location &buffer_loc) const {
+    bool skip = false;
+    bool correct_usage = false;
+    if (strict) {
+        correct_usage = ((buffer_state.usage & desired) == desired);
+    } else {
+        correct_usage = ((buffer_state.usage & desired) != 0);
+    }
+
+    if (!correct_usage) {
+        skip = LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
+                        FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(),
+                        string_VkBufferUsageFlags(desired).c_str());
+    }
+    return skip;
 }
-// explictly instantiate templates needed by other .cpp files
-template bool CoreChecks::ValidateBufferUsageFlags(VkCommandBuffer, BUFFER_STATE const &, unsigned int, bool, char const *,
-                                                   char const *, char const *) const;
-template bool CoreChecks::ValidateBufferUsageFlags(VkDevice, BUFFER_STATE const &, unsigned int, bool, char const *, char const *,
-                                                   char const *) const;
 
 bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE &buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
                                          const VkPhysicalDeviceLimits *device_limits, const Location &loc) const {
@@ -300,6 +306,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         return skip;
     }
     const auto &buffer_state = *buffer_state_ptr;
+    const LogObjectList objlist(device, pCreateInfo->buffer);
 
     if (FormatIsDepthOrStencil(pCreateInfo->format)) {
         // Should never hopefully get here, but there are known driver advertising the wrong feature flags
@@ -313,9 +320,9 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, "vkCreateBufferView()", "VUID-VkBufferViewCreateInfo-buffer-00935");
     // In order to create a valid buffer view, the buffer must have been created with at least one of the following flags:
     // UNIFORM_TEXEL_BUFFER_BIT or STORAGE_TEXEL_BUFFER_BIT
-    skip |= ValidateBufferUsageFlags(
-        device, buffer_state, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, false,
-        "VUID-VkBufferViewCreateInfo-buffer-00932", "vkCreateBufferView()", "VK_BUFFER_USAGE_[STORAGE|UNIFORM]_TEXEL_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(objlist, buffer_state,
+                                     VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, false,
+                                     "VUID-VkBufferViewCreateInfo-buffer-00932", loc.dot(Field::buffer));
 
     // Buffer view offset must be less than the size of buffer
     if (pCreateInfo->offset >= buffer_state.createInfo.size) {
@@ -328,7 +335,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
     if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0 &&
         !enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", buffer_state.buffer(), loc.dot(Field::offset),
+        skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", objlist, loc.dot(Field::offset),
                          "(%" PRIuLEAST64
                          ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
                          pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
@@ -347,7 +354,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
                 skip |= LogError(
-                    "VUID-VkBufferViewCreateInfo-buffer-02750", buffer_state.buffer(), loc,
+                    "VUID-VkBufferViewCreateInfo-buffer-02750", objlist, loc,
                     "If buffer was created with usage containing "
                     "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
                     "VkBufferViewCreateInfo offset (%" PRIuLEAST64
@@ -370,7 +377,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
                 skip |= LogError(
-                    "VUID-VkBufferViewCreateInfo-buffer-02751", buffer_state.buffer(), loc,
+                    "VUID-VkBufferViewCreateInfo-buffer-02751", objlist, loc,
                     "If buffer was created with usage containing "
                     "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, "
                     "VkBufferViewCreateInfo offset (%" PRIuLEAST64
@@ -390,11 +397,11 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     if (auto buffer_usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
         const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
         if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
-            skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", buffer_state.buffer(),
+            skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
                              loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage), "is %s.",
                              string_VkBufferUsageFlags2KHR(usage).c_str());
         } else if ((usage & buffer_state.usage) != buffer_state.usage) {
-            skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", buffer_state.buffer(),
+            skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", objlist,
                              loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage),
                              "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2KHR(usage).c_str(),
                              string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str());
@@ -436,26 +443,26 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     if (!cb_state_ptr || !buffer_state) {
         return skip;
     }
+    const LogObjectList objlist(commandBuffer, dstBuffer);
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     skip |=
         ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmd(cb_state, errorObj.location);
     // Validate that DST buffer has correct usage flags set
-    skip |=
-        ValidateBufferUsageFlags(commandBuffer, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                 "VUID-vkCmdFillBuffer-dstBuffer-00029", "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+    skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+                                     "VUID-vkCmdFillBuffer-dstBuffer-00029", errorObj.location.dot(Field::dstBuffer));
 
-    skip |= ValidateProtectedBuffer(cb_state, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-commandBuffer-01811");
-    skip |= ValidateUnprotectedBuffer(cb_state, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-commandBuffer-01812");
+    skip |= ValidateProtectedBuffer(cb_state, *buffer_state, errorObj.location, "VUID-vkCmdFillBuffer-commandBuffer-01811");
+    skip |= ValidateUnprotectedBuffer(cb_state, *buffer_state, errorObj.location, "VUID-vkCmdFillBuffer-commandBuffer-01812");
 
     if (dstOffset >= buffer_state->createInfo.size) {
-        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", dstBuffer, errorObj.location.dot(Field::dstOffset),
+        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", objlist, errorObj.location.dot(Field::dstOffset),
                          "(0x%" PRIxLEAST64 ") is not less than destination buffer (%s) size (0x%" PRIxLEAST64 ").", dstOffset,
                          FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
     }
 
     if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
-        skip |= LogError("VUID-vkCmdFillBuffer-size-00027", dstBuffer, errorObj.location.dot(Field::size),
+        skip |= LogError("VUID-vkCmdFillBuffer-size-00027", objlist, errorObj.location.dot(Field::size),
                          "(0x%" PRIxLEAST64 ") is greater than dstBuffer (%s) size (0x%" PRIxLEAST64
                          ") minus dstOffset (0x%" PRIxLEAST64 ").",
                          size, FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
@@ -470,28 +477,28 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 }
 
 // Validates the buffer is allowed to be protected
-bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, const char *cmd_name,
+bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, const Location &loc,
                                          const char *vuid, const char *more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
+        skip |= LogError(vuid, objlist, loc, "command buffer (%s) is unprotected while buffer (%s) is a protected buffer.%s",
                          FormatHandle(cb_state).c_str(), FormatHandle(buffer_state).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the buffer is allowed to be unprotected
-bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, const char *cmd_name,
+bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, const Location &loc,
                                            const char *vuid, const char *more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,
+        skip |= LogError(vuid, objlist, loc, "command buffer (%s) is protected while buffer (%s) is an unprotected buffer.%s",
                          FormatHandle(cb_state).c_str(), FormatHandle(buffer_state).c_str(), more_message);
     }
     return skip;
