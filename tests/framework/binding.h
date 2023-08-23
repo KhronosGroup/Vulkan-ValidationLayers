@@ -47,9 +47,6 @@ std::vector<Dst> MakeVkHandles(const std::vector<Src *> &v) {
     return handles;
 }
 
-typedef void (*ErrorCallback)(const char *expr, const char *file, unsigned int line, const char *function);
-void set_error_callback(ErrorCallback callback);
-
 class PhysicalDevice;
 class Device;
 class Queue;

@@ -52,7 +52,3 @@
         const VkResult resolved_err = err;                                    \
         ASSERT_EQ(VK_SUCCESS, resolved_err) << string_VkResult(resolved_err); \
     }
-
-static inline void test_error_callback(const char *expr, const char *file, unsigned int line, const char *function) {
-    ADD_FAILURE_AT(file, line) << "Assertion: `" << expr << "'";
-}

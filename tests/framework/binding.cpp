@@ -49,26 +49,18 @@ namespace {
     }                                                          \
     cls::~cls() noexcept { destroy(); }
 
-#define STRINGIFY(x) #x
-#define EXPECT(expr) ((expr) ? true : expect_failure(STRINGIFY(expr), __FILE__, __LINE__, __FUNCTION__))
-
-vk_testing::ErrorCallback error_callback;
-
-bool expect_failure(const char *expr, const char *file, unsigned int line, const char *function) {
-    if (error_callback) {
-        error_callback(expr, file, line, function);
-    } else {
-        std::cerr << file << ":" << line << ": " << function << ": Expectation `" << expr << "' failed.\n";
-    }
+bool expect_failure(const char *expr, const char *file, unsigned int line) {
+    ADD_FAILURE_AT(file, line) << "Assertion: `" << expr << "'";
 
     return false;
 }
 
+#define STRINGIFY(x) #x
+#define EXPECT(expr) ((expr) ? true : expect_failure(STRINGIFY(expr), __FILE__, __LINE__))
+
 }  // namespace
 
 namespace vk_testing {
-
-void set_error_callback(ErrorCallback callback) { error_callback = callback; }
 
 VkPhysicalDeviceProperties PhysicalDevice::properties() const {
     VkPhysicalDeviceProperties info;
