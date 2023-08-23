@@ -191,8 +191,6 @@ void TestEnvironment::SetUp() {
     // Initialize GLSL to SPV compiler utility
     glslang::InitializeProcess();
 
-    vk_testing::set_error_callback(test_error_callback);
-
     vk::InitCore("vulkan");
 }
 
