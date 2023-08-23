@@ -5090,6 +5090,28 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
+// Wrap FAIL:
+//  * DRY for common messages
+//  * for test stability reasons sometimes cleanup code is required *prior* to the return hidden in FAIL
+//  * result_arg_ *can* (should) have side-effect, but is referenced exactly once
+//  * label_ must be converitble to bool, and *should* *not* have side-effects
+//  * clean_ *can* (should) have side-effects
+//    * "{}" or ";" are valid clean_ values for noop
+#define REQUIRE_SUCCESS(result_arg_, label_, clean_)                    \
+    {                                                                   \
+        const VkResult result_ = (result_arg_);                         \
+        if (result_ != VK_SUCCESS) {                                    \
+            {                                                           \
+                clean_;                                                 \
+            }                                                           \
+            if (bool(label_)) {                                         \
+                FAIL() << string_VkResult(result_) << ": " << (label_); \
+            } else {                                                    \
+                FAIL() << string_VkResult(result_);                     \
+            }                                                           \
+        }                                                               \
+    }
+
 TEST_F(NegativeSyncVal, QSPresentAcquire) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
 
