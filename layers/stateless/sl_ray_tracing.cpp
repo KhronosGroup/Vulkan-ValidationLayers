@@ -650,7 +650,7 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
     if (SafeModulo((VkDeviceSize)pInfo->dst.hostAddress, 16) != 0) {
         skip |=
             LogError("VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03751", device, loc.dot(Field::dst).dot(Field::hostAddress),
-                     "(%" PRIx64 ") must be aligned to 16 bytes.", (VkDeviceAddress)pInfo->dst.hostAddress);
+                     "(0x%" PRIx64 ") must be aligned to 16 bytes.", (VkDeviceAddress)pInfo->dst.hostAddress);
     }
     return skip;
 }
@@ -666,7 +666,7 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
     }
     if (SafeModulo(pInfo->dst.deviceAddress, 256) != 0) {
         skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03740", commandBuffer,
-                         loc.dot(Field::dst).dot(Field::deviceAddress), "(%" PRIx64 ") must be aligned to 256 bytes.",
+                         loc.dot(Field::dst).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
                          pInfo->dst.deviceAddress);
     }
     return skip;

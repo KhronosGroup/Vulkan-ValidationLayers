@@ -130,7 +130,7 @@ TEST_F(NegativeCommand, IndexBufferSize) {
     TEST_DESCRIPTION("Run indexed draw call with bad index buffer size.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdDrawIndexed(): index size ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     VKTriangleTest(BsoFailIndexBufferBadSize);
     m_errorMonitor->VerifyFound();
 }
@@ -139,7 +139,7 @@ TEST_F(NegativeCommand, IndexBufferOffset) {
     TEST_DESCRIPTION("Run indexed draw call with bad index buffer offset.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdDrawIndexed(): index size ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     VKTriangleTest(BsoFailIndexBufferBadOffset);
     m_errorMonitor->VerifyFound();
 }
@@ -148,7 +148,7 @@ TEST_F(NegativeCommand, IndexBufferBindSize) {
     TEST_DESCRIPTION("Run bind index buffer with a size greater than the index buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdDrawIndexed(): index size ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     VKTriangleTest(BsoFailIndexBufferBadMapSize);
     m_errorMonitor->VerifyFound();
 }
@@ -157,7 +157,7 @@ TEST_F(NegativeCommand, IndexBufferBindOffset) {
     TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdDrawIndexed(): index size ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-robustBufferAccess2-07825");
     VKTriangleTest(BsoFailIndexBufferBadMapOffset);
     m_errorMonitor->VerifyFound();
 }

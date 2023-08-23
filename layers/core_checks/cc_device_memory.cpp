@@ -229,9 +229,11 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
         const LogObjectList objlist(device);
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_flags_struct->deviceMask, objlist,
+                                                        loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::deviceMask),
                                                         "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
-        skip |=
-            ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, objlist, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
+        skip |= ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, objlist,
+                                         loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::deviceMask),
+                                         "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
     }
 
     if (pAllocateInfo->memoryTypeIndex >= phys_dev_mem_props.memoryTypeCount) {
@@ -1425,7 +1427,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError("VUID-VkBindImageMemoryInfo-pNext-01627", objlist,
                                      loc.pNext(Struct::VkBindImageMemoryDeviceGroupInfo, Field::splitInstanceBindRegionCount),
-                                     "(%" PRIi32
+                                     "(%" PRId32
                                      ") is not 0 and %s is not created with "
                                      "VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT.",
                                      bind_image_memory_device_group_info->splitInstanceBindRegionCount,
@@ -1440,7 +1442,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     skip |= LogError(
                         "VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636", objlist,
                         loc.pNext(Struct::VkBindImageMemoryDeviceGroupInfo, Field::splitInstanceBindRegionCount),
-                        "(%" PRIi32
+                        "(%" PRId32
                         ") is not 0 and different from the number of physical devices in the logical device squared (%" PRIu32 ").",
                         bind_image_memory_device_group_info->splitInstanceBindRegionCount, phy_dev_square);
                 }
@@ -1626,9 +1628,8 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const &image_state,
                                                                VkImageSubresource const &subresource, const Location &bind_loc,
                                                                const Location &subresource_loc) const {
-    bool skip =
-        ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask, image_state.disjoint,
-                                "vkQueueSparseBind()", "VUID-VkSparseImageMemoryBind-subresource-01106");
+    bool skip = ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask,
+                                        image_state.disjoint, bind_loc, "VUID-VkSparseImageMemoryBind-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=
@@ -1672,7 +1673,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
             if (SafeModulo(bind.offset.x, granularity.width) != 0) {
                 skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
                                  bind_loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRIi32
+                                 "(%" PRId32
                                  ") must be a multiple of the sparse image block width "
                                  "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image.",
                                  bind.offset.x, granularity.width);
@@ -1681,7 +1682,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
             if (SafeModulo(bind.offset.y, granularity.height) != 0) {
                 skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01109", image_state->Handle(),
                                  bind_loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRIi32
+                                 "(%" PRId32
                                  ") must be a multiple of the sparse image block height "
                                  "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image.",
                                  bind.offset.y, granularity.height);
@@ -1690,7 +1691,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
             if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
                 skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01111", image_state->Handle(),
                                  bind_loc.dot(Field::offset).dot(Field::z),
-                                 "(%" PRIi32
+                                 "(%" PRId32
                                  ") must be a multiple of the sparse image block depth "
                                  "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image.",
                                  bind.offset.z, granularity.depth);

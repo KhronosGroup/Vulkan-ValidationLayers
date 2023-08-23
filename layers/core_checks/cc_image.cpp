@@ -360,8 +360,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                    "vkCreateImage", "pCreateInfo->pQueueFamilyIndices",
+        skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, loc,
                                                     "VUID-VkImageCreateInfo-sharingMode-01420");
     }
 
@@ -1187,18 +1186,20 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
         const LogObjectList objlist(cb, image_state.Handle());
         // Same error, but more details if it was an AHB external format
         if (image_state.HasAHBFormat()) {
-            skip |= LogError(vuid, objlist, image_loc,
-                             "(%s) was created external format has VkFormatFeatureFlags2 (%s) but is missing the required feature "
-                             "%s (Features found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures).",
-                             FormatHandle(image_state).c_str(), string_VkFormatFeatureFlags2(image_format_features).c_str(),
-                             string_VkFormatFeatureFlags2(desired).c_str());
-        } else {
             skip |= LogError(
                 vuid, objlist, image_loc,
-                "(%s) was created with %s and %s which has VkFormatFeatureFlags2 (%s) but is missing the required feature %s.",
-                FormatHandle(image_state).c_str(), string_VkFormat(image_state.createInfo.format),
-                string_VkImageTiling(image_state.createInfo.tiling), string_VkFormatFeatureFlags2(image_format_features).c_str(),
+                "(%s) was created with an external format having VkFormatFeatureFlags2 (%s) which is missing the required feature "
+                "%s (Features found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures).",
+                FormatHandle(image_state).c_str(), string_VkFormatFeatureFlags2(image_format_features).c_str(),
                 string_VkFormatFeatureFlags2(desired).c_str());
+        } else {
+            skip |= LogError(vuid, objlist, image_loc,
+                             "(%s) was created with format %s and tiling %s which have VkFormatFeatureFlags2 (%s) which in turn is "
+                             "missing the required feature %s.",
+                             FormatHandle(image_state).c_str(), string_VkFormat(image_state.createInfo.format),
+                             string_VkImageTiling(image_state.createInfo.tiling),
+                             string_VkFormatFeatureFlags2(image_format_features).c_str(),
+                             string_VkFormatFeatureFlags2(desired).c_str());
         }
     }
     return skip;
@@ -1206,57 +1207,57 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
 
 // For the given format verify that the aspect masks make sense
 bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, bool is_image_disjoint,
-                                         const char *func_name, const char *vuid) const {
+                                         const Location &loc, const char *vuid) const {
     bool skip = false;
     // checks color format and (single-plane or non-disjoint)
     // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
     if ((FormatIsColor(format)) && ((FormatIsMultiplane(format) == false) || (is_image_disjoint == false))) {
         if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= LogError(
-                image, vuid,
-                "%s: Using format (%s) with aspect flags (%s) but color image formats must have the VK_IMAGE_ASPECT_COLOR_BIT set.",
-                func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                vuid, image, loc,
+                "Using format (%s) with aspect flags (%s) but color image formats must have the VK_IMAGE_ASPECT_COLOR_BIT set.",
+                string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         } else if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != aspect_mask) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but color image formats must have ONLY the "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but color image formats must have ONLY the "
                              "VK_IMAGE_ASPECT_COLOR_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     } else if (FormatIsDepthAndStencil(format)) {
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) == 0) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but depth/stencil image formats must have at least one "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but depth/stencil image formats must have at least one "
                              "of VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         } else if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != aspect_mask) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but combination depth/stencil image formats can have "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but combination depth/stencil image formats can have "
                              "only the VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     } else if (FormatIsDepthOnly(format)) {
         if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but depth-only image formats must have the "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but depth-only image formats must have the "
                              "VK_IMAGE_ASPECT_DEPTH_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         } else if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != aspect_mask) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but depth-only image formats can have only the "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but depth-only image formats can have only the "
                              "VK_IMAGE_ASPECT_DEPTH_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     } else if (FormatIsStencilOnly(format)) {
         if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but stencil-only image formats must have the "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but stencil-only image formats must have the "
                              "VK_IMAGE_ASPECT_STENCIL_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         } else if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != aspect_mask) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but stencil-only image formats can have only the "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but stencil-only image formats can have only the "
                              "VK_IMAGE_ASPECT_STENCIL_BIT set.",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     } else if (FormatIsMultiplane(format)) {
         VkImageAspectFlags valid_flags = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
@@ -1264,10 +1265,10 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
             valid_flags = valid_flags | VK_IMAGE_ASPECT_PLANE_2_BIT;
         }
         if ((aspect_mask & valid_flags) != aspect_mask) {
-            skip |= LogError(image, vuid,
-                             "%s: Using format (%s) with aspect flags (%s) but multi-plane image formats may have only "
+            skip |= LogError(vuid, image, loc,
+                             "Using format (%s) with aspect flags (%s) but multi-plane image formats may have only "
                              "VK_IMAGE_ASPECT_COLOR_BIT or VK_IMAGE_ASPECT_PLANE_n_BITs set, where n = [0, 1, 2].",
-                             func_name, string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
+                             string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
     return skip;
@@ -1711,7 +1712,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     // Validate correct image aspect bits for desired formats and format consistency
-    skip |= ValidateImageAspectMask(image_state.image(), image_format, aspect_mask, image_state.disjoint, "vkCreateImageView()");
+    skip |= ValidateImageAspectMask(image_state.image(), image_format, aspect_mask, image_state.disjoint, errorObj.location);
 
     // Valdiate Image/ImageView type compatibility #resources-image-views-compatibility
     switch (image_type) {

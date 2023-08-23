@@ -1017,12 +1017,14 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_st
                     const auto &vuid = GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
                     const LogObjectList objlist(cb_state->commandBuffer(), img_barrier.image);
-                    subres_skip = LogError(objlist, vuid,
-                                           "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
-                                           "%s layout is %s.",
-                                           loc.Message().c_str(), FormatHandle(img_barrier.image).c_str(), subres.aspectMask,
-                                           subres.mipLevel, subres.arrayLayer, string_VkImageLayout(img_barrier.oldLayout),
-                                           layout_check.message, string_VkImageLayout(layout_check.layout));
+                    subres_skip =
+                        LogError(objlist, vuid,
+                                 "%s %s cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
+                                 " from %s when the "
+                                 "%s layout is %s.",
+                                 loc.Message().c_str(), FormatHandle(img_barrier.image).c_str(), subres.aspectMask, subres.mipLevel,
+                                 subres.arrayLayer, string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
+                                 string_VkImageLayout(layout_check.layout));
                 }
                 return subres_skip;
             });

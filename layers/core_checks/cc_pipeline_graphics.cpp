@@ -1246,23 +1246,25 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
     return skip;
 }
 
-bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo, const char *apiName) const {
+bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo, const Location &loc) const {
     bool skip = false;
     const VkSampleCountFlagBits sample_count = pSampleLocationsInfo->sampleLocationsPerPixel;
     const uint32_t sample_total_size = pSampleLocationsInfo->sampleLocationGridSize.width *
                                        pSampleLocationsInfo->sampleLocationGridSize.height * SampleCountSize(sample_count);
     if (pSampleLocationsInfo->sampleLocationsCount != sample_total_size) {
-        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527",
-                         "%s: VkSampleLocationsInfoEXT::sampleLocationsCount (%u) must equal grid width * grid height * pixel "
-                         "sample rate which currently is (%u * %u * %u).",
-                         apiName, pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->sampleLocationGridSize.width,
+        skip |= LogError("VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527", device, loc.dot(Field::sampleLocationsCount),
+                         "(%" PRIu32
+                         ") must equal grid width * grid height * pixel "
+                         "sample rate which currently is (%" PRIu32 " * %" PRIu32 " * %" PRIu32 ").",
+                         pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->sampleLocationGridSize.width,
                          pSampleLocationsInfo->sampleLocationGridSize.height, SampleCountSize(sample_count));
     }
     if ((phys_dev_ext_props.sample_locations_props.sampleLocationSampleCounts & sample_count) == 0) {
-        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526",
-                         "%s: VkSampleLocationsInfoEXT::sampleLocationsPerPixel of %s is not supported by the device, please check "
-                         "VkPhysicalDeviceSampleLocationsPropertiesEXT::sampleLocationSampleCounts for valid sample counts.",
-                         apiName, string_VkSampleCountFlagBits(sample_count));
+        skip |=
+            LogError("VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526", device, loc.dot(Field::sampleLocationsPerPixel),
+                     "is %s, but VkPhysicalDeviceSampleLocationsPropertiesEXT::sampleLocationSampleCounts is %s.",
+                     string_VkSampleCountFlagBits(sample_count),
+                     string_VkSampleCountFlags(phys_dev_ext_props.sample_locations_props.sampleLocationSampleCounts).c_str());
     }
 
     return skip;
@@ -1513,7 +1515,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                 (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
                 const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
                 const Location sample_info_loc = ms_loc.pNext(Struct::VkPipelineSampleLocationsStateCreateInfoEXT, Field::sampleLocationsInfo);
-                skip |= ValidateSampleLocationsInfo(&sample_location_info, "vkCreateGraphicsPipelines");
+                skip |= ValidateSampleLocationsInfo(&sample_location_info, sample_info_loc.dot(Field::sampleLocationsInfo));
                 const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
 
                 auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
@@ -2899,13 +2901,14 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
     if (cb_state.activeRenderPass->renderPass() != rp_state->renderPass()) {
         // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
         skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
-                                                *rp_state.get(), caller, vuid.render_pass_compatible_02684);
+                                                *rp_state.get(), loc, vuid.render_pass_compatible_02684);
     }
     const auto subpass = pipeline.Subpass();
     if (subpass != cb_state.GetActiveSubpass()) {
         const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-        skip |= LogError(objlist, vuid.subpass_index_02685, "%s: Pipeline was built for subpass %u but used in subpass %u.", caller,
-                         subpass, cb_state.GetActiveSubpass());
+        skip |= LogError(vuid.subpass_index_02685, objlist, loc,
+                         "Pipeline was built for subpass %" PRIu32 " but used in subpass %" PRIu32 ".", subpass,
+                         cb_state.GetActiveSubpass());
     }
     const safe_VkAttachmentReference2 *ds_attachment =
         cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;

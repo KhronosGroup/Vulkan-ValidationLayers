@@ -1010,13 +1010,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                             if (scissor.offset.x < 0) {
                                 skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-x-02821", device,
-                                                 scissor_loc.dot(Field::offset).dot(Field::x), "(%" PRIi32 ") is negative.",
+                                                 scissor_loc.dot(Field::offset).dot(Field::x), "(%" PRId32 ") is negative.",
                                                  scissor.offset.x);
                             }
 
                             if (scissor.offset.y < 0) {
                                 skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-x-02821", device,
-                                                 scissor_loc.dot(Field::offset).dot(Field::y), "(%" PRIi32 ") is negative.",
+                                                 scissor_loc.dot(Field::offset).dot(Field::y), "(%" PRId32 ") is negative.",
                                                  scissor.offset.y);
                             }
 
@@ -1024,7 +1024,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
                             if (x_sum > std::numeric_limits<int32_t>::max()) {
                                 skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-offset-02822", device, scissor_loc,
-                                                 "offset.x (%" PRIi32 ") + extent.width (%" PRIi32 ") is %" PRIi64
+                                                 "offset.x (%" PRId32 ") + extent.width (%" PRId32 ") is %" PRIi64
                                                  " which will overflow int32_t.",
                                                  scissor.offset.x, scissor.extent.width, x_sum);
                             }
@@ -1033,7 +1033,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
                             if (y_sum > std::numeric_limits<int32_t>::max()) {
                                 skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-offset-02823", device, scissor_loc,
-                                                 "offset.y (%" PRIi32 ") + extent.height (%" PRIi32 ") is %" PRIi64
+                                                 "offset.y (%" PRId32 ") + extent.height (%" PRId32 ") is %" PRIi64
                                                  " which will overflow int32_t.",
                                                  scissor.offset.y, scissor.extent.height, y_sum);
                             }
