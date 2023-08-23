@@ -2277,7 +2277,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
             skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09055", objlist, loc.dot(Field::image),
                              "was created with usage (%s) which does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT.",
-                             string_VkBufferUsageFlags(image_state->createInfo.usage).c_str());
+                             string_VkImageUsageFlags(image_state->createInfo.usage).c_str());
         }
 
         skip |= ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
