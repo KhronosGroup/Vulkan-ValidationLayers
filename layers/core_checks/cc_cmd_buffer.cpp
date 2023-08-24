@@ -409,11 +409,11 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, co
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") does not fall on alignment (%s) boundary.", offset,
                          string_VkIndexType(indexType));
     }
-    if (offset >= buffer_state.requirements.size) {
+    if (offset >= buffer_state.createInfo.size) {
         const LogObjectList objlist(cb_state.commandBuffer(), buffer_state.buffer());
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", offset,
-                         buffer_state.requirements.size);
+                         buffer_state.createInfo.size);
     }
 
     return skip;
@@ -440,12 +440,12 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
                              "vkCmdBindIndexBuffer2KHR() size (%" PRIu64 ") does not fall on alignment (%s) boundary.", size,
                              string_VkIndexType(indexType));
         }
-        if ((offset + size) > buffer_state->requirements.size) {
+        if ((offset + size) > buffer_state->createInfo.size) {
             const LogObjectList objlist(commandBuffer, buffer);
             skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer2KHR-size-08768",
                              "vkCmdBindIndexBuffer2KHR() size (%" PRIu64 ") + offset (%" PRIu64
                              ") is larger then the buffer size (%" PRIu64 ").",
-                             size, offset, buffer_state->requirements.size);
+                             size, offset, buffer_state->createInfo.size);
         }
     }
     return skip;
