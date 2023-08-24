@@ -1436,7 +1436,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
 }
 
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
-    TEST_DESCRIPTION("Draw with only vertex and fragment shader objects bound.");
+    TEST_DESCRIPTION("Draw in secondary command buffers.");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
@@ -1471,7 +1471,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
 }
 
 TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
-    TEST_DESCRIPTION("Draw with only vertex and fragment shader objects bound.");
+    TEST_DESCRIPTION("Draw with fragment shader writing to multiple attachments.");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
@@ -1528,6 +1528,110 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
+    TEST_DESCRIPTION("Draw in secondary command buffers with render pass continue flag.");
+
+    InitBasicShaderObject(nullptr, VK_API_VERSION_1_3);
+    if (::testing::Test::IsSkipped()) return;
+
+    InitDynamicRenderTarget();
+
+    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+
+    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
+
+    VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
+    VkCommandBufferObj command_buffer(m_device, &command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    auto rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfo>();
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachmentFormats = &m_render_target_fmt;
+    rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    auto hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>(&rendering_info);
+    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &hinfo;
+    command_buffer.begin(&begin_info);
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fragShader.handle()};
+    vk::CmdBindShadersEXT(command_buffer.handle(), 5u, stages, shaders);
+    SetDefaultDynamicStates({}, true, command_buffer.handle());
+    vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
+    command_buffer.end();
+
+    m_commandBuffer->begin();
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageView = GetDynamicRenderTarget();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto renderingInfo = LvlInitStruct<VkRenderingInfoKHR>();
+    renderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &color_attachment;
+    renderingInfo.layerCount = 1;
+
+    m_commandBuffer->BeginRendering(renderingInfo);
+
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &command_buffer.handle());
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderObject, DrawRebindingShaders) {
+    TEST_DESCRIPTION("Draw after rebinding only some shaders.");
+
+    InitBasicShaderObject(nullptr, VK_API_VERSION_1_3);
+    if (::testing::Test::IsSkipped()) return;
+
+    InitDynamicRenderTarget();
+
+    const VkShaderStageFlagBits vertStage = VK_SHADER_STAGE_VERTEX_BIT;
+    const VkShaderStageFlagBits tescStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    const VkShaderStageFlagBits teseStage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    const VkShaderStageFlagBits geomStage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    const VkShaderStageFlagBits fragStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    const vk_testing::Shader vertShader(*m_device, vertStage, GLSLToSPV(vertStage, kVertexMinimalGlsl));
+    const vk_testing::Shader tescShader(*m_device, tescStage, GLSLToSPV(tescStage, kTessellationControlMinimalGlsl));
+    const vk_testing::Shader teseShader(*m_device, teseStage, GLSLToSPV(teseStage, kTessellationEvalMinimalGlsl));
+    const vk_testing::Shader geomShader(*m_device, geomStage, GLSLToSPV(geomStage, kGeometryMinimalGlsl));
+    const vk_testing::Shader fragShader(*m_device, fragStage, GLSLToSPV(fragStage, kFragmentMinimalGlsl));
+
+    const VkShaderEXT nullShader = VK_NULL_HANDLE;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+
+    SetDefaultDynamicStates();
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &vertStage, &vertShader.handle());
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &tescStage, &nullShader);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &teseStage, &nullShader);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &nullShader);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &fragStage, &fragShader.handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &geomShader.handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &tescStage, &tescShader.handle());
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &teseStage, &teseShader.handle());
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &nullShader);
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &fragStage, &nullShader);
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
