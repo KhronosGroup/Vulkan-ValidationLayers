@@ -930,12 +930,10 @@ TEST_F(NegativeMesh, DrawCmds) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkBufferObj count_buffer;
     buffer_create_info.size = 64;
-    count_buffer.init(*m_device, buffer_create_info);
+    VkBufferObj count_buffer(*m_device, buffer_create_info);
 
     VkPipelineLayoutObj pipeline_layout(m_device);
     VkPipelineObj pipe(m_device);
@@ -1095,8 +1093,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkPipelineLayoutObj pipeline_layout(m_device);
     VkPipelineObj pipe(m_device);
@@ -1129,8 +1126,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     count_buffer_create_info.size = 64;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
-    VkBufferObj count_buffer;
-    count_buffer.init(*m_device, count_buffer_create_info);
+    VkBufferObj count_buffer(*m_device, count_buffer_create_info);
     ASSERT_TRUE(count_buffer.initialized());
 
     VkBufferObj count_buffer_unbound;
@@ -1212,12 +1208,10 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandNV);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkBufferObj count_buffer;
     buffer_create_info.size = 64;
-    count_buffer.init(*m_device, buffer_create_info);
+    VkBufferObj count_buffer(*m_device, buffer_create_info);
 
     VkPipelineLayoutObj pipeline_layout(m_device);
     VkPipelineObj pipe(m_device);

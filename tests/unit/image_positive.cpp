@@ -602,8 +602,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     uint32_t current_buffer;
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
+    vk_testing::Semaphore image_acquired(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
     VkImageView imageView = image.targetView(attachmentFormat);
@@ -1316,21 +1315,17 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
     VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
-    vk_testing::ImageView view;
     auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
     image_view_create_info.subresourceRange = view_range;
 
-    view.init(*m_device, image_view_create_info);
-    ASSERT_TRUE(view.initialized());
+    vk_testing::ImageView view(*m_device, image_view_create_info);
 
     // Create Sampler
-    vk_testing::Sampler sampler;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler.init(*m_device, sampler_ci);
-    ASSERT_TRUE(sampler.initialized());
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};
@@ -1540,10 +1535,8 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
                                    (uint32_t)deps.size(),
                                    deps.data()};
     // Create Sampler
-    vk_testing::Sampler sampler;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler.init(*m_device, sampler_ci);
-    ASSERT_TRUE(sampler.initialized());
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};

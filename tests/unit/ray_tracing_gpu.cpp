@@ -75,9 +75,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
@@ -166,9 +165,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
@@ -278,9 +276,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
@@ -359,9 +356,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));

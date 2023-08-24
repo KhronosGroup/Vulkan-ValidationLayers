@@ -644,8 +644,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass;
 
-        vk_testing::RenderPass render_pass;
-        render_pass.init(*m_device, rpci);
+        vk_testing::RenderPass render_pass(*m_device, rpci);
 
         VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
         fbci.renderPass = render_pass.handle();
@@ -655,8 +654,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         fbci.height = image_ci.extent.height;
         fbci.layers = image_ci.extent.depth;
 
-        vk_testing::Framebuffer framebuffer;
-        framebuffer.init(*m_device, fbci);
+        vk_testing::Framebuffer framebuffer(*m_device, fbci);
 
         VkClearAttachment color_attachment;
         color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -696,8 +694,7 @@ TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     secondary.begin();
     vk::CmdSetEvent(secondary.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -725,9 +722,7 @@ TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
     }
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event ev;
-    ev.init(*m_device, event_create_info);
+    vk_testing::Event ev(*m_device);
     VkEvent ev_handle = ev.handle();
     VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb = secondary_cb.handle();

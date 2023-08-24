@@ -1914,8 +1914,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
 
-    vk_testing::RenderPass rp1;
-    rp1.init(*m_device, rpci);
+    vk_testing::RenderPass rp1(*m_device, rpci);
 
     cmd_buffer_inheritance_info.renderPass = rp1.handle();
     cmd_buffer_inheritance_info.subpass = 0x5;
@@ -1956,8 +1955,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBuffer) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
 
-    vk_testing::RenderPass rp1;
-    rp1.init(*m_device, rpci);
+    vk_testing::RenderPass rp1(*m_device, rpci);
 
     cmd_buf_hinfo.renderPass = rp1.handle();
     cmd_buf_hinfo.subpass = 0x5;
@@ -2041,8 +2039,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView depth_image_view;
-    depth_image_view.init(*m_device, ivci);
+    vk_testing::ImageView depth_image_view(*m_device, ivci);
 
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2162,8 +2159,7 @@ TEST_F(NegativeDynamicRendering, InfoMismatchedSamples) {
     civ_ci.subresourceRange.levelCount = 1;
     civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView color_image_view;
-    color_image_view.init(*m_device, civ_ci);
+    vk_testing::ImageView color_image_view(*m_device, civ_ci);
 
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageView = color_image_view.handle();
@@ -2184,8 +2180,7 @@ TEST_F(NegativeDynamicRendering, InfoMismatchedSamples) {
     div_ci.subresourceRange.levelCount = 1;
     div_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    vk_testing::ImageView depth_image_view;
-    depth_image_view.init(*m_device, div_ci);
+    vk_testing::ImageView depth_image_view(*m_device, div_ci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -3205,8 +3200,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     render_pass_ci.subpassCount = 1;
     render_pass_ci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, render_pass_ci);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();
@@ -3249,8 +3243,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     render_pass_ci.subpassCount = 2;
     render_pass_ci.pSubpasses = subpasses;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, render_pass_ci);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
     auto framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
     framebuffer_ci.renderPass = render_pass.handle();
@@ -3258,8 +3251,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer;
-    framebuffer.init(*m_device, framebuffer_ci);
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();

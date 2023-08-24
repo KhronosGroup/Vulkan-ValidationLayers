@@ -6861,11 +6861,10 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView image_view = image.targetView(format);
 
-    vk_testing::Sampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.minFilter = VK_FILTER_LINEAR;
     sampler_info.compareEnable = VK_FALSE;
-    sampler.init(*m_device, sampler_info);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle());
     descriptor_set.UpdateDescriptorSets();
@@ -7082,8 +7081,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     query_pool_ci.queryCount = 1;
     query_pool_ci.queryType = VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT;
 
-    vk_testing::QueryPool query_pool;
-    query_pool.init(*m_device, query_pool_ci);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());

@@ -735,15 +735,13 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     vinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
     vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView fullView0;
-    fullView0.init(*m_device, vinfo);
+    vk_testing::ImageView fullView0(*m_device, vinfo);
 
     vinfo.image = depthImage.handle();
     vinfo.format = VK_FORMAT_D32_SFLOAT;
     vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    vk_testing::ImageView fullView1;
-    fullView1.init(*m_device, vinfo);
+    vk_testing::ImageView fullView1(*m_device, vinfo);
 
     VkImageView fullViews[] = {fullView0.handle(), fullView1.handle()};
 
@@ -1147,8 +1145,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass rp;
-    rp.init(*m_device, rpci);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     auto image_ci = LvlInitStruct<VkImageCreateInfo>();
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -1170,8 +1167,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 3};
-    vk_testing::ImageView view;
-    view.init(*m_device, ivci);
+    vk_testing::ImageView view(*m_device, ivci);
     VkImageView image_view_handle = view.handle();
 
     VkFramebufferCreateInfo fci = LvlInitStruct<VkFramebufferCreateInfo>();
@@ -1181,16 +1177,14 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     fci.width = 32;
     fci.height = 32;
     fci.layers = 1;
-    vk_testing::Framebuffer fb;
-    fb.init(*m_device, fci);
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
     qpci.queryCount = 2;
-    vk_testing::QueryPool query_pool;
-    query_pool.init(*m_device, qpci);
+    vk_testing::QueryPool query_pool(*m_device, qpci);
 
     VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbi.renderPass = rp.handle();
@@ -1398,8 +1392,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     rp_info.attachmentCount = depth_count;
     rp_info.pAttachments = attach_desc;
 
-    vk_testing::RenderPass renderpass;
-    renderpass.init(*m_device, rp_info);
+    vk_testing::RenderPass renderpass(*m_device, rp_info);
 
     auto fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = renderpass.handle();
@@ -1409,8 +1402,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     fb_info.height = image_info.extent.height;
     fb_info.layers = 1;
 
-    vk_testing::Framebuffer framebuffer;
-    framebuffer.init(*m_device, fb_info);
+    vk_testing::Framebuffer framebuffer(*m_device, fb_info);
 
     auto rp_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     rp_begin_info.renderPass = renderpass.handle();
@@ -1669,13 +1661,12 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     const auto stencil_range = image.subresource_range(VK_IMAGE_ASPECT_STENCIL_BIT);
     const auto depth_stencil_range = image.subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    vk_testing::ImageView view;
     VkImageViewCreateInfo view_info = LvlInitStruct<VkImageViewCreateInfo>();
     view_info.image = image.handle();
     view_info.subresourceRange = depth_stencil_range;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     view_info.format = ds_format;
-    view.init(*m_device, view_info);
+    vk_testing::ImageView view(*m_device, view_info);
 
     std::vector<VkImageMemoryBarrier> barriers;
 

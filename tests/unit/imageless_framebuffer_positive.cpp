@@ -154,8 +154,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer;
-    framebuffer.init(*m_device, framebuffer_ci);
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkClearValue clear_value = {};
     clear_value.color = {{0u, 0u, 0u, 0u}};

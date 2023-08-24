@@ -28,9 +28,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     }
 
     // 2 semaphores needed since we need to bind twice before copying
-    auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, s_info);
-    vk_testing::Semaphore semaphore2(*m_device, s_info);
+    vk_testing::Semaphore semaphore(*m_device);
+    vk_testing::Semaphore semaphore2(*m_device);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
@@ -120,8 +119,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, s_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     constexpr VkDeviceSize copy_size = 16;
     // Consecutive ranges
@@ -206,8 +204,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_ci);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkBufferCreateInfo buffer_ci =
         vk_testing::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
@@ -290,8 +287,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_ci);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkBufferCreateInfo buffer_ci =
         vk_testing::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);

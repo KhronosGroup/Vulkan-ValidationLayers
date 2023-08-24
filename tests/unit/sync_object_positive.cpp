@@ -267,9 +267,8 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     vk::EndCommandBuffer(cmd_bufs[3]);
 
     // Submit 4 command buffers in 3 submits, with submits 2 and 3 waiting for semaphores from submits 1 and 2
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore1(*m_device, semaphore_create_info);
-    vk_testing::Semaphore semaphore2(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore1(*m_device);
+    vk_testing::Semaphore semaphore2(*m_device);
     VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
     VkSubmitInfo submit_info[3];
     submit_info[0] = LvlInitStruct<VkSubmitInfo>();
@@ -403,8 +402,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -489,8 +487,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -575,8 +572,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -720,8 +716,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -910,8 +905,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -1143,8 +1137,7 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -1683,8 +1676,7 @@ TEST_F(PositiveSyncObject, WaitEventThenSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -1836,11 +1828,8 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    semaphore_create_info.pNext = &semaphore_type_create_info;
-
-    vk_testing::Semaphore semaphore;
-    semaphore.init(*m_device, semaphore_create_info);
+    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
+    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
 
     // timeline values, Begins will be signaled by host, Ends by the queues
     constexpr uint64_t kQ0Begin = 1;
@@ -1926,8 +1915,7 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool;
-    query_pool.init(*m_device, query_pool_create_info);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();

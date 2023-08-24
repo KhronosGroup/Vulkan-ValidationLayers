@@ -810,8 +810,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, render_pass_ci);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -825,8 +824,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer;
-    framebuffer.init(*m_device, framebuffer_ci);
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitInfo();

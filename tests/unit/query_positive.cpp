@@ -86,9 +86,8 @@ TEST_F(PositiveQuery, BasicQuery) {
     bci.size = 4 * sizeof(uint64_t);
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer.init(*m_device, bci, mem_props);
+    VkBufferObj buffer(*m_device, bci, mem_props);
 
     VkQueryPoolCreateInfo query_pool_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -159,9 +158,8 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     bci.size = sizeof_samples_passed;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer.init(*m_device, bci, mem_props);
+    VkBufferObj buffer(*m_device, bci, mem_props);
 
     constexpr uint32_t query_count = 2;
 
@@ -246,8 +244,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, buff_create_info);
+    VkBufferObj buffer(*m_device, buff_create_info);
 
     VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
     hinfo.renderPass = VK_NULL_HANDLE;
@@ -314,8 +311,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, buff_create_info);
+    VkBufferObj buffer(*m_device, buff_create_info);
 
     {
         VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
@@ -400,11 +396,10 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    vk_testing::QueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 2;
-    query_pool.init(*m_device, query_pool_ci);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
     vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);

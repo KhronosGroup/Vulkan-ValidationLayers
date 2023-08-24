@@ -194,8 +194,7 @@ TEST_F(NegativeBuffer, BufferViewObject) {
         buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-        VkBufferObj buffer;
-        buffer.init(*m_device, buffer_create_info);
+        VkBufferObj buffer(*m_device, buffer_create_info);
 
         VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
         bvci.buffer = buffer.handle();
@@ -891,8 +890,7 @@ TEST_F(NegativeBuffer, ConditionalRenderingBufferUsage) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = LvlInitStruct<VkConditionalRenderingBeginInfoEXT>();
     conditional_rendering_begin.buffer = buffer.handle();
@@ -918,8 +916,7 @@ TEST_F(NegativeBuffer, ConditionalRenderingOffset) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 128;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = LvlInitStruct<VkConditionalRenderingBeginInfoEXT>();
     conditional_rendering_begin.buffer = buffer.handle();
@@ -952,8 +949,7 @@ TEST_F(NegativeBuffer, BeginConditionalRendering) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = LvlInitStruct<VkConditionalRenderingBeginInfoEXT>();
     conditional_rendering_begin.buffer = buffer.handle();

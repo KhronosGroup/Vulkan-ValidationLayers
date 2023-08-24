@@ -1324,8 +1324,7 @@ TEST_F(NegativeImagelessFramebuffer, DescriptorUpdateTemplateEntryWithInlineUnif
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buff_ci);
+    VkBufferObj buffer(*m_device, buff_ci);
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;

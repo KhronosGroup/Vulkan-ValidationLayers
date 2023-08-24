@@ -36,8 +36,8 @@ TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device, LvlInitStruct<VkEventCreateInfo>());
-    const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
+    const vk_testing::Event event(*m_device);
+    const vk_testing::Event event2(*m_device);
 
     m_commandBuffer->begin();
     // Different API calls to cover three category of VUIDs: 07316, 07318, 07314

@@ -1196,8 +1196,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     sampler_conversion_ci.chromaFilter = VK_FILTER_NEAREST;
     sampler_conversion_ci.forceExplicitReconstruction = false;
 
-    vk_testing::SamplerYcbcrConversion sampler_conversion;
-    sampler_conversion.init(*m_device, sampler_conversion_ci, false);
+    vk_testing::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
 
     auto sampler_ycbcr_conversion_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     sampler_ycbcr_conversion_info.conversion = sampler_conversion.handle();

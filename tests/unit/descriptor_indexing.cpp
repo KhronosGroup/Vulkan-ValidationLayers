@@ -233,8 +233,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     auto buff_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buff_create_info.size = 1024;
     buff_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buff_create_info);
+    VkBufferObj buffer(*m_device, buff_create_info);
 
     VkDescriptorBufferInfo bufferInfo[3] = {};
     bufferInfo[0].buffer = buffer.handle();

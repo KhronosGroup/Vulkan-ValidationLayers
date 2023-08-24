@@ -261,8 +261,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -305,8 +304,7 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -1113,19 +1111,16 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags array entry
     // Expected to trigger an error with StatelessValidation::ValidateFlagsArray
-    VkSemaphore semaphore;
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    vk_testing::Semaphore semaphore(*m_device);
     // `stage_flags` is set to a value which, currently, is not a defined stage flag
     // `VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM` works well for this
     VkPipelineStageFlags stage_flags = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
     // `waitSemaphoreCount` *must* be greater than 0 to perform this check
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1608,10 +1603,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
-    ASSERT_TRUE(event.initialized());
-
+    vk_testing::Event event(*m_device);
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-01149");
@@ -1624,8 +1616,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
 
     m_commandBuffer->end();
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore semaphore(*m_device);
     ASSERT_TRUE(semaphore.initialized());
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
@@ -1669,8 +1660,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     commandBuffer.begin();
 
-    VkEventCreateInfo event_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_info);
+    vk_testing::Event event(*m_device);
     VkResult err;
 
     err = vk::ResetEvent(device(), event.handle());
@@ -2055,8 +2045,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buff_create_info);
+    VkBufferObj buffer(*m_device, buff_create_info);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -2685,8 +2674,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2776,9 +2764,8 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
 
     metal_texture_info.image = VK_NULL_HANDLE;
-    vk_testing::ImageView image_view_no_struct;
     auto image_view_ci = image_obj.BasicViewCreatInfo();
-    image_view_no_struct.init(*m_device, image_view_ci);
+    vk_testing::ImageView image_view_no_struct(*m_device, image_view_ci);
     metal_texture_info.imageView = image_view_no_struct.handle();
     // ImageView not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06796");
@@ -2815,8 +2802,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     image_view_ci.pNext = &export_metal_object_create_info;
     export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
-    vk_testing::ImageView single_plane_export_image_view;
-    single_plane_export_image_view.init(*m_device, image_view_ci);
+    vk_testing::ImageView single_plane_export_image_view(*m_device, image_view_ci);
     metal_texture_info.image = VK_NULL_HANDLE;
     metal_texture_info.imageView = single_plane_export_image_view.handle();
     // metal_texture_info.plane not plane_0 for single plane imageView
@@ -2851,8 +2837,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     if (portability_features.events) {
         event_info.pNext = nullptr;
-        vk_testing::Event event_no_struct;
-        event_no_struct.init(*m_device, event_info);
+        vk_testing::Event event_no_struct(*m_device, event_info);
         metal_shared_event_info.event = event_no_struct.handle();
         metal_shared_event_info.semaphore = VK_NULL_HANDLE;
         // Event not created with struct in pNext
@@ -2903,8 +2888,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
             ivci.image = mp_image_obj.handle();
             ivci.format = mp_format;
             ivci.pNext = &ycbcr_info;
-            vk_testing::ImageView mp_image_view;
-            mp_image_view.init(*m_device, ivci);
+            vk_testing::ImageView mp_image_view(*m_device, ivci);
             metal_texture_info.image = VK_NULL_HANDLE;
             metal_texture_info.imageView = mp_image_view.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802");

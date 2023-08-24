@@ -4907,8 +4907,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     view_ci.subresourceRange.levelCount = 1;
     view_ci.subresourceRange.baseArrayLayer = 0;
     view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView view_2d_array;
-    view_2d_array.init(*m_device, view_ci);
+    vk_testing::ImageView view_2d_array(*m_device, view_ci);
 
     descriptor_set.WriteDescriptorImageInfo(0, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-06712");
@@ -4916,9 +4915,8 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     m_errorMonitor->VerifyFound();
     descriptor_set.descriptor_writes.clear();
 
-    vk_testing::ImageView view_2d;
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_2d.init(*m_device, view_ci);
+    vk_testing::ImageView view_2d(*m_device, view_ci);
     descriptor_set.WriteDescriptorImageInfo(0, view_2d.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07796");
     descriptor_set.UpdateDescriptorSets();
@@ -4985,8 +4983,7 @@ TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     view_ci.subresourceRange.levelCount = 1;
     view_ci.subresourceRange.baseArrayLayer = 0;
     view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView view_2d_array;
-    view_2d_array.init(*m_device, view_ci);
+    vk_testing::ImageView view_2d_array(*m_device, view_ci);
 
     descriptor_set.WriteDescriptorImageInfo(0, view_2d_array.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06714");
@@ -5103,9 +5100,8 @@ TEST_F(NegativeImage, ColorWthDepthAspect) {
     civ_ci.subresourceRange.levelCount = 1;
     civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView color_image_view;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    color_image_view.init(*m_device, civ_ci);
+    vk_testing::ImageView color_image_view(*m_device, civ_ci);
     m_errorMonitor->VerifyFound();
 }
 

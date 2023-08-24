@@ -1605,9 +1605,7 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     dev_grp_cmd_buf_info.deviceMask = 0x1;
     auto cmd_buf_info = LvlInitStruct<VkCommandBufferBeginInfo>(&dev_grp_cmd_buf_info);
 
-    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
-    ASSERT_TRUE(semaphore.initialized());
+    vk_testing::Semaphore semaphore(*m_device);
 
     auto device_group_submit_info = LvlInitStruct<VkDeviceGroupSubmitInfo>();
     device_group_submit_info.commandBufferCount = 1;
@@ -2609,9 +2607,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
-    vk_testing::Semaphore submit_semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore acquire_semaphore(*m_device);
+    vk_testing::Semaphore submit_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
@@ -3400,9 +3397,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     VkSwapchainKHR swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
-    ASSERT_TRUE(semaphore.initialized());
+    vk_testing::Semaphore semaphore(*m_device);
 
     auto acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;

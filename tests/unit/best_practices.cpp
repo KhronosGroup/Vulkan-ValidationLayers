@@ -1553,10 +1553,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-
-    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore semaphore;
-    semaphore.init(*m_device, semaphore_ci);
+    vk_testing::Semaphore semaphore(*m_device);
     VkSemaphore semaphore_handle = semaphore.handle();
 
     VkSubmitInfo signal_submit_info = LvlInitStruct<VkSubmitInfo>();

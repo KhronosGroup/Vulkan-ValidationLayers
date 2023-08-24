@@ -81,8 +81,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = buffer.handle();
@@ -92,8 +91,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    VkBufferObj index_buffer;
-    index_buffer.init(*m_device, index_buffer_create_info);
+    VkBufferObj index_buffer(*m_device, index_buffer_create_info);
 
     // Only update binding 0
     VkWriteDescriptorSet descriptor_writes[2] = {};
