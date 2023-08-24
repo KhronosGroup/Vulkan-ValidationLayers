@@ -68,11 +68,10 @@ TEST_F(NegativePipeline, BasicCompute) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    VkBufferObj buffer;
     auto bci = LvlInitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 1024;
-    buffer.init(*m_device, bci);
+    VkBufferObj buffer(*m_device, bci);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -316,11 +315,10 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_commandBuffer->DrawIndexed(1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj buffer;
     VkBufferCreateInfo ci = LvlInitStruct<VkBufferCreateInfo>();
     ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     ci.size = 1024;
-    buffer.init(*m_device, ci);
+    VkBufferObj buffer(*m_device, ci);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-None-08606");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 1, 0);
     m_errorMonitor->VerifyFound();
@@ -1867,14 +1865,12 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     bci.size = 4;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj storage_buffer;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    storage_buffer.init(*m_device, bci, mem_props);
+    VkBufferObj storage_buffer(*m_device, bci, mem_props);
 
-    VkBufferObj uniform_buffer;
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 20;
-    uniform_buffer.init(*m_device, bci, mem_props);
+    VkBufferObj uniform_buffer(*m_device, bci, mem_props);
 
     OneOffDescriptorSet::Bindings binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},

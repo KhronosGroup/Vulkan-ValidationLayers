@@ -62,8 +62,7 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
-        VkBufferObj buffer;
-        buffer.init(*m_device, info);
+        VkBufferObj buffer(*m_device, info);
         VkDeviceSize offsets[1]{};
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindTransformFeedbackBuffersEXT-transformFeedback-02355");
@@ -555,8 +554,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 1024;
-    VkBufferObj counter_buffer;
-    counter_buffer.init(*m_device, buffer_create_info);
+    VkBufferObj counter_buffer(*m_device, buffer_create_info);
 
     {
         CreatePipelineHelper pipeline(*this);

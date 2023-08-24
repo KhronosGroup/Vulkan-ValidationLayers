@@ -74,8 +74,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.buffer = buffer.handle();

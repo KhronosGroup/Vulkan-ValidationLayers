@@ -1056,8 +1056,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
 
-    vk_testing::DescriptorSetLayout ds_layout;
-    ds_layout.init(*m_device, ds_layout_ci);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();

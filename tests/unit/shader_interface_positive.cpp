@@ -960,19 +960,17 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     pipe.CreateGraphicsPipeline();
 
-    VkBufferObj uniform_buffer;
     auto ub_ci = LvlInitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
-    uniform_buffer.init(*m_device, ub_ci);
+    VkBufferObj uniform_buffer(*m_device, ub_ci);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
 
-    VkBufferObj buffer;
     VkBufferCreateInfo vb_ci = LvlInitStruct<VkBufferCreateInfo>();
     vb_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vb_ci.size = 1024;
-    buffer.init(*m_device, vb_ci);
+    VkBufferObj buffer(*m_device, vb_ci);
     VkBuffer buffer_handle = buffer.handle();
     VkDeviceSize offset = 0;
 

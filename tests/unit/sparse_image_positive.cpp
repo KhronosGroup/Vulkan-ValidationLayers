@@ -299,8 +299,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler;
-    sampler.init(*m_device, sampler_ci);
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

@@ -760,8 +760,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Check for error for trying to wait on pipeline stage not supported by this queue. Specifically since our queue is not a
     // compute queue, vk::CmdWaitEvents cannot have it's source stage mask be VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-06459");
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
     vk::CmdWaitEvents(bad_command_buffer.handle(), 1, &event.handle(), /*source stage mask*/ VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -1479,8 +1478,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     m_commandBuffer->begin();
     // try for vk::CmdWaitEvents
     {
-        VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
-        vk_testing::Event event(*m_device, eci);
+        vk_testing::Event event(*m_device);
 
         // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
         {
@@ -1971,10 +1969,7 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
 
-    auto sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-
-    vk_testing::Semaphore semaphore;
-    semaphore.init(*m_device, sem_info);
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkQueue other = m_device->graphics_queues()[1]->handle();
 
@@ -2079,8 +2074,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueues) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
     VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkBufferMemoryBarrier buffer_memory_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
@@ -2982,19 +2976,15 @@ TEST_F(NegativeSyncObject, SignalSemaphoreType) {
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device);
 
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
-    semaphore_signal_info.semaphore = semaphore;
+    semaphore_signal_info.semaphore = semaphore.handle();
     semaphore_signal_info.value = 10;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-semaphore-03257");
     vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
 TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
@@ -3211,8 +3201,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
         semaphore_type_create_info.initialValue = 0;
         vk_testing::Semaphore timeline_sem(*m_device, semaphore_create_info);
 
-        auto binary_semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-        vk_testing::Semaphore binary_sem(*m_device, binary_semaphore_create_info);
+        vk_testing::Semaphore binary_sem(*m_device);
 
         wait_info.semaphore = timeline_sem.handle();
         wait_info.value = 1;
@@ -3246,18 +3235,13 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
     GetPhysicalDeviceFeatures2(timelinefeatures);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device);
 
     uint64_t value = 0xdeadbeef;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetSemaphoreCounterValue-semaphore-03255");
-    vk::GetSemaphoreCounterValueKHR(m_device->device(), semaphore, &value);
+    vk::GetSemaphoreCounterValueKHR(m_device->device(), semaphore.handle(), &value);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
 TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
@@ -3267,8 +3251,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3290,8 +3273,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3316,8 +3298,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3345,8 +3326,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk_testing::Event event(*m_device, event_create_info);
+    vk_testing::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3382,14 +3362,12 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     cb1.begin();
     cb1.end();
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cb1.handle();
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &semaphore;
+    submit_info.pSignalSemaphores = &semaphore.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_commandBuffer->begin();
@@ -3400,7 +3378,6 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     m_errorMonitor->VerifyFound();
 
     vk::DeviceWaitIdle(m_device->device());
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
 TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {

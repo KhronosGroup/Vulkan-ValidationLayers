@@ -388,8 +388,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.pushConstantRangeCount = 1;
         pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-        vk_testing::PipelineLayout layout;
-        layout.init(*m_device, pipeline_layout_info, std::vector<const vk_testing::DescriptorSetLayout *>{});
+        vk_testing::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vk_testing::DescriptorSetLayout *>{});
 
         CreatePipelineHelper pipe(*this);
         pipe.InitInfo();
@@ -444,8 +443,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         auto bci = LvlInitStruct<VkBufferCreateInfo>();
         bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bci.size = 8;
-        VkBufferObj buffer;
-        buffer.init(*m_device, bci);
+        VkBufferObj buffer(*m_device, bci);
         VkDescriptorBufferInfo buffer_info;
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
@@ -462,8 +460,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
 
-        vk_testing::PipelineLayout layout;
-        layout.init(*m_device, pipeline_layout_info, std::vector<vk_testing::DescriptorSetLayout const *>{});
+        vk_testing::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vk_testing::DescriptorSetLayout const *>{});
 
         VkShaderObj const vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj const fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -749,8 +746,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView;
 
-    vk_testing::Framebuffer framebuffer;
-    framebuffer.init(*m_device, framebufferCreateInfo);
+    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     render_pass_begin_info.renderPass = render_pass.handle();

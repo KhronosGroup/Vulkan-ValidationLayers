@@ -5105,8 +5105,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     buffer_create_info.size = sizeof(VkDrawIndirectCommand);
-    VkBufferObj draw_buffer;
-    draw_buffer.init(*m_device, buffer_create_info);
+    VkBufferObj draw_buffer(*m_device, buffer_create_info);
 
     VkBufferObj draw_buffer_correct;
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -6079,9 +6078,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dep;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, rpci);
-    ASSERT_TRUE(render_pass.initialized());
+    vk_testing::RenderPass render_pass(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -6100,8 +6097,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = LvlInitStruct<VkConditionalRenderingBeginInfoEXT>();
     conditional_rendering_begin.buffer = buffer.handle();
@@ -6696,8 +6692,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, rp_ci);
+    vk_testing::RenderPass render_pass(*m_device, rp_ci);
 
     auto depth_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     depth_state_info.depthTestEnable = VK_TRUE;

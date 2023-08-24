@@ -1338,8 +1338,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     fb_info.height = 32;
     fb_info.layers = 1;
 
-    vk_testing::Framebuffer framebuffer_fsr;
-    framebuffer_fsr.init(*m_device, fb_info);
+    vk_testing::Framebuffer framebuffer_fsr(*m_device, fb_info);
 
     // Create a frame buffer with a render pass without FSR attachment
     VkFramebufferCreateInfo fb_info_0 = LvlInitStruct<VkFramebufferCreateInfo>();
@@ -1350,8 +1349,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     fb_info_0.height = 32;
     fb_info_0.layers = 1;
 
-    vk_testing::Framebuffer framebuffer_no_fsr;
-    framebuffer_no_fsr.init(*m_device, fb_info_0);
+    vk_testing::Framebuffer framebuffer_no_fsr(*m_device, fb_info_0);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -2103,7 +2101,6 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 
     // Create view attachment
     VkImageView iv[7];
-    vk_testing::ImageView iv0;
     auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = fdm_image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
@@ -2114,48 +2111,42 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    iv0.init(*m_device, ivci);
+    vk_testing::ImageView iv0(*m_device, ivci);
     ASSERT_TRUE(iv0.initialized());
     iv[0] = iv0.handle();
 
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ivci.image = input_image.handle();
-    vk_testing::ImageView iv1;
-    iv1.init(*m_device, ivci);
+    vk_testing::ImageView iv1(*m_device, ivci);
     ASSERT_TRUE(iv1.initialized());
     iv[1] = iv1.handle();
 
     ivci.image = color_image1.handle();
-    vk_testing::ImageView iv2;
-    iv2.init(*m_device, ivci);
+    vk_testing::ImageView iv2(*m_device, ivci);
     ASSERT_TRUE(iv2.initialized());
     iv[2] = iv2.handle();
 
     ivci.image = color_image2.handle();
-    vk_testing::ImageView iv3;
-    iv3.init(*m_device, ivci);
+    vk_testing::ImageView iv3(*m_device, ivci);
     ASSERT_TRUE(iv3.initialized());
     iv[3] = iv3.handle();
 
     ivci.format = ds_format;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     ivci.image = depth_image.handle();
-    vk_testing::ImageView iv4;
-    iv4.init(*m_device, ivci);
+    vk_testing::ImageView iv4(*m_device, ivci);
     ASSERT_TRUE(iv4.initialized());
     iv[4] = iv4.handle();
 
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.image = resolve_image.handle();
-    vk_testing::ImageView iv5;
-    iv5.init(*m_device, ivci);
+    vk_testing::ImageView iv5(*m_device, ivci);
     ASSERT_TRUE(iv5.initialized());
     iv[5] = iv5.handle();
 
     ivci.image = preserve_image.handle();
-    vk_testing::ImageView iv6;
-    iv6.init(*m_device, ivci);
+    vk_testing::ImageView iv6(*m_device, ivci);
     ASSERT_TRUE(iv6.initialized());
     iv[6] = iv6.handle();
 
@@ -2647,8 +2638,8 @@ TEST_F(NegativeFragmentShadingRate, StageUsage) {
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device, LvlInitStruct<VkEventCreateInfo>());
-    const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
+    const vk_testing::Event event(*m_device);
+    const vk_testing::Event event2(*m_device);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07316");
@@ -2682,8 +2673,8 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device, LvlInitStruct<VkEventCreateInfo>());
-    const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
+    const vk_testing::Event event(*m_device);
+    const vk_testing::Event event2(*m_device);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07316");

@@ -674,9 +674,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     ds_pool_ci.flags = 0;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool;
-    ds_pool.init(*m_device, ds_pool_ci);
-    ASSERT_TRUE(ds_pool.initialized());
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
@@ -1164,9 +1162,8 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     image.Init(image_ci);
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1);
 
-    vk_testing::Sampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    sampler.init(*m_device, sampler_info);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
     frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
     frag_descriptor_set.UpdateDescriptorSets();

@@ -475,8 +475,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, render_pass_ci);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
 }
@@ -526,8 +525,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, render_pass_ci);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
     auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);

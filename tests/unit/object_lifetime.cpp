@@ -317,8 +317,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-        VkBufferObj buffer;
-        buffer.init(*m_device, buffer_create_info);
+        VkBufferObj buffer(*m_device, buffer_create_info);
 
         bvci.buffer = buffer.handle();
         bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -372,8 +371,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     bvci.buffer = buffer.handle();
     VkResult err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &view);
@@ -1017,8 +1015,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
+    VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkBufferView view;
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();

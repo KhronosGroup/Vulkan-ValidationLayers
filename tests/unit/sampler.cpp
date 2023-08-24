@@ -839,9 +839,8 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-    vk_testing::ImageView view;
     auto image_view_create_info = image.BasicViewCreatInfo();
-    view.init(*m_device, image_view_create_info);
+    vk_testing::ImageView view(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
     img_info.sampler = sampler.handle();
