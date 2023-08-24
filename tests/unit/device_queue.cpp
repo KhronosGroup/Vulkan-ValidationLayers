@@ -308,3 +308,54 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, BindPipeline) {
+    TEST_DESCRIPTION("vkCmdPipelineBarrier with command pool with wrong queues");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
+    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
+        if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
+            only_transfer_queueFamilyIndex = i;
+            break;
+        }
+    }
+    if (only_transfer_queueFamilyIndex == vvl::kU32Max) {
+        GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
+    }
+    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
+    VkCommandBufferObj commandBuffer(m_device, &commandPool);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.InitState();
+    g_pipe.CreateGraphicsPipeline();
+    CreateComputePipelineHelper c_pipe(*this);
+    c_pipe.InitInfo();
+    c_pipe.InitState();
+    c_pipe.CreateComputePipeline();
+
+    // Get implicit VU because using Transfer only instead of a Graphics-only or Compute-only queue
+    commandBuffer.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00777");
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.pipeline_);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00778");
+    vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    m_errorMonitor->VerifyFound();
+    commandBuffer.end();
+}
+
+TEST_F(NegativeDeviceQueue, CreateCommandPool) {
+    TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    const size_t queue_count = vk_testing::PhysicalDevice(gpu()).queue_properties().size();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    VkCommandPoolObj commandPool(m_device, queue_count + 1);
+    m_errorMonitor->VerifyFound();
+}

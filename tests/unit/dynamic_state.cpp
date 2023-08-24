@@ -5135,3 +5135,16 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, SetDepthBiasClampDisabled) {
+    TEST_DESCRIPTION("Call vkCmdSetDepthBias with depthBiasClamp disabled");
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.depthBiasClamp = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBias-depthBiasClamp-00790");
+    vk::CmdSetDepthBias(m_commandBuffer->handle(), 0.0f, 1.0f, 0.0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
