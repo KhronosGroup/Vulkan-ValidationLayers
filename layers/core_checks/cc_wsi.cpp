@@ -335,15 +335,15 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
     }
 
     // Will be assigned &full_screen_info_copy if a VkSurfaceFullScreenExclusiveInfoEXT is found in pCreateInfo->pNext chain
-    const void *full_screen_info_copy_addr = nullptr;
+    void *pnext_copy_addr = nullptr;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     auto full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
     auto win32_full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
     const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
     if (full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
-        full_screen_info_copy_addr = &full_screen_info_copy;
         full_screen_info_copy = *full_screen_info;
-        full_screen_info_copy.pNext = nullptr;
+        full_screen_info_copy.pNext = pnext_copy_addr;
+        pnext_copy_addr = &full_screen_info_copy;
 
         if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
             const auto *win32_full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
@@ -363,8 +363,15 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         }
     }
 #endif
+    auto present_mode_info = LvlInitStruct<VkSurfacePresentModeEXT>();
+    if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
+        present_mode_info.presentMode = pCreateInfo->presentMode;
+        present_mode_info.pNext = pnext_copy_addr;
+        pnext_copy_addr = &present_mode_info;
+    }
+
     const auto surface_caps2 = surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                              physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
+                                                              physical_device_state->PhysDev(), pnext_copy_addr, this);
 
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
@@ -507,7 +514,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         vvl::span<const safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
+                                                physical_device_state->PhysDev(), pnext_copy_addr, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
@@ -549,7 +556,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             if (surface_state) {
                 cached_capabilities =
                     surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                   physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
+                                                   physical_device_state->PhysDev(), pnext_copy_addr, this);
             } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
                 cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
             }
