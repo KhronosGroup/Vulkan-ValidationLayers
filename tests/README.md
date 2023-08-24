@@ -18,8 +18,6 @@ The tests are grouped into different categories. Some of the main test categorie
 - Positive testing
     - Make sure Validation isn't accidentally triggering an error
     - Commonly created to prevent bug regressions
-- SPIR-V testing with [SPIRV-Hopper](./spirv_hopper/)
-    - Seperate tool for testing shader runtime validation
 
 ## Implicit Layers note
 

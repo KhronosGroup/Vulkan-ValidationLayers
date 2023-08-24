@@ -137,7 +137,6 @@ jobs:
             build-ci/external/mimalloc/build/install
             build-ci/external/robin-hood-hashing/build/install
             build-ci/external/SPIRV-Headers/build/install
-            build-ci/external/SPIRV-Reflect/build/install
             build-ci/external/SPIRV-Tools/build/install
             build-ci/external/Vulkan-Headers/build/install
           key: windows-dependencies-${{ matrix.arch }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
