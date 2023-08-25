@@ -31,7 +31,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, co
     for (const auto &entry : cb_state.broken_bindings) {
         const auto &obj = entry.first;
         const char *cause_str = (obj.type == kVulkanObjectTypeDescriptorSet)   ? " or updated"
-                                : (obj.type == kVulkanObjectTypeDescriptorSet) ? " or rerecorded"
+                                : (obj.type == kVulkanObjectTypeCommandBuffer) ? " or rerecorded"
                                                                                : "";
         std::string vuid;
         std::ostringstream str;
@@ -39,7 +39,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, co
         vuid = str.str();
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.commandBuffer());
-        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was destroyed %s.",
+        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was destroyed%s.",
                          FormatHandle(cb_state).c_str(), FormatHandle(obj).c_str(), cause_str);
     }
     return skip;

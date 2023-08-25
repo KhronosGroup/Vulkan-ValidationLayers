@@ -476,7 +476,7 @@ TEST_F(NegativeCommand, NoBeginCommandBuffer) {
 TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "was destroyed or rerecorded");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkCommandBuffer");
 
     // A pool we can reset in.
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -500,7 +500,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
 TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "was destroyed or rerecorded");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkCommandBuffer");
 
     // A pool we can reset in.
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
