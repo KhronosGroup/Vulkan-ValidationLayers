@@ -21,7 +21,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     InitBestPracticesFramework("");
 }
 
-void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
+void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
     // Enable the vendor-specific checks spcified by vendor_checks_to_enable
     VkLayerSettingValueDataEXT bp_setting_string_value{};
     bp_setting_string_value.arrayString.pCharArray = vendor_checks_to_enable;
@@ -256,10 +256,9 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
     VkCommandBufferObj secondary_full_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBufferObj secondary_small_clear(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT |
-                       VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    VkCommandBufferInheritanceInfo inherit_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
+    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
     inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
@@ -456,7 +455,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     // Don't care about actual data, just need to get to draw to flag error
     const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void*)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);  // VBO idx 1, but no VBO in PSO
     m_commandBuffer->Draw(1, 0, 0, 0);
 
@@ -947,10 +946,9 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_commandBuffer->EndRenderPass();
 
     // Try the same thing, but now with secondary command buffers.
-    VkCommandBufferBeginInfo begin_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT |
-                       VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    VkCommandBufferInheritanceInfo inherit_info = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
+    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
     inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
@@ -1458,7 +1456,8 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkImageObj image(m_device);
-    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+               VK_IMAGE_TILING_OPTIMAL, 0);
 
     VkClearColorValue color_clear_value = {};
     color_clear_value.uint32[0] = 255;
@@ -1514,7 +1513,7 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     }
 
     bool fifo_relaxed = false;
-    for (const auto& present_mode : m_surface_present_modes) {
+    for (const auto &present_mode : m_surface_present_modes) {
         if (present_mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             fifo_relaxed = true;
             break;
@@ -1627,7 +1626,6 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
 TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     TEST_DESCRIPTION("Test for clearing a RenderPass with non-zero clearValueCount without any VK_ATTACHMENT_LOAD_OP_CLEAR");
 
-
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1719,9 +1717,9 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     m_commandBuffer->end();
 }
 
-
 TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCount) {
-    TEST_DESCRIPTION("Test for beginning a RenderPass with VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount");
+    TEST_DESCRIPTION(
+        "Test for beginning a RenderPass with VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount");
 
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1767,7 +1765,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     spd.pColorAttachments = &ar;
 
     VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
-    rp_info.attachmentCount = 1; // There is only one attachment
+    rp_info.attachmentCount = 1;  // There is only one attachment
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &spd;
@@ -2378,4 +2376,24 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+}
+
+TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
+    TEST_DESCRIPTION("With swapchain maintenance 1, CreateSwapchain with VkPresentModesCreateInfoEXT");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+    m_errorMonitor->SetDesiredFailureMsg(
+        kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided");
+    CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
+    m_errorMonitor->VerifyFound();
 }
