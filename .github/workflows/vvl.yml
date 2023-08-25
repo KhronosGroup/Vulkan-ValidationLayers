@@ -227,7 +227,7 @@ jobs:
       - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
         run: ccache --show-stats
 
-  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, Vulkan-Profiles, or the Chromium build.
+  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, or the Chromium build.
   integration_test:
     runs-on: ubuntu-22.04
     steps:
