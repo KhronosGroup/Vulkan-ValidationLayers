@@ -116,6 +116,9 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
 [[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchainImageCount =
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";
+[[maybe_unused]] static const char *kVUID_BestPractices_NoVkSwapchainPresentModesCreateInfoEXTProvided =
+    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided";
+
 [[maybe_unused]] static const char *kVUID_BestPractices_Swapchain_InvalidCount = "UNASSIGNED-BestPractices-SwapchainInvalidCount";
 [[maybe_unused]] static const char *kVUID_BestPractices_DepthBiasNoAttachment = "UNASSIGNED-BestPractices-DepthBiasNoAttachment";
 [[maybe_unused]] static const char *kVUID_BestPractices_SpirvDeprecated_WorkgroupSize =
