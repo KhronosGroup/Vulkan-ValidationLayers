@@ -6417,3 +6417,40 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     image.Init(128, 128, 1, VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImage, OverlappingImageCopy) {
+    TEST_DESCRIPTION("Copy a range of an image to another overlapping range of the same image");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image.init(&image_create_info);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    m_commandBuffer->begin();
+
+    VkImageCopy image_copy{};
+    image_copy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_copy.srcSubresource.layerCount = 1;
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = image_copy.srcSubresource;
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {64, 64, 1};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00124");
+    vk::CmdCopyImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}

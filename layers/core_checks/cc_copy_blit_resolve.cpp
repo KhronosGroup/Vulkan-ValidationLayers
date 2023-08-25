@@ -18,20 +18,100 @@
  */
 
 #include <string>
+#include <sstream>
 #include <vector>
 
+#include "containers/range_vector.h"
+#include "core_validation.h"
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_validation.h"
 
-// Returns true if [x, xoffset] and [y, yoffset] overlap
-static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, uint32_t end_offset) {
-    bool result = false;
-    uint32_t intersection_min = std::max(static_cast<uint32_t>(start), static_cast<uint32_t>(end));
-    uint32_t intersection_max = std::min(static_cast<uint32_t>(start) + start_offset, static_cast<uint32_t>(end) + end_offset);
+// Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
+static sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+    int64_t intersection_min = std::max(x, y);
+    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
 
-    if (intersection_max > intersection_min) {
-        result = true;
+    return {intersection_min, intersection_max};
+}
+
+// Returns true if [x, x + x_size) and [y, y + y_size) overlap
+static bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+    auto intersection = GetRangeIntersection(x, x_size, y, y_size);
+    return intersection.non_empty();
+}
+
+struct ImageRegionIntersection {
+    VkImageSubresourceLayers subresource = {};
+    VkOffset3D offset = {0, 0, 0};
+    VkExtent3D extent = {1, 1, 1};
+    bool has_instersection = false;
+    std::string String() const noexcept {
+        std::stringstream ss;
+        ss << "{ subresource { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
+           << ", mipLevel: " << subresource.mipLevel << ", baseArrayLayer: " << subresource.baseArrayLayer
+           << ", layerCount: " << subresource.layerCount << " }, offset {" << offset.x << ", " << offset.y << ", " << offset.z
+           << "}, extent {" << extent.width << ", " << extent.height << ", " << extent.depth << "} }";
+        return ss.str();
+    }
+};
+
+// Returns true if source area of first vkImageCopy/vkImageCopy2KHR region intersects dest area of second region
+// It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
+template <typename RegionType>
+static ImageRegionIntersection GetRegionIntersection(const RegionType &region0, const RegionType &region1, VkImageType type,
+                                                     bool is_multiplane) {
+    ImageRegionIntersection result = {};
+
+    // Separate planes within a multiplane image cannot intersect
+    if (is_multiplane && (region0.srcSubresource.aspectMask != region1.dstSubresource.aspectMask)) {
+        return result;
+    }
+    auto intersection = GetRangeIntersection(region0.srcSubresource.baseArrayLayer, region0.srcSubresource.layerCount,
+                                             region1.dstSubresource.baseArrayLayer, region1.dstSubresource.layerCount);
+    if ((region0.srcSubresource.mipLevel == region1.dstSubresource.mipLevel) && intersection.non_empty()) {
+        result.subresource.aspectMask = region0.srcSubresource.aspectMask;
+        result.subresource.baseArrayLayer = static_cast<uint32_t>(intersection.begin);
+        result.subresource.layerCount = static_cast<uint32_t>(intersection.distance());
+        result.subresource.mipLevel = region0.srcSubresource.mipLevel;
+        result.has_instersection = true;
+        switch (type) {
+            case VK_IMAGE_TYPE_3D:
+                intersection =
+                    GetRangeIntersection(region0.srcOffset.z, region0.extent.depth, region1.dstOffset.z, region1.extent.depth);
+                if (intersection.non_empty()) {
+                    result.offset.z = static_cast<int32_t>(intersection.begin);
+                    result.extent.depth = static_cast<uint32_t>(intersection.distance());
+                } else {
+                    result.has_instersection = false;
+                    return result;
+                }
+                [[fallthrough]];
+            case VK_IMAGE_TYPE_2D:
+                intersection =
+                    GetRangeIntersection(region0.srcOffset.y, region0.extent.height, region1.dstOffset.y, region1.extent.height);
+                if (intersection.non_empty()) {
+                    result.offset.y = static_cast<int32_t>(intersection.begin);
+                    result.extent.height = static_cast<uint32_t>(intersection.distance());
+                } else {
+                    result.has_instersection = false;
+                    return result;
+                }
+                [[fallthrough]];
+            case VK_IMAGE_TYPE_1D:
+                intersection =
+                    GetRangeIntersection(region0.srcOffset.x, region0.extent.width, region1.dstOffset.x, region1.extent.width);
+                if (intersection.non_empty()) {
+                    result.offset.x = static_cast<int32_t>(intersection.begin);
+                    result.extent.width = static_cast<uint32_t>(intersection.distance());
+                } else {
+                    result.has_instersection = false;
+                    return result;
+                }
+                break;
+            default:
+                // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
+                assert(false);
+        }
     }
     return result;
 }
@@ -40,34 +120,7 @@ static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, u
 // It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
 template <typename RegionType>
 static bool RegionIntersects(const RegionType *region0, const RegionType *region1, VkImageType type, bool is_multiplane) {
-    bool result = false;
-
-    // Separate planes within a multiplane image cannot intersect
-    if (is_multiplane && (region0->srcSubresource.aspectMask != region1->dstSubresource.aspectMask)) {
-        return result;
-    }
-
-    if ((region0->srcSubresource.mipLevel == region1->dstSubresource.mipLevel) &&
-        (RangesIntersect(region0->srcSubresource.baseArrayLayer, region0->srcSubresource.layerCount,
-                         region1->dstSubresource.baseArrayLayer, region1->dstSubresource.layerCount))) {
-        result = true;
-        switch (type) {
-            case VK_IMAGE_TYPE_3D:
-                result &= RangesIntersect(region0->srcOffset.z, region0->extent.depth, region1->dstOffset.z, region1->extent.depth);
-                [[fallthrough]];
-            case VK_IMAGE_TYPE_2D:
-                result &=
-                    RangesIntersect(region0->srcOffset.y, region0->extent.height, region1->dstOffset.y, region1->extent.height);
-                [[fallthrough]];
-            case VK_IMAGE_TYPE_1D:
-                result &= RangesIntersect(region0->srcOffset.x, region0->extent.width, region1->dstOffset.x, region1->extent.width);
-                break;
-            default:
-                // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
-                assert(false);
-        }
-    }
-    return result;
+    return GetRegionIntersection(region0, region1, type, is_multiplane).has_instersection;
 }
 
 template <typename RegionType>
@@ -1831,7 +1884,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
-        const RegionType region = pRegions[i];
+        const RegionType &region = pRegions[i];
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
@@ -1982,12 +2035,19 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
         // must not overlap in memory
+        // Validation is only performed when source image is the same as destination image.
+        // In the general case, the mapping between an image and its underlying memory is undefined,
+        // so checking for memory overlaps is not possible.
         if (src_image_state->image() == dst_image_state->image()) {
             for (uint32_t j = 0; j < regionCount; j++) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
-                if (RegionIntersects(&region, &pRegions[j], src_image_type, FormatIsMultiplane(src_format))) {
+                if (auto intersection = GetRegionIntersection(region, pRegions[j], src_image_type, FormatIsMultiplane(src_format));
+                    intersection.has_instersection) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
-                    skip |= LogError(vuid, objlist, loc, "pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "].", i, j);
+                    skip |= LogError(vuid, objlist, loc,
+                                     "pRegion[%" PRIu32 "] copy source overlaps with pRegions[%" PRIu32
+                                     "] copy destination. Overlap info, with respect to image (%s): %s.",
+                                     i, j, FormatHandle(srcImage).c_str(), intersection.String().c_str());
                 }
             }
         }
