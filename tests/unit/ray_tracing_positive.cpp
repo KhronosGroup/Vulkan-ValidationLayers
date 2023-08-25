@@ -431,7 +431,7 @@ TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
     auto barrier = LvlInitStruct<VkMemoryBarrier>();
     barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreChecks-unhandled-bad-access-flags");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
     m_commandBuffer->begin();
     m_commandBuffer->PipelineBarrier(invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     m_commandBuffer->end();
