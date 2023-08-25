@@ -29,7 +29,6 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidRenderpass = "UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidSecondaryCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidSecondaryCommandBuffer";
-[[maybe_unused]] static const char *kVUID_Core_DrawState_NoEndCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-NoEndCommandBuffer";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_TessellationDomainOrigin = "UNASSIGNED-CoreValidation-DrawState-TessellationDomainOrigin";

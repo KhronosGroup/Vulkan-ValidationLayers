@@ -491,8 +491,8 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
             break;
 
         case CbState::Recording:
-            skip |= LogError(kVUID_Core_DrawState_NoEndCommandBuffer, cb_state.commandBuffer(), loc,
-                             "You must call vkEndCommandBuffer() on %s before this call.", FormatHandle(cb_state).c_str());
+            skip |= LogError(vuid, cb_state.commandBuffer(), loc, "You must call vkEndCommandBuffer() on %s before this call.",
+                             FormatHandle(cb_state).c_str());
             break;
 
         default: /* recorded */
