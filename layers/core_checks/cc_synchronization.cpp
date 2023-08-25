@@ -2327,7 +2327,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const auto &mem_barrier = pBufferMemBarriers[i];
-        const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pMemoryBarriers, i);
+        const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
         skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
     }
