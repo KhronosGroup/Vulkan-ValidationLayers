@@ -784,6 +784,19 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
     CreateBufferViewTest(*this, &buffer_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-08780"});
 }
 
+TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
+    TEST_DESCRIPTION("Use bad buffer usage flag.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 32;
+    buffer_ci.usage = 0;
+    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09206"});
+
+    buffer_ci.usage = 0xBAD0000;
+    CreateBufferTest(*this, &buffer_ci, {"VUID-VkBufferCreateInfo-None-09205"});
+}
+
 TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR that are not a subset of the Buffer.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
