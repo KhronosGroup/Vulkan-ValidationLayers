@@ -920,6 +920,7 @@ class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {
     VkBufferMemoryBarrier buffer_barrier_;
 };
 
+// TODO - Only works with extensions enabled, not using Vulkan1.3 (uses KHR functions)
 class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
   public:
     Barrier2QueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}

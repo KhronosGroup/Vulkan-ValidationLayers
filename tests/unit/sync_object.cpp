@@ -388,27 +388,17 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        conc_test("VUID-VkImageMemoryBarrier-image-03319");
-    } else {
-        conc_test("VUID-VkImageMemoryBarrier-image-03320");
+    conc_test("VUID-VkImageMemoryBarrier-image-03319");
 
-        // Having only one of depth or stencil set for DS image is an error
-        conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-        conc_test("VUID-VkImageMemoryBarrier-image-03320");
-    }
+    conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
-    if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
-        conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    conc_test("VUID-VkImageMemoryBarrier-aspectMask-08702");
 
-        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-        conc_test("VUID-VkImageMemoryBarrier-aspectMask-08702");
+    conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    conc_test("VUID-VkImageMemoryBarrier-aspectMask-08703");
 
-        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        conc_test("VUID-VkImageMemoryBarrier-aspectMask-08703");
-
-        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    }
+    conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     // Having anything other than DEPTH and STENCIL is an error
     conc_test.image_barrier_.subresourceRange.aspectMask =
@@ -778,9 +768,6 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "Vulkan 1.2 required";
-    }
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     const bool video_decode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
@@ -1211,6 +1198,97 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     bad_command_buffer.PipelineBarrier2KHR(&dep_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
+    TEST_DESCRIPTION("test barrier with depth/stencil image, with wrong aspect mask with not separateDepthStencilLayouts");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    if (only_one_family) {
+        qf_indices.resize(1);
+    }
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
+    BarrierQueueFamilyTestHelper conc_test(&test_context);
+    conc_test.Init(nullptr, false, true);
+
+    m_commandBuffer->begin();
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
+    VkDepthStencilObj ds_image(m_device);
+    ds_image.Init(m_device, 128, 128, depth_format);
+
+    conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    conc_test.image_barrier_.image = ds_image.handle();
+
+    // Not having DEPTH or STENCIL set is an error
+    conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    conc_test("VUID-VkImageMemoryBarrier-image-03320");
+
+    // Having only one of depth or stencil set for DS image is an error
+    conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    conc_test("VUID-VkImageMemoryBarrier-image-03320");
+}
+
+TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
+    TEST_DESCRIPTION("test barrier with depth/stencil image, with wrong aspect mask with not separateDepthStencilLayouts");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    GetPhysicalDeviceFeatures2(sync2_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t invalid = static_cast<uint32_t>(m_device->queue_props.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (invalid == 1) || (m_device->queue_props[other_family].queueCount == 0);
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    if (only_one_family) {
+        qf_indices.resize(1);
+    }
+    Barrier2QueueFamilyTestHelper::Context test_context(this, qf_indices);
+    Barrier2QueueFamilyTestHelper conc_test(&test_context);
+    conc_test.Init(nullptr, false, true);
+
+    m_commandBuffer->begin();
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
+    VkDepthStencilObj ds_image(m_device);
+    ds_image.Init(m_device, 128, 128, depth_format);
+
+    conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    conc_test.image_barrier_.image = ds_image.handle();
+
+    // Not having DEPTH or STENCIL set is an error
+    conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+    conc_test("VUID-VkImageMemoryBarrier2-image-03320");
+
+    // Having only one of depth or stencil set for DS image is an error
+    conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    conc_test("VUID-VkImageMemoryBarrier2-image-03320");
 }
 
 TEST_F(NegativeSyncObject, BarrierQueueFamily) {
