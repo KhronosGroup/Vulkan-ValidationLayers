@@ -167,11 +167,11 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
 
     // baseArrayLayer + layerCount > arrayLayers
     region_to_image.imageSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-08790");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-08790");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageSubresource.baseArrayLayer = 0;
@@ -251,12 +251,12 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
         // imageSubresource.baseArrayLayer must be 0 and imageSubresource.layerCount must be 1
         region_to_image.imageSubresource.baseArrayLayer = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07983");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-08790");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
         region_from_image.imageSubresource.baseArrayLayer = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07983");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-08790");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
         region_to_image.imageSubresource.baseArrayLayer = 0;
@@ -860,8 +860,8 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     // baseArrayLayer + layerCount > arrayLayers
     image_copy_2.srcSubresource.baseArrayLayer = image_ci.arrayLayers;
     image_copy_2.dstSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcSubresource-08790");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstSubresource-08790");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.baseArrayLayer = 0;
@@ -944,8 +944,8 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
         image_copy_2.dstSubresource.baseArrayLayer = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07983");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07983");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-08790");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-08790");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcSubresource.baseArrayLayer = 0;

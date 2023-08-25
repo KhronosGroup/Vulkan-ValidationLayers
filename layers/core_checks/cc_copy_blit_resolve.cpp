@@ -1238,15 +1238,15 @@ static const char *GetImageCopyVUID(const std::string &id, bool copy2, bool host
             "VUID-VkCopyImageInfo2-dstSubresource-07967",
             "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07967",
        }},
-       {"08790src", {
-            "VUID-vkCmdCopyImage-srcSubresource-08790",
-            "VUID-VkCopyImageInfo2-srcSubresource-08790",
-            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-08790",
+       {"07968src", {
+            "VUID-vkCmdCopyImage-srcSubresource-07968",
+            "VUID-VkCopyImageInfo2-srcSubresource-07968",
+            "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968",
        }},
-       {"08790dst", {
-            "VUID-vkCmdCopyImage-dstSubresource-08790",
-            "VUID-VkCopyImageInfo2-dstSubresource-08790",
-            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-08790",
+       {"07968dst", {
+            "VUID-vkCmdCopyImage-dstSubresource-07968",
+            "VUID-VkCopyImageInfo2-dstSubresource-07968",
+            "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968",
        }},
        {"00142", {
             "VUID-vkCmdCopyImage-aspectMask-00142",
@@ -1676,10 +1676,10 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const IMAGE_STATE &src_
                                       dst_subresource_loc.dot(Field::mipLevel), GetImageCopyVUID("07967dst", is_2, is_host));
         skip |= ValidateImageArrayLayerRange(handle, src_image_state, region.srcSubresource.baseArrayLayer,
                                              region.srcSubresource.layerCount, src_subresource_loc,
-                                             GetImageCopyVUID("08790src", is_2, is_host));
+                                             GetImageCopyVUID("07968src", is_2, is_host));
         skip |= ValidateImageArrayLayerRange(handle, dst_image_state, region.dstSubresource.baseArrayLayer,
                                              region.dstSubresource.layerCount, dst_subresource_loc,
-                                             GetImageCopyVUID("08790dst", is_2, is_host));
+                                             GetImageCopyVUID("07968dst", is_2, is_host));
 
         if (api_version < VK_API_VERSION_1_1) {
             if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
@@ -2466,7 +2466,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07967" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07967";
         skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.imageSubresource.mipLevel,
                                       subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-08790" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-08790";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07968" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07968";
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc, vuid);
     }
@@ -2614,7 +2614,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07967" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07967";
         skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, region.imageSubresource.mipLevel,
                                       subresource_loc.dot(Field::mipLevel), vuid);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-08790" : "VUID-vkCmdCopyBufferToImage-imageSubresource-08790";
+        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07968" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07968";
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc, vuid);
 
@@ -2826,8 +2826,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
                                                  : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07967");
         skip |= ValidateImageArrayLayerRange(device, *image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc,
-                                             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-08790"
-                                                        : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-08790");
+                                             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968"
+                                                        : "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
         skip |= ValidateImageSubresourceLayers(device, &region.imageSubresource, subresource_loc);
         if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) has_stencil = true;
         if (region.imageSubresource.aspectMask & ~VK_IMAGE_ASPECT_STENCIL_BIT) has_non_stencil = true;
