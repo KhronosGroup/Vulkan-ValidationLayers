@@ -682,7 +682,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const Location& loc,
                              const char* vuid) const;
     bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const Location& loc, uint32_t current_submit_count,
-                                    const char* vu_id) const;
+                                    const char* vuid) const;
     bool ValidateCommandBufferSimultaneousUse(const Location& loc, const CMD_BUFFER_STATE& cb_state,
                                               int current_submit_count) const;
     bool ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,

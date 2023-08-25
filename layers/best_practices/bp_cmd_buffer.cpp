@@ -184,6 +184,20 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
                 skip |= ValidateClearAttachment(*primary, clear.framebufferAttachment, clear.colorAttachment, clear.aspects, true);
             }
         }
+
+        if (!(secondary_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+            if (primary->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+                // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
+                const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                skip |= LogWarning(objlist, kVUID_BestPractices_DrawState_InvalidCommandBufferSimultaneousUse,
+                                   "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
+                                   "] %s does not have "
+                                   "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
+                                   "%s to be treated as if it does not have "
+                                   "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even though it does.",
+                                   i, FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
+            }
+        }
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {

@@ -464,7 +464,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
 }
 
 bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const Location &loc, uint32_t current_submit_count,
-                                            const char *vu_id) const {
+                                            const char *vuid) const {
     bool skip = false;
     if (disabled[command_buffer_state]) {
         return skip;
@@ -486,7 +486,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
             break;
 
         case CbState::New:
-            skip |= LogError(vu_id, cb_state.commandBuffer(), loc, "%s is unrecorded and contains no commands.",
+            skip |= LogError(vuid, cb_state.commandBuffer(), loc, "%s is unrecorded and contains no commands.",
                              FormatHandle(cb_state).c_str());
             break;
 
