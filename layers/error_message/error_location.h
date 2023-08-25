@@ -138,6 +138,8 @@ struct Key {
         : function(Func::Empty), structure(r), field(f), recurse_field(recurse) {}
     Key(Func fn, Field f = Field::Empty, bool recurse = false)
         : function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
+    Key(Func fn, Struct r, Field f = Field::Empty, bool recurse = false)
+        : function(fn), structure(r), field(f), recurse_field(recurse) {}
 };
 
 bool operator<(const Key& lhs, const Key& rhs);

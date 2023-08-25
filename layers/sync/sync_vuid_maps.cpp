@@ -666,23 +666,55 @@ const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR 
     return result2;
 }
 
-// commonvalidity/access_mask_2_common.adoc
+// commonvalidity/access_mask_common.adoc/access_mask_2_common.adoc
 static const auto &GetLocation2VUIDMap() {
     static const std::map<Key, std::string> Location2VUID{
+        // Sync2 barriers. This can match different functions that work with VkDependencyInfo
         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06256"},
         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06256"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06256"},
         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-06256"},
         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-06256"},
         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-06256"},
+
+        // Sync1 barrier. This matches only vkCmdPipelineBarrier.
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkMemoryBarrier, Field::srcAccessMask),
+         "VUID-vkCmdPipelineBarrier-srcAccessMask-06257"},
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkMemoryBarrier, Field::dstAccessMask),
+         "VUID-vkCmdPipelineBarrier-dstAccessMask-06257"},
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkBufferMemoryBarrier, Field::srcAccessMask),
+         "VUID-vkCmdPipelineBarrier-srcAccessMask-06257"},
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkBufferMemoryBarrier, Field::dstAccessMask),
+         "VUID-vkCmdPipelineBarrier-dstAccessMask-06257"},
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkImageMemoryBarrier, Field::srcAccessMask),
+         "VUID-vkCmdPipelineBarrier-srcAccessMask-06257"},
+        {Key(Func::vkCmdPipelineBarrier, Struct::VkImageMemoryBarrier, Field::dstAccessMask),
+         "VUID-vkCmdPipelineBarrier-dstAccessMask-06257"},
+
+        // Sync1 event wait. This matches only vkCmdWaitEvents.
+        {Key(Func::vkCmdWaitEvents, Struct::VkMemoryBarrier, Field::srcAccessMask), "VUID-vkCmdWaitEvents-srcAccessMask-06257"},
+        {Key(Func::vkCmdWaitEvents, Struct::VkMemoryBarrier, Field::dstAccessMask), "VUID-vkCmdWaitEvents-dstAccessMask-06257"},
+        {Key(Func::vkCmdWaitEvents, Struct::VkBufferMemoryBarrier, Field::srcAccessMask),
+         "VUID-vkCmdWaitEvents-srcAccessMask-06257"},
+        {Key(Func::vkCmdWaitEvents, Struct::VkBufferMemoryBarrier, Field::dstAccessMask),
+         "VUID-vkCmdWaitEvents-dstAccessMask-06257"},
+        {Key(Func::vkCmdWaitEvents, Struct::VkImageMemoryBarrier, Field::srcAccessMask),
+         "VUID-vkCmdWaitEvents-srcAccessMask-06257"},
+        {Key(Func::vkCmdWaitEvents, Struct::VkImageMemoryBarrier, Field::dstAccessMask),
+         "VUID-vkCmdWaitEvents-dstAccessMask-06257"},
     };
-    assert(Location2VUID.size() == 6);
     return Location2VUID;
 }
 
 const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions) {
-    const Key key(loc.structure, loc.field);
-    if (auto it = GetLocation2VUIDMap().find(key); it != GetLocation2VUIDMap().end()) {
+    // At first try exact match: VUID for specific parameter (struct + field) of specific function
+    const Key key_full(loc.function, loc.structure, loc.field);
+    if (auto it = GetLocation2VUIDMap().find(key_full); it != GetLocation2VUIDMap().end()) {
+        return it->second;
+    }
+    // Try to match VUID based on parameter (so can be used by multiple functions)
+    const Key key_struct_field(loc.structure, loc.field);
+    if (auto it = GetLocation2VUIDMap().find(key_struct_field); it != GetLocation2VUIDMap().end()) {
         return it->second;
     }
     static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-bad-access-flags");
