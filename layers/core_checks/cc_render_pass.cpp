@@ -479,6 +479,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    const bool non_zero_device_render_area = chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount != 0;
     if (chained_device_group_struct) {
         const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->deviceMask, objlist,
@@ -500,11 +501,13 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
         }
     }
 
-    if (!chained_device_group_struct || chained_device_group_struct->deviceRenderAreaCount == 0) {
+    if (!non_zero_device_render_area) {
         if (pRenderPassBegin->renderArea.extent.width == 0) {
-            skip |= LogError("VUID-VkRenderPassBeginInfo-None-08996", commandBuffer, loc, "renderArea.extent.width is zero.");
+            skip |= LogError("VUID-VkRenderPassBeginInfo-None-08996", commandBuffer,
+                             loc.dot(Field::renderArea).dot(Field::extent).dot(Field::width), "is zero.");
         } else if (pRenderPassBegin->renderArea.extent.height == 0) {
-            skip |= LogError("VUID-VkRenderPassBeginInfo-None-08997", commandBuffer, loc, "renderArea.extent.height is zero.");
+            skip |= LogError("VUID-VkRenderPassBeginInfo-None-08997", commandBuffer,
+                             loc.dot(Field::renderArea).dot(Field::extent).dot(Field::height), "is zero.");
         }
     }
 
@@ -871,12 +874,14 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     } else {
         const Location render_area_loc = loc.dot(Field::renderArea);
         if (pRenderPassBegin->renderArea.offset.x < 0) {
-            skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02850", pRenderPassBegin->renderPass, render_area_loc,
-                             "offset.x is negative (%" PRId32 ").", pRenderPassBegin->renderArea.offset.x);
+            skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02850", pRenderPassBegin->renderPass,
+                             render_area_loc.dot(Field::offset).dot(Field::x), "is %" PRId32 " (offset can't be negative).",
+                             pRenderPassBegin->renderArea.offset.x);
         }
         if (pRenderPassBegin->renderArea.offset.y < 0) {
-            skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02851", pRenderPassBegin->renderPass, render_area_loc,
-                             "offset.y is negative (%" PRId32 ").", pRenderPassBegin->renderArea.offset.y);
+            skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02851", pRenderPassBegin->renderPass,
+                             render_area_loc.dot(Field::offset).dot(Field::y), "is %" PRId32 " (offset can't be negative).",
+                             pRenderPassBegin->renderArea.offset.y);
         }
 
         const auto x_adjusted_extent = static_cast<int64_t>(pRenderPassBegin->renderArea.offset.x) +
@@ -3317,15 +3322,21 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     }
 
     if (!non_zero_device_render_area) {
+        // if the renderArea was set with garbage, only want to report 1 error
         if (pRenderingInfo->renderArea.offset.x < 0) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06077", commandBuffer,
                              loc.dot(Field::renderArea).dot(Field::offset).dot(Field::x),
-                             "is %" PRId32 ", but must not be negative.", pRenderingInfo->renderArea.offset.x);
-        }
-        if (pRenderingInfo->renderArea.offset.y < 0) {
+                             "is %" PRId32 " (offset can't be negative).", pRenderingInfo->renderArea.offset.x);
+        } else if (pRenderingInfo->renderArea.offset.y < 0) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06078", commandBuffer,
                              loc.dot(Field::renderArea).dot(Field::offset).dot(Field::y),
-                             "is %" PRId32 ", but must not be negative.", pRenderingInfo->renderArea.offset.y);
+                             "is %" PRId32 " (offset can't be negative).", pRenderingInfo->renderArea.offset.y);
+        } else if (pRenderingInfo->renderArea.extent.width == 0) {
+            skip |= LogError("VUID-VkRenderingInfo-None-08994", commandBuffer,
+                             loc.dot(Field::renderArea).dot(Field::extent).dot(Field::width), "is zero.");
+        } else if (pRenderingInfo->renderArea.extent.height == 0) {
+            skip |= LogError("VUID-VkRenderingInfo-None-08995", commandBuffer,
+                             loc.dot(Field::renderArea).dot(Field::extent).dot(Field::height), "is zero.");
         }
         if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-07815", commandBuffer, loc.dot(Field::renderArea),
@@ -3383,25 +3394,33 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
              ++deviceRenderAreaIndex) {
             const Location group_loc =
                 loc.pNext(Struct::VkDeviceGroupRenderPassBeginInfo, Field::pDeviceRenderAreas, deviceRenderAreaIndex);
-            const int32_t offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
-            const uint32_t width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
+            const VkRect2D render_area = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex];
+            const int32_t offset_x = render_area.offset.x;
+            const uint32_t width = render_area.extent.width;
+            const int32_t offset_y = render_area.offset.y;
+            const uint32_t height = render_area.extent.height;
+
             if (offset_x < 0) {
-                skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166", commandBuffer,
-                                 group_loc.dot(Field::offset).dot(Field::x), "(%" PRIu32 ") must be greater than or equal to 0.",
-                                 offset_x);
+                skip |=
+                    LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166", commandBuffer,
+                             group_loc.dot(Field::offset).dot(Field::x), "is %" PRId32 " (offset can't be negative).", offset_x);
+            } else if (offset_y < 0) {
+                skip |=
+                    LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167", commandBuffer,
+                             group_loc.dot(Field::offset).dot(Field::y), "is %" PRId32 " (offset can't be negative).", offset_y);
+            } else if (width == 0) {
+                skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-extent-08998", commandBuffer,
+                                 group_loc.dot(Field::extent).dot(Field::width), "is zero.");
+            } else if (height == 0) {
+                skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-extent-08999", commandBuffer,
+                                 group_loc.dot(Field::extent).dot(Field::height), "is zero.");
             }
+
             if ((offset_x + width) > phys_dev_props.limits.maxFramebufferWidth) {
                 skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168", commandBuffer, group_loc,
                                  "sum of offset.x (%" PRId32 ") and extent.width (%" PRIu32
                                  ") is greater than maxFramebufferWidth (%" PRIu32 ").",
                                  offset_x, width, phys_dev_props.limits.maxFramebufferWidth);
-            }
-            const int32_t offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
-            const uint32_t height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
-            if (offset_y < 0) {
-                skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167", commandBuffer,
-                                 group_loc.dot(Field::offset).dot(Field::x), "(%" PRIu32 ") must be greater than or equal to 0.",
-                                 offset_y);
             }
             if ((offset_y + height) > phys_dev_props.limits.maxFramebufferHeight) {
                 skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169", commandBuffer, group_loc,
