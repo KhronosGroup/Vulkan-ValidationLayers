@@ -273,10 +273,11 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_sta
     }
     if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) && entrypoint) {
         for (uint32_t i = 0; i < cb_state.dynamic_state_value.vertex_attribute_descriptions.size(); ++i) {
-            const auto &description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
+            const auto& description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
             bool format64 = FormatIs64bit(description.format);
-            for (const auto *variable_ptr : entrypoint->user_defined_interface_variables) {
-                if (variable_ptr->decorations.location == description.location) {
+            for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
+                if (variable_ptr->decorations.location == description.location &&
+                    variable_ptr->storage_class == spv::StorageClass::StorageClassInput) {
                     const auto base_type_instruction = spirv_state->GetBaseTypeInstruction(variable_ptr->type_id);
                     const auto opcode = base_type_instruction->Opcode();
                     if (opcode != spv::Op::OpTypeFloat && opcode != spv::Op::OpTypeInt && opcode != spv::Op::OpTypeBool) {
