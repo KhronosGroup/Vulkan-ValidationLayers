@@ -2356,3 +2356,26 @@ TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    secondary.begin();
+    secondary.end();
+
+    VkCommandBufferBeginInfo cbbi = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        nullptr,
+        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+        nullptr,
+    };
+
+    m_commandBuffer->begin(&cbbi);
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DrawState-InvalidCommandBufferSimultaneousUse");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}

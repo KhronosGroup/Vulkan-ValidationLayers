@@ -26,24 +26,20 @@
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 
-static char const *GetCauseStr(VulkanTypedHandle obj) {
-    if (obj.type == kVulkanObjectTypeDescriptorSet) return "destroyed or updated";
-    if (obj.type == kVulkanObjectTypeCommandBuffer) return "destroyed or rerecorded";
-    return "destroyed";
-}
-
 bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE &cb_state, const Location &loc) const {
     bool skip = false;
     for (const auto &entry : cb_state.broken_bindings) {
         const auto &obj = entry.first;
-        const char *cause_str = GetCauseStr(obj);
+        const char *cause_str = (obj.type == kVulkanObjectTypeDescriptorSet)   ? " or updated"
+                                : (obj.type == kVulkanObjectTypeDescriptorSet) ? " or rerecorded"
+                                                                               : "";
         std::string vuid;
         std::ostringstream str;
         str << kVUID_Core_DrawState_InvalidCommandBuffer << "-" << object_string[obj.type];
         vuid = str.str();
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.commandBuffer());
-        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was %s.",
+        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was destroyed %s.",
                          FormatHandle(cb_state).c_str(), FormatHandle(obj).c_str(), cause_str);
     }
     return skip;
@@ -1230,18 +1226,6 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "Cannot duplicate %s in pCommandBuffers without "
                                  "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                  FormatHandle(commandBuffer).c_str());
-            }
-
-            if (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
-                // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
-                const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogWarning(objlist, kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
-                                   "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
-                                   "] %s does not have "
-                                   "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
-                                   "%s to be treated as if it does not have "
-                                   "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even though it does.",
-                                   i, FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
             }
         }
         if (!cb_state.activeQueries.empty() && !enabled_features.core.inheritedQueries) {
