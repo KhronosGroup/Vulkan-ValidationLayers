@@ -4348,13 +4348,13 @@ std::shared_ptr<SWAPCHAIN_NODE> SyncValidator::CreateSwapchainState(const VkSwap
 
 std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                              VkFormatFeatureFlags2KHR features) {
-    return CreateImageStateImpl<ImageStateBindingTraits<ImageState>>(img, pCreateInfo, features);
+    return std::make_shared<ImageState>(this, img, pCreateInfo, features);
 }
 
 std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                              VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                              VkFormatFeatureFlags2KHR features) {
-    return CreateImageStateImpl<ImageStateBindingTraits<ImageState>>(img, pCreateInfo, swapchain, swapchain_index, features);
+    return std::make_shared<ImageState>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,

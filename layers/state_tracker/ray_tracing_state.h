@@ -30,7 +30,10 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
           build_scratch_memory_requirements(
               GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
           update_scratch_memory_requirements(
-              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)) {}
+              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
+          tracker_(&memory_requirements) {
+              BINDABLE::SetMemoryTracker(&tracker_);
+    }
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
 
     VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }
@@ -45,7 +48,6 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     const VkMemoryRequirements memory_requirements;
     const VkMemoryRequirements build_scratch_memory_requirements;
     const VkMemoryRequirements update_scratch_memory_requirements;
-    const VkMemoryRequirements *const memory_requirements_pointer = &memory_requirements;
     uint64_t opaque_handle = 0;
     bool memory_requirements_checked = false;
     bool build_scratch_memory_requirements_checked = false;
@@ -62,10 +64,8 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
         DispatchGetAccelerationStructureMemoryRequirementsNV(device, &req_info, &requirements);
         return requirements.memoryRequirements;
     }
+    BindableLinearMemoryTracker tracker_;
 };
-
-using ACCELERATION_STRUCTURE_STATE_LINEAR =
-    MEMORY_TRACKED_RESOURCE_STATE<ACCELERATION_STRUCTURE_STATE, BindableLinearMemoryTracker>;
 
 class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
   public:
