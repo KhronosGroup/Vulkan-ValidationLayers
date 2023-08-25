@@ -380,6 +380,9 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
     {spv::OpFragmentMaskFetchAMD, {"OpFragmentMaskFetchAMD", true, true, 0, 0, 0, 3, 0}},
     {spv::OpFragmentFetchAMD, {"OpFragmentFetchAMD", true, true, 0, 0, 0, 3, 0}},
     {spv::OpReadClockKHR, {"OpReadClockKHR", true, true, 0, 3, 0, 0, 0}},
+    {spv::OpFinalizeNodePayloadsAMDX, {"OpFinalizeNodePayloadsAMDX", false, false, 0, 0, 0, 0, 0}},
+    {spv::OpFinishWritingNodePayloadAMDX, {"OpFinishWritingNodePayloadAMDX", true, true, 0, 0, 0, 0, 0}},
+    {spv::OpInitializeNodePayloadsAMDX, {"OpInitializeNodePayloadsAMDX", false, false, 0, 0, 0, 0, 0}},
     {spv::OpHitObjectRecordHitMotionNV, {"OpHitObjectRecordHitMotionNV", false, false, 0, 0, 0, 0, 0}},
     {spv::OpHitObjectRecordHitWithIndexMotionNV, {"OpHitObjectRecordHitWithIndexMotionNV", false, false, 0, 0, 0, 0, 0}},
     {spv::OpHitObjectRecordMissMotionNV, {"OpHitObjectRecordMissMotionNV", false, false, 0, 0, 0, 0, 0}},
@@ -809,6 +812,10 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "StorageBuffer";
         case spv::StorageClassTileImageEXT:
             return "TileImageEXT";
+        case spv::StorageClassNodePayloadAMDX:
+            return "NodePayloadAMDX";
+        case spv::StorageClassNodeOutputPayloadAMDX:
+            return "NodeOutputPayloadAMDX";
         case spv::StorageClassCallableDataNV:
             return "CallableDataNV";
         case spv::StorageClassIncomingCallableDataNV:
@@ -987,6 +994,14 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "BlockMatchTextureQCOM";
         case spv::DecorationExplicitInterpAMD:
             return "ExplicitInterpAMD";
+        case spv::DecorationNodeSharesPayloadLimitsWithAMDX:
+            return "NodeSharesPayloadLimitsWithAMDX";
+        case spv::DecorationNodeMaxPayloadsAMDX:
+            return "NodeMaxPayloadsAMDX";
+        case spv::DecorationTrackFinishWritingAMDX:
+            return "TrackFinishWritingAMDX";
+        case spv::DecorationPayloadNodeNameAMDX:
+            return "PayloadNodeNameAMDX";
         case spv::DecorationOverrideCoverageNV:
             return "OverrideCoverageNV";
         case spv::DecorationPassthroughNV:
@@ -1107,6 +1122,12 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "VectorComputeCallableFunctionINTEL";
         case spv::DecorationMediaBlockIOINTEL:
             return "MediaBlockIOINTEL";
+        case spv::DecorationInitModeINTEL:
+            return "InitModeINTEL";
+        case spv::DecorationImplementInRegisterMapINTEL:
+            return "ImplementInRegisterMapINTEL";
+        case spv::DecorationHostAccessINTEL:
+            return "HostAccessINTEL";
         case spv::DecorationFPMaxErrorDecorationINTEL:
             return "FPMaxErrorDecorationINTEL";
         case spv::DecorationLatencyControlLabelINTEL:
@@ -1271,6 +1292,10 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "BaryCoordPullModelAMD";
         case spv::BuiltInFragStencilRefEXT:
             return "FragStencilRefEXT";
+        case spv::BuiltInCoalescedInputCountAMDX:
+            return "CoalescedInputCountAMDX";
+        case spv::BuiltInShaderIndexAMDX:
+            return "ShaderIndexAMDX";
         case spv::BuiltInViewportMaskNV:
             return "ViewportMaskNV";
         case spv::BuiltInSecondaryPositionNV:

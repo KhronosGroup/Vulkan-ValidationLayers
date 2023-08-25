@@ -147,8 +147,10 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                                 self.opcodes[opcode]['executionScopePosition'] = index + 1
                             elif operand['name'] == '\'Memory\'':
                                 self.opcodes[opcode]['memoryScopePosition'] = index + 1
+                            elif operand['name'] == '\'Visibility\'':
+                                continue # ignore
                             else:
-                                print("Error: unknown operand {} not handled correctly\n".format(opname))
+                                print(f'Error: unknown operand {opname} with IdScope {operand["name"]} not handled correctly\n')
                                 sys.exit(1)
                         if operand['kind'] == 'ImageOperands':
                             self.opcodes[opcode]['imageOperandsPosition'] = index + 1
