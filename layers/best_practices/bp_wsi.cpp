@@ -144,6 +144,15 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
             pCreateInfo->minImageCount);
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1) &&
+        !LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext)) {
+        skip |= LogWarning(device, kVUID_BestPractices_NoVkSwapchainPresentModesCreateInfoEXTProvided,
+                           "No VkSwapchainPresentModesCreateInfoEXT was provided to VkCreateSwapchainKHR. "
+                           "When VK_EXT_swapchain_maintenance1 is enabled, a VkSwapchainPresentModesCreateInfoEXT should "
+                           "be provided to inform the implementation that the application is aware of the new features "
+                           "in a backward compatible way.");
+    }
+
     if (VendorCheckEnabled(kBPVendorArm) && (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR)) {
         skip |= LogWarning(device, kVUID_BestPractices_CreateSwapchain_PresentMode,
                            "%s Warning: Swapchain is not being created with presentation mode \"VK_PRESENT_MODE_FIFO_KHR\". "
