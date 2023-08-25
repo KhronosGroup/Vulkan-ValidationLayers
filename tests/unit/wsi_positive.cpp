@@ -1187,3 +1187,54 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
 }
+
+TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
+    TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    InitSwapchainInfo();
+
+    // Implementations must support.
+    // Also most likely to have lower minImageCount than reported for other present modes
+    // (although this is implementation dependant)
+    const auto present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    auto surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    surface_present_mode.presentMode = present_mode;
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&surface_present_mode);
+    surface_info.surface = m_surface;
+
+    auto surface_caps = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
+
+    auto swapchain_present_mode_create_info = LvlInitStruct<VkSwapchainPresentModesCreateInfoEXT>();
+    swapchain_present_mode_create_info.presentModeCount = 1;
+    swapchain_present_mode_create_info.pPresentModes = &present_mode;
+    auto swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>(&swapchain_present_mode_create_info);
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
+                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+}
