@@ -304,10 +304,8 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     CreateBufferTest(*this, &buffer_ci, {});
 }
 
-// Need to get VkBufferCreateInfo::usage removed from auto code generation
-// https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6066
-TEST_F(PositiveBuffer, DISABLED_BufferUsageFlags2BadUsage) {
-    TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR.");
+TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
+    TEST_DESCRIPTION("Ignore old flags if using VkBufferUsageFlags2CreateInfoKHR, even if bad.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());

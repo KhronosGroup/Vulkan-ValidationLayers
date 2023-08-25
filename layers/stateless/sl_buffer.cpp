@@ -17,6 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include "generated/enum_flag_bits.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
@@ -78,6 +79,12 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                                  "VkPhysicalDeviceMaintenance4Properties.maxBufferSize (%" PRIu64 ").",
                                  pCreateInfo->size, phys_dev_ext_props.maintenance4_props.maxBufferSize);
             }
+        }
+
+        if (!LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+            skip |= ValidateFlags(error_obj.location, "pCreateInfo->usage", "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits,
+                                  pCreateInfo->usage, kRequiredFlags, "VUID-VkBufferCreateInfo-None-09205",
+                                  "VUID-VkBufferCreateInfo-None-09206");
         }
     }
 

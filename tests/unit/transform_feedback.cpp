@@ -226,7 +226,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     // Don't set VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT.
     {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
-        // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
+        info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         info.size = 4;
         VkBufferObj const buffer_obj(*m_device, info);
 
