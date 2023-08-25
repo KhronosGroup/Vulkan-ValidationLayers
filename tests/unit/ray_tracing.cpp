@@ -1057,9 +1057,9 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryDisabled) {
+TEST_F(NegativeRayTracing, BarrierSync2AccessAccelerationStructureRayQueryDisabled) {
     TEST_DESCRIPTION(
-        "Test barrier with access ACCELERATION_STRUCTURE bit."
+        "Test sync2 barrier with ACCELERATION_STRUCTURE_READ memory access."
         "Ray query feature is not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1130,6 +1130,118 @@ TEST_F(NegativeRayTracing, BarrierAccessMaskAccelerationStructureRayQueryDisable
 
     m_commandBuffer->end();
 
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, BarrierSync1AccessAccelerationStructureRayQueryDisabled) {
+    TEST_DESCRIPTION(
+        "Test sync1 barrier with ACCELERATION_STRUCTURE_READ memory access."
+        "Ray query feature is not enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
+    memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+    VkBufferObj buffer(*m_device, 32);
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    buffer_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_commandBuffer->begin();
+
+    // memory barrier
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstAccessMask-06257");
+    // buffer barrier
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstAccessMask-06257");
+    // image barrier
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstAccessMask-06257");
+
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0, 1,
+                                     &memory_barrier, 1, &buffer_barrier, 1, &image_barrier);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, EventSync1AccessAccelerationStructureRayQueryDisabled) {
+    TEST_DESCRIPTION(
+        "Test sync1 event wait with ACCELERATION_STRUCTURE_READ memory access."
+        "Ray query feature is not enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const vk_testing::Event event(*m_device);
+
+    auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
+    memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+    VkBufferObj buffer(*m_device, 32);
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    buffer_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_commandBuffer->begin();
+
+    // memory
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-dstAccessMask-06257");
+    // buffer
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-dstAccessMask-06257");
+    // image
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcAccessMask-06257");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-dstAccessMask-06257");
+
+    m_commandBuffer->WaitEvents(1, &event.handle(), VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                1, &memory_barrier, 1, &buffer_barrier, 1, &image_barrier);
     m_errorMonitor->VerifyFound();
 }
 
