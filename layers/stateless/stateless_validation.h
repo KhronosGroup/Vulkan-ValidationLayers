@@ -529,14 +529,12 @@ class StatelessValidation : public ValidationObject {
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                const char *extension_name) const;
 
-    enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
-
     bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
                                       VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
 
     bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                  RenderPassCreateVersion rp_version, const ErrorObject &errorObj) const;
+                                  const ErrorObject &errorObj) const;
 
     void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
 

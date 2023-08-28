@@ -512,8 +512,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateStageMaskHost(const Location& loc, VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const DEVICE_MEMORY_STATE& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
-    bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
-                               const ErrorObject& errorObj) const;
+    bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& errorObj) const;
     bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                          const Location& loc, const char* error_code) const;
@@ -561,8 +560,8 @@ class CoreChecks : public ValidationStateTracker {
                                                   const QUEUE_STATE& queue_data, const CMD_BUFFER_STATE& cb_state,
                                                   const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
                                                   uint32_t dst_queue_family);
-    bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                    const VkRenderPassBeginInfo* pRenderPassBegin, const ErrorObject& errorObj) const;
+    bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                    const ErrorObject& errorObj) const;
     bool ValidateDependencies(const FRAMEBUFFER_STATE& framebuffer_state, const RENDER_PASS_STATE& render_pass_state,
                               const ErrorObject& errorObj) const;
     template <typename Barrier>
@@ -640,8 +639,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE& cb_state, const Location& loc, const char* vuid) const;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
-    bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer,
-                                  const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& errorObj) const;
+    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                  const ErrorObject& errorObj) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
@@ -668,8 +667,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdDrawInstance(const CMD_BUFFER_STATE& cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                  const Location& loc) const;
     bool ValidateGraphicsIndexedCmd(const CMD_BUFFER_STATE& cb_state, const Location& loc) const;
-    bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer,
-                                const ErrorObject& errorObj) const;
+    bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
                                    VkDeviceSize memoryOffset, const Location& loc) const;
     bool ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
@@ -685,17 +683,13 @@ class CoreChecks : public ValidationStateTracker {
                                     const char* vuid) const;
     bool ValidateCommandBufferSimultaneousUse(const Location& loc, const CMD_BUFFER_STATE& cb_state,
                                               int current_submit_count) const;
-    bool ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,
-                                     const VkFormat attachment_format, bool input, const Location& loc) const;
-    bool ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
-                                           const ErrorObject& errorObj) const;
-    bool AddAttachmentUse(RenderPassCreateVersion rp_version, std::vector<uint8_t>& attachment_uses,
-                          std::vector<VkImageLayout>& attachment_layouts, uint32_t attachment, uint8_t new_use,
-                          VkImageLayout new_layout, const Location loc) const;
-    bool ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
-                                 const Location& loc) const;
-    bool ValidateCreateRenderPass(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
-                                  const ErrorObject& errorObj) const;
+    bool ValidateAttachmentReference(VkAttachmentReference2 reference, const VkFormat attachment_format, bool input,
+                                     const Location& loc) const;
+    bool ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& errorObj) const;
+    bool AddAttachmentUse(std::vector<uint8_t>& attachment_uses, std::vector<VkImageLayout>& attachment_layouts,
+                          uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location loc) const;
+    bool ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location& loc) const;
+    bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& errorObj) const;
 
     bool ValidateRenderPassPipelineBarriers(const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                             VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
@@ -1051,18 +1045,17 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkImageSubresourceRange& subresourceRange, const char* image_layer_count_var_name,
                                        const VkImage image, const SubresourceRangeErrorCodes& errorCodes,
                                        const Location& loc) const;
-    bool ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
-                                                             VkRenderPass renderpass, uint32_t subpass, IMAGE_STATE* image_state,
-                                                             VkSampleCountFlagBits msrtss_samples, uint32_t attachment_index,
-                                                             bool depth = false) const;
-    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
-                                                              const IMAGE_VIEW_STATE& image_view_state, VkFramebuffer framebuffer,
-                                                              VkRenderPass renderpass, uint32_t attachment_index,
-                                                              const char* variable_name) const;
-    bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
-                                                                     const IMAGE_VIEW_STATE& image_view_state,
+    bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass, uint32_t subpass,
+                                                             IMAGE_STATE* image_state, VkSampleCountFlagBits msrtss_samples,
+                                                             uint32_t attachment_index, bool depth, const Location& loc) const;
+    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
+                                                              VkFramebuffer framebuffer, VkRenderPass renderpass,
+                                                              uint32_t attachment_index, const char* variable_name,
+                                                              const Location& loc) const;
+    bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                                     uint32_t attachment_index, const char* variable_name) const;
+                                                                     uint32_t attachment_index, const char* variable_name,
+                                                                     const Location& loc) const;
     bool ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state,
                                           const Location& loc) const;
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const IMAGE_STATE& image_state) const;
@@ -1182,9 +1175,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
 
-    bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, const CMD_BUFFER_STATE& cb_state,
-                                               const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const FRAMEBUFFER_STATE& framebuffer_state) const;
+    bool VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                               const FRAMEBUFFER_STATE& framebuffer_state, const Location& loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
@@ -1298,9 +1290,9 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const LocType& location) const;
 
-    bool ValidateLayoutVsAttachmentDescription(RenderPassCreateVersion rp_version, const VkImageLayout first_layout,
-                                               const uint32_t attachment,
-                                               const VkAttachmentDescription2& attachment_description) const;
+    bool ValidateLayoutVsAttachmentDescription(const VkImageLayout first_layout, const uint32_t attachment,
+                                               const VkAttachmentDescription2& attachment_description,
+                                               const Location& layout_loc) const;
 
     bool ValidateImageUsageFlags(VkCommandBuffer cb, IMAGE_STATE const& image_state, VkImageUsageFlags desired, bool strict,
                                  const char* vuid, const Location& image_loc) const;
