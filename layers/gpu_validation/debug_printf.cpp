@@ -116,13 +116,13 @@ bool DebugPrintf::InstrumentShader(const vvl::span<const uint32_t> &input, std::
                 break;
         }
     };
+    *unique_shader_id = unique_shader_module_id++;
     optimizer.SetMessageConsumer(debug_printf_console_message_consumer);
-    optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_module_id));
+    optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, *unique_shader_id));
     const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
-    *unique_shader_id = unique_shader_module_id++;
     return pass;
 }
 // Create the instrumented shader data to provide to the driver.
