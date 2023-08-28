@@ -1828,14 +1828,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride, const ErrorObject& errorObj) const override;
-    bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
+    bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                     const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                             const ErrorObject& errorObj) const override;
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
                                         uint32_t stride, const ErrorObject& errorObj) const override;
-    bool ValidateBaseGroups(const CMD_BUFFER_STATE& cb_state, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                            const Location& loc) const;
     bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                         uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                         const ErrorObject& errorObj) const override;
@@ -2249,9 +2247,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
                                  const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags,
                                  const Location& loc) const;
-    bool ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
+    bool ValidateCmdDrawStrideWithStruct(const CMD_BUFFER_STATE& cb_state, const std::string& vuid, const uint32_t stride,
                                          Struct struct_name, const uint32_t struct_size, const Location& loc) const;
-    bool ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
+    bool ValidateCmdDrawStrideWithBuffer(const CMD_BUFFER_STATE& cb_state, const std::string& vuid, const uint32_t stride,
                                          Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
                                          const VkDeviceSize offset, const BUFFER_STATE* buffer_state, const Location& loc) const;
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject& errorObj) const override;

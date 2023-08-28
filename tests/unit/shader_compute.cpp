@@ -806,8 +806,8 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     cs_text << "local_size_z = " << z_size_limit << ") in;\n";
     cs_text << "void main() {}\n";
 
-    VkShaderObj cs_obj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.flags = VK_PIPELINE_CREATE_DISPATCH_BASE;
     pipe.CreateComputePipeline();
 
     // Bind pipeline to command buffer
@@ -828,10 +828,6 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     m_errorMonitor->VerifyFound();
 
     if (device_group_creation) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
-        vk::CmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00421");
         vk::CmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
@@ -867,4 +863,29 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     } else {
         printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
     }
+}
+
+TEST_F(NegativeShaderCompute, DispatchBaseFlag) {
+    TEST_DESCRIPTION("Compute dispatch without VK_PIPELINE_CREATE_DISPATCH_BASE");
+
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    // Bind pipeline to command buffer
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
+    vk::CmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }

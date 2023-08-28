@@ -8321,7 +8321,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirect(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdDrawIndirect", "buffer", buffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, errorObj);
     return skip;
 }
 
@@ -8334,7 +8333,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirect(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirect", "buffer", buffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, errorObj);
     return skip;
 }
 
@@ -8346,7 +8344,6 @@ bool StatelessValidation::PreCallValidateCmdDispatch(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ, errorObj);
     return skip;
 }
 
@@ -8357,7 +8354,6 @@ bool StatelessValidation::PreCallValidateCmdDispatchIndirect(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdDispatchIndirect", "buffer", buffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset, errorObj);
     return skip;
 }
 
@@ -8991,7 +8987,6 @@ bool StatelessValidation::PreCallValidateCmdDispatchBase(
     const ErrorObject&                          errorObj) const {
     bool skip = false;
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ, errorObj);
     return skip;
 }
 
@@ -9565,7 +9560,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCount(
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCount", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCount", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -9581,7 +9575,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCount(
     bool skip = false;
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCount", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCount", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -12533,7 +12526,6 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_device_group)) skip |= OutputExtensionError("vkCmdDispatchBaseKHR", "VK_KHR_device_group");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ, errorObj);
     return skip;
 }
 
@@ -13758,7 +13750,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountKHR(
     if (!IsExtEnabled(device_extensions.vk_khr_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndirectCountKHR", "VK_KHR_draw_indirect_count");
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCountKHR", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCountKHR", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -13775,7 +13766,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(
     if (!IsExtEnabled(device_extensions.vk_khr_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountKHR", "VK_KHR_draw_indirect_count");
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCountKHR", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCountKHR", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -14895,7 +14885,6 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirect2KHR(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1)) skip |= OutputExtensionError("vkCmdTraceRaysIndirect2KHR", "VK_KHR_ray_tracing_maintenance1");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, errorObj);
     return skip;
 }
 
@@ -15415,7 +15404,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectByteCountEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback)) skip |= OutputExtensionError("vkCmdDrawIndirectByteCountEXT", "VK_EXT_transform_feedback");
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectByteCountEXT", "counterBuffer", counterBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride, errorObj);
     return skip;
 }
 
@@ -15628,7 +15616,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountAMD(
     if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndirectCountAMD", "VK_AMD_draw_indirect_count");
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCountAMD", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndirectCountAMD", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -15645,7 +15632,6 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountAMD(
     if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountAMD", "VK_AMD_draw_indirect_count");
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCountAMD", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawIndexedIndirectCountAMD", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -17110,7 +17096,6 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysNV(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError("vkCmdTraceRaysNV", "VK_NV_ray_tracing");
     skip |= ValidateRequiredHandle("vkCmdTraceRaysNV", "raygenShaderBindingTableBuffer", raygenShaderBindingTableBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width, height, depth, errorObj);
     return skip;
 }
 
@@ -17354,7 +17339,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksNV(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksNV", "VK_NV_mesh_shader");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, errorObj);
     return skip;
 }
 
@@ -17368,7 +17352,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectNV(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectNV", "VK_NV_mesh_shader");
     skip |= ValidateRequiredHandle("vkCmdDrawMeshTasksIndirectNV", "buffer", buffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, errorObj);
     return skip;
 }
 
@@ -17385,7 +17368,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectCountNV", "VK_NV_mesh_shader");
     skip |= ValidateRequiredHandle("vkCmdDrawMeshTasksIndirectCountNV", "buffer", buffer);
     skip |= ValidateRequiredHandle("vkCmdDrawMeshTasksIndirectCountNV", "countBuffer", countBuffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride, errorObj);
     return skip;
 }
 
@@ -19308,7 +19290,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_multi_draw)) skip |= OutputExtensionError("vkCmdDrawMultiEXT", "VK_EXT_multi_draw");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride, errorObj);
     return skip;
 }
 
@@ -19324,7 +19305,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiIndexedEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_multi_draw)) skip |= OutputExtensionError("vkCmdDrawMultiIndexedEXT", "VK_EXT_multi_draw");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride, pVertexOffset, errorObj);
     return skip;
 }
 
@@ -21248,7 +21228,6 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysKHR(
     {
         // No xml-driven validation
     }
-    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, errorObj);
     return skip;
 }
 
@@ -21420,7 +21399,6 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirectKHR(
     {
         // No xml-driven validation
     }
-    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, indirectDeviceAddress, errorObj);
     return skip;
 }
 
@@ -21456,7 +21434,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksEXT", "VK_EXT_mesh_shader");
     // No xml-driven validation
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, errorObj);
     return skip;
 }
 
@@ -21470,7 +21447,6 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectEXT", "VK_EXT_mesh_shader");
     skip |= ValidateRequiredHandle("vkCmdDrawMeshTasksIndirectEXT", "buffer", buffer);
-    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, errorObj);
     return skip;
 }
 

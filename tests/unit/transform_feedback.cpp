@@ -564,12 +564,18 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline_);
 
         // Greater stride than maxTransformFeedbackBufferDataStride
+        if (!tf_properties.transformFeedbackDraw) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288");
+        }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289");
         vk::CmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 0,
                                         tf_properties.maxTransformFeedbackBufferDataStride + 4);
         m_errorMonitor->VerifyFound();
 
         // non-4 multiple stride
+        if (!tf_properties.transformFeedbackDraw) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288");
+        }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568");
         vk::CmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 4);
         m_errorMonitor->VerifyFound();

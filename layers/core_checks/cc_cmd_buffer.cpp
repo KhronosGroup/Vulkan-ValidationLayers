@@ -1341,25 +1341,26 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
     return ValidateCmd(*cb_state, errorObj.location);
 }
 
-bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
+bool CoreChecks::ValidateCmdDrawStrideWithStruct(const CMD_BUFFER_STATE &cb_state, const std::string &vuid, const uint32_t stride,
                                                  Struct struct_name, const uint32_t struct_size, const Location &loc) const {
     bool skip = false;
     static const int condition_multiples = 0b0011;
     if ((stride & condition_multiples) || (stride < struct_size)) {
-        skip |= LogError(vuid, commandBuffer, loc.dot(Field::stride), "%" PRIu32 " is invalid or less than sizeof(%s) %" PRIu32 ".",
-                         stride, String(struct_name), struct_size);
+        skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc.dot(Field::stride),
+                         "%" PRIu32 " is invalid or less than sizeof(%s) %" PRIu32 ".", stride, String(struct_name), struct_size);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
+bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const CMD_BUFFER_STATE &cb_state, const std::string &vuid, const uint32_t stride,
                                                  Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
                                                  const VkDeviceSize offset, const BUFFER_STATE *buffer_state,
                                                  const Location &loc) const {
     bool skip = false;
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state->createInfo.size) {
-        const LogObjectList objlist(commandBuffer, buffer_state->buffer());
+        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        objlist.add(buffer_state->buffer());
         skip |=
             LogError(vuid, objlist, loc,
                      "stride (%" PRIu32 ") * [drawCount (%" PRIu32 ") - 1] + offset (%" PRIu64 ") + sizeof(%s) (%" PRIu32

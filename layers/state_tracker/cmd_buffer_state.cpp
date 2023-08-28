@@ -1541,3 +1541,72 @@ void CMD_BUFFER_STATE::UnbindResources() {
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();
 }
+
+LogObjectList CMD_BUFFER_STATE::GetObjectList(VkShaderStageFlagBits stage) const {
+    LogObjectList objlist(handle_);
+    const auto lv_bind_point = ConvertToLvlBindPoint(stage);
+    const auto &last_bound = lastBound[lv_bind_point];
+    const auto *pipeline_state = last_bound.pipeline_state;
+
+    if (pipeline_state) {
+        objlist.add(pipeline_state->pipeline());
+    } else if (VkShaderEXT shader = last_bound.GetShader(ConvertToShaderObjectStage(stage))) {
+        objlist.add(shader);
+    }
+    return objlist;
+}
+
+LogObjectList CMD_BUFFER_STATE::GetObjectList(VkPipelineBindPoint pipeline_bind_point) const {
+    LogObjectList objlist(handle_);
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
+    const auto &last_bound = lastBound[lv_bind_point];
+    const auto *pipeline_state = last_bound.pipeline_state;
+
+    if (pipeline_state) {
+        objlist.add(pipeline_state->pipeline());
+    } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::COMPUTE)) {
+            objlist.add(shader);
+        }
+    } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        // If using non-compute, need to check all graphics stages
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::VERTEX)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TESSELLATION_CONTROL)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::GEOMETRY)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::FRAGMENT)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::MESH)) {
+            objlist.add(shader);
+        }
+        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TASK)) {
+            objlist.add(shader);
+        }
+    }
+    return objlist;
+}
+
+PIPELINE_STATE *CMD_BUFFER_STATE::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
+    return lastBound[lv_bind_point].pipeline_state;
+}
+
+void CMD_BUFFER_STATE::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
+                                                          const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
+    const auto &last_bound = lastBound[lv_bind_point];
+    if (!last_bound.IsUsing()) {
+        return;
+    }
+    *rtn_pipe = last_bound.pipeline_state;
+    *rtn_sets = &(last_bound.per_set);
+}

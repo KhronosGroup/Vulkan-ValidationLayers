@@ -501,21 +501,13 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         return qfo_transfer_buffer_barriers;
     }
 
-    PIPELINE_STATE *GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
-        const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-        return lastBound[lv_bind_point].pipeline_state;
-    }
+    // Used to get error message objects, but overloads depending on what information is known
+    LogObjectList GetObjectList(VkShaderStageFlagBits stage) const;
+    LogObjectList GetObjectList(VkPipelineBindPoint pipeline_bind_point) const;
 
+    PIPELINE_STATE *GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const;
     void GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
-                                            const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
-        const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-        const auto &last_bound = lastBound[lv_bind_point];
-        if (!last_bound.IsUsing()) {
-            return;
-        }
-        *rtn_pipe = last_bound.pipeline_state;
-        *rtn_sets = &(last_bound.per_set);
-    }
+                                            const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const;
 
     VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
 
