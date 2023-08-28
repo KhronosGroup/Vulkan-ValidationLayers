@@ -846,6 +846,13 @@ static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlagBi
             return VK_PIPELINE_BIND_POINT_GRAPHICS;
         case VK_SHADER_STAGE_COMPUTE_BIT:
             return VK_PIPELINE_BIND_POINT_COMPUTE;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
         default:
             return static_cast<VkPipelineBindPoint>(stage);
     }
@@ -864,6 +871,13 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
             return BindPoint_Graphics;
         case VK_SHADER_STAGE_COMPUTE_BIT:
             return BindPoint_Compute;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return BindPoint_Ray_Tracing;
         default:
             return static_cast<LvlBindPoint>(stage);
     }

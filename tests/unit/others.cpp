@@ -2093,6 +2093,8 @@ TEST_F(VkLayerTest, ValidateStride) {
         auto draw_count = m_device->phy().properties().limits.maxDrawIndirectCount;
         if (draw_count != vvl::kU32Max) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02719");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00476");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-00488");
             vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, draw_count + 1, 2);
             m_errorMonitor->VerifyFound();
         }
