@@ -2042,7 +2042,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
 
         if (fragment_shading_rate_state->fragmentSize.height == 0) {
             skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495",device, fragment_loc.dot(Field::height),
+                LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495", device, fragment_loc.dot(Field::height),
                          "is zero.");
         }
 
@@ -2244,7 +2244,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
 
         if (pipeline.IsRenderPassStateRequired()) {
             if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
-                skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-multiview-06577",device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiview-06577", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
                                  "is %" PRIu32 ", but the multiview feature was not enabled.",
                                  rendering_struct->viewMask);
             }

@@ -658,6 +658,10 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_render_areas{kNotEnabled};
+    ExtEnabled vk_qcom_image_processing2{kNotEnabled};
+    ExtEnabled vk_qcom_filter_cubic_weights{kNotEnabled};
+    ExtEnabled vk_qcom_ycbcr_degamma{kNotEnabled};
+    ExtEnabled vk_qcom_filter_cubic_clamp{kNotEnabled};
     ExtEnabled vk_ext_attachment_feedback_loop_dynamic_state{kNotEnabled};
     ExtEnabled vk_qnx_external_memory_screen_buffer{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
@@ -1317,6 +1321,15 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
             {VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_render_areas, {})},
+            {VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_image_processing2, {{
+                           {&DeviceExtensions::vk_qcom_image_processing, VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME}}})},
+            {VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_filter_cubic_weights, {{
+                           {&DeviceExtensions::vk_ext_filter_cubic, VK_EXT_FILTER_CUBIC_EXTENSION_NAME}}})},
+            {VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_ycbcr_degamma, {})},
+            {VK_QCOM_FILTER_CUBIC_CLAMP_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_filter_cubic_clamp, {{
+                           {&DeviceExtensions::vk_ext_filter_cubic, VK_EXT_FILTER_CUBIC_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_feature_version_1_2, "VK_VERSION_1_2"},
+                           {&DeviceExtensions::vk_ext_sampler_filter_minmax, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME}}})},
             {VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_dynamic_state, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_ext_attachment_feedback_loop_layout, VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME}}})},
@@ -1831,6 +1844,10 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME,
     VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME,
     VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME,
+    VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME,
+    VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME,
+    VK_QCOM_YCBCR_DEGAMMA_EXTENSION_NAME,
+    VK_QCOM_FILTER_CUBIC_CLAMP_EXTENSION_NAME,
     VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     VK_QNX_EXTERNAL_MEMORY_SCREEN_BUFFER_EXTENSION_NAME,

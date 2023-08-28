@@ -7373,9 +7373,9 @@ bool ObjectLifetimes::PreCallValidateCopyMemoryToImageEXT(
     const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo,
     const ErrorObject&                          errorObj) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined, errorObj.location);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCopyMemoryToImageEXT-device-parameter", kVUIDUndefined, errorObj.location);
     if (pCopyMemoryToImageInfo) {
-        skip |= ValidateObject(pCopyMemoryToImageInfo->dstImage, kVulkanObjectTypeImage, false, kVUIDUndefined, kVUIDUndefined, errorObj.location);
+        skip |= ValidateObject(pCopyMemoryToImageInfo->dstImage, kVulkanObjectTypeImage, false, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-parameter", kVUIDUndefined, errorObj.location);
     }
 
     return skip;
@@ -7386,9 +7386,9 @@ bool ObjectLifetimes::PreCallValidateCopyImageToMemoryEXT(
     const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo,
     const ErrorObject&                          errorObj) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined, errorObj.location);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCopyImageToMemoryEXT-device-parameter", kVUIDUndefined, errorObj.location);
     if (pCopyImageToMemoryInfo) {
-        skip |= ValidateObject(pCopyImageToMemoryInfo->srcImage, kVulkanObjectTypeImage, false, kVUIDUndefined, kVUIDUndefined, errorObj.location);
+        skip |= ValidateObject(pCopyImageToMemoryInfo->srcImage, kVulkanObjectTypeImage, false, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-parameter", kVUIDUndefined, errorObj.location);
     }
 
     return skip;
@@ -7399,10 +7399,10 @@ bool ObjectLifetimes::PreCallValidateCopyImageToImageEXT(
     const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo,
     const ErrorObject&                          errorObj) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined, errorObj.location);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCopyImageToImageEXT-device-parameter", kVUIDUndefined, errorObj.location);
     if (pCopyImageToImageInfo) {
-        skip |= ValidateObject(pCopyImageToImageInfo->srcImage, kVulkanObjectTypeImage, false, kVUIDUndefined, "VUID-VkCopyImageToImageInfoEXT-commonparent", errorObj.location);
-        skip |= ValidateObject(pCopyImageToImageInfo->dstImage, kVulkanObjectTypeImage, false, kVUIDUndefined, "VUID-VkCopyImageToImageInfoEXT-commonparent", errorObj.location);
+        skip |= ValidateObject(pCopyImageToImageInfo->srcImage, kVulkanObjectTypeImage, false, "VUID-VkCopyImageToImageInfoEXT-srcImage-parameter", "VUID-VkCopyImageToImageInfoEXT-commonparent", errorObj.location);
+        skip |= ValidateObject(pCopyImageToImageInfo->dstImage, kVulkanObjectTypeImage, false, "VUID-VkCopyImageToImageInfoEXT-dstImage-parameter", "VUID-VkCopyImageToImageInfoEXT-commonparent", errorObj.location);
     }
 
     return skip;

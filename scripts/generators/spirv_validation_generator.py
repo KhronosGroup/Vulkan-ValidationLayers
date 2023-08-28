@@ -32,6 +32,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         self.capabilityExcludeList = [
             'ClusterCullingShadingHUAWEI',
             'ShaderEnqueueAMDX',
+            'TextureBlockMatch2QCOM',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
