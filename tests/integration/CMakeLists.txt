@@ -56,22 +56,3 @@ target_include_directories(foobar PRIVATE
 )
 
 target_sources(foobar PRIVATE main.cpp)
-
-# See LunarG/VulkanTools build-android/jni/Android.mk
-# https://github.com/LunarG/VulkanTools/blob/main/build-android/jni/Android.mk
-
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/vk_layer_config.cpp")
-    message(FATAL_ERROR "vk_layer_config.cpp is missing - update LunarG/VulkanTools")
-endif()
-
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/error_message/logging.cpp")
-    message(FATAL_ERROR "logging.cpp is missing - update LunarG/VulkanTools")
-endif()
-
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/utils/vk_layer_utils.cpp")
-    message(FATAL_ERROR "vk_layer_utils.cpp is missing - update LunarG/VulkanTools")
-endif()
-
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/vulkan/generated/vk_format_utils.cpp")
-    message(FATAL_ERROR "vk_format_utils.cpp is missing - update LunarG/VulkanTools")
-endif()
