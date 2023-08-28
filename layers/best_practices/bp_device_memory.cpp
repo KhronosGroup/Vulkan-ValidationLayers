@@ -36,7 +36,7 @@ void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryA
 
 bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-                                                  const ErrorObject& errorObj) const {
+                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
     if ((Count<DEVICE_MEMORY_STATE>() + 1) > kMemoryObjectWarningLimit) {
@@ -129,7 +129,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
 }
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
-                                              const ErrorObject& errorObj) const {
+                                              const ErrorObject& error_obj) const {
     if (memory == VK_NULL_HANDLE) return false;
     bool skip = false;
 
@@ -167,20 +167,20 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
 }
 
 bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
-                                                    VkDeviceSize memoryOffset, const ErrorObject& errorObj) const {
+                                                    VkDeviceSize memoryOffset, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateBindBufferMemory(buffer, memory, errorObj.location);
+    skip |= ValidateBindBufferMemory(buffer, memory, error_obj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                     const VkBindBufferMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
+                                                     const VkBindBufferMemoryInfo* pBindInfos, const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, errorObj.location.dot(Field::pBindInfos, i));
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, error_obj.location.dot(Field::pBindInfos, i));
     }
 
     return skip;
@@ -188,8 +188,8 @@ bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t b
 
 bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                                         const VkBindBufferMemoryInfo* pBindInfos,
-                                                        const ErrorObject& errorObj) const {
-    return PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, errorObj);
+                                                        const ErrorObject& error_obj) const {
+    return PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
 
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const {
@@ -244,21 +244,22 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
 }
 
 bool BestPractices::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                                   const ErrorObject& errorObj) const {
+                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateBindImageMemory(image, memory, errorObj.location);
+    skip |= ValidateBindImageMemory(image, memory, error_obj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                    const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
+                                                    const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (!LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
-            skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, errorObj.location.dot(Field::pBindInfos, i));
+            skip |=
+                ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, error_obj.location.dot(Field::pBindInfos, i));
         }
     }
 
@@ -266,8 +267,9 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
 }
 
 bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                       const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& errorObj) const {
-    return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, errorObj);
+                                                       const VkBindImageMemoryInfo* pBindInfos,
+                                                       const ErrorObject& error_obj) const {
+    return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
 
 void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {

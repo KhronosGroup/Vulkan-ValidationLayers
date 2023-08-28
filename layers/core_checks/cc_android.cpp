@@ -112,7 +112,7 @@ std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
 //
 bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
                                                                           VkAndroidHardwareBufferPropertiesANDROID *pProperties,
-                                                                          const ErrorObject &errorObj) const {
+                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
@@ -132,7 +132,7 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevi
 bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                                       struct AHardwareBuffer **pBuffer,
-                                                                      const ErrorObject &errorObj) const {
+                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pInfo->memory);
 
@@ -418,13 +418,13 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 
 bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                         const VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &errorObj) const {
+                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *ahb_usage = LvlFindInChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
         const auto *pdeifi = LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
         if ((!pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868", physical_device, errorObj.location,
+            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868", physical_device, error_obj.location,
                              "pImageFormatProperties includes a chained "
                              "VkAndroidHardwareBufferUsageANDROID struct, but pImageFormatInfo does not include a chained "
                              "VkPhysicalDeviceExternalImageFormatInfo struct with handleType "
@@ -598,7 +598,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
 
 bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                         const VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &errorObj) const {
+                                                                        const ErrorObject &error_obj) const {
     return false;
 }
 

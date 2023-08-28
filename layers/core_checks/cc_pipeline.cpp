@@ -92,12 +92,12 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flag
 
 bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
-                                                    const ErrorObject &errorObj) const {
+                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     if (enabled_features.core13.pipelineCreationCacheControl == VK_FALSE) {
         if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892", device,
-                             errorObj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                             error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
                              "includes "
                              "VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT, but pipelineCreationCacheControl feature "
                              "was not eanbled");
@@ -152,9 +152,9 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE &pipe
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
                                                                    uint32_t *pExecutableCount,
                                                                    VkPipelineExecutablePropertiesKHR *pProperties,
-                                                                   const ErrorObject &errorObj) const {
+                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidatePipelineExecutableInfo(device, nullptr, errorObj.location,
+    skip |= ValidatePipelineExecutableInfo(device, nullptr, error_obj.location,
                                            "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
     return skip;
 }
@@ -193,14 +193,14 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
                                                                    const VkPipelineExecutableInfoKHR *pExecutableInfo,
                                                                    uint32_t *pStatisticCount,
                                                                    VkPipelineExecutableStatisticKHR *pStatistics,
-                                                                   const ErrorObject &errorObj) const {
+                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, errorObj.location,
+    skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
 
     auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
     if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
-        skip |= LogError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274", pExecutableInfo->pipeline, errorObj.location,
+        skip |= LogError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274", pExecutableInfo->pipeline, error_obj.location,
                          "called on a pipeline created without the "
                          "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR flag set.");
     }
@@ -210,15 +210,15 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &errorObj) const {
+    VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &error_obj) const {
     bool skip = false;
-    skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, errorObj.location,
+    skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
 
     auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
     if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
         skip |= LogError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278", pExecutableInfo->pipeline,
-                         errorObj.location,
+                         error_obj.location,
                          "called on a pipeline created without the "
                          "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR flag set.");
     }
@@ -227,28 +227,28 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
 }
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
-                                                const ErrorObject &errorObj) const {
+                                                const ErrorObject &error_obj) const {
     auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
     bool skip = false;
     if (pipeline_state) {
-        skip |= ValidateObjectNotInUse(pipeline_state.get(), errorObj.location, "VUID-vkDestroyPipeline-pipeline-00765");
+        skip |= ValidateObjectNotInUse(pipeline_state.get(), error_obj.location, "VUID-vkDestroyPipeline-pipeline-00765");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipeline pipeline, const ErrorObject &errorObj) const {
+                                                VkPipeline pipeline, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.location);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
         std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdBindPipeline-pipelineBindPoint-00778"),
         std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdBindPipeline-pipelineBindPoint-00777"),
         std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdBindPipeline-pipelineBindPoint-02391")};
 
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, errorObj.location, bindpoint_errors);
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, error_obj.location, bindpoint_errors);
 
     auto pPipeline = Get<PIPELINE_STATE>(pipeline);
     assert(pPipeline);
@@ -257,17 +257,17 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     if (pipelineBindPoint != pipeline_state.pipeline_type) {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00779", objlist, errorObj.location,
+            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00779", objlist, error_obj.location,
                              "Cannot bind a pipeline of type %s to the graphics pipeline bind point",
                              string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00780", objlist, errorObj.location,
+            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-00780", objlist, error_obj.location,
                              "Cannot bind a pipeline of type %s to the compute pipeline bind point",
                              string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-02392", objlist, errorObj.location,
+            skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-02392", objlist, error_obj.location,
                              "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
                              string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         }
@@ -290,7 +290,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
                     if (last_bound_provoking_vertex_state_ci && !current_provoking_vertex_state_ci) {
                         const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, errorObj.location,
+                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
                                          "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
                                          FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
@@ -298,7 +298,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                          FormatHandle(pipeline).c_str());
                     } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
                         const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, errorObj.location,
+                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
                                          "%s's provokingVertexMode is %s, but previous %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
                                          FormatHandle(pipeline).c_str(),
@@ -309,7 +309,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                    current_provoking_vertex_state_ci->provokingVertexMode) {
                         const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
                         skip |=
-                            LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, errorObj.location,
+                            LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
                                      "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
                                      FormatHandle(pipeline).c_str(),
                                      string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
@@ -341,7 +341,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                     }
                     if (!found) {
                         const LogObjectList objlist(cb_state->commandBuffer(), pipeline, cb_state->activeRenderPass->Handle());
-                        skip |= LogError("VUID-vkCmdBindPipeline-variableSampleLocations-01525", objlist, errorObj.location,
+                        skip |= LogError("VUID-vkCmdBindPipeline-variableSampleLocations-01525", objlist, error_obj.location,
                                          "the current render pass was not begun with any element of "
                                          "pPostSubpassSampleLocations subpassIndex "
                                          "matching the current subpass index (%" PRIu32
@@ -385,25 +385,25 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
         if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-pipeline-03382", objlist, errorObj.location,
+            skip |= LogError("VUID-vkCmdBindPipeline-pipeline-03382", objlist, error_obj.location,
                              "Cannot bind a pipeline that was created with the VK_PIPELINE_CREATE_LIBRARY_BIT_KHR flag.");
         }
         if (cb_state->transform_feedback_active) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-            skip |= LogError("VUID-vkCmdBindPipeline-None-02323", objlist, errorObj.location, "transform feedback is active.");
+            skip |= LogError("VUID-vkCmdBindPipeline-None-02323", objlist, error_obj.location, "transform feedback is active.");
         }
         if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
                 if (pipeline_state.create_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
-                    skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409", objlist, errorObj.location,
+                    skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409", objlist, error_obj.location,
                                      "Binding pipeline created with "
                                      "VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT in an unprotected command buffer.");
                 }
             } else {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
                 if (pipeline_state.create_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) {
-                    skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408", objlist, errorObj.location,
+                    skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408", objlist, error_obj.location,
                                      "Binding pipeline created with "
                                      "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT in a protected command buffer.");
                 }

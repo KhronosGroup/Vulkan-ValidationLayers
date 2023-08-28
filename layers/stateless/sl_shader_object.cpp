@@ -19,7 +19,7 @@
 bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                                  const VkShaderCreateInfoEXT *pCreateInfos,
                                                                  const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                                 const ErrorObject &errorObj) const {
+                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
@@ -173,7 +173,7 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
 }
 
 bool StatelessValidation::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize,
-                                                                       void *pData, const ErrorObject &errorObj) const {
+                                                                       void *pData, const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pData) {

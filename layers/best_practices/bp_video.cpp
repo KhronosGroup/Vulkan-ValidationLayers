@@ -23,7 +23,7 @@
 bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                                         uint32_t* pMemoryRequirementsCount,
                                                                         VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
-                                                                        const ErrorObject& errorObj) const {
+                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
@@ -43,7 +43,7 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice
 bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                              uint32_t bindSessionMemoryInfoCount,
                                                              const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
-                                                             const ErrorObject& errorObj) const {
+                                                             const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);

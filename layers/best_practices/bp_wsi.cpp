@@ -39,20 +39,20 @@ bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPh
 
 bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                        uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                                       const ErrorObject& errorObj) const {
+                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                                   uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                                  const ErrorObject& errorObj) const {
+                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
 
     return skip;
 }
@@ -60,16 +60,16 @@ bool BestPractices::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevi
 bool BestPractices::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                    const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                                    VkDisplayPlaneCapabilities2KHR* pCapabilities,
-                                                                   const ErrorObject& errorObj) const {
+                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, errorObj.location);
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
 
     return skip;
 }
 
 bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                                         VkImage* pSwapchainImages, const ErrorObject& errorObj) const {
+                                                         VkImage* pSwapchainImages, const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
@@ -98,7 +98,7 @@ bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwap
 
 bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
-                                                      const ErrorObject& errorObj) const {
+                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto* bp_pd_state = GetPhysicalDeviceState();
@@ -168,7 +168,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
 bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                              const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
-                                                             const ErrorObject& errorObj) const {
+                                                             const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < swapchainCount; i++) {
@@ -210,7 +210,7 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
 bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                       uint32_t* pSurfaceFormatCount,
                                                                       VkSurfaceFormatKHR* pSurfaceFormats,
-                                                                      const ErrorObject& errorObj) const {
+                                                                      const ErrorObject& error_obj) const {
     if (!pSurfaceFormats) return false;
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     const auto& call_state = bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
@@ -234,7 +234,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
 }
 
 bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
-                                                   const ErrorObject& errorObj) const {
+                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
@@ -253,7 +253,7 @@ bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
 bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
-                                                       const ErrorObject& errorObj) const {
+                                                       const ErrorObject& error_obj) const {
     auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
     bool skip = false;
     if (swapchain_data && swapchain_data->images.size() == 0) {

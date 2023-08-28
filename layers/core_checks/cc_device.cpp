@@ -304,18 +304,18 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
 
 bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                             const ErrorObject &errorObj) const {
+                                             const ErrorObject &error_obj) const {
     bool skip = false;
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(gpu);
 
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
     if (!pd_state) {
-        skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", device, errorObj.location,
+        skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", device, error_obj.location,
                          "Have not called vkEnumeratePhysicalDevices() yet.");
     } else {
         skip |= ValidateDeviceQueueCreateInfos(pd_state.get(), pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
-                                               errorObj.location.dot(Field::pCreateInfo));
+                                               error_obj.location.dot(Field::pCreateInfo));
 
         const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =
             LvlFindInChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
@@ -326,15 +326,15 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 
             if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04478", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04478", pd_state->Handle(), error_obj.location,
                                      "Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
                 }
                 if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04479", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04479", pd_state->Handle(), error_obj.location,
                                      "Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
                 }
                 if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04480", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04480", pd_state->Handle(), error_obj.location,
                                      "Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
                                      "simultaneously.");
                 }
@@ -345,17 +345,17 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 
             if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04481", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04481", pd_state->Handle(), error_obj.location,
                                      "Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
                                      "simultaneously.");
                 }
                 if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04482", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04482", pd_state->Handle(), error_obj.location,
                                      "Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
                                      "simultaneously.");
                 }
                 if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04483", pd_state->Handle(), errorObj.location,
+                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04483", pd_state->Handle(), error_obj.location,
                                      "Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
                                      "simultaneously.");
                 }
@@ -367,7 +367,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         if (shader_image_atomic_int64_features) {
             if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
                 !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", pd_state->Handle(), errorObj.location,
+                skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", pd_state->Handle(), error_obj.location,
                                  "if shaderImageInt64Atomics feature is enabled then sparseImageInt64Atomics "
                                  "feature must also be enabled.");
             }
@@ -376,13 +376,13 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         if (shader_atomic_float_features) {
             if (shader_atomic_float_features->sparseImageFloat32Atomics &&
                 !shader_atomic_float_features->shaderImageFloat32Atomics) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", pd_state->Handle(), errorObj.location,
+                skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", pd_state->Handle(), error_obj.location,
                                  "if sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
                                  "feature must also be enabled.");
             }
             if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
                 !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04898", pd_state->Handle(), errorObj.location,
+                skip |= LogError("VUID-VkDeviceCreateInfo-None-04898", pd_state->Handle(), error_obj.location,
                                  "if sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
                                  "feature must also be enabled.");
             }
@@ -393,7 +393,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
                 !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
                 skip |=
-                    LogError("VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975", pd_state->Handle(), errorObj.location,
+                    LogError("VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975", pd_state->Handle(), error_obj.location,
                              "if sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
                              "feature must also be enabled.");
             }
@@ -404,7 +404,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                 for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                     if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
                         skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", pd_state->Handle(),
-                                         errorObj.location,
+                                         error_obj.location,
                                          "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
                                          "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
                                          i, j);
@@ -511,10 +511,10 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 }
 
 bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
-                                               const ErrorObject &errorObj) const {
+                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, errorObj.location.dot(Field::queueFamilyIndex),
+    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, error_obj.location.dot(Field::queueFamilyIndex),
                                       "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
 
     for (size_t i = 0; i < device_queue_info_list.size(); i++) {
@@ -526,7 +526,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
         // flag must be zero
         if (device_queue_info.flags != 0) {
             skip |= LogError(
-                "VUID-vkGetDeviceQueue-flags-01841", device, errorObj.location.dot(Field::queueFamilyIndex),
+                "VUID-vkGetDeviceQueue-flags-01841", device, error_obj.location.dot(Field::queueFamilyIndex),
                 "(%" PRIu32
                 ") was created with a non-zero VkDeviceQueueCreateFlags in vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                 "]. Need to use vkGetDeviceQueue2 instead.",
@@ -534,7 +534,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
         }
 
         if (device_queue_info.queue_count <= queueIndex) {
-            skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, errorObj.location.dot(Field::queueFamilyIndex),
+            skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, error_obj.location.dot(Field::queueFamilyIndex),
                              "(%" PRIu32 ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
                              ") when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                              "] (i.e. is not less than %" PRIu32 ").",
@@ -545,11 +545,11 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 }
 
 bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
-                                                const ErrorObject &errorObj) const {
+                                                const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pQueueInfo) {
-        const Location loc = errorObj.location.dot(Field::pQueueInfo);
+        const Location loc = error_obj.location.dot(Field::pQueueInfo);
         const uint32_t queueFamilyIndex = pQueueInfo->queueFamilyIndex;
         const uint32_t queueIndex = pQueueInfo->queueIndex;
         const VkDeviceQueueCreateFlags flags = pQueueInfo->flags;
@@ -571,7 +571,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
             if (device_queue_info.queue_count <= queueIndex) {
                 skip |= LogError(
-                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, errorObj.location.dot(Field::queueFamilyIndex),
+                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, error_obj.location.dot(Field::queueFamilyIndex),
                     "(%" PRIu32 ") is not less than the number of queues requested from [queueFamilyIndex (%" PRIu32
                     "), flags (%s)] combination when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "] (requested %" PRIu32 " queues).",
@@ -582,7 +582,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
         // Don't double error message if already skipping from ValidateDeviceQueueFamily
         if (!valid_flags && !skip) {
-            skip |= LogError("VUID-VkDeviceQueueInfo2-flags-06225", device, errorObj.location,
+            skip |= LogError("VUID-VkDeviceQueueInfo2-flags-06225", device, error_obj.location,
                              "The combination of queueFamilyIndex (%" PRIu32
                              ") and flags (%s) were never both set together in any element of "
                              "vkCreateDevice::pCreateInfo->pQueueCreateInfos at device creation time.",
@@ -594,12 +594,12 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
 bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                  VkImageFormatProperties2 *pImageFormatProperties,
-                                                                 const ErrorObject &errorObj) const {
+                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *copy_perf_query = LvlFindInChain<VkHostImageCopyDevicePerformanceQueryEXT>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
         if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", physical_device, errorObj.location,
+            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", physical_device, error_obj.location,
                              "pImageFormatProperties includes a chained "
                              "VkHostImageCopyDevicePerformanceQueryEXT struct, but pImageFormatInfo->usage (%s) does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT",
@@ -612,19 +612,19 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysica
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                         VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &errorObj) const {
+                                                                        const ErrorObject &error_obj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
-    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties, errorObj);
-    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties, errorObj);
+    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties, error_obj);
+    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties, error_obj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                            VkImageFormatProperties2 *pImageFormatProperties,
-                                                                           const ErrorObject &errorObj) const {
+                                                                           const ErrorObject &error_obj) const {
     return PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
-                                                                  errorObj);
+                                                                  error_obj);
 }
 
 // Access helper functions for external modules
@@ -688,7 +688,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
 }
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                 const ErrorObject &errorObj) const {
+                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state_ptr) {
@@ -696,8 +696,8 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
     }
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer);
-    skip |= ValidateExtendedDynamicState(cb_state, errorObj.location, VK_TRUE, nullptr, nullptr);
-    const Location loc = errorObj.location.dot(Field::deviceMask);
+    skip |= ValidateExtendedDynamicState(cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    const Location loc = error_obj.location.dot(Field::deviceMask);
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00108");
     skip |= ValidateDeviceMaskToZero(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00109");
     skip |= ValidateDeviceMaskToCommandBuffer(cb_state, deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00110");
@@ -708,23 +708,23 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                    const ErrorObject &errorObj) const {
-    return PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, errorObj);
+                                                    const ErrorObject &error_obj) const {
+    return PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,
                                                          VkPrivateDataSlotEXT *pPrivateDataSlot,
-                                                         const ErrorObject &errorObj) const {
-    return PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, errorObj);
+                                                         const ErrorObject &error_obj) const {
+    return PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator, VkPrivateDataSlot *pPrivateDataSlot,
-                                                      const ErrorObject &errorObj) const {
+                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.core13.privateData) {
-        skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, errorObj.location,
+        skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, error_obj.location,
                          "The privateData feature was not enabled.");
     }
     return skip;
@@ -732,9 +732,9 @@ bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkP
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, loc.dot(Field::queueFamilyIndex),
                                       "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     if ((enabled_features.core11.protectedMemory == VK_FALSE) &&
@@ -747,7 +747,7 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 }
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &errorObj) const {
+                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
     bool skip = false;
     if (cp_state) {
@@ -759,7 +759,7 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
 }
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                                 const ErrorObject &errorObj) const {
+                                                 const ErrorObject &error_obj) const {
     auto command_pool_state = Get<COMMAND_POOL_STATE>(commandPool);
     return CheckCommandBuffersInFlight(command_pool_state.get(), "reset command pool with",
                                        "VUID-vkResetCommandPool-commandPool-00040");

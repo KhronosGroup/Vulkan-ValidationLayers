@@ -365,11 +365,11 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
 }
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     auto rp_state = Get<RENDER_PASS_STATE>(renderPass);
     bool skip = false;
     if (rp_state) {
-        skip |= ValidateObjectNotInUse(rp_state.get(), errorObj.location, "VUID-vkDestroyRenderPass-renderPass-00873");
+        skip |= ValidateObjectNotInUse(rp_state.get(), error_obj.location, "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
 }
@@ -389,13 +389,13 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 }
 
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                            const ErrorObject &errorObj) const {
+                                            const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     auto fb_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
-    const Location loc = errorObj.location.dot(Field::pRenderPassBegin);
+    const Location loc = error_obj.location.dot(Field::pRenderPassBegin);
 
     if (rp_state) {
         uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
@@ -472,10 +472,10 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                                         loc, "VUID-VkRenderPassBeginInfo-renderPass-00904");
             }
 
-            skip |= ValidateDependencies(*fb_state, *rp_state, errorObj);
+            skip |= ValidateDependencies(*fb_state, *rp_state, error_obj);
         }
 
-        skip |= ValidateCmd(*cb_state, errorObj.location);
+        skip |= ValidateCmd(*cb_state, error_obj.location);
     }
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
@@ -515,21 +515,21 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                   VkSubpassContents contents, const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, errorObj);
+                                                   VkSubpassContents contents, const ErrorObject &error_obj) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                       const ErrorObject &errorObj) const {
-    return PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
+                                                       const ErrorObject &error_obj) const {
+    return PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                     const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                    const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, errorObj);
+                                                    const ErrorObject &error_obj) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
     return skip;
 }
 
@@ -565,11 +565,11 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                          const ErrorObject &errorObj) const {
+                                          const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    const bool use_rp2 = errorObj.location.function != Func::vkCmdEndRenderPass;
+    const bool use_rp2 = error_obj.location.function != Func::vkCmdEndRenderPass;
     const char *vuid;
 
     RENDER_PASS_STATE *rp_state = cb_state->activeRenderPass.get();
@@ -578,13 +578,13 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
         if (!rp_state->UsesDynamicRendering() && (cb_state->GetActiveSubpass() != rp_state->createInfo.subpassCount - 1)) {
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-03103" : "VUID-vkCmdEndRenderPass-None-00910";
             const LogObjectList objlist(commandBuffer, rp_state->renderPass());
-            skip |= LogError(vuid, objlist, errorObj.location, "Called before reaching final subpass.");
+            skip |= LogError(vuid, objlist, error_obj.location, "Called before reaching final subpass.");
         }
 
         if (rp_state->UsesDynamicRendering()) {
             const LogObjectList objlist(commandBuffer, rp_state->renderPass());
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-06171" : "VUID-vkCmdEndRenderPass-None-06170";
-            skip |= LogError(vuid, objlist, errorObj.location,
+            skip |= LogError(vuid, objlist, error_obj.location,
                              "Called when the render pass instance was begun with vkCmdBeginRendering().");
         }
 
@@ -597,8 +597,8 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                         const LogObjectList objlist(commandBuffer, rp_state->renderPass());
                         skip |=
                             LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503", objlist,
-                                     errorObj.location.pNext(Struct::VkSubpassFragmentDensityMapOffsetEndInfoQCOM,
-                                                             Field::fragmentDensityOffsetCount),
+                                     error_obj.location.pNext(Struct::VkSubpassFragmentDensityMapOffsetEndInfoQCOM,
+                                                              Field::fragmentDensityOffsetCount),
                                      "is %" PRIu32 " but must be 0 when feature is not enabled.",
                                      fdm_offset_info->fragmentDensityOffsetCount);
                     }
@@ -607,7 +607,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                     for (uint32_t k = 0; k < fdm_offset_info->fragmentDensityOffsetCount; k++) {
                         if ((fdm_offset_info->pFragmentDensityOffsets[k].x != 0) ||
                             (fdm_offset_info->pFragmentDensityOffsets[k].y != 0)) {
-                            const Location offset_loc = errorObj.location.pNext(
+                            const Location offset_loc = error_obj.location.pNext(
                                 Struct::VkSubpassFragmentDensityMapOffsetEndInfoQCOM, Field::pFragmentDensityOffsets, k);
                             fdm_non_zero_offsets = true;
                             uint32_t width =
@@ -643,7 +643,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                         if ((fdm_non_zero_offsets == true) &&
                             ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
                             const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
-                            skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-06502", objlist, errorObj.location,
+                            skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-06502", objlist, error_obj.location,
                                              "Attachment #%" PRIu32
                                              " is not created with flag value"
                                              " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and renderPass"
@@ -660,7 +660,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                     const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                     skip |= LogError(
                                         "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapAttachment-06504",
-                                        objlist, errorObj.location,
+                                        objlist, error_obj.location,
                                         "Fragment density map attachment #%" PRIu32
                                         " is not created with"
                                         " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -673,7 +673,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                     const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                     skip |= LogError(
                                         "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510",
-                                        objlist, errorObj.location,
+                                        objlist, error_obj.location,
                                         "fragmentDensityOffsetCount %" PRIu32
                                         " does not match the fragment density map attachment (%" PRIu32
                                         ") view layer count (%" PRIu32 ").",
@@ -685,7 +685,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                     const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                     skip |= LogError(
                                         "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511",
-                                        objlist, errorObj.location,
+                                        objlist, error_obj.location,
                                         "fragmentDensityOffsetCount %" PRIu32 " should be 1 when multiview is not enabled.",
                                         fdm_offset_info->fragmentDensityOffsetCount);
                                 }
@@ -699,7 +699,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                             ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
                             const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                             skip |= LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pDepthStencilAttachment-06505",
-                                             objlist, errorObj.location,
+                                             objlist, error_obj.location,
                                              "Depth/Stencil attachment #%" PRIu32
                                              " is not created with"
                                              " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -715,7 +715,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                 const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                 skip |=
                                     LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pInputAttachments-06506", objlist,
-                                             errorObj.location,
+                                             error_obj.location,
                                              "Input attachment #%" PRIu32
                                              " is not created with"
                                              " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -732,7 +732,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                 const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                 skip |=
                                     LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507", objlist,
-                                             errorObj.location,
+                                             error_obj.location,
                                              "Color attachment #%" PRIu32
                                              " is not created with"
                                              " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -750,7 +750,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                     const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                     skip |= LogError(
                                         "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508", objlist,
-                                        errorObj.location,
+                                        error_obj.location,
                                         "Resolve attachment #%" PRIu32
                                         " is not created with"
                                         " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -768,7 +768,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                                 const LogObjectList objlist(commandBuffer, rp_state->renderPass(), view_state->image_view());
                                 skip |=
                                     LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509",
-                                             objlist, errorObj.location,
+                                             objlist, error_obj.location,
                                              "Preserve attachment #%" PRIu32
                                              " is not created with"
                                              " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
@@ -784,27 +784,27 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
         if (cb_state->transform_feedback_active) {
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-02352" : "VUID-vkCmdEndRenderPass-None-02351";
             const LogObjectList objlist(commandBuffer, rp_state->renderPass());
-            skip |= LogError(vuid, objlist, errorObj.location, "transform feedback is active.");
+            skip |= LogError(vuid, objlist, error_obj.location, "transform feedback is active.");
         }
     }
 
-    skip |= ValidateCmd(*cb_state, errorObj.location);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdEndRenderPass(commandBuffer, VK_NULL_HANDLE, errorObj);
+bool CoreChecks::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
+    bool skip = ValidateCmdEndRenderPass(commandBuffer, VK_NULL_HANDLE, error_obj);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                     const ErrorObject &errorObj) const {
-    return PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
+                                                     const ErrorObject &error_obj) const {
+    return PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                  const ErrorObject &errorObj) const {
-    bool skip = ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, errorObj);
+                                                  const ErrorObject &error_obj) const {
+    bool skip = ValidateCmdEndRenderPass(commandBuffer, pSubpassEndInfo, error_obj);
     return skip;
 }
 
@@ -1347,10 +1347,10 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
     return skip;
 }
 
-bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &errorObj) const {
+bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &error_obj) const {
     bool skip = false;
-    const bool use_rp2 = errorObj.location.function != Func::vkCreateRenderPass;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
 
     // Track when we're observing the first use of an attachment
     std::vector<bool> attach_first_use(pCreateInfo->attachmentCount, true);
@@ -1435,8 +1435,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         const char *vuid =
                             use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-02525" : "VUID-VkRenderPassCreateInfo-pNext-01963";
                         // Assuming no disjoint image since there's no handle
-                        skip |=
-                            ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, false, errorObj.location, vuid);
+                        skip |= ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, false, error_obj.location,
+                                                        vuid);
                     }
 
                     if (attach_first_use[attachment_index]) {
@@ -1987,7 +1987,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 }
 
 bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state, const RENDER_PASS_STATE &render_pass_state,
-                                      const ErrorObject &errorObj) const {
+                                      const ErrorObject &error_obj) const {
     bool skip = false;
     auto const framebuffer_info = framebuffer_state.createInfo.ptr();
     auto const create_info = render_pass_state.createInfo.ptr();
@@ -2091,7 +2091,7 @@ bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state
             }
 
             if (attachment_indices.count(attachment)) {
-                skip |= LogError(kVUID_Core_DrawState_InvalidRenderpass, render_pass_state.renderPass(), errorObj.location,
+                skip |= LogError(kVUID_Core_DrawState_InvalidRenderpass, render_pass_state.renderPass(), error_obj.location,
                                  "Cannot use same attachment (%" PRIu32 ") as both color and depth output in same subpass (%" PRIu32
                                  ").",
                                  attachment, i);
@@ -2100,7 +2100,7 @@ bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state
     }
     // If there is a dependency needed make sure one exists
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const Location subpass_loc = errorObj.location.dot(Field::pSubpasses, i);
+        const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         // If the attachment is an input then all subpasses that output must have a dependency relationship
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
@@ -2132,7 +2132,7 @@ bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state
     // Loop through implicit dependencies, if this pass reads make sure the attachment is preserved for all passes after it was
     // written.
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
-        const Location subpass_loc = errorObj.location.dot(Field::pSubpasses, i);
+        const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             const Location attachment_loc = subpass_loc.dot(Field::pInputAttachments, j);
@@ -2143,13 +2143,13 @@ bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state
     return skip;
 }
 
-bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &errorObj) const {
+bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &error_obj) const {
     bool skip = false;
     const char *vuid;
-    const bool use_rp2 = errorObj.location.function != Func::vkCreateRenderPass;
+    const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const Location loc = errorObj.location.dot(Field::pDependencies, i);
+        const Location loc = error_obj.location.dot(Field::pDependencies, i);
         const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
 
         // The first subpass here serves as a good proxy for "is multiview enabled" - since all view masks need to be non-zero if
@@ -2233,21 +2233,21 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInf
     return skip;
 }
 
-bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &errorObj) const {
+bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &error_obj) const {
     bool skip = false;
-    const bool use_rp2 = errorObj.location.function != Func::vkCreateRenderPass;
+    const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid;
 
-    skip |= ValidateRenderpassAttachmentUsage(pCreateInfo, errorObj);
+    skip |= ValidateRenderpassAttachmentUsage(pCreateInfo, error_obj);
 
-    skip |= ValidateRenderPassDAG(pCreateInfo, errorObj);
+    skip |= ValidateRenderPassDAG(pCreateInfo, error_obj);
 
     // Validate multiview correlation and view masks
     bool view_mask_zero = false;
     bool view_mask_non_zero = false;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        const Location loc = errorObj.location.dot(Field::pSubpasses, i);
+        const Location loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
@@ -2281,19 +2281,19 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
 
     if (use_rp2) {
         if (view_mask_non_zero && view_mask_zero) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03058", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03058", device, error_obj.location,
                              "Some view masks are non-zero whilst others are zero.");
         }
 
         if (view_mask_zero && pCreateInfo->correlatedViewMaskCount != 0) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03057", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-viewMask-03057", device, error_obj.location,
                              "Multiview is not enabled but correlation masks are still provided");
         }
     }
     uint32_t aggregated_cvms = 0;
     for (uint32_t i = 0; i < pCreateInfo->correlatedViewMaskCount; ++i) {
         if (aggregated_cvms & pCreateInfo->pCorrelatedViewMasks[i]) {
-            const Location loc = errorObj.location.dot(Field::pCorrelatedViewMasks, i);
+            const Location loc = error_obj.location.dot(Field::pCorrelatedViewMasks, i);
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056"
                            : "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841";
             skip |= LogError(vuid, device, loc, "contains a previously appearing view bit.");
@@ -2305,7 +2305,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
     if (fragment_density_map_info) {
         if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
             const Location fragment_loc =
-                errorObj.location.pNext(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT, Field::fragmentDensityMapAttachment);
+                error_obj.location.pNext(Struct::VkRenderPassFragmentDensityMapCreateInfoEXT, Field::fragmentDensityMapAttachment);
             const Location attchment_loc = fragment_loc.dot(Field::attachment);
 
             if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
@@ -2354,24 +2354,24 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassDependency(errorObj, loc, dependency);
+        skip |= ValidateSubpassDependency(error_obj, loc, dependency);
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                 const ErrorObject &errorObj) const {
+                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
     const VkRenderPassMultiviewCreateInfo *multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
     if (multiview_info) {
         if (multiview_info->subpassCount && multiview_info->subpassCount != pCreateInfo->subpassCount) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01928", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01928", device, error_obj.location,
                              "Subpass count is %" PRIu32 " but multiview info has a subpass count of %" PRIu32 ".",
                              pCreateInfo->subpassCount, multiview_info->subpassCount);
         } else if (multiview_info->dependencyCount && multiview_info->dependencyCount != pCreateInfo->dependencyCount) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01929", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01929", device, error_obj.location,
                              "Dependency count is %" PRIu32 " but multiview info has a dependency count of %" PRIu32 ".",
                              pCreateInfo->dependencyCount, multiview_info->dependencyCount);
         }
@@ -2382,7 +2382,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             all_not_zero &= multiview_info->pViewMasks[i] != 0;
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
                 static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-                skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", device, errorObj.location,
+                skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", device, error_obj.location,
                                  "Most significant bit in "
                                  "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (%" PRIu32
                                  ") must be less than maxMultiviewViewCount(%" PRIu32 ").",
@@ -2390,11 +2390,11 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             }
         }
         if (!all_zero && !all_not_zero) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02513", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02513", device, error_obj.location,
                              "elements of VkRenderPassMultiviewCreateInfo pViewMasks must all be either 0 or not 0.");
         }
         if (all_zero && multiview_info->correlationMaskCount != 0) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02515", device, errorObj.location,
+            skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02515", device, error_obj.location,
                              "VkRenderPassCreateInfo::correlationMaskCount is %" PRIu32 ", but all elements of pViewMasks are 0.",
                              multiview_info->correlationMaskCount);
         }
@@ -2402,14 +2402,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             if ((pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) {
                 if (i < multiview_info->dependencyCount && multiview_info->pViewOffsets[i] != 0) {
                     skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02512", device,
-                                     errorObj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
+                                     error_obj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
                                      "does not have VK_DEPENDENCY_VIEW_LOCAL_BIT bit set, but the corresponding "
                                      "VkRenderPassMultiviewCreateInfo::pViewOffsets[%" PRIu32 "] is %" PRId32 ".",
                                      i, multiview_info->pViewOffsets[i]);
                 }
             } else if (all_zero) {
                 skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02514", device,
-                                 errorObj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
+                                 error_obj.location.dot(Field::pDependencies, i).dot(Field::dependencyFlags),
                                  "contains VK_DEPENDENCY_VIEW_LOCAL_BIT bit, but all elements of pViewMasks are 0.");
             }
         }
@@ -2423,14 +2423,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             if (subpass >= pCreateInfo->subpassCount) {
                 skip |= LogError(
                     "VUID-VkRenderPassCreateInfo-pNext-01926", device,
-                    errorObj.location.pNext(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i)
+                    error_obj.location.pNext(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i)
                         .dot(Field::subpass),
                     "is %" PRIu32 " which is not less than pCreateInfo->subpassCount (%" PRIu32 ").", subpass,
                     pCreateInfo->subpassCount);
             } else if (pCreateInfo->pSubpasses && attachment >= pCreateInfo->pSubpasses[subpass].inputAttachmentCount) {
                 skip |= LogError(
                     "VUID-VkRenderPassCreateInfo-pNext-01927", device,
-                    errorObj.location.pNext(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i)
+                    error_obj.location.pNext(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i)
                         .dot(Field::inputAttachmentIndex),
                     "is %" PRIu32 " which is not less then pCreateInfo->pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32
                     ").",
@@ -2441,7 +2441,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
     if (!skip) {
         safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-        skip |= ValidateCreateRenderPass(create_info_2.ptr(), errorObj);
+        skip |= ValidateCreateRenderPass(create_info_2.ptr(), error_obj);
     }
 
     return skip;
@@ -2449,13 +2449,13 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
 // VK_KHR_depth_stencil_resolve was added with a requirement on VK_KHR_create_renderpass2 so this will never be able to use
 // VkRenderPassCreateInfo
-bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &errorObj) const {
+bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &error_obj) const {
     bool skip = false;
 
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-        const Location loc = errorObj.location.dot(Field::pSubpasses, i);
+        const Location loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
@@ -2631,20 +2631,20 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
 bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDepthStencilResolve(pCreateInfo, errorObj);
-    skip |= ValidateFragmentShadingRateAttachments(pCreateInfo, errorObj);
+    skip |= ValidateDepthStencilResolve(pCreateInfo, error_obj);
+    skip |= ValidateFragmentShadingRateAttachments(pCreateInfo, error_obj);
 
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    skip |= ValidateCreateRenderPass(create_info_2.ptr(), errorObj);
+    skip |= ValidateCreateRenderPass(create_info_2.ptr(), error_obj);
 
     return skip;
 }
 
 bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                        const ErrorObject &errorObj) const {
+                                                        const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
@@ -2657,7 +2657,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                     LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
 
                 if (fragment_shading_rate_attachment && fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
-                    const Location loc = errorObj.location.dot(Field::pSubpasses, subpass);
+                    const Location loc = error_obj.location.dot(Field::pSubpasses, subpass);
                     const Location fragment_loc =
                         loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment);
                     const VkAttachmentReference2 &attachment_reference =
@@ -2679,7 +2679,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                         if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                             skip |= LogError(
                                 "VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
-                                errorObj.location.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
+                                error_obj.location.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
                                 "is %s and used in %s as a fragment shading rate attachment, but the format does not support "
                                 "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
                                 string_VkFormat(pCreateInfo->pAttachments[attachment_reference.attachment].format),
@@ -2785,7 +2785,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
             // Search for other uses of the same attachment
             if (!used_as_fragment_shading_rate_attachment.empty()) {
                 for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
-                    const Location loc = errorObj.location.dot(Field::pSubpasses, subpass);
+                    const Location loc = error_obj.location.dot(Field::pSubpasses, subpass);
                     const VkSubpassDescription2 &subpass_info = pCreateInfo->pSubpasses[subpass];
 
                     std::string fsr_attachment_subpasses_string = vector_to_string(used_as_fragment_shading_rate_attachment);
@@ -2850,8 +2850,8 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                     const ErrorObject &errorObj) const {
-    return PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, errorObj);
+                                                     const ErrorObject &error_obj) const {
+    return PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
 }
 
 bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view,
@@ -3041,21 +3041,21 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.location);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     const auto *chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     const bool non_zero_device_render_area = chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount != 0;
 
     if (!enabled_features.core13.dynamicRendering) {
-        skip |= LogError("VUID-vkCmdBeginRendering-dynamicRendering-06446", commandBuffer, errorObj.location,
+        skip |= LogError("VUID-vkCmdBeginRendering-dynamicRendering-06446", commandBuffer, error_obj.location,
                          "dynamicRendering is not enabled.");
     }
 
-    const Location loc = errorObj.location.dot(Field::pRenderingInfo);
+    const Location loc = error_obj.location.dot(Field::pRenderingInfo);
     if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
         skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", commandBuffer, loc.dot(Field::layerCount),
                          "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", pRenderingInfo->layerCount,
@@ -3693,26 +3693,26 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const Locat
     return outside;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
+bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
-    skip |= ValidateCmd(*cb_state, errorObj.location);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
     if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
-        skip |= LogError("VUID-vkCmdEndRendering-None-06161", commandBuffer, errorObj.location,
+        skip |= LogError("VUID-vkCmdEndRendering-None-06161", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun with vkCmdBeginRendering().");
     }
     if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
-        skip |= LogError("VUID-vkCmdEndRendering-commandBuffer-06162", commandBuffer, errorObj.location,
+        skip |= LogError("VUID-vkCmdEndRendering-commandBuffer-06162", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
     }
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
-    return PreCallValidateCmdEndRendering(commandBuffer, errorObj);
+bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
+    return PreCallValidateCmdEndRendering(commandBuffer, error_obj);
 }
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
@@ -3763,8 +3763,8 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
-                                                     const ErrorObject &errorObj) const {
-    return PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
+                                                     const ErrorObject &error_obj) const {
+    return PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
@@ -3783,41 +3783,41 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const
     return skip;
 }
 
-bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject &errorObj) const {
+bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    const bool use_rp2 = errorObj.location.function != Func::vkCmdNextSubpass;
+    const bool use_rp2 = error_obj.location.function != Func::vkCmdNextSubpass;
     const char *vuid;
 
-    skip |= ValidateCmd(*cb_state, errorObj.location);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
     auto subpass_count = cb_state->activeRenderPass->createInfo.subpassCount;
     if (cb_state->GetActiveSubpass() == subpass_count - 1) {
         vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
-        skip |= LogError(vuid, commandBuffer, errorObj.location, "Attempted to advance beyond final subpass.");
+        skip |= LogError(vuid, commandBuffer, error_obj.location, "Attempted to advance beyond final subpass.");
     }
     if (cb_state->transform_feedback_active) {
         vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-02350" : "VUID-vkCmdNextSubpass-None-02349";
-        skip |= LogError(vuid, commandBuffer, errorObj.location, "transform feedback is active.");
+        skip |= LogError(vuid, commandBuffer, error_obj.location, "transform feedback is active.");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                               const ErrorObject &errorObj) const {
-    return ValidateCmdNextSubpass(commandBuffer, errorObj);
+                                               const ErrorObject &error_obj) const {
+    return ValidateCmdNextSubpass(commandBuffer, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                   const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
-    return PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, errorObj);
+                                                   const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const {
+    return PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &errorObj) const {
-    return ValidateCmdNextSubpass(commandBuffer, errorObj);
+                                                const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const {
+    return ValidateCmdNextSubpass(commandBuffer, error_obj);
 }
 
 void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
@@ -3946,10 +3946,10 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
 
 bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     // TODO : Verify that renderPass FB is created with is compatible with FB
     bool skip = false;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     const auto *framebuffer_attachments_create_info = LvlFindInChain<VkFramebufferAttachmentsCreateInfo>(pCreateInfo->pNext);
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) {
         if (!enabled_features.core12.imagelessFramebuffer) {
@@ -4604,11 +4604,11 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 }
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
-                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &errorObj) const {
+                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     auto framebuffer_state = Get<FRAMEBUFFER_STATE>(framebuffer);
     bool skip = false;
     if (framebuffer_state) {
-        skip |= ValidateObjectNotInUse(framebuffer_state.get(), errorObj.location, "VUID-vkDestroyFramebuffer-framebuffer-00892");
+        skip |= ValidateObjectNotInUse(framebuffer_state.get(), error_obj.location, "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
 }

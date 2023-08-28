@@ -20,7 +20,7 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
-                                                                const ErrorObject &errorObj) const {
+                                                                const ErrorObject &error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(
@@ -31,7 +31,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device,
 }
 bool StatelessValidation::manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkEvent *pEvent,
-                                                            const ErrorObject &errorObj) const {
+                                                            const ErrorObject &error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(

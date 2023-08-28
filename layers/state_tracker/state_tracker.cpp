@@ -2502,7 +2502,7 @@ std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineSt
 bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                    const ErrorObject &errorObj, void *cgpl_state_data) const {
+                                                                    const ErrorObject &error_obj, void *cgpl_state_data) const {
     bool skip = false;
     // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
@@ -2560,7 +2560,7 @@ std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateComputePipelineSta
 bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                                   const ErrorObject &errorObj, void *ccpl_state_data) const {
+                                                                   const ErrorObject &error_obj, void *ccpl_state_data) const {
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     ccpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     ccpl_state->pipe_state.reserve(count);
@@ -2596,7 +2596,7 @@ std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateRayTracingPipeline
 
 bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(
     VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &errorObj, void *crtpl_state_data) const {
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj, void *crtpl_state_data) const {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     crtpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
@@ -2631,7 +2631,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
                                                                          VkPipelineCache pipelineCache, uint32_t count,
                                                                          const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                                          const VkAllocationCallbacks *pAllocator,
-                                                                         VkPipeline *pPipelines, const ErrorObject &errorObj,
+                                                                         VkPipeline *pPipelines, const ErrorObject &error_obj,
                                                                          void *crtpl_state_data) const {
     auto crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     crtpl_state->pipe_state.reserve(count);
@@ -2746,7 +2746,7 @@ void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, 
 
 bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice device,
                                                                    const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                                   VkDescriptorSet *pDescriptorSets, const ErrorObject &errorObj,
+                                                                   VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
                                                                    void *ads_state_data) const {
     // Always update common data
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =

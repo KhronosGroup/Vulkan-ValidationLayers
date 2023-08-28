@@ -21,11 +21,11 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                                            const ErrorObject &errorObj) const {
+                                                            const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         const VkFormat image_format = pCreateInfo->format;
         const VkImageCreateFlags image_flags = pCreateInfo->flags;
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -654,11 +654,11 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
 bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                                                const ErrorObject &errorObj) const {
+                                                                const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         // Validate feature set if using CUBE_ARRAY
         if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (physical_device_features.imageCubeArray == false)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-01004", pCreateInfo->image, loc.dot(Field::viewType),

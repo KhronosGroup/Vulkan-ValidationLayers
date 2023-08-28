@@ -121,11 +121,11 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
 
 bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
-                                                              const ErrorObject &errorObj) const {
+                                                              const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         const auto &features = physical_device_features;
         const auto &limits = device_limits;
 
@@ -478,7 +478,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
                                                                           VkDescriptorSetLayout *pSetLayout,
-                                                                          const ErrorObject &errorObj) const {
+                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
 
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
@@ -486,7 +486,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
         LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
     bool mutable_descriptor_type_features_enabled =
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pCreateInfo->pBindings != nullptr) {
@@ -622,7 +622,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
 bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool,
                                                                    uint32_t descriptorSetCount,
                                                                    const VkDescriptorSet *pDescriptorSets,
-                                                                   const ErrorObject &errorObj) const {
+                                                                   const ErrorObject &error_obj) const {
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
@@ -856,7 +856,7 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                                      uint32_t descriptorCopyCount,
                                                                      const VkCopyDescriptorSet *pDescriptorCopies,
-                                                                     const ErrorObject &errorObj) const {
+                                                                     const ErrorObject &error_obj) const {
     return ValidateWriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
 }
 
@@ -928,11 +928,11 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkDescriptorPool *pDescriptorPool,
-                                                                     const ErrorObject &errorObj) const {
+                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfo) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         if (pCreateInfo->maxSets <= 0) {
             skip |= LogError("VUID-VkDescriptorPoolCreateInfo-maxSets-00301", device, loc.dot(Field::maxSets), "is zero.");
         }
@@ -997,12 +997,12 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
 
 bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
-                                                                const ErrorObject &errorObj) const {
+                                                                const ErrorObject &error_obj) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pCreateInfo != nullptr) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         // If queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, pipelineStatistics must be a valid combination of
         // VkQueryPipelineStatisticFlagBits values
         if ((pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) && (pCreateInfo->pipelineStatistics != 0) &&
@@ -1023,7 +1023,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
                                                                              const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                              const VkAllocationCallbacks *pAllocator,
                                                                              VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                             const ErrorObject &errorObj) const {
+                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
@@ -1031,7 +1031,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
     if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
         const auto *vulkan_11_features = LvlFindInChain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
         if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
-            skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, errorObj.location,
+            skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, error_obj.location,
                              "samplerYcbcrConversion feature must be enabled.");
         }
     }
@@ -1044,7 +1044,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
 #endif
 
     const VkFormat format = pCreateInfo->format;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
 
     // If there is a VkExternalFormatANDROID with externalFormat != 0, the value of components is ignored.
     if (!is_external_format) {
@@ -1154,6 +1154,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
 
 bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkSamplerYcbcrConversion *pYcbcrConversion, const ErrorObject &errorObj) const {
-    return manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
+    VkSamplerYcbcrConversion *pYcbcrConversion, const ErrorObject &error_obj) const {
+    return manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
 }

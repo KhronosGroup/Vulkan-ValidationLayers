@@ -37,10 +37,10 @@ bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) 
 bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                             const ErrorObject &errorObj) const {
+                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const VkFormat conversion_format = pCreateInfo->format;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
 
     // Need to check for external format conversion first as it allows for non-UNORM format
     bool external_format = false;
@@ -143,6 +143,6 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                 const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                const ErrorObject &errorObj) const {
-    return PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, errorObj);
+                                                                const ErrorObject &error_obj) const {
+    return PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
 }

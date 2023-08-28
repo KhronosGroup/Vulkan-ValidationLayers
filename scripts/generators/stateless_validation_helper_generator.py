@@ -270,7 +270,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(');', ') const override;\n')
             if 'ValidationCache' in command.name:
                 prototype = prototype.replace('const override', 'const')
-            prototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
+            prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
             out.append(prototype)
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
         self.write("".join(out))
@@ -437,7 +437,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 prototype = '\n'.join(prototype)
                 prototype += ' const {\n'
                 prototype = prototype.split('VKAPI_CALL vk')[1]
-                prototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
+                prototype = prototype.replace(')', ',\n    const ErrorObject&                         error_obj)')
                 out.append('bool StatelessValidation::PreCallValidate' + prototype)
                 out.append(f'{indent}bool skip = false;\n')
                 if command.instance and command.version:
@@ -454,7 +454,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                     params_text = ''
                     for param in command.params:
                         params_text += f'{param.name}, '
-                    params_text += 'errorObj, '
+                    params_text += 'error_obj, '
                     params_text = params_text[:-2] + ');\n'
                     out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text}')
                 out.append(f'{indent}return skip;\n')

@@ -20,11 +20,11 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                             const ErrorObject &errorObj) const {
+                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfo);
+        const Location loc = error_obj.location.dot(Field::pCreateInfo);
         skip |= ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", loc.dot(Field::size));
 
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -86,7 +86,7 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
 
 bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
-                                                                 const ErrorObject &errorObj) const {
+                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(

@@ -230,7 +230,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             terminator = ';\n' if 'ValidationCache' in command.name else ' override;\n'
 
             if pre_call_validate:
-                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
+                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
             if pre_call_record:
@@ -321,7 +321,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
             # Output PreCallValidateAPI function if necessary
             if pre_call_validate:
-                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          errorObj)')
+                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
                 out.append('\n')
                 out.append(f'bool ObjectLifetimes::PreCallValidate{prePrototype} const {{\n')
                 out.append('    bool skip = false;\n')
@@ -448,7 +448,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     pre_call_validate += addIndent(indent,
 f'''if (({countName} > 0) && ({prefix}{member.name})) {{
     for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
-        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, errorObj.location);
+        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, error_obj.location);
     }}
 }}''')
                 else:
@@ -459,7 +459,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         nullAllowed = 'false'
                         manual_vuid_index = parentName + '-' + member.name
                         paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-                    pre_call_validate += f'{bonus_indent}{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, errorObj.location);\n'
+                    pre_call_validate += f'{bonus_indent}{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, error_obj.location);\n'
                     if 'pSampler' in member.name:
                         pre_call_validate = ''
 
@@ -565,7 +565,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
             nullallocVUID = self.getAllocVUID(handle_param, "nullalloc")
             if handle_param.type in self.vk.handles:
                 # Call Destroy a single time
-                pre_call_validate += f'{indent}skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, errorObj.location);\n'
+                pre_call_validate += f'{indent}skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, error_obj.location);\n'
                 pre_call_record += f'{indent}RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]});\n'
 
         return pre_call_validate, pre_call_record, post_call_record
