@@ -45,6 +45,7 @@ enum class QueueError {
     kSync1ConcurrentDst,
     kExclusiveSrc,
     kExclusiveDst,
+    kHostStage,
 };
 
 extern const std::map<QueueError, std::string> kQueueErrorSummary;
