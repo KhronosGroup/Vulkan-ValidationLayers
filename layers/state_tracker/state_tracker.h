@@ -69,12 +69,6 @@ struct SHADER_MODULE_STATE;
 struct SHADER_OBJECT_STATE;
 struct SPIRV_MODULE_STATE;
 
-// These versions allow functions that are the same to share the same logic but can use different VUs
-// The common case are functions that were missing the pNext in Vulkan 1.0 and added via extension
-//
-// Added from VK_KHR_create_renderpass2
-enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
-
 // This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
 struct create_shader_module_api_state {
     // We build a SPIRV_MODULE_STATE at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers

@@ -53,10 +53,10 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const Vk
 
 bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                   RenderPassCreateVersion rp_version, const ErrorObject &errorObj) const {
+                                                   const ErrorObject &errorObj) const {
     bool skip = false;
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
-    const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
+    const bool use_rp2 = errorObj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
     const Location &loc = errorObj.location.dot(Field::pCreateInfo);
     VkBool32 separate_depth_stencil_layouts = false;
@@ -367,14 +367,14 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                                  const ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1, errorObj);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkRenderPass *pRenderPass, const ErrorObject &errorObj) const {
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2, errorObj);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, errorObj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
