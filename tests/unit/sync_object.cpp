@@ -1404,6 +1404,101 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     }
 }
 
+TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
+    TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    sync2_features.synchronization2 = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkBufferObj buffer(*m_device, 32);
+    auto barrier = LvlInitStruct<VkBufferMemoryBarrier2>();
+    barrier.buffer = buffer.handle();
+    barrier.size = VK_WHOLE_SIZE;
+    // source and destination families should be equal if HOST stage is used
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = 0;
+
+    auto dependency_info = LvlInitStruct<VkDependencyInfo>();
+    dependency_info.bufferMemoryBarrierCount = 1;
+    dependency_info.pBufferMemoryBarriers = &barrier;
+
+    // HOST stage as source
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferMemoryBarrier2-srcStageMask-03851");
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    // HOST stage as destination
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferMemoryBarrier2-srcStageMask-03851");
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
+    TEST_DESCRIPTION("Image barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    sync2_features.synchronization2 = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    auto barrier = LvlInitStruct<VkImageMemoryBarrier2>();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = image.handle();
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    // source and destination families should be equal if HOST stage is used
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = 0;
+
+    auto dependency_info = LvlInitStruct<VkDependencyInfo>();
+    dependency_info.imageMemoryBarrierCount = 1;
+    dependency_info.pImageMemoryBarriers = &barrier;
+
+    // HOST stage as source
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-srcStageMask-03854");
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    // HOST stage as destination
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-srcStageMask-03854");
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 // TODO - Figure out if test or VU are bad
 TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
