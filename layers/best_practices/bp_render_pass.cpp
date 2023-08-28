@@ -77,7 +77,7 @@ static inline bool RenderPassUsesAttachmentAsImageOnly(const safe_VkRenderPassCr
 
 bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                                    const ErrorObject& errorObj) const {
+                                                    const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
@@ -549,8 +549,8 @@ void BestPractices::RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer) {
 }
 
 bool BestPractices::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                      VkSubpassContents contents, const ErrorObject& errorObj) const {
-    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, errorObj);
+                                                      VkSubpassContents contents, const ErrorObject& error_obj) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, error_obj);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
     return skip;
 }
@@ -558,30 +558,30 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuf
 bool BestPractices::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                           const VkRenderPassBeginInfo* pRenderPassBegin,
                                                           const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                                          const ErrorObject& errorObj) const {
-    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
+                                                          const ErrorObject& error_obj) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                        const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                                       const ErrorObject& errorObj) const {
-    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, errorObj);
+                                                       const ErrorObject& error_obj) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
     skip |= ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                                     const ErrorObject& errorObj) const {
-    bool skip = StateTracker::PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, errorObj);
+                                                     const ErrorObject& error_obj) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);
     skip |= ValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                                        const ErrorObject& errorObj) const {
-    bool skip = StateTracker::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, errorObj);
+                                                        const ErrorObject& error_obj) const {
+    bool skip = StateTracker::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo, error_obj);
     skip |= ValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
     return skip;
 }
@@ -637,9 +637,9 @@ void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer command
 }
 
 bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                                     const ErrorObject& errorObj) const {
+                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, errorObj);
+    skip |= StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
@@ -650,9 +650,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
 }
 
 bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                                        const ErrorObject& errorObj) const {
+                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, errorObj);
+    skip |= StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, error_obj);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
@@ -662,9 +662,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     return skip;
 }
 
-bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const {
+bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer, errorObj);
+    skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer, error_obj);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
@@ -674,9 +674,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     return skip;
 }
 
-bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const {
+bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer, errorObj);
+    skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer, error_obj);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
@@ -685,9 +685,9 @@ bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& errorObj) const {
+bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= StateTracker::PreCallValidateCmdEndRenderingKHR(commandBuffer, errorObj);
+    skip |= StateTracker::PreCallValidateCmdEndRenderingKHR(commandBuffer, error_obj);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);

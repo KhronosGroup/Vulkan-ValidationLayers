@@ -70,11 +70,11 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                               const ErrorObject &errorObj) const {
+                                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pAllocateInfo) {
-        const Location loc = errorObj.location.dot(Field::pAllocateInfo);
+        const Location loc = error_obj.location.dot(Field::pAllocateInfo);
         auto chained_prio_struct = LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
         if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
             skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
@@ -223,10 +223,10 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
                                                                                  const VkDeviceImageMemoryRequirements *pInfo,
                                                                                  VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                 const ErrorObject &errorObj) const {
+                                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, error_obj.location.dot(Field::pInfo));
 
     return skip;
 }
@@ -234,23 +234,23 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
                                                                                     const VkDeviceImageMemoryRequirements *pInfo,
                                                                                     VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                    const ErrorObject &errorObj) const {
-    return manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, errorObj);
+                                                                                    const ErrorObject &error_obj) const {
+    return manual_PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &errorObj) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, errorObj.location.dot(Field::pInfo));
+    skip |= ValidateDeviceImageMemoryRequirements(device, pInfo, error_obj.location.dot(Field::pInfo));
 
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &errorObj) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
     return manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
-                                                                        pSparseMemoryRequirements, errorObj);
+                                                                        pSparseMemoryRequirements, error_obj);
 }

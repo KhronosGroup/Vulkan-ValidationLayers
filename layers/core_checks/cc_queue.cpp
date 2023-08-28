@@ -107,13 +107,13 @@ struct CommandBufferSubmitState {
 };
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                            const ErrorObject &errorObj) const {
+                                            const ErrorObject &error_obj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueSubmit-fence-00063",
-                                      objlist, errorObj.location);
+                                      objlist, error_obj.location);
     }
     if (skip) {
         return true;
@@ -130,7 +130,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        const Location loc = errorObj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
+        const Location loc = error_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
@@ -233,20 +233,20 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 }
 
 bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                      const ErrorObject &errorObj) const {
+                                      const ErrorObject &error_obj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueSubmit2-fence-04895", "VUID-vkQueueSubmit2-fence-04894",
-                                      objlist, errorObj.location);
+                                      objlist, error_obj.location);
     }
     if (skip) {
         return true;
     }
 
     if (!enabled_features.core13.synchronization2) {
-        skip |= LogError("VUID-vkQueueSubmit2-synchronization2-03866", queue, errorObj.location,
+        skip |= LogError("VUID-vkQueueSubmit2-synchronization2-03866", queue, error_obj.location,
                          "synchronization2 feature is not enabled");
     }
 
@@ -257,7 +257,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const Location loc = errorObj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
+        const Location loc = error_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
         const VkSubmitInfo2KHR &submit = pSubmits[submit_idx];
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
@@ -328,13 +328,13 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, const ErrorObject &errorObj) const {
-    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
+                                                VkFence fence, const ErrorObject &error_obj) const {
+    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                             const ErrorObject &errorObj) const {
-    return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, errorObj);
+                                             const ErrorObject &error_obj) const {
+    return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
 void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
@@ -573,13 +573,13 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 }
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                VkFence fence, const ErrorObject &errorObj) const {
+                                                VkFence fence, const ErrorObject &error_obj) const {
     bool skip = false;
     {
         auto fence_state = Get<FENCE_STATE>(fence);
         const LogObjectList objlist(queue, fence);
         skip = ValidateFenceForSubmit(fence_state.get(), "VUID-vkQueueBindSparse-fence-01114", "VUID-vkQueueBindSparse-fence-01113",
-                                      objlist, errorObj.location);
+                                      objlist, error_obj.location);
     }
     if (skip) {
         return true;
@@ -588,14 +588,14 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     auto queue_data = Get<QUEUE_STATE>(queue);
     const auto queue_flags = physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
     if (!(queue_flags & VK_QUEUE_SPARSE_BINDING_BIT)) {
-        skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, errorObj.location,
+        skip |= LogError("VUID-vkQueueBindSparse-queuetype", queue, error_obj.location,
                          "a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.");
     }
 
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags);
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
-        const Location loc = errorObj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
+        const Location loc = error_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, bind_info, loc);

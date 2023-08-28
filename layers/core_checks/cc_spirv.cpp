@@ -2500,7 +2500,7 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
 
 bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                   const ErrorObject &errorObj) const {
+                                                   const ErrorObject &error_obj) const {
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
 
@@ -2508,7 +2508,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return false;
     }
 
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     auto have_glsl_shader = IsExtEnabled(device_extensions.vk_nv_glsl_shader);
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
@@ -2558,10 +2558,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 
 bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                              VkShaderModuleIdentifierEXT *pIdentifier,
-                                                             const ErrorObject &errorObj) const {
+                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
-        skip |= LogError("VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884", shaderModule, errorObj.location,
+        skip |= LogError("VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884", shaderModule, error_obj.location,
                          "the shaderModuleIdentifier feature was not enabled.");
     }
     return skip;
@@ -2569,10 +2569,10 @@ bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, Vk
 
 bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                                        VkShaderModuleIdentifierEXT *pIdentifier,
-                                                                       const ErrorObject &errorObj) const {
+                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
-        skip |= LogError("VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885", device, errorObj.location,
+        skip |= LogError("VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885", device, error_obj.location,
                          "the shaderModuleIdentifier feature was not enabled.");
     }
     return skip;

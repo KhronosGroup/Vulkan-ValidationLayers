@@ -20,11 +20,11 @@
 #include "generated/enum_flag_bits.h"
 
 bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                               const ErrorObject &errorObj) const {
+                                                               const ErrorObject &error_obj) const {
     constexpr auto allowed_types = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
     bool skip = false;
     if (0 == (pGetFdInfo->handleType & allowed_types)) {
-        skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00672", pGetFdInfo->memory, errorObj.location,
+        skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00672", pGetFdInfo->memory, error_obj.location,
                          "handle type %s is not one of the supported handle types.",
                          string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType));
     }
@@ -34,14 +34,14 @@ bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, 
 bool StatelessValidation::manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device,
                                                                          VkExternalMemoryHandleTypeFlagBits handleType, int fd,
                                                                          VkMemoryFdPropertiesKHR *pMemoryFdProperties,
-                                                                         const ErrorObject &errorObj) const {
+                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
     if (fd < 0) {
-        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-fd-00673", device, errorObj.location,
+        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-fd-00673", device, error_obj.location,
                          "fd handle (%d) is not a valid POSIX file descriptor.", fd);
     }
     if (handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
-        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-handleType-00674", device, errorObj.location,
+        skip |= LogError("VUID-vkGetMemoryFdPropertiesKHR-handleType-00674", device, error_obj.location,
                          "opaque handle type %s is not allowed.", string_VkExternalMemoryHandleTypeFlagBits(handleType));
     }
     return skip;
@@ -75,13 +75,13 @@ static constexpr VkExternalSemaphoreHandleTypeFlags kSemFdHandleTypes =
     VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
 
 bool StatelessValidation::manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info, int *pFd,
-                                                                  const ErrorObject &errorObj) const {
+                                                                  const ErrorObject &error_obj) const {
     return ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkSemaphoreGetFdInfoKHR-handleType-01136",
                                                "vkGetSemaphoreFdKHR", info->handleType, kSemFdHandleTypes);
 }
 
 bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info,
-                                                                     const ErrorObject &errorObj) const {
+                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkImportSemaphoreFdKHR";
 
@@ -90,7 +90,7 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice de
 
     if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT &&
         (info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) == 0) {
-        skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-07307", info->semaphore, errorObj.location.dot(Field::info),
+        skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-07307", info->semaphore, error_obj.location.dot(Field::info),
                          "handleType is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT so"
                          " VK_SEMAPHORE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
                          info->flags);
@@ -102,13 +102,13 @@ static constexpr VkExternalFenceHandleTypeFlags kFenceFdHandleTypes =
     VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
 
 bool StatelessValidation::manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd,
-                                                              const ErrorObject &errorObj) const {
+                                                              const ErrorObject &error_obj) const {
     return ValidateExternalFenceHandleType(info->fence, "VUID-VkFenceGetFdInfoKHR-handleType-01456", "vkGetFenceFdKHR",
                                            info->handleType, kFenceFdHandleTypes);
 }
 
 bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *info,
-                                                                 const ErrorObject &errorObj) const {
+                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkImportFenceFdKHR";
 
@@ -116,7 +116,7 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
                                             info->handleType, kFenceFdHandleTypes);
 
     if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (info->flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
-        skip |= LogError("VUID-VkImportFenceFdInfoKHR-handleType-07306", info->fence, errorObj.location.dot(Field::info),
+        skip |= LogError("VUID-VkImportFenceFdInfoKHR-handleType-07306", info->fence, error_obj.location.dot(Field::info),
                          "handleType is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT so"
                          " VK_FENCE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
                          info->flags);
@@ -127,7 +127,7 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
-    VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties, const ErrorObject &errorObj) const {
+    VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties, const ErrorObject &error_obj) const {
     bool skip = false;
     if (handle == NULL || handle == INVALID_HANDLE_VALUE) {
         static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
@@ -150,7 +150,7 @@ static constexpr VkExternalSemaphoreHandleTypeFlags kSemWin32HandleTypes = VK_EX
 
 bool StatelessValidation::manual_PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
                                                                               const VkImportSemaphoreWin32HandleInfoKHR *info,
-                                                                              const ErrorObject &errorObj) const {
+                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkImportSemaphoreWin32HandleKHR";
 
@@ -173,7 +173,7 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreWin32HandleKHR(Vk
 
 bool StatelessValidation::manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                                            const VkSemaphoreGetWin32HandleInfoKHR *info,
-                                                                           HANDLE *pHandle, const ErrorObject &errorObj) const {
+                                                                           HANDLE *pHandle, const ErrorObject &error_obj) const {
     return ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01131",
                                                "vkGetSemaphoreWin32HandleKHR", info->handleType, kSemWin32HandleTypes);
 }
@@ -183,7 +183,7 @@ static constexpr VkExternalFenceHandleTypeFlags kFenceWin32HandleTypes =
 
 bool StatelessValidation::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                                           const VkImportFenceWin32HandleInfoKHR *info,
-                                                                          const ErrorObject &errorObj) const {
+                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkImportFenceWin32HandleKHR";
 
@@ -204,7 +204,7 @@ bool StatelessValidation::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevi
 }
 
 bool StatelessValidation::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info,
-                                                                       HANDLE *pHandle, const ErrorObject &errorObj) const {
+                                                                       HANDLE *pHandle, const ErrorObject &error_obj) const {
     return ValidateExternalFenceHandleType(info->fence, "vkGetFenceWin32HandleKHR",
                                            "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01452", info->handleType,
                                            kFenceWin32HandleTypes);
@@ -233,7 +233,7 @@ bool StatelessValidation::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFla
 
 bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice device,
                                                                       VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
-                                                                      const ErrorObject &errorObj) const {
+                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
 
     static_assert(AllVkExportMetalObjectTypeFlagBitsEXT == 0x3F, "Add new ExportMetalObjects support to VVL!");

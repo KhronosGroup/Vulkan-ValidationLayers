@@ -17,13 +17,13 @@ inside `chassis.cpp` we generate the starting `Location` for `ErrorObject`. From
 ```cpp
 // example
 
-bool PreCallValidateQueueBindSparse(/*..*/ ErrorObject &errorObj) const {
+bool PreCallValidateQueueBindSparse(/*..*/ ErrorObject &error_obj) const {
     // automatically has Func::vkQueueBindSparse
-    // note: errorObj.location is used if just want to print the function
-    LogError("VUID-A", errorObj.location);
+    // note: error_obj.location is used if just want to print the function
+    LogError("VUID-A", error_obj.location);
 
     for (uint32_t i = 0; i < bindInfoCount; ++i) {
-        const Location loc = errorObj.location.dot(Field::pBindInfo, i);
+        const Location loc = error_obj.location.dot(Field::pBindInfo, i);
         LogError("VUID-B", loc); // i == 3
 
         for (uint32_t j = 0; j < bufferBindCount; ++j) {
@@ -56,7 +56,7 @@ will produce the following location in the error message
 using the `Location::Fields()` you can print the location, minus the function, as a string
 
 ```cpp
-const Location loc = errorObj.location.dot(Field::pBindInfo, i); // vkQueueBindSparse(): pBindInfo[3]
+const Location loc = error_obj.location.dot(Field::pBindInfo, i); // vkQueueBindSparse(): pBindInfo[3]
 
 // prints "pBindInfo[3]"
 LogError(/*..*/, "%s". loc.Fields().c_str());
@@ -95,9 +95,9 @@ The original design was to not make copies of `Location` and just have it modify
 
 ```cpp
 // example
-errorObject.location.add(Struct::VkSomething);
-ValidateItem(errorObject);
-errorObject.location.remove(Struct::VkSomething);
+error_obj.location.add(Struct::VkSomething);
+ValidateItem(error_obj);
+error_obj.location.remove(Struct::VkSomething);
 ```
 
 which slowly leads to a LOT more code and becomes very error prone to forget to remove `Location` values. Instead the `dot` operator return a new copy of `Location`.

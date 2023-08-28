@@ -122,7 +122,7 @@ bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, const char
 }
 
 bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                                  VkInstance* pInstance, const ErrorObject& errorObj) const {
+                                                  VkInstance* pInstance, const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -133,9 +133,9 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
         }
         uint32_t specified_version =
             (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-        skip |= ValidateDeprecatedExtensions(errorObj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version,
+        skip |= ValidateDeprecatedExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], specified_version,
                                              kVUID_BestPractices_CreateInstance_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions(errorObj.location, pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, pCreateInfo->ppEnabledExtensionNames[i], kSpecialUseInstanceVUIDs);
     }
 
     return skip;
@@ -143,7 +143,7 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
 
 bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                                const ErrorObject& errorObj) const {
+                                                const ErrorObject& error_obj) const {
     bool skip = false;
 
     // get API version of physical device passed when creating device.
@@ -188,9 +188,9 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
             extension_api_version = api_version;
         }
 
-        skip |= ValidateDeprecatedExtensions(errorObj.location, extension_name, extension_api_version,
+        skip |= ValidateDeprecatedExtensions(error_obj.location, extension_name, extension_api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
-        skip |= ValidateSpecialUseExtensions(errorObj.location, extension_name, kSpecialUseDeviceVUIDs);
+        skip |= ValidateSpecialUseExtensions(error_obj.location, extension_name, kSpecialUseDeviceVUIDs);
     }
 
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
@@ -255,12 +255,12 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const P
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                          const ErrorObject& errorObj) const {
+                                                                          const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
-                                                                    errorObj.location);
+                                                                    error_obj.location);
     }
     return false;
 }
@@ -268,12 +268,12 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pQueueFamilyPropertyCount,
                                                                            VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                           const ErrorObject& errorObj) const {
+                                                                           const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
-                                                                    errorObj.location);
+                                                                    error_obj.location);
     }
     return false;
 }
@@ -281,12 +281,12 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t* pQueueFamilyPropertyCount,
                                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                              const ErrorObject& errorObj) const {
+                                                                              const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(bp_pd_state.get(), *pQueueFamilyPropertyCount,
                                                                     bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2KHRState,
-                                                                    errorObj.location);
+                                                                    error_obj.location);
     }
     return false;
 }
@@ -385,7 +385,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 }
 
 bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                               const ErrorObject& errorObj) const {
+                                               const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -408,7 +408,7 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                                   VkFence fence, const ErrorObject& errorObj) const {
+                                                   VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -421,7 +421,7 @@ bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submi
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                                const ErrorObject& errorObj) const {
+                                                const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
@@ -434,7 +434,7 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 }
 
 bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                                   VkFence fence, const ErrorObject& errorObj) const {
+                                                   VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {

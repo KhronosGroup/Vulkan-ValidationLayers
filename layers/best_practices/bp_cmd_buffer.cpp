@@ -22,7 +22,7 @@
 
 bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                                     const ErrorObject& errorObj) const {
+                                                     const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (pCreateInfo->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
@@ -36,7 +36,7 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
 }
 
 bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                          VkCommandBuffer* pCommandBuffers, const ErrorObject& errorObj) const {
+                                                          VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto cp_state = Get<COMMAND_POOL_STATE>(pAllocateInfo->commandPool);
@@ -68,7 +68,7 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                                      const ErrorObject& errorObj) const {
+                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -99,7 +99,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                     VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
+                                                     VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp", static_cast<VkPipelineStageFlags>(pipelineStage));
@@ -108,7 +108,8 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                         VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
+                                                         VkQueryPool queryPool, uint32_t query,
+                                                         const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2KHR", pipelineStage);
@@ -117,7 +118,7 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer command
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
-                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject& errorObj) const {
+                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags("vkCmdWriteTimestamp2", pipelineStage);
@@ -170,7 +171,7 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer comman
 }
 
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer* pCommandBuffers, const ErrorObject& errorObj) const {
+                                                      const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
     const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < commandBufferCount; i++) {

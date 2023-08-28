@@ -125,9 +125,9 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE &buffer_state, cons
 
 bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                             const ErrorObject &errorObj) const {
+                                             const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     auto chained_devaddr_struct = LvlFindInChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
@@ -296,10 +296,10 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
-                                                 const ErrorObject &errorObj) const {
+                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     auto buffer_state_ptr = Get<BUFFER_STATE>(pCreateInfo->buffer);
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (!buffer_state_ptr) {
         return skip;
@@ -414,28 +414,28 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
-                                              const ErrorObject &errorObj) const {
+                                              const ErrorObject &error_obj) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
 
     bool skip = false;
     if (buffer_state) {
-        skip |= ValidateObjectNotInUse(buffer_state.get(), errorObj.location, "VUID-vkDestroyBuffer-buffer-00922");
+        skip |= ValidateObjectNotInUse(buffer_state.get(), error_obj.location, "VUID-vkDestroyBuffer-buffer-00922");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     auto buffer_view_state = Get<BUFFER_VIEW_STATE>(bufferView);
     bool skip = false;
     if (buffer_view_state) {
-        skip |= ValidateObjectNotInUse(buffer_view_state.get(), errorObj.location, "VUID-vkDestroyBufferView-bufferView-00936");
+        skip |= ValidateObjectNotInUse(buffer_view_state.get(), error_obj.location, "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                              VkDeviceSize size, uint32_t data, const ErrorObject &errorObj) const {
+                                              VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto buffer_state = Get<BUFFER_STATE>(dstBuffer);
@@ -446,29 +446,29 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     skip |=
         ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
-    skip |= ValidateCmd(cb_state, errorObj.location);
+    skip |= ValidateCmd(cb_state, error_obj.location);
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                     "VUID-vkCmdFillBuffer-dstBuffer-00029", errorObj.location.dot(Field::dstBuffer));
+                                     "VUID-vkCmdFillBuffer-dstBuffer-00029", error_obj.location.dot(Field::dstBuffer));
 
-    skip |= ValidateProtectedBuffer(cb_state, *buffer_state, errorObj.location, "VUID-vkCmdFillBuffer-commandBuffer-01811");
-    skip |= ValidateUnprotectedBuffer(cb_state, *buffer_state, errorObj.location, "VUID-vkCmdFillBuffer-commandBuffer-01812");
+    skip |= ValidateProtectedBuffer(cb_state, *buffer_state, error_obj.location, "VUID-vkCmdFillBuffer-commandBuffer-01811");
+    skip |= ValidateUnprotectedBuffer(cb_state, *buffer_state, error_obj.location, "VUID-vkCmdFillBuffer-commandBuffer-01812");
 
     if (dstOffset >= buffer_state->createInfo.size) {
-        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", objlist, errorObj.location.dot(Field::dstOffset),
+        skip |= LogError("VUID-vkCmdFillBuffer-dstOffset-00024", objlist, error_obj.location.dot(Field::dstOffset),
                          "(0x%" PRIxLEAST64 ") is not less than destination buffer (%s) size (0x%" PRIxLEAST64 ").", dstOffset,
                          FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
     }
 
     if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
-        skip |= LogError("VUID-vkCmdFillBuffer-size-00027", objlist, errorObj.location.dot(Field::size),
+        skip |= LogError("VUID-vkCmdFillBuffer-size-00027", objlist, error_obj.location.dot(Field::size),
                          "(0x%" PRIxLEAST64 ") is greater than dstBuffer (%s) size (0x%" PRIxLEAST64
                          ") minus dstOffset (0x%" PRIxLEAST64 ").",
                          size, FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
     }
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        skip |= ValidateCmdQueueFlags(cb_state, errorObj.location, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+        skip |= ValidateCmdQueueFlags(cb_state, error_obj.location, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdFillBuffer-apiVersion-07894");
     }
 

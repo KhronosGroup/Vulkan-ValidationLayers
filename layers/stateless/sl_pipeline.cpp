@@ -22,9 +22,9 @@
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkPipelineLayout *pPipelineLayout,
-                                                                     const ErrorObject &errorObj) const {
+                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = errorObj.location.dot(Field::pCreateInfo);
+    const Location loc = error_obj.location.dot(Field::pCreateInfo);
     // Validate layout count against device physical limit
     if (pCreateInfo->setLayoutCount > device_limits.maxBoundDescriptorSets) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, loc.dot(Field::setLayoutCount),
@@ -505,16 +505,14 @@ bool StatelessValidation::ValidatePipelineInputAssemblyStateCreateInfo(const VkP
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
-                                                                        uint32_t createInfoCount,
-                                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                        VkPipeline *pPipelines, const ErrorObject &errorObj) const {
+bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
+    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pCreateInfos != nullptr) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
-            const Location &loc = errorObj.location.dot(Field::pCreateInfos, i);
+            const Location &loc = error_obj.location.dot(Field::pCreateInfos, i);
             bool has_pre_raster_state = true;
             // Create a copy of create_info and set non-included sub-state to null
             auto create_info = pCreateInfos[i];
@@ -1715,10 +1713,10 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                                                        uint32_t createInfoCount,
                                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                       VkPipeline *pPipelines, const ErrorObject &errorObj) const {
+                                                                       VkPipeline *pPipelines, const ErrorObject &error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        const Location loc = errorObj.location.dot(Field::pCreateInfos, i);
+        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
         skip |=
             ValidateString("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
                            "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
@@ -1808,12 +1806,12 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
 
 bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache,
                                                                     uint32_t srcCacheCount, const VkPipelineCache *pSrcCaches,
-                                                                    const ErrorObject &errorObj) const {
+                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     if (pSrcCaches) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             if (pSrcCaches[index0] == dstCache) {
-                skip |= LogError("VUID-vkMergePipelineCaches-dstCache-00770", instance, errorObj.location.dot(Field::dstCache),
+                skip |= LogError("VUID-vkMergePipelineCaches-dstCache-00770", instance, error_obj.location.dot(Field::dstCache),
                                  "%s is in pSrcCaches list.", FormatHandle(dstCache).c_str());
                 break;
             }

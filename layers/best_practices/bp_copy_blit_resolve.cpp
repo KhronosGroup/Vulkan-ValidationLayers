@@ -192,7 +192,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
 
 bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
-                                                       const VkClearRect* pRects, const ErrorObject& errorObj) const {
+                                                       const VkClearRect* pRects, const ErrorObject& error_obj) const {
     bool skip = false;
     const auto cb_node = GetRead<bp_state::CommandBuffer>(commandBuffer);
     if (!cb_node) return skip;
@@ -343,26 +343,26 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
 
 bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                   const VkImageResolve* pRegions, const ErrorObject& errorObj) const {
+                                                   const VkImageResolve* pRegions, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= ValidateCmdResolveImage(commandBuffer, srcImage, dstImage, errorObj.location);
+    skip |= ValidateCmdResolveImage(commandBuffer, srcImage, dstImage, error_obj.location);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkResolveImageInfo2KHR* pResolveImageInfo,
-                                                       const ErrorObject& errorObj) const {
+                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage,
-                                    errorObj.location.dot(Field::pResolveImageInfo));
+                                    error_obj.location.dot(Field::pResolveImageInfo));
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                                    const ErrorObject& errorObj) const {
+                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage,
-                                    errorObj.location.dot(Field::pResolveImageInfo));
+                                    error_obj.location.dot(Field::pResolveImageInfo));
     return skip;
 }
 
@@ -528,25 +528,25 @@ bool BestPractices::ValidateCmdBlitImage(VkCommandBuffer command_buffer, uint32_
 
 bool BestPractices::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& errorObj) const {
-    return ValidateCmdBlitImage(commandBuffer, regionCount, pRegions, errorObj.location);
+                                                const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
+    return ValidateCmdBlitImage(commandBuffer, regionCount, pRegions, error_obj.location);
 }
 
 bool BestPractices::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                                    const ErrorObject& errorObj) const {
+                                                    const ErrorObject& error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                errorObj.location.dot(Field::pBlitImageInfo));
+                                error_obj.location.dot(Field::pBlitImageInfo));
 }
 
 bool BestPractices::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                                 const ErrorObject& errorObj) const {
+                                                 const ErrorObject& error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                                errorObj.location.dot(Field::pBlitImageInfo));
+                                error_obj.location.dot(Field::pBlitImageInfo));
 }
 
 bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
-                                                      const VkImageSubresourceRange* pRanges, const ErrorObject& errorObj) const {
+                                                      const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto dst = Get<bp_state::Image>(image);
@@ -569,7 +569,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                                              VkImageLayout imageLayout,
                                                              const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                              const VkImageSubresourceRange* pRanges,
-                                                             const ErrorObject& errorObj) const {
+                                                             const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |= LogPerformanceWarning(
@@ -591,7 +591,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 
 bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageCopy* pRegions, const ErrorObject& errorObj) const {
+                                                const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
     bool skip = false;
     std::stringstream src_image_hex;
     std::stringstream dst_image_hex;

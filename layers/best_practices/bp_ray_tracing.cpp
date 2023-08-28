@@ -25,20 +25,20 @@ bool BestPractices::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuff
                                                                    VkBuffer instanceData, VkDeviceSize instanceOffset,
                                                                    VkBool32 update, VkAccelerationStructureNV dst,
                                                                    VkAccelerationStructureNV src, VkBuffer scratch,
-                                                                   VkDeviceSize scratchOffset, const ErrorObject& errorObj) const {
+                                                                   VkDeviceSize scratchOffset, const ErrorObject& error_obj) const {
     return ValidateBuildAccelerationStructure(commandBuffer);
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts,
-    const ErrorObject& errorObj) const {
+    const ErrorObject& error_obj) const {
     return ValidateBuildAccelerationStructure(commandBuffer);
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& errorObj) const {
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
     return ValidateBuildAccelerationStructure(commandBuffer);
 }
 
@@ -61,7 +61,7 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
 
 bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                                      const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                                     const ErrorObject& errorObj) const {
+                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {

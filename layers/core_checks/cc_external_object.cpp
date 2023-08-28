@@ -22,7 +22,7 @@
 #include "core_validation.h"
 
 bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                               const ErrorObject &errorObj) const {
+                                               const ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
         const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
@@ -41,12 +41,12 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
 }
 
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info,
-                                                     const ErrorObject &errorObj) const {
+                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkImportSemaphoreFdKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
-        skip |= ValidateObjectNotInUse(sem_state.get(), errorObj.location, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
+        skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
 
         if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError(sem_state->Handle(), "VUID-VkImportSemaphoreFdInfoKHR-flags-03323",
@@ -57,7 +57,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
 }
 
 bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info, int *pFd,
-                                                  const ErrorObject &errorObj) const {
+                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkGetSemaphoreFdKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
@@ -94,13 +94,13 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const Loca
 }
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
-                                                 const ErrorObject &errorObj) const {
+                                                 const ErrorObject &error_obj) const {
     return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463",
-                               errorObj.location.dot(Field::pImportFenceFdInfo));
+                               error_obj.location.dot(Field::pImportFenceFdInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd,
-                                              const ErrorObject &errorObj) const {
+                                              const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkGetFenceFdKHR";
     auto fence_state = Get<FENCE_STATE>(info->fence);
@@ -122,12 +122,12 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *info,
-                                                              const ErrorObject &errorObj) const {
+                                                              const ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
         // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
-        skip |= ValidateObjectNotInUse(sem_state.get(), errorObj.location, kVUIDUndefined);
+        skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, kVUIDUndefined);
 
         if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError(
@@ -139,7 +139,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, c
 }
 
 bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *info,
-                                                           HANDLE *pHandle, const ErrorObject &errorObj) const {
+                                                           HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkGetSemaphoreWin32HandleKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
@@ -156,13 +156,13 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, cons
 
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                           const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
-                                                          const ErrorObject &errorObj) const {
+                                                          const ErrorObject &error_obj) const {
     return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "VUID-vkImportFenceWin32HandleKHR-fence-04448",
-                               errorObj.location.dot(Field::pImportFenceWin32HandleInfo));
+                               error_obj.location.dot(Field::pImportFenceWin32HandleInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info, HANDLE *pHandle,
-                                                       const ErrorObject &errorObj) const {
+                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     const char *func_name = "vkGetFenceWin32HandleKHR";
     auto fence_state = Get<FENCE_STATE>(info->fence);
@@ -181,12 +181,12 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
 #ifdef VK_USE_PLATFORM_FUCHSIA
 bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                    const VkImportSemaphoreZirconHandleInfoFUCHSIA *info,
-                                                                   const ErrorObject &errorObj) const {
+                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
-        skip |=
-            ValidateObjectNotInUse(sem_state.get(), errorObj.location, "VUID-vkImportSemaphoreZirconHandleFUCHSIA-semaphore-04764");
+        skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location,
+                                       "VUID-vkImportSemaphoreZirconHandleFUCHSIA-semaphore-04764");
 
         if (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |=
@@ -215,7 +215,7 @@ void CoreChecks::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
-                                                      const ErrorObject &errorObj) const {
+                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     const VkBaseOutStructure *metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure *>(pMetalObjectsInfo->pNext);
     while (metal_objects_info_ptr) {

@@ -30,9 +30,9 @@ bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeli
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const ErrorObject &errorObj, void *ccpl_state_data) const {
+                                                       const ErrorObject &error_obj, void *ccpl_state_data) const {
     bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                    pPipelines, errorObj, ccpl_state_data);
+                                                                    pPipelines, error_obj, ccpl_state_data);
 
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
@@ -40,7 +40,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         if (!pipeline) {
             continue;
         }
-        const Location loc = errorObj.location.dot(Field::pCreateInfos, i);
+        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
         skip |= ValidateComputePipelineShaderState(*pipeline, loc);
         skip |= ValidateShaderModuleId(*pipeline, loc);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, loc.dot(Field::flags),
