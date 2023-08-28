@@ -1870,3 +1870,50 @@ void main() {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayTessellation) {
+    TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    const char *source = R"glsl(
+#version 440
+layout(triangles, equal_spacing, cw) in;
+
+layout(constant_id = 0) const int MAX_NUM_DESCRIPTOR_IMAGES = 100;
+
+layout(location = 0) in vec2 inHeightTexCoordinates[];
+layout(location = 1) in int inHeightTextureIndex[];
+
+layout(set = 0, binding = 1) uniform sampler textureSampler;
+layout(set = 1, binding = 1) uniform texture2D heightTextures[MAX_NUM_DESCRIPTOR_IMAGES];
+
+vec2 mixVec2(const vec2 vectors[gl_MaxPatchVertices]) {
+    return gl_TessCoord.x * vectors[0] + gl_TessCoord.y * vectors[1] + gl_TessCoord.z * vectors[2];
+}
+
+void main() {
+    vec2 heightTexCoordinates = mixVec2(inHeightTexCoordinates);
+    int heightTextureIndex = inHeightTextureIndex[0];
+    float extraHeight = texture(sampler2D(heightTextures[heightTextureIndex], textureSampler), heightTexCoordinates).r;
+}
+        )glsl";
+    const VkShaderObj tese(this, source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+}
+
+TEST_F(PositiveShaderSpirv, SpecConstantTextureArrayVertex) {
+    TEST_DESCRIPTION("Reproduces https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6370");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    const char *source = R"glsl(
+#version 450
+layout(constant_id = 0) const int MAX_NUM_DESCRIPTOR_IMAGES = 100;
+
+layout(location = 0) in int index;
+
+layout(set = 0, binding = 1) uniform sampler textureSampler;
+layout(set = 1, binding = 1) uniform texture2D heightTextures[MAX_NUM_DESCRIPTOR_IMAGES];
+
+void main() {
+    float extraHeight = texture(sampler2D(heightTextures[index], textureSampler), vec2(0.0)).r;
+}
+        )glsl";
+    const VkShaderObj vs(this, source, VK_SHADER_STAGE_VERTEX_BIT);
+}
