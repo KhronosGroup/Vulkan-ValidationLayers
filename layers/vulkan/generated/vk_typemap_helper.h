@@ -7220,6 +7220,87 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS
     typedef VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM Type;
 };
 
+// Map type VkPhysicalDeviceImageProcessing2FeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_FEATURES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceImageProcessing2FeaturesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_FEATURES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_FEATURES_QCOM> {
+    typedef VkPhysicalDeviceImageProcessing2FeaturesQCOM Type;
+};
+
+// Map type VkPhysicalDeviceImageProcessing2PropertiesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_PROPERTIES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceImageProcessing2PropertiesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_PROPERTIES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_2_PROPERTIES_QCOM> {
+    typedef VkPhysicalDeviceImageProcessing2PropertiesQCOM Type;
+};
+
+// Map type VkSamplerBlockMatchWindowCreateInfoQCOM to id VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM
+template <> struct LvlTypeMap<VkSamplerBlockMatchWindowCreateInfoQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SAMPLER_BLOCK_MATCH_WINDOW_CREATE_INFO_QCOM> {
+    typedef VkSamplerBlockMatchWindowCreateInfoQCOM Type;
+};
+
+// Map type VkPhysicalDeviceCubicWeightsFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceCubicWeightsFeaturesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM> {
+    typedef VkPhysicalDeviceCubicWeightsFeaturesQCOM Type;
+};
+
+// Map type VkSamplerCubicWeightsCreateInfoQCOM to id VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM
+template <> struct LvlTypeMap<VkSamplerCubicWeightsCreateInfoQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SAMPLER_CUBIC_WEIGHTS_CREATE_INFO_QCOM> {
+    typedef VkSamplerCubicWeightsCreateInfoQCOM Type;
+};
+
+// Map type VkBlitImageCubicWeightsInfoQCOM to id VK_STRUCTURE_TYPE_BLIT_IMAGE_CUBIC_WEIGHTS_INFO_QCOM
+template <> struct LvlTypeMap<VkBlitImageCubicWeightsInfoQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BLIT_IMAGE_CUBIC_WEIGHTS_INFO_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BLIT_IMAGE_CUBIC_WEIGHTS_INFO_QCOM> {
+    typedef VkBlitImageCubicWeightsInfoQCOM Type;
+};
+
+// Map type VkPhysicalDeviceYcbcrDegammaFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_DEGAMMA_FEATURES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceYcbcrDegammaFeaturesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_DEGAMMA_FEATURES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_DEGAMMA_FEATURES_QCOM> {
+    typedef VkPhysicalDeviceYcbcrDegammaFeaturesQCOM Type;
+};
+
+// Map type VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM to id VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_YCBCR_DEGAMMA_CREATE_INFO_QCOM
+template <> struct LvlTypeMap<VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_YCBCR_DEGAMMA_CREATE_INFO_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_YCBCR_DEGAMMA_CREATE_INFO_QCOM> {
+    typedef VkSamplerYcbcrConversionYcbcrDegammaCreateInfoQCOM Type;
+};
+
+// Map type VkPhysicalDeviceCubicClampFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_CLAMP_FEATURES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceCubicClampFeaturesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_CLAMP_FEATURES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_CLAMP_FEATURES_QCOM> {
+    typedef VkPhysicalDeviceCubicClampFeaturesQCOM Type;
+};
+
 // Map type VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT;

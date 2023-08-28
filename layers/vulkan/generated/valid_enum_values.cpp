@@ -733,6 +733,7 @@ template<>
 std::vector<VkSamplerReductionMode> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkSamplerReductionModeEnums = {VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE, VK_SAMPLER_REDUCTION_MODE_MIN, VK_SAMPLER_REDUCTION_MODE_MAX};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkSamplerReductionMode>> ExtendedVkSamplerReductionModeEnums = {
+        { &DeviceExtensions::vk_qcom_filter_cubic_clamp, { VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM } },
     };
     std::vector<VkSamplerReductionMode> values(CoreVkSamplerReductionModeEnums.cbegin(), CoreVkSamplerReductionModeEnums.cend());
     std::set<VkSamplerReductionMode> unique_exts;
@@ -1697,6 +1698,38 @@ std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const {
     std::vector<VkShaderCodeTypeEXT> values(CoreVkShaderCodeTypeEXTEnums.cbegin(), CoreVkShaderCodeTypeEXTEnums.cend());
     std::set<VkShaderCodeTypeEXT> unique_exts;
     for (const auto& [extension, enums]: ExtendedVkShaderCodeTypeEXTEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+template<>
+std::vector<VkBlockMatchWindowCompareModeQCOM> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkBlockMatchWindowCompareModeQCOMEnums = {VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM, VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MAX_QCOM};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkBlockMatchWindowCompareModeQCOM>> ExtendedVkBlockMatchWindowCompareModeQCOMEnums = {
+    };
+    std::vector<VkBlockMatchWindowCompareModeQCOM> values(CoreVkBlockMatchWindowCompareModeQCOMEnums.cbegin(), CoreVkBlockMatchWindowCompareModeQCOMEnums.cend());
+    std::set<VkBlockMatchWindowCompareModeQCOM> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkBlockMatchWindowCompareModeQCOMEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+template<>
+std::vector<VkCubicFilterWeightsQCOM> ValidationObject::ValidParamValues() const {
+    constexpr std::array CoreVkCubicFilterWeightsQCOMEnums = {VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM, VK_CUBIC_FILTER_WEIGHTS_ZERO_TANGENT_CARDINAL_QCOM, VK_CUBIC_FILTER_WEIGHTS_B_SPLINE_QCOM, VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM};
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkCubicFilterWeightsQCOM>> ExtendedVkCubicFilterWeightsQCOMEnums = {
+    };
+    std::vector<VkCubicFilterWeightsQCOM> values(CoreVkCubicFilterWeightsQCOMEnums.cbegin(), CoreVkCubicFilterWeightsQCOMEnums.cend());
+    std::set<VkCubicFilterWeightsQCOM> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkCubicFilterWeightsQCOMEnums) {
         if (IsExtEnabled(device_extensions.*extension)) {
             unique_exts.insert(enums.cbegin(), enums.cend());
         }

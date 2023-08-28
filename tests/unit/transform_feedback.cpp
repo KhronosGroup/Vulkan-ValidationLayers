@@ -228,7 +228,6 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
-        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
         VkBufferObj const buffer_obj(*m_device, info);
 
         VkDeviceSize const offsets[1]{};
@@ -328,7 +327,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
         info.size = 4;
-        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
         VkBufferObj const buffer_obj(*m_device, info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372");
@@ -424,7 +422,6 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
                 auto info = LvlInitStruct<VkBufferCreateInfo>();
                 // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
                 info.size = 4;
-                m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
                 VkBufferObj const buffer_obj(*m_device, info);
 
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");

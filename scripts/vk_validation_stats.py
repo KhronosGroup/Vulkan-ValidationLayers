@@ -152,7 +152,7 @@ def buildKvuidDict(unassigned_vuid_files):
 
     for uf in unassigned_vuid_files:
         line_num = 0
-        with open(uf) as f:
+        with open(uf, encoding='utf-8') as f:
             for line in f:
                 line_num = line_num + 1
                 if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
@@ -275,7 +275,7 @@ class ValidationTests:
         prepend = None
         for test_file in self.test_files:
             spirv_file = True if spirv_val.enabled and test_file.startswith(spirv_val.repo_path) else False
-            with open(test_file) as tf:
+            with open(test_file, encoding='utf-8') as tf:
                 for line in tf:
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
                         continue
@@ -444,7 +444,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 """
     def dump_txt(self, filename, only_unimplemented=False):
         print(f'\nDumping database to text file: {filename}')
-        with open (filename, 'w') as txt:
+        with open(filename, 'w', encoding='utf-8') as txt:
             txt.write("## VUID Database\n")
             txt.write("## Format: VUID_NAME | CHECKED | SPIRV-TOOL | TEST | TYPE | API/STRUCT | EXTENSION | VUID_TEXT\n##\n")
             vuid_list = list(self.vj.all_vuids)
@@ -473,7 +473,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 
     def dump_csv(self, filename, only_unimplemented=False):
         print(f'\nDumping database to csv file: {filename}')
-        with open (filename, 'w', newline='') as csvfile:
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             cw = csv.writer(csvfile)
             cw.writerow(['VUID_NAME','CHECKED','SPIRV-TOOL', 'TEST','TYPE','API/STRUCT','EXTENSION','VUID_TEXT'])
             vuid_list = list(self.vj.all_vuids)
@@ -509,7 +509,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
         print(f'\nDumping database to html file: {filename}')
         preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>Valid Usage Database</h2>\n<font size="2" face="Arial">\n<table style="width:100%">\n'
         headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>SPIRV-TOOL</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>EXTENSION</th><th>VUID TEXT</th></tr>\n'
-        with open(filename, 'w') as hfile:
+        with open(filename, 'w', encoding='utf-8') as hfile:
             hfile.write(preamble)
             hfile.write(headers)
             vuid_list = list(self.vj.all_vuids)
@@ -554,7 +554,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     if vuid in self.vs.all_vuids:
                         ext_db[ext_name].checked += 1
 
-        with open (filename, 'w', newline='') as csvfile:
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             cw = csv.writer(csvfile)
             cw.writerow(['EXTENSION','CHECKED','TOTAL','COVERAGE'])
             for ext_name in sorted(ext_db):
@@ -633,7 +633,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     def export_header(self, filename):
         if verbose_mode:
             print("\n Exporting header file to: %s" % filename)
-        with open (filename, 'w', newline='\n') as hfile:
+        with open(filename, 'w', newline='\n', encoding='utf-8') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
