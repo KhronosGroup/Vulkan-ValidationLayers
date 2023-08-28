@@ -1990,7 +1990,7 @@ using sync_vuid_maps::QueueError;
 
 class ValidatorState {
   public:
-    ValidatorState(const ValidationStateTracker *device_data, LogObjectList &&obj, const Location &location,
+    ValidatorState(const ValidationStateTracker *device_data, const LogObjectList &obj, const Location &location,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : device_data_(device_data),
           objects_(std::move(obj)),
@@ -2084,8 +2084,8 @@ class ValidatorState {
     const uint32_t limit_;
 };
 
-bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
-              const uint32_t src_queue_family, const uint32_t dst_queue_family) {
+static bool Validate(const CoreChecks *device_data, const ValidatorState &val, const uint32_t src_queue_family,
+                     const uint32_t dst_queue_family) {
     bool skip = false;
 
     if (!IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {
@@ -2134,6 +2134,28 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
 
     return skip;
 }
+
+static bool ValidateHostStage(const ValidationObject *validation_obj, const LogObjectList &objects, const Location &barrier_loc,
+                              uint32_t src_queue_family, uint32_t dst_queue_family, VkPipelineStageFlags2 src_stage_mask,
+                              VkPipelineStageFlags2 dst_stage_mask) {
+    auto log_msg = [validation_obj, &objects, src_queue_family, dst_queue_family](const Location &stage_loc) {
+        const auto &vuid = GetBarrierQueueVUID(stage_loc, QueueError::kHostStage);
+        return validation_obj->LogError(vuid, objects, stage_loc,
+                                        "is VK_PIPELINE_STAGE_2_HOST_BIT but srcQueueFamilyIndex (%" PRIu32
+                                        ") != dstQueueFamilyIndex (%" PRIu32 ").",
+                                        src_queue_family, dst_queue_family);
+    };
+    bool skip = false;
+    if (src_queue_family != dst_queue_family) {
+        if (src_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            skip |= log_msg(barrier_loc.dot(vvl::Field::srcStageMask));
+        } else if (dst_stage_mask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            skip |= log_msg(barrier_loc.dot(vvl::Field::dstStageMask));
+        }
+    }
+    return skip;
+}
+
 }  // namespace barrier_queue_families
 
 bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &state_data,
@@ -2147,41 +2169,50 @@ bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const Va
 
 // Type specific wrapper for image barriers
 template <typename ImgBarrier>
-bool CoreChecks::ValidateBarrierQueueFamilies(const Location &loc, const CMD_BUFFER_STATE *cb_state, const ImgBarrier &barrier,
-                                              const IMAGE_STATE *state_data) const {
-    // State data is required
-    if (!state_data) {
-        return false;
-    }
-
-    // Create the validator state from the image state
-    barrier_queue_families::ValidatorState val(this, LogObjectList(cb_state->commandBuffer()), loc, state_data->Handle(),
-                                               state_data->createInfo.sharingMode);
+bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const ImgBarrier &barrier,
+                                              VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
+                                              const IMAGE_STATE &image_state) const {
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
-    return barrier_queue_families::Validate(this, cb_state, val, src_queue_family, dst_queue_family);
+    const auto image_loc = barrier_loc.dot(Field::image);
+    const bool is_2 = barrier_loc.structure == vvl::Struct::VkImageMemoryBarrier2;
+
+    bool skip = false;
+
+    barrier_queue_families::ValidatorState val(this, objects, image_loc, image_state.Handle(), image_state.createInfo.sharingMode);
+    skip |= barrier_queue_families::Validate(this, val, src_queue_family, dst_queue_family);
+    if (is_2) {
+        skip |= barrier_queue_families::ValidateHostStage(this, objects, barrier_loc, src_queue_family, dst_queue_family,
+                                                          src_stage_mask, dst_stage_mask);
+    }
+    return skip;
 }
 
 // Type specific wrapper for buffer barriers
 template <typename BufBarrier>
-bool CoreChecks::ValidateBarrierQueueFamilies(const Location &loc, const CMD_BUFFER_STATE *cb_state, const BufBarrier &barrier,
-                                              const BUFFER_STATE *state_data) const {
-    // State data is required
-    if (!state_data) {
-        return false;
-    }
-
-    // Create the validator state from the buffer state
-    barrier_queue_families::ValidatorState val(this, LogObjectList(cb_state->commandBuffer()), loc, state_data->Handle(),
-                                               state_data->createInfo.sharingMode);
+bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const BufBarrier &barrier,
+                                              VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
+                                              const BUFFER_STATE &buffer_state) const {
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
-    return barrier_queue_families::Validate(this, cb_state, val, src_queue_family, dst_queue_family);
+    const auto buf_loc = barrier_loc.dot(Field::buffer);
+    const bool is_2 = barrier_loc.structure == vvl::Struct::VkBufferMemoryBarrier2;
+
+    bool skip = false;
+
+    barrier_queue_families::ValidatorState val(this, objects, buf_loc, buffer_state.Handle(), buffer_state.createInfo.sharingMode);
+    skip |= barrier_queue_families::Validate(this, val, src_queue_family, dst_queue_family);
+    if (is_2) {
+        skip |= barrier_queue_families::ValidateHostStage(this, objects, barrier_loc, src_queue_family, dst_queue_family,
+                                                          src_stage_mask, dst_stage_mask);
+    }
+    return skip;
 }
 
 template <typename Barrier>
 bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
-                                       const Barrier &mem_barrier) const {
+                                       const Barrier &mem_barrier, VkPipelineStageFlags2 src_stage_mask,
+                                       VkPipelineStageFlags2 dst_stage_mask) const {
     using sync_vuid_maps::BufferError;
     using sync_vuid_maps::GetBufferBarrierVUID;
 
@@ -2196,7 +2227,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
         const auto &mem_vuid = GetBufferBarrierVUID(buf_loc, BufferError::kNoMemory);
         skip |= ValidateMemoryIsBoundToBuffer(cb_state->commandBuffer(), *buffer_state, loc.StringFunc(), mem_vuid.c_str());
 
-        skip |= ValidateBarrierQueueFamilies(buf_loc, cb_state, mem_barrier, buffer_state.get());
+        skip |= ValidateBarrierQueueFamilies(objects, loc, mem_barrier, src_stage_mask, dst_stage_mask, *buffer_state);
 
         auto buffer_size = buffer_state->createInfo.size;
         if (mem_barrier.offset >= buffer_size) {
@@ -2238,7 +2269,8 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
 
 template <typename Barrier>
 bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Location &loc, const CMD_BUFFER_STATE *cb_state,
-                                      const Barrier &mem_barrier) const {
+                                      const Barrier &mem_barrier, VkPipelineStageFlags2 src_stage_mask,
+                                      VkPipelineStageFlags2 dst_stage_mask) const {
     bool skip = false;
 
     skip |= ValidateQFOTransferBarrierUniqueness(loc, cb_state, mem_barrier, cb_state->qfo_transfer_image_barriers);
@@ -2292,7 +2324,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
 
         skip |= ValidateMemoryIsBoundToImage(cb_state->commandBuffer(), *image_data, loc);
 
-        skip |= ValidateBarrierQueueFamilies(image_loc, cb_state, mem_barrier, image_data.get());
+        skip |= ValidateBarrierQueueFamilies(objects, loc, mem_barrier, src_stage_mask, dst_stage_mask, *image_data);
 
         skip |= ValidateImageAspectMask(image_data->image(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
                                         image_data->disjoint, image_loc);
@@ -2319,7 +2351,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
         const auto &mem_barrier = pImageMemBarriers[i];
         const Location loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
-        skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
+        skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
     }
     {
         // need to know struct for VUID map
@@ -2330,7 +2362,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
         const auto &mem_barrier = pBufferMemBarriers[i];
         const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
-        skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
+        skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier, src_stage_mask, dst_stage_mask);
     }
     return skip;
 }
@@ -2347,7 +2379,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         const auto &mem_barrier = dep_info->pImageMemoryBarriers[i];
         const Location loc = outer_loc.dot(Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
-        skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
+        skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
     }
     {
         // need to know struct for VUID map
@@ -2359,7 +2391,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         const auto &mem_barrier = dep_info->pBufferMemoryBarriers[i];
         const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
-        skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier);
+        skip |= ValidateBufferBarrier(objects, loc, cb_state, mem_barrier, mem_barrier.srcStageMask, mem_barrier.dstStageMask);
     }
 
     return skip;

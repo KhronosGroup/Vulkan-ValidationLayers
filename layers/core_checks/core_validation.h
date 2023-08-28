@@ -567,11 +567,13 @@ class CoreChecks : public ValidationStateTracker {
                               const ErrorObject& error_obj) const;
     template <typename Barrier>
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                               const Barrier& barrier) const;
+                               const Barrier& barrier, VkPipelineStageFlags2 src_stage_mask,
+                               VkPipelineStageFlags2 dst_stage_mask) const;
 
     template <typename Barrier>
     bool ValidateImageBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                              const Barrier& barrier) const;
+                              const Barrier& barrier, VkPipelineStageFlags2 src_stage_mask,
+                              VkPipelineStageFlags2 dst_stage_mask) const;
 
     bool ValidateBarriers(const Location& loc, const CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
                           VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount, const VkMemoryBarrier* pMemBarriers,
@@ -607,11 +609,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
     template <typename ImgBarrier>
-    bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImgBarrier& barrier,
-                                      const IMAGE_STATE* state_data) const;
+    bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const ImgBarrier& barrier,
+                                      VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
+                                      const IMAGE_STATE& image_state) const;
     template <typename BufBarrier>
-    bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const BufBarrier& barrier,
-                                      const BUFFER_STATE* state_data) const;
+    bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const BufBarrier& barrier,
+                                      VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
+                                      const BUFFER_STATE& buffer_state) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& loc,
                                                  VkSwapchainCreateInfoKHR const* create_info,
                                                  const SURFACE_STATE* surface_state) const;

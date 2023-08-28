@@ -813,6 +813,11 @@ static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-09118"},
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-09118"},
      }},
+    {QueueError::kHostStage,
+     {
+         {Key(Struct::VkBufferMemoryBarrier2), "VUID-VkBufferMemoryBarrier2-srcStageMask-03851"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcStageMask-03854"},
+     }},
 };
 
 const std::map<QueueError, std::string> kQueueErrorSummary{
