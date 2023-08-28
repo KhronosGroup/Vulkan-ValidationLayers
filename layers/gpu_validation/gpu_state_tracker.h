@@ -210,7 +210,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features{};
     VkPhysicalDeviceFeatures desired_features{};
     uint32_t adjusted_max_desc_sets = 0;
-    uint32_t unique_shader_module_id = 1;  // zero represents no shader module found
+    std::atomic<uint32_t> unique_shader_module_id = 1;  // zero represents no shader module found
     uint32_t output_buffer_size = 0;
     VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;

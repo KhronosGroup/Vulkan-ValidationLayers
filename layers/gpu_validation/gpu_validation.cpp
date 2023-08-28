@@ -978,8 +978,9 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     opt_options.set_validator_options(val_options);
     Optimizer optimizer(target_env);
     optimizer.SetMessageConsumer(gpu_console_message_consumer);
+    *unique_shader_id = unique_shader_module_id++;
     if (validate_descriptors) {
-        optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id));
+        optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, *unique_shader_id));
     }
 
     // Call CreateAggressiveDCEPass with preserve_interface == true
@@ -987,7 +988,7 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
         shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
-        optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
+        optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, *unique_shader_id));
     }
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     std::string instrumented_error;
@@ -1001,7 +1002,6 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
         ReportSetupProblem(device, strm.str().c_str());
         pass = false;
     }
-    *unique_shader_id = unique_shader_module_id++;
     return pass;
 }
 // Create the instrumented shader data to provide to the driver.
