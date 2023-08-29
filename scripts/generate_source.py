@@ -57,7 +57,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.format_utils_generator import FormatUtilsOutputGenerator
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
-    from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
     from generators.typemap_helper_generator import TypemapHelperOutputGenerator
     from generators.object_types_generator import ObjectTypesOutputGenerator
     from generators.safe_struct_generator import SafeStructOutputGenerator
@@ -151,10 +150,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         },
         'vk_layer_dispatch_table.h' : {
             'generator' : LayerDispatchTableOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_enum_string_helper.h' : {
-            'generator' : EnumStringHelperOutputGenerator,
             'genCombined': True,
         },
         'vk_safe_struct.h' : {

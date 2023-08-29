@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "external/xxhash.h"

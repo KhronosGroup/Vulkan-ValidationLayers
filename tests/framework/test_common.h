@@ -27,7 +27,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 
 // GTest and Xlib collide due to redefinitions of "None" and "Bool"
 #ifdef VK_USE_PLATFORM_XLIB_KHR

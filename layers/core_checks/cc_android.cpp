@@ -18,7 +18,7 @@
  */
 
 #include "utils/vk_layer_utils.h"
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)

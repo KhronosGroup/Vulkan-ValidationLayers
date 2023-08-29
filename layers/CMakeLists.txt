@@ -45,7 +45,6 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_safe_struct_khr.cpp
     ${API_TYPE}/generated/vk_safe_struct_ext.cpp
     ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
-    ${API_TYPE}/generated/vk_enum_string_helper.h
     ${API_TYPE}/generated/vk_object_types.h
     ${API_TYPE}/generated/vk_api_version.h
     ${API_TYPE}/generated/vk_extension_helper.h
@@ -75,6 +74,8 @@ target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC
     Vulkan::Headers
+    Vulkan::LayerSettings
+    Vulkan::UtilityHeaders
     ${CMAKE_DL_LIBS}
 )
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
@@ -89,7 +90,6 @@ endif()
 
 # TODO: This should be removed once the official "Vulkan-Utility-Libraries" library is available for consumption
 if(BUILD_LAYER_SUPPORT_FILES)
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_enum_string_helper.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
     install(FILES ${CMAKE_SOURCE_DIR}/layers/containers/custom_containers.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/containers)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/error_message
@@ -109,7 +109,6 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_khr.cpp
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_ext.cpp
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_vendor.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_enum_string_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_object_types.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_api_version.h
                   ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_extension_helper.h
@@ -400,7 +399,7 @@ endif()
 
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS Vulkan::LayerSettings VkLayer_utils)
+target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
 # OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in

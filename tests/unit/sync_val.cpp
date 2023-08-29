@@ -14,7 +14,6 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
-#include "generated/vk_enum_string_helper.h"
 
 class NegativeSyncVal : public VkSyncValTest {};
 
