@@ -22,7 +22,7 @@
 #include <debugapi.h>
 #endif
 
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "generated/vk_safe_struct.h"
 #include "generated/vk_validation_error_messages.h"
 #include "external/xxhash.h"

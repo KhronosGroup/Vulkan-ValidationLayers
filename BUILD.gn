@@ -374,7 +374,6 @@ source_set("vulkan_layer_utils") {
     "$vulkan_headers_dir/include/vulkan/vulkan.h",
     "layers/utils/android_ndk_types.h",
     "layers/utils/cast_utils.h",
-    "layers/vulkan/generated/vk_enum_string_helper.h",
     "layers/vulkan/generated/vk_api_version.h",
     "layers/vulkan/generated/vk_extension_helper.h",
     "layers/vulkan/generated/vk_format_utils.cpp",
@@ -412,7 +411,7 @@ source_set("vulkan_layer_utils") {
     ":vulkan_internal_config",
     ":vulkan_memory_allocator_config",
   ]
-  public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
+  public_deps = [ "$vulkan_headers_dir:vulkan_headers", "$vulkan_utility_libraries_dir:vulkan_layer_settings" ]
 
   configs -= vulkan_undefine_configs
   if (!is_fuchsia) {

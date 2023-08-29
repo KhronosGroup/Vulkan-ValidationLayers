@@ -195,7 +195,6 @@ find_package(glslang REQUIRED CONFIG QUIET)
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
-    Vulkan::LayerSettings
     glslang::glslang
     glslang::OGLCompiler
     glslang::OSDependent

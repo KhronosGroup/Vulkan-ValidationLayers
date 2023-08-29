@@ -291,7 +291,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #include <memory>
 #include <string_view>
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include "utils/cast_utils.h"
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
@@ -299,10 +301,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "vk_object_types.h"
-#include "vk_enum_string_helper.h"
 #include "utils/vk_layer_extension_utils.h"
 #include "utils/vk_layer_utils.h"
-#include "vulkan/vk_layer.h"
 #include "vk_dispatch_table_helper.h"
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"

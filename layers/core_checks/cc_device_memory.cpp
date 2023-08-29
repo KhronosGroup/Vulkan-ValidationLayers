@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 #include "core_validation.h"
 

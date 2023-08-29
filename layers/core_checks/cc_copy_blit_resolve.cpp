@@ -23,7 +23,7 @@
 
 #include "containers/range_vector.h"
 #include "core_validation.h"
-#include "generated/vk_enum_string_helper.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
 
 // Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
