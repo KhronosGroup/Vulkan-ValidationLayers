@@ -171,10 +171,10 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
 
 void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
-                                                       VkResult result) {
+                                                       const RecordObject &record_obj) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
     // Copy extension data into local object
-    if (result != VK_SUCCESS) return;
+    if (record_obj.result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
     this->device_extensions = instance_data->device_extensions;
 }
@@ -212,8 +212,9 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
 }
 
 void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                                 VkPhysicalDevice *pPhysicalDevices, VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) {
+                                                                 VkPhysicalDevice *pPhysicalDevices,
+                                                                 const RecordObject &record_obj) {
+    if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
 
@@ -224,8 +225,8 @@ void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance inst
 
 void StatelessValidation::PostCallRecordEnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-    VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) {
+    const RecordObject &record_obj) {
+    if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
 
@@ -254,9 +255,10 @@ void StatelessValidation::GetPhysicalDeviceProperties2(VkPhysicalDevice physical
 }
 
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
+                                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                     const RecordObject &record_obj) {
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    if (result != VK_SUCCESS) return;
+    if (record_obj.result != VK_SUCCESS) return;
     ValidationObject *validation_data = GetValidationObject(device_data->object_dispatch, LayerObjectTypeParameterValidation);
     StatelessValidation *stateless_validation = static_cast<StatelessValidation *>(validation_data);
 

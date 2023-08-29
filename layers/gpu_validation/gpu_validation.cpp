@@ -874,9 +874,9 @@ void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
 
 void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                                   const VkBindAccelerationStructureMemoryInfoNV *pBindInfos,
-                                                                  VkResult result) {
-    if (VK_SUCCESS != result) return;
-    ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, result);
+                                                                  const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
         auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
@@ -910,7 +910,8 @@ void GpuAssisted::DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationB
 }
 
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                            VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
+                                                            VkPhysicalDeviceProperties *pPhysicalDeviceProperties,
+                                                            const RecordObject &record_obj) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
@@ -920,11 +921,12 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceProperties(physicalDevice, pPhysicalDeviceProperties);
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceProperties(physicalDevice, pPhysicalDeviceProperties, record_obj);
 }
 
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                             VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2) {
+                                                             VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2,
+                                                             const RecordObject &record_obj) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
@@ -934,7 +936,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice ph
                        "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, pPhysicalDeviceProperties2);
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, pPhysicalDeviceProperties2, record_obj);
 }
 
 void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
@@ -1436,10 +1438,10 @@ void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipeli
 void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                      const uint32_t *pDynamicOffsets) {
+                                                      const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
     ValidationStateTracker::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet,
                                                                 descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
-                                                                pDynamicOffsets);
+                                                                pDynamicOffsets, record_obj);
     UpdateBoundDescriptors(commandBuffer, pipelineBindPoint);
 }
 

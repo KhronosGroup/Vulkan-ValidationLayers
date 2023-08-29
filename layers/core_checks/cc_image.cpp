@@ -616,10 +616,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 }
 
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
-    if (VK_SUCCESS != result) return;
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage,
+                                           const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
 
-    StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
+    StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
         // non-sparse images set up their layout maps when memory is bound
         auto image_state = Get<IMAGE_STATE>(*pImage);
@@ -2362,10 +2363,11 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
 };
 
 void CoreChecks::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                        const VkHostImageLayoutTransitionInfoEXT *pTransitions, VkResult result) {
-    ValidationStateTracker::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, result);
+                                                        const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                        const RecordObject &record_obj) {
+    ValidationStateTracker::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
 
-    if (VK_SUCCESS != result) return;
+    if (VK_SUCCESS != record_obj.result) return;
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
         auto &transition = pTransitions[i];

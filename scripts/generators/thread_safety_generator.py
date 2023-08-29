@@ -189,7 +189,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                     if not ('Create' in command.name and 'Shaders' in command.name):
                         create_shaders_call = False
                     if not create_pipelines_call and not create_shaders_call:
-                        out.append('    if (result == VK_SUCCESS) {\n')
+                        out.append('    if (record_obj.result == VK_SUCCESS) {\n')
                         create_pipelines_call = False
                         indent = '        '
                     if param.length:
@@ -274,10 +274,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             out.append('}\n\n')
 
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
-            if command.returnType == 'VkResult':
-                prototype = prototype.replace(')', ',\n    VkResult                                    result)')
-            elif command.returnType == 'VkDeviceAddress':
-                prototype = prototype.replace(')', ',\n    VkDeviceAddress                             result)')
+            prototype = prototype.replace(')', ',\n    const RecordObject&                         record_obj)')
             out.append(prototype)
             out.extend([finishThreadSafety] if finishThreadSafety is not None else [])
             out.append('}\n\n')
@@ -304,10 +301,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             out.append(prototype)
 
             prototype = prototype.replace('PreCallRecord', 'PostCallRecord')
-            if command.returnType == 'VkResult':
-                prototype = prototype.replace(')', ',\n    VkResult                                    result)')
-            elif command.returnType == 'VkDeviceAddress':
-                prototype = prototype.replace(')', ',\n    VkDeviceAddress                             result)')
+            prototype = prototype.replace(')', ',\n    const RecordObject&                         record_obj)')
             out.append(prototype)
 
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])

@@ -412,16 +412,14 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
     }
 }
 
-void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                                     VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                                     uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                                     uint32_t bufferMemoryBarrierCount,
-                                                     const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                                     uint32_t imageMemoryBarrierCount,
-                                                     const VkImageMemoryBarrier* pImageMemoryBarriers) {
-    ValidationStateTracker::PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
-                                                             memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                                             pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+void BestPractices::PostCallRecordCmdPipelineBarrier(
+    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+    const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier(
+        commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+        pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     num_barriers_objects_ += (memoryBarrierCount + imageMemoryBarrierCount + bufferMemoryBarrierCount);
 
@@ -430,16 +428,18 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuff
     }
 }
 
-void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
-    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
+                                                      const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
     }
 }
 
-void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
-    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
+void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
+                                                         const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo, record_obj);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);

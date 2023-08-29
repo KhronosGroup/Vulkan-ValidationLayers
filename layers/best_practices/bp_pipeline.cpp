@@ -80,7 +80,7 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                                uint32_t createInfoCount,
                                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                               VkResult result, void* pipe_state) {
+                                                               const RecordObject& record_obj, void* pipe_state) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -253,7 +253,7 @@ std::shared_ptr<PIPELINE_STATE> BestPractices::CreateGraphicsPipelineState(const
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                                VkResult result, void* cgpl_state_data) {
+                                                                const RecordObject& record_obj, void* cgpl_state_data) {
     // AMD best practice
     pipeline_cache_ = pipelineCache;
 }
@@ -462,8 +462,8 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
 }
 
 void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                  VkPipeline pipeline) {
-    StateTracker::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+                                                  VkPipeline pipeline, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
 
     // AMD best practice
     PipelineUsedInFrame(pipeline);

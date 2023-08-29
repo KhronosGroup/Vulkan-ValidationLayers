@@ -237,29 +237,26 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
                 out.append(f'void PreCallRecord{prototype}{terminator}')
 
             if post_call_record:
-                if command.returnType == 'VkResult':
-                    prototype = prototype.replace(')', ',\n    VkResult                                    result)')
-                elif command.returnType == 'VkDeviceAddress':
-                    prototype = prototype.replace(')', ',\n    VkDeviceAddress                             result)')
+                prototype = prototype.replace(')', ',\n    const RecordObject&                         record_obj)')
                 out.append(f'void PostCallRecord{prototype}{terminator}')
 
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
 
         out.append('''
 
-void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) override;
+void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator, const RecordObject& record_obj) override;
 void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags) override;
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties *pQueueFamilyProperties) override;
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties *pQueueFamilyProperties, const RecordObject& record_obj) override;
 void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) override;
 void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets) override;
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) override;
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties) override;
-void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayPropertiesKHR *pProperties, VkResult result) override;
-void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties, VkResult result) override;
-void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayProperties2KHR *pProperties, VkResult result) override;
-void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties, VkResult result) override;
-void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlanePropertiesKHR* pProperties, VkResult result) override;
-void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlaneProperties2KHR* pProperties, VkResult result) override;
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayPropertiesKHR *pProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayProperties2KHR *pProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlanePropertiesKHR* pProperties, const RecordObject& record_obj) override;
+void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlaneProperties2KHR* pProperties, const RecordObject& record_obj) override;
 ''')
         self.write("".join(out))
 
@@ -343,19 +340,17 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             if post_call_record:
                 out.append('\n')
                 postPrototype = f'void ObjectLifetimes::PostCallRecord{prototype} {{\n'
+                postPrototype = postPrototype.replace(')', ',\n    const RecordObject&                         record_obj)')
                 if command.returnType == 'VkResult':
-                    postPrototype = postPrototype.replace(')', ',\n    VkResult                                    result)')
-                    failureCondition = 'result != VK_SUCCESS'
+                    failureCondition = 'record_obj.result != VK_SUCCESS'
                     # VK_INCOMPLETE is considered a success
                     if 'EnumeratePhysicalDeviceGroups' in command.name:
-                        failureCondition += ' && result != VK_INCOMPLETE'
+                        failureCondition += ' && record_obj.result != VK_INCOMPLETE'
                     if 'CreateShadersEXT' in command.name:
-                        failureCondition += ' && result != VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT'
+                        failureCondition += ' && record_obj.result != VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT'
                     # The two createpipelines APIs may create on failure -- skip the success result check
                     if 'CreateGraphicsPipelines' not in command.name and 'CreateComputePipelines' not in command.name and 'CreateRayTracingPipelines' not in command.name:
                         postPrototype = postPrototype.replace('{', f'{{\n    if ({failureCondition}) return;')
-                elif command.returnType == 'VkDeviceAddress':
-                    postPrototype = postPrototype.replace(')', ',\n    VkDeviceAddress                             result)')
                 out.append(postPrototype)
 
                 out.append(f'{post_call_record}\n')
@@ -530,7 +525,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
 
                 if objectArray:
                     if isCreatePipelines:
-                        post_call_record += f'{indent}if (VK_ERROR_VALIDATION_FAILED_EXT == result) return;\n'
+                        post_call_record += f'{indent}if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;\n'
 
                     post_call_record += f'{indent}if ({command.params[-1].name}) {{\n'
                     indent = incIndent(indent)
@@ -555,8 +550,9 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
             # Physical device groups are not handles, but a set of handles, they need to be tracked as well
             elif handle_type == 'VkPhysicalDeviceGroupProperties':
                 post_call_record += f'''{indent}if ({command.params[-1].name}) {{
+{indent}{indent}const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
 {indent}{indent}for (uint32_t device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
-{indent}{indent}{indent}PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, VK_SUCCESS);
+{indent}{indent}{indent}PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, record_obj);
 {indent}{indent}}}
 {indent}}}\n'''
         # Handle object destroy operations

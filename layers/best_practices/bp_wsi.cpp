@@ -185,9 +185,10 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
     return skip;
 }
 
-void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
+void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
+                                                        const RecordObject& record_obj) {
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+        auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
             LogPerformanceWarning(
                 pPresentInfo->pSwapchains[i], kVUID_BestPractices_SuboptimalSwapchain,
@@ -266,7 +267,7 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                                 VkSurfaceKHR surface,
                                                                                 VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                                                VkResult result) {
+                                                                                const RecordObject& record_obj) {
     auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
@@ -275,7 +276,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-    VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result) {
+    VkSurfaceCapabilities2KHR* pSurfaceCapabilities, const RecordObject& record_obj) {
     auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
@@ -285,7 +286,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
                                                                                  VkSurfaceKHR surface,
                                                                                  VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-                                                                                 VkResult result) {
+                                                                                 const RecordObject& record_obj) {
     auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_state) {
         bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
@@ -294,7 +295,8 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
                                                                                 VkSurfaceKHR surface, uint32_t* pPresentModeCount,
-                                                                                VkPresentModeKHR* pPresentModes, VkResult result) {
+                                                                                VkPresentModeKHR* pPresentModes,
+                                                                                const RecordObject& record_obj) {
     auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfacePresentModesKHRState;
@@ -314,7 +316,8 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                            uint32_t* pSurfaceFormatCount,
-                                                                           VkSurfaceFormatKHR* pSurfaceFormats, VkResult result) {
+                                                                           VkSurfaceFormatKHR* pSurfaceFormats,
+                                                                           const RecordObject& record_obj) {
     auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState;
@@ -336,7 +339,8 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
                                                                             const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                             uint32_t* pSurfaceFormatCount,
-                                                                            VkSurfaceFormat2KHR* pSurfaceFormats, VkResult result) {
+                                                                            VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                                            const RecordObject& record_obj) {
     auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         if (*pSurfaceFormatCount) {
@@ -356,7 +360,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPh
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                    uint32_t* pPropertyCount,
                                                                                    VkDisplayPlanePropertiesKHR* pProperties,
-                                                                                   VkResult result) {
+                                                                                   const RecordObject& record_obj) {
     auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (bp_pd_data) {
         if (*pPropertyCount) {
@@ -374,7 +378,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
 
 void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                               uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
-                                                              VkResult result) {
+                                                              const RecordObject& record_obj) {
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
     if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
         if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
