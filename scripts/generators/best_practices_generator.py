@@ -118,13 +118,14 @@ class BestPracticesOutputGenerator(BaseGenerator):
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include "containers/custom_containers.h"
+#include "error_message/record_object.h"
 ''')
         # List all Function declarations
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void PostCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ',\n    VkResult                                    result) {\n')
+            prototype = prototype.replace(');', ',\n    const RecordObject&                         record_obj) {\n')
             prototype = prototype.replace(') {', ') override;\n')
             if command.name in self.extra_parameter_list:
                 prototype = prototype.replace(')', ',\n    void*                                       state_data)')
@@ -165,7 +166,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
 ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             paramList = [param.name for param in command.params]
-            paramList.append('result')
+            paramList.append('record_obj')
             if command.name in self.extra_parameter_list:
                 paramList.append('state_data')
             params = ', '.join(paramList)
@@ -174,7 +175,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void BestPractices::PostCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ',\n    VkResult                                    result) {\n')
+            prototype = prototype.replace(');', ',\n    const RecordObject&                         record_obj) {\n')
             if command.name in self.extra_parameter_list:
                 prototype = prototype.replace(')', ',\n    void*                                       state_data)')
             out.append(prototype)
@@ -184,15 +185,15 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 out.append(f'    ManualPostCallRecord{command.name[2:]}({params});\n')
 
             if hasNonVkSuccess(command.successCodes):
-                out.append('    if (result > VK_SUCCESS) {\n')
+                out.append('    if (record_obj.result > VK_SUCCESS) {\n')
                 results = [ x for x in command.successCodes if x != 'VK_SUCCESS' ]
-                out.append(f'        LogPositiveSuccessCode(Func::{command.name}, result); // {", ".join(results)}\n')
+                out.append(f'        LogPositiveSuccessCode(record_obj); // {", ".join(results)}\n')
                 out.append('        return;\n')
                 out.append('    }\n')
 
             if command.errorCodes is not None:
-                out.append('    if (result < VK_SUCCESS) {\n')
-                out.append(f'        LogErrorCode(Func::{command.name}, result); // {", ".join(command.errorCodes)}\n')
+                out.append('    if (record_obj.result < VK_SUCCESS) {\n')
+                out.append(f'        LogErrorCode(record_obj); // {", ".join(command.errorCodes)}\n')
                 out.append('    }\n')
 
             out.append('}\n')

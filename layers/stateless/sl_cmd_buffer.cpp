@@ -1458,8 +1458,8 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 }
 
 void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                                               VkCommandBuffer *pCommandBuffers, VkResult result) {
-    if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+                                                               VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
+    if ((record_obj.result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         auto lock = CBWriteLock();
         for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
             secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
@@ -1468,7 +1468,7 @@ void StatelessValidation::PostCallRecordAllocateCommandBuffers(VkDevice device, 
 }
 
 void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                           const VkCommandBuffer *pCommandBuffers) {
+                                                           const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     auto lock = CBWriteLock();
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
         secondary_cb_map.erase(pCommandBuffers[cb_index]);
@@ -1476,7 +1476,8 @@ void StatelessValidation::PostCallRecordFreeCommandBuffers(VkDevice device, VkCo
 }
 
 void StatelessValidation::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                           const VkAllocationCallbacks *pAllocator) {
+                                                           const VkAllocationCallbacks *pAllocator,
+                                                           const RecordObject &record_obj) {
     auto lock = CBWriteLock();
     for (auto item = secondary_cb_map.begin(); item != secondary_cb_map.end();) {
         if (item->second == commandPool) {

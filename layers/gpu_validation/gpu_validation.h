@@ -206,7 +206,7 @@ class GpuAssisted : public GpuAssistedBase {
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) override;
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                         VkResult result) override;
+                                                         const RecordObject& record_obj) override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
     void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
@@ -234,7 +234,7 @@ class GpuAssisted : public GpuAssistedBase {
     void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                              const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                             const uint32_t* pDynamicOffsets) override;
+                                             const uint32_t* pDynamicOffsets, const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites) override;
@@ -319,9 +319,11 @@ class GpuAssisted : public GpuAssistedBase {
                                                 GpuAssistedPreDispatchResources& resources,
                                                 const GpuAssistedCmdIndirectState* indirect_state);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                   VkPhysicalDeviceProperties* pPhysicalDeviceProperties) override;
+                                                   VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
+                                                   const RecordObject& record_obj) override;
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                    VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2) override;
+                                                    VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
+                                                    const RecordObject& record_obj) override;
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;

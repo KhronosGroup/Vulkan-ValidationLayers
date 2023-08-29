@@ -541,31 +541,32 @@ class StatelessValidation : public ValidationObject {
     // Pre/PostCallRecord declarations
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                        VkResult result) override;
+                                        const RecordObject &record_obj) override;
     void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                            VkResult result) override;
-    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
-                                         const VkAllocationCallbacks *pAllocator) override;
+                                            const RecordObject &record_obj) override;
+    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
+                                         const RecordObject &record_obj) override;
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                              VkCommandBuffer *pCommandBuffers, VkResult result) override;
+                                              VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) override;
     void PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                          const VkCommandBuffer *pCommandBuffers) override;
-    void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                          const VkAllocationCallbacks *pAllocator) override;
+                                          const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) override;
+    void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator,
+                                          const RecordObject &record_obj) override;
     void GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2 &pProperties) const;
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
+                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                    const RecordObject &record_obj) override;
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                      VkInstance *pInstance, VkResult result) override;
+                                      VkInstance *pInstance, const RecordObject &record_obj) override;
 
     void CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count);
     void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                VkPhysicalDevice *pPhysicalDevices, VkResult result) override;
+                                                VkPhysicalDevice *pPhysicalDevices, const RecordObject &record_obj) override;
 
     void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
                                                      VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-                                                     VkResult result) override;
+                                                     const RecordObject &record_obj) override;
 
     bool ValidateInstanceExtensions(const VkInstanceCreateInfo *pCreateInfo) const;
 

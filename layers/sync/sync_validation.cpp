@@ -4777,9 +4777,9 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comman
 }
 
 void SyncValidator::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
-                                                     VkResult result) {
+                                                     const RecordObject &record_obj) {
     // The state tracker sets up the command buffer state
-    StateTracker::PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, result);
+    StateTracker::PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
     // Create/initialize the structure that trackers accesses at the command buffer scope.
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -4796,24 +4796,25 @@ void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                     VkSubpassContents contents) {
-    StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+                                                     VkSubpassContents contents, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, Func::vkCmdBeginRenderPass);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, record_obj.location.function);
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      const VkSubpassBeginInfo *pSubpassBeginInfo) {
-    StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, Func::vkCmdBeginRenderPass2);
+                                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj.location.function);
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                          const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                         const VkSubpassBeginInfo *pSubpassBeginInfo) {
-    StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, Func::vkCmdBeginRenderPass2KHR);
+                                                         const VkSubpassBeginInfo *pSubpassBeginInfo,
+                                                         const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
+    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj.location.function);
 }
 
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -4861,23 +4862,24 @@ void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const Vk
     cb_context->RecordSyncOp<SyncOpNextSubpass>(command, *this, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
-void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
+void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
+                                                 const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, Func::vkCmdNextSubpass);
+    RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, record_obj.location.function);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                  const VkSubpassEndInfo *pSubpassEndInfo) {
-    StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, Func::vkCmdNextSubpass2);
+                                                  const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj.location.function);
 }
 
 void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                     const VkSubpassEndInfo *pSubpassEndInfo) {
-    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, Func::vkCmdNextSubpass2KHR);
+                                                     const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj.location.function);
 }
 
 bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -4930,19 +4932,21 @@ bool SyncValidator::SupressedBoundDescriptorWAW(const HazardResult &hazard) cons
     return (hazard.hazard == WRITE_AFTER_WRITE) && (FlagBit(hazard.usage_index) == hazard.prior_access);
 }
 
-void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
-    RecordCmdEndRenderPass(commandBuffer, nullptr, Func::vkCmdEndRenderPass);
-    StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer);
+void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+    RecordCmdEndRenderPass(commandBuffer, nullptr, record_obj.location.function);
+    StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
 }
 
-void SyncValidator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, Func::vkCmdEndRenderPass2);
-    StateTracker::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
+void SyncValidator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
+                                                    const RecordObject &record_obj) {
+    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, record_obj.location.function);
+    StateTracker::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
-void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, Func::vkCmdEndRenderPass2KHR);
-    StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
+void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
+                                                       const RecordObject &record_obj) {
+    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, record_obj.location.function);
+    StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
 template <typename RegionType>
@@ -6290,14 +6294,15 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     return set_event_op.Validate(*cb_context);
 }
 
-void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    StateTracker::PostCallRecordCmdSetEvent(commandBuffer, event, stageMask);
+void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                              const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent, *this, cb_context->GetQueueFlags(), event, stageMask,
+    cb_context->RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask,
                                              cb_context->GetCurrentAccessContext());
 }
 
@@ -6324,29 +6329,29 @@ bool SyncValidator::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, V
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                  const VkDependencyInfoKHR *pDependencyInfo) {
-    StateTracker::PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
+                                                  const VkDependencyInfoKHR *pDependencyInfo, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdSetEvent2KHR(commandBuffer, event, pDependencyInfo, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     if (!pDependencyInfo) return;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent2KHR, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
-                                             cb_context->GetCurrentAccessContext());
+    cb_context->RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event,
+                                             *pDependencyInfo, cb_context->GetCurrentAccessContext());
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-                                               const VkDependencyInfo *pDependencyInfo) {
-    StateTracker::PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo);
+                                               const VkDependencyInfo *pDependencyInfo, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     if (!pDependencyInfo) return;
 
-    cb_context->RecordSyncOp<SyncOpSetEvent>(Func::vkCmdSetEvent2, *this, cb_context->GetQueueFlags(), event, *pDependencyInfo,
-                                             cb_context->GetCurrentAccessContext());
+    cb_context->RecordSyncOp<SyncOpSetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event,
+                                             *pDependencyInfo, cb_context->GetCurrentAccessContext());
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -6361,14 +6366,15 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     return reset_event_op.Validate(*cb_context);
 }
 
-void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    StateTracker::PostCallRecordCmdResetEvent(commandBuffer, event, stageMask);
+void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                                const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
@@ -6390,24 +6396,25 @@ bool SyncValidator::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                    VkPipelineStageFlags2KHR stageMask) {
-    StateTracker::PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask);
+                                                    VkPipelineStageFlags2KHR stageMask, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdResetEvent2KHR(commandBuffer, event, stageMask, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent2KHR, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
-void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
-    StateTracker::PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask);
+void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                                 const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpResetEvent>(Func::vkCmdResetEvent2, *this, cb_context->GetQueueFlags(), event, stageMask);
+    cb_context->RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -6434,19 +6441,19 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                                 uint32_t bufferMemoryBarrierCount,
                                                 const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                uint32_t imageMemoryBarrierCount,
-                                                const VkImageMemoryBarrier *pImageMemoryBarriers) {
+                                                uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                const RecordObject &record_obj) {
     StateTracker::PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
                                               pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                              imageMemoryBarrierCount, pImageMemoryBarriers);
+                                              imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
-                                               srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(record_obj.location.function, *this, cb_context->GetQueueFlags(), eventCount,
+                                               pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                                                bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                                pImageMemoryBarriers);
 }
@@ -6458,16 +6465,16 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuff
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                    const VkDependencyInfoKHR *pDependencyInfos) {
-    StateTracker::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+                                                    const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents2KHR, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
-                                               pDependencyInfos);
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(record_obj.location.function, *this, cb_context->GetQueueFlags(), eventCount,
+                                               pEvents, pDependencyInfos);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -6485,16 +6492,16 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                 const VkDependencyInfo *pDependencyInfos) {
-    StateTracker::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+                                                 const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
-    cb_context->RecordSyncOp<SyncOpWaitEvents>(Func::vkCmdWaitEvents2, *this, cb_context->GetQueueFlags(), eventCount, pEvents,
-                                               pDependencyInfos);
+    cb_context->RecordSyncOp<SyncOpWaitEvents>(record_obj.location.function, *this, cb_context->GetQueueFlags(), eventCount,
+                                               pEvents, pDependencyInfos);
 }
 
 void SyncEventState::ResetFirstScope() {
@@ -7618,30 +7625,30 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 }
 
 void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                                  VkResult result) {
-    StateTracker::PostCallRecordBindImageMemory(device, image, mem, memoryOffset, result);
-    if (VK_SUCCESS != result) return;
+                                                  const RecordObject &record_obj) {
+    StateTracker::PostCallRecordBindImageMemory(device, image, mem, memoryOffset, record_obj);
+    if (VK_SUCCESS != record_obj.result) return;
     const VkBindImageMemoryInfo bind_info = ConvertImageMemoryInfo(device, image, mem, memoryOffset);
     UpdateSyncImageMemoryBindState(1, &bind_info);
 }
 
 void SyncValidator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                                   VkResult result) {
-    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, result);
-    if (VK_SUCCESS != result) return;
+                                                   const RecordObject &record_obj) {
+    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    if (VK_SUCCESS != record_obj.result) return;
     UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
 }
 
 void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                      const VkBindImageMemoryInfo *pBindInfos, VkResult result) {
-    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, result);
-    if (VK_SUCCESS != result) return;
+                                                      const VkBindImageMemoryInfo *pBindInfos, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
+    if (VK_SUCCESS != record_obj.result) return;
     UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
 }
 
-void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
-    StateTracker::PostCallRecordQueueWaitIdle(queue, result);
-    if ((result != VK_SUCCESS) || (!enabled[sync_validation_queue_submit]) || (queue == VK_NULL_HANDLE)) return;
+void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordQueueWaitIdle(queue, record_obj);
+    if ((record_obj.result != VK_SUCCESS) || (!enabled[sync_validation_queue_submit]) || (queue == VK_NULL_HANDLE)) return;
 
     const auto queue_state = GetQueueSyncStateShared(queue);
     if (!queue_state) return;  // Invalid queue
@@ -7652,8 +7659,8 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) 
     vvl::EraseIf(waitable_fences_, [waited_queue](const SignaledFence &sf) { return sf.second.queue_id == waited_queue; });
 }
 
-void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
-    StateTracker::PostCallRecordDeviceWaitIdle(device, result);
+void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordDeviceWaitIdle(device, record_obj);
 
     // We need to treat this a fence waits for all queues... noting that present engine ops will be preserved.
     ForAllQueueBatchContexts([](const std::shared_ptr<QueueBatchContext> &batch) {
@@ -7729,8 +7736,9 @@ ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &prese
     return ResourceUsageRange(0, presented_images.size());
 }
 
-void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
-    StateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
+void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                                  const RecordObject &record_obj) {
+    StateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     if (!enabled[sync_validation_queue_submit]) return;
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
@@ -7738,7 +7746,8 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
     vvl::TlsGuard<QueuePresentCmdState> cmd_state;
 
     // See ValidationStateTracker::PostCallRecordQueuePresentKHR for spec excerpt supporting
-    if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_DEVICE_LOST) {
+    if (record_obj.result == VK_ERROR_OUT_OF_HOST_MEMORY || record_obj.result == VK_ERROR_OUT_OF_DEVICE_MEMORY ||
+        record_obj.result == VK_ERROR_DEVICE_LOST) {
         return;
     }
 
@@ -7753,23 +7762,23 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                       VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                                      VkResult result) {
-    StateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, result);
+                                                      const RecordObject &record_obj) {
+    StateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     if (!enabled[sync_validation_queue_submit]) return;
-    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, result, "vkAcquireNextImageKHR");
+    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                       uint32_t *pImageIndex, VkResult result) {
-    StateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, result);
+                                                       uint32_t *pImageIndex, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     if (!enabled[sync_validation_queue_submit]) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                pAcquireInfo->fence, pImageIndex, result, "vkAcquireNextImage2KHR");
+                                pAcquireInfo->fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                                VkFence fence, uint32_t *pImageIndex, VkResult result, const char *func_name) {
-    if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
+                                                VkFence fence, uint32_t *pImageIndex, const RecordObject &record_obj) {
+    if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) return;
 
     // Get the image out of the presented list and create apppropriate fences/semaphores.
     auto swapchain_state = Get<syncval_state::Swapchain>(swapchain);
@@ -7791,7 +7800,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     batch->SetupBatchTags(ResourceUsageRange(0, 1));
     const ResourceUsageTag acquire_tag = batch->GetTagRange().begin;
     batch->DoAcquireOperation(presented);
-    batch->LogAcquireOperation(presented, func_name);
+    batch->LogAcquireOperation(presented, record_obj.location.function);
 
     // Now swap out the present queue batch with the acquired one.
     // Note that fence and signal will read the acquire batch from presented, so this needs to be done before
@@ -7872,13 +7881,13 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
 }
 
 void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                              VkResult result) {
-    StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+                                              const RecordObject &record_obj) {
+    StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
-    RecordQueueSubmit(queue, fence, result);
+    RecordQueueSubmit(queue, fence, record_obj);
 }
 
-void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult result) {
+void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const RecordObject &record_obj) {
     // If this return is above the TlsGuard, then the Validate phase return must also be.
     if (!enabled[sync_validation_queue_submit]) return;  // Queue submit validation must be affirmatively enabled
 
@@ -7886,7 +7895,7 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
     // static payload
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
 
-    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit failed
+    if (VK_SUCCESS != record_obj.result) return;  // dispatched QueueSubmit failed
     if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
 
     // Don't need to look up the queue state again, but we need a non-const version
@@ -7910,30 +7919,30 @@ bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                  VkFence fence, VkResult result) {
-    StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit(queue, fence, result);
+                                                  VkFence fence, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, record_obj);
+    RecordQueueSubmit(queue, fence, record_obj);
 }
 void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                               VkResult result) {
-    StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
-    RecordQueueSubmit(queue, fence, result);
+                                               const RecordObject &record_obj) {
+    StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+    RecordQueueSubmit(queue, fence, record_obj);
 }
 
-void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
-    StateTracker::PostCallRecordGetFenceStatus(device, fence, result);
+void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordGetFenceStatus(device, fence, record_obj);
     if (!enabled[sync_validation_queue_submit]) return;
-    if (result == VK_SUCCESS) {
+    if (record_obj.result == VK_SUCCESS) {
         // fence is signalled, mark it as waited for
         WaitForFence(fence);
     }
 }
 
 void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
-                                                uint64_t timeout, VkResult result) {
-    StateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, result);
+                                                uint64_t timeout, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     if (!enabled[sync_validation_queue_submit]) return;
-    if ((result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
+    if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
         for (uint32_t i = 0; i < fenceCount; i++) {
             WaitForFence(pFences[i]);
@@ -7942,9 +7951,9 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
 }
 
 void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                        VkImage *pSwapchainImages, VkResult result) {
-    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
-    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+                                                        VkImage *pSwapchainImages, const RecordObject &record_obj) {
+    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
+    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
 
     if (pSwapchainImages) {
@@ -8406,10 +8415,10 @@ void QueueBatchContext::DoAcquireOperation(const PresentedImage &presented) {
     presented.UpdateMemoryAccess(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL, tag_range_.begin, access_context_);
 }
 
-void QueueBatchContext::LogAcquireOperation(const PresentedImage &presented, const char *func_name) {
+void QueueBatchContext::LogAcquireOperation(const PresentedImage &presented, vvl::Func command) {
     auto access_log = std::make_shared<AccessLog>();
     batch_log_.Insert(batch_, tag_range_, access_log);
-    access_log->emplace_back(AcquireResourceRecord(presented, tag_range_.begin, func_name));
+    access_log->emplace_back(AcquireResourceRecord(presented, tag_range_.begin, command));
 }
 
 void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
@@ -8809,11 +8818,11 @@ std::ostream &QueueBatchContext::PresentResourceRecord::Format(std::ostream &out
 }
 
 QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::AcquireResourceRecord::MakeRecord() const {
-    return std::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, func_name_.c_str());
+    return std::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, command_);
 }
 
 std::ostream &QueueBatchContext::AcquireResourceRecord::Format(std::ostream &out, const SyncValidator &sync_state) const {
-    out << func_name_ << " ";
+    out << vvl::String(command_) << " ";
     out << "aquire_tag:" << acquire_tag_;
     out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get());
     out << ", image_index: " << presented_.image_index;

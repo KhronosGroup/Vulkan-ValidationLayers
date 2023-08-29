@@ -405,17 +405,19 @@ class ThreadSafety : public ValidationObject {
 
     void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR *pProperties,
-                                                                  VkResult result) override;
+                                                                  const RecordObject &record_obj) override;
 
     void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                    VkDisplayPlaneProperties2KHR *pProperties,
-                                                                   VkResult result) override;
+                                                                   const RecordObject &record_obj) override;
 
     void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                             VkDisplayPropertiesKHR *pProperties, VkResult result) override;
+                                                             VkDisplayPropertiesKHR *pProperties,
+                                                             const RecordObject &record_obj) override;
 
     void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                              VkDisplayProperties2KHR *pProperties, VkResult result) override;
+                                                              VkDisplayProperties2KHR *pProperties,
+                                                              const RecordObject &record_obj) override;
 
     void PreCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                       const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
@@ -423,17 +425,18 @@ class ThreadSafety : public ValidationObject {
 
     void PostCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                        const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
-                                                       VkDisplayPlaneCapabilities2KHR *pCapabilities, VkResult result) override;
+                                                       VkDisplayPlaneCapabilities2KHR *pCapabilities,
+                                                       const RecordObject &record_obj) override;
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
     void PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display *dpy, RROutput rrOutput,
-                                                VkDisplayKHR *pDisplay, VkResult result) override;
+                                                VkDisplayKHR *pDisplay, const RecordObject &record_obj) override;
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
     void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR *display,
-                                        VkResult result) override;
+                                        const RecordObject &record_obj) override;
 
 #include "generated/thread_safety_commands.h"
 };

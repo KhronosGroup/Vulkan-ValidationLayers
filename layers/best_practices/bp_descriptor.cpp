@@ -74,8 +74,9 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
 }
 
 void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                               VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) {
-    if (result == VK_SUCCESS) {
+                                                               VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
+                                                               void* ads_state) {
+    if (record_obj.result == VK_SUCCESS) {
         auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
         if (pool_state) {
             // we record successful allocations by subtracting the allocation count from the last recorded free count
@@ -91,9 +92,10 @@ void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, 
 }
 
 void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                     const VkDescriptorSet* pDescriptorSets, VkResult result) {
-    ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, result);
-    if (result == VK_SUCCESS) {
+                                                     const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
+                                                             record_obj);
+    if (record_obj.result == VK_SUCCESS) {
         auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool);
         // we want to track frees because we're interested in suggesting re-use
         if (pool_state) {

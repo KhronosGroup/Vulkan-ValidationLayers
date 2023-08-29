@@ -398,6 +398,7 @@ source_set("vulkan_layer_utils") {
     "layers/error_message/logging.cpp",
     "layers/error_message/error_location.cpp",
     "layers/error_message/error_location.h",
+    "layers/error_message/record_object.h",
     "layers/vulkan/generated/error_location_helper.cpp",
     "layers/vulkan/generated/error_location_helper.h",
     "layers/utils/ray_tracing_utils.cpp",

@@ -102,26 +102,28 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 }
 
 // Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
-void BestPractices::LogPositiveSuccessCode(Func command, VkResult result) const {
-    assert(result > VK_SUCCESS);
+void BestPractices::LogPositiveSuccessCode(const RecordObject& record_obj) const {
+    assert(record_obj.result > VK_SUCCESS);
 
-    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", String(command),
-               string_VkResult(result));
+    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", record_obj.location.StringFunc(),
+               string_VkResult(record_obj.result));
 }
 
-void BestPractices::LogErrorCode(Func command, VkResult result) const {
-    assert(result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
+void BestPractices::LogErrorCode(const RecordObject& record_obj) const {
+    assert(record_obj.result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
 
     // Despite being error codes log these results as informational.
     // That is because they are returned frequently during window resizing.
     // They are expected to occur during the normal application lifecycle.
     constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
-    const auto result_string = string_VkResult(result);
+    const auto result_string = string_VkResult(record_obj.result);
 
-    if (IsValueIn(result, common_failure_codes)) {
-        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", String(command), result_string);
+    if (IsValueIn(record_obj.result, common_failure_codes)) {
+        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", record_obj.location.StringFunc(),
+                result_string);
     } else {
-        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", String(command), result_string);
+        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", record_obj.location.StringFunc(),
+                   result_string);
     }
 }
 

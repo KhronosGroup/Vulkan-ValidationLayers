@@ -327,8 +327,9 @@ void BestPractices::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuf
     RecordCmdBeginRenderingCommon(commandBuffer);
 }
 
-void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    ValidationStateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
+void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
+                                                 const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
 
     auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto rp = cmd_state->activeRenderPass.get();
@@ -616,21 +617,22 @@ void BestPractices::PostRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, 
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                     VkSubpassContents contents) {
-    StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+                                                     VkSubpassContents contents, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     PostRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                      const VkSubpassBeginInfo* pSubpassBeginInfo) {
-    StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+                                                      const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     PostRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                          const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                         const VkSubpassBeginInfo* pSubpassBeginInfo) {
-    StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+                                                         const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                                         const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     PostRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin);
 }
 

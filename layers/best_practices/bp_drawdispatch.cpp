@@ -122,8 +122,8 @@ bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
 }
 
 void BestPractices::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                          uint32_t firstVertex, uint32_t firstInstance) {
-    StateTracker::PostCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+                                          uint32_t firstVertex, uint32_t firstInstance, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     RecordCmdDrawType(commandBuffer, vertexCount * instanceCount);
 }
 
@@ -351,8 +351,10 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                 uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
-    StateTracker::PostCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+                                                 uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
+                                                 const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
+                                               record_obj);
     RecordCmdDrawType(commandBuffer, indexCount * instanceCount);
 }
 
@@ -371,8 +373,8 @@ bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
 }
 
 void BestPractices::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  uint32_t count, uint32_t stride) {
-    StateTracker::PostCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride);
+                                                  uint32_t count, uint32_t stride, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
     RecordCmdDrawType(commandBuffer, count);
 }
 
@@ -391,8 +393,8 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         uint32_t count, uint32_t stride) {
-    StateTracker::PostCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride);
+                                                         uint32_t count, uint32_t stride, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
     RecordCmdDrawType(commandBuffer, count);
 }
 
@@ -407,9 +409,10 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
 
 void BestPractices::PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                              uint32_t maxDrawCount, uint32_t stride) {
+                                                              uint32_t maxDrawCount, uint32_t stride,
+                                                              const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                            maxDrawCount, stride);
+                                                            maxDrawCount, stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -425,9 +428,9 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffe
 void BestPractices::PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                  VkDeviceSize offset, VkBuffer countBuffer,
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                 uint32_t stride) {
+                                                                 uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                               maxDrawCount, stride);
+                                                               maxDrawCount, stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -443,9 +446,9 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffe
 void BestPractices::PostCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                  VkDeviceSize offset, VkBuffer countBuffer,
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                 uint32_t stride) {
+                                                                 uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                               maxDrawCount, stride);
+                                                               maxDrawCount, stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -461,9 +464,9 @@ bool BestPractices::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer c
 void BestPractices::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                               uint32_t firstInstance, VkBuffer counterBuffer,
                                                               VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                              uint32_t vertexStride) {
+                                                              uint32_t vertexStride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
-                                                            counterBufferOffset, counterOffset, vertexStride);
+                                                            counterBufferOffset, counterOffset, vertexStride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -477,9 +480,9 @@ bool BestPractices::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandB
 
 void BestPractices::PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride) {
+                                                       uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                     stride);
+                                                     stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -494,9 +497,9 @@ bool BestPractices::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer comma
 
 void BestPractices::PostCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                          uint32_t maxDrawCount, uint32_t stride) {
+                                                          uint32_t maxDrawCount, uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                        stride);
+                                                        stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -511,9 +514,9 @@ bool BestPractices::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer comma
 
 void BestPractices::PostCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                          uint32_t maxDrawCount, uint32_t stride) {
+                                                          uint32_t maxDrawCount, uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                        stride);
+                                                        stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -529,9 +532,9 @@ bool BestPractices::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuff
 void BestPractices::PostCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                  uint32_t stride) {
+                                                                  uint32_t stride, const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                                maxDrawCount, stride);
+                                                                maxDrawCount, stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -544,8 +547,8 @@ bool BestPractices::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer co
 }
 
 void BestPractices::PostCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                             uint32_t drawCount, uint32_t stride) {
-    StateTracker::PostCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+                                                             uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -556,8 +559,9 @@ bool BestPractices::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuf
     return skip;
 }
 
-void BestPractices::PostCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
-    StateTracker::PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+void BestPractices::PostCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                     const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     RecordCmdDrawType(commandBuffer, 0);
 }
 
@@ -572,9 +576,10 @@ bool BestPractices::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer comman
 
 void BestPractices::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                          const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
-                                                         uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset) {
+                                                         uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
+                                                         const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
-                                                       pVertexOffset);
+                                                       pVertexOffset, record_obj);
     uint32_t count = 0;
     for (uint32_t i = 0; i < drawCount; ++i) {
         count += pIndexInfo[i].indexCount;
@@ -592,8 +597,9 @@ bool BestPractices::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer
 
 void BestPractices::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                   const VkMultiDrawInfoEXT* pVertexInfo, uint32_t instanceCount,
-                                                  uint32_t firstInstance, uint32_t stride) {
-    StateTracker::PostCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride);
+                                                  uint32_t firstInstance, uint32_t stride, const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
+                                                record_obj);
     uint32_t count = 0;
     for (uint32_t i = 0; i < drawCount; ++i) {
         count += pVertexInfo[i].vertexCount;

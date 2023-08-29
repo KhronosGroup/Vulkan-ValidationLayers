@@ -748,7 +748,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
 }
 
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                     VkImage *pSwapchainImages, VkResult result) {
+                                                     VkImage *pSwapchainImages, const RecordObject &record_obj) {
     // This function will run twice. The first is to get pSwapchainImageCount. The second is to get pSwapchainImages.
     // The first time in StateTracker::PostCallRecordGetSwapchainImagesKHR only generates the container's size.
     // The second time in StateTracker::PostCallRecordGetSwapchainImagesKHR will create VKImage and IMAGE_STATE.
@@ -757,7 +757,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
     // pSwapchainImages is not nullptr and it needs to wait until StateTracker::PostCallRecordGetSwapchainImagesKHR.
 
     uint32_t new_swapchain_image_index = 0;
-    if (((result == VK_SUCCESS) || (result == VK_INCOMPLETE)) && pSwapchainImages) {
+    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
         auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
 
@@ -768,9 +768,9 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             }
         }
     }
-    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
+    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
 
-    if (((result == VK_SUCCESS) || (result == VK_INCOMPLETE)) && pSwapchainImages) {
+    if (((record_obj.result == VK_SUCCESS) || (record_obj.result == VK_INCOMPLETE)) && pSwapchainImages) {
         for (; new_swapchain_image_index < *pSwapchainImageCount; ++new_swapchain_image_index) {
             auto image_state = Get<IMAGE_STATE>(pSwapchainImages[new_swapchain_image_index]);
             image_state->SetInitialLayoutMap();

@@ -1535,10 +1535,10 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
 }
 
 void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                               VkResult result) {
-    if (VK_SUCCESS != result) return;
+                                               const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
 
-    StateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, result);
+    StateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     auto image_state = Get<IMAGE_STATE>(image);
     if (image_state) {
         image_state->SetInitialLayoutMap();
@@ -1551,9 +1551,9 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
 }
 
 void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                                VkResult result) {
-    if (VK_SUCCESS != result) return;
-    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, result);
+                                                const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
@@ -1569,9 +1569,9 @@ bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bi
 }
 
 void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
-                                                   VkResult result) {
-    if (VK_SUCCESS != result) return;
-    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, result);
+                                                   const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         auto image_state = Get<IMAGE_STATE>(pBindInfos[i].image);
         if (image_state) {

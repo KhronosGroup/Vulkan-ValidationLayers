@@ -408,23 +408,23 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
 }
 void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                         VkResult result) {
-    if (result != VK_SUCCESS) return;
+                                                         const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
     safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
 void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                             VkResult result) {
+                                                             const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
-    if (result != VK_SUCCESS) return;
+    if (record_obj.result != VK_SUCCESS) return;
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
 void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
-                                                          const VkAllocationCallbacks *pAllocator) {
+                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
