@@ -388,7 +388,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
     # recursively walks struct members (and command params)
     # parentName == Struct or Command calling into this
     # topCommand == The command called from (when in a struct)
-    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName: str, topCommand: str, isTopLevelCreate: bool) -> str:
+    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName: str, topCommand: str, errorLoc: str, isTopLevelCreate: bool) -> str:
         pre_call_validate = ''
         index = f'index{str(arrayIndex)}'
         arrayIndex += 1
@@ -398,12 +398,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 continue # ignore last param of creation commands
 
             if member.type in self.vk.handles:
-                if member.length:
-                    countName = f'{prefix}{member.length}'
-                    nullAllowed = 'true' if member.noAutoValidity else str(member.optionalPointer).lower()
+                if member.noAutoValidity:
+                    nullAllowed = 'true'
+                elif member.length:
+                    nullAllowed = str(member.optionalPointer).lower()
                 else:
-                    countName = None
-                    nullAllowed = 'true' if member.noAutoValidity else str(member.optional).lower()
+                    nullAllowed = str(member.optional).lower()
 
                 # Replace with alias if one
                 alias = self.vk.commands[parentName].alias if parentName in self.vk.commands else None
@@ -444,24 +444,23 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                         if topCommand == 'vkCreateImageView' and member.name == 'image':
                             parentVUID = "\"VUID-vkCreateImageView-image-09179\""
 
-                if countName is not None:
+                if member.length:
+                    location = f'{errorLoc}.dot(Field::{member.name}, {index})'
+                    countName = f'{prefix}{member.length}'
                     pre_call_validate += addIndent(indent,
 f'''if (({countName} > 0) && ({prefix}{member.name})) {{
     for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
-        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, error_obj.location);
+        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});
     }}
 }}''')
+                elif 'basePipelineHandle' in member.name:
+                    pre_call_validate += f'{indent}if (({prefix}flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && ({prefix}basePipelineIndex == -1))\n'
+                    manual_vuid_index = parentName + '-' + member.name
+                    paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
+                    pre_call_validate += f'{indent}    skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {paramVUID}, {parentVUID}, error_obj.location);\n'
                 else:
-                    bonus_indent = ''
-                    if 'basePipelineHandle' in member.name:
-                        pre_call_validate += f'{indent}if (({prefix}flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && ({prefix}basePipelineIndex == -1))\n'
-                        bonus_indent = '    '
-                        nullAllowed = 'false'
-                        manual_vuid_index = parentName + '-' + member.name
-                        paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-                    pre_call_validate += f'{bonus_indent}{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, error_obj.location);\n'
-                    if 'pSampler' in member.name:
-                        pre_call_validate = ''
+                    location = f'{errorLoc}.dot(Field::{member.name})'
+                    pre_call_validate += f'{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});\n'
 
             # Handle Structs that contain objects at some level
             elif member.type in self.vk.structs:
@@ -475,9 +474,11 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         indent = incIndent(indent)
                         pre_call_validate += f'{indent}for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         indent = incIndent(indent)
-                        local_prefix = f'{prefix}{member.name}[{index}].'
+                        new_error_loc = f'{index}_loc'
+                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n'
+                        new_prefix = f'{prefix}{member.name}[{index}].'
                         # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, local_prefix, arrayIndex, member.type, topCommand, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
                         indent = decIndent(indent)
                         pre_call_validate += f'{indent}}}\n'
                         indent = decIndent(indent)
@@ -489,16 +490,20 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                         # Declare safe_VarType for struct
                         pre_call_validate += f'{indent}if ({prefix}{member.name}) {{\n'
                         indent = incIndent(indent)
+                        new_error_loc = f'{member.name}_loc'
+                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n'
                         # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
                         indent = decIndent(indent)
                         pre_call_validate += '%s}\n' % indent
                     # Single Nested Struct
                     else:
                         # Update struct prefix
                         new_prefix = f'{prefix}{member.name}.'
+                        new_error_loc = f'{member.name}_loc'
+                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n'
                         # Process sub-structs
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, False)
+                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
         return pre_call_validate
     #
     # For a particular API, generate the object handling code
@@ -511,7 +516,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
         isCreate = any(x in command.name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']) or ('vkGet' in command.name and command.params[-1].pointer)
         isDestroy = any(x in command.name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
 
-        pre_call_validate += self.validateObjects(command.params, indent, '', 0, command.name, command.name, isCreate)
+        pre_call_validate += self.validateObjects(command.params, indent, '', 0, command.name, command.name, 'error_obj.location', isCreate)
 
         # Handle object create operations if last parameter is created by this call
         if isCreate:
@@ -535,8 +540,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
 
                 if isCreatePipelines:
                     post_call_record += f'{indent}if (!pPipelines[index]) continue;\n'
-
-                if isCreateShaders:
+                elif isCreateShaders:
                     post_call_record += f'{indent}if (!pShaders[index]) break;\n'
 
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
