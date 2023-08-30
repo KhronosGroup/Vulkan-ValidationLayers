@@ -579,3 +579,49 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but have maintenance5.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+
+    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance5_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    const char *source = R"glsl(
+        #version 450
+        vec2 vertices[3];
+        out gl_PerVertex
+        {
+            vec4 gl_Position;
+            float gl_PointSize;
+        };
+        void main() {
+            vertices[0] = vec2(-1.0, -1.0);
+            vertices[1] = vec2( 1.0, -1.0);
+            vertices[2] = vec2( 0.0,  1.0);
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}

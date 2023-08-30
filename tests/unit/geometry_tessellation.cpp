@@ -177,7 +177,8 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
 
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "VUID-VkGraphicsPipelineCreateInfo-shaderTessellationAndGeometryPointSize-08776");
 }
 
 TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {

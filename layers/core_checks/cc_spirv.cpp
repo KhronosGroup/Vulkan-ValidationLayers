@@ -1441,12 +1441,13 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
 
     const bool output_points = entrypoint.execution_mode.Has(ExecutionModeSet::output_points_bit);
     const bool point_mode = entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit);
+    const bool maintenance5 = enabled_features.maintenance5_features.maintenance5;
 
     if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
         if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size &&
-            entrypoint.emit_vertex_geometry) {
+            entrypoint.emit_vertex_geometry && !maintenance5) {
             skip |= LogError(
-                "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725", module_state.handle(), loc,
+                "VUID-VkGraphicsPipelineCreateInfo-shaderTessellationAndGeometryPointSize-08776", module_state.handle(), loc,
                 "SPIR-V (Geometry stage) PointSize is not written, but shaderTessellationAndGeometryPointSize was enabled.");
         } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && entrypoint.written_builtin_point_size) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Geometry-07726", module_state.handle(), loc,
@@ -1455,7 +1456,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
         }
     } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
                ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0) && point_mode) {
-        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size &&
+            !maintenance5) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723", module_state.handle(), loc,
                              "SPIR-V (Tessellation Evaluation stage) PointSize is not written, but "
                              "shaderTessellationAndGeometryPointSize was enabled.");
@@ -1471,9 +1473,9 @@ bool CoreChecks::ValidatePointSizeShaderState(const StageCreateInfo &create_info
                pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                      phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
-        if (!entrypoint.written_builtin_point_size && !ignore_topology) {
+        if (!entrypoint.written_builtin_point_size && !ignore_topology && !maintenance5) {
             skip |= LogError(
-                "VUID-VkGraphicsPipelineCreateInfo-topology-08890", module_state.handle(), loc,
+                "VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
                 "SPIR-V (Vertex) PointSize is not written to, but Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.");
         }
     }

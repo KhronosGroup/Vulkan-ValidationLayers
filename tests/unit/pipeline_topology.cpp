@@ -77,7 +77,7 @@ TEST_F(NegativePipelineTopology, PointSize) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
@@ -105,7 +105,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
@@ -133,7 +133,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
@@ -174,7 +174,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
         helper.dyn_state_ci_ = dyn_state_ci;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PrimitiveTopology) {

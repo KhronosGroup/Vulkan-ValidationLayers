@@ -408,6 +408,7 @@ class NegativeFragmentShadingRate : public FragmentShadingRateTest {};
 class PositiveFragmentShadingRate : public FragmentShadingRateTest {};
 
 class NegativeGeometryTessellation : public VkLayerTest {};
+class PositiveGeometryTessellation : public VkLayerTest {};
 
 class GraphicsLibraryTest : public VkLayerTest {
   public:
