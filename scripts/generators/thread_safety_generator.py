@@ -153,11 +153,11 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                             out.append(f'            for (uint32_t index2=0; index2 < {limit}; index2++) {{\n')
                             element = element.replace('[]','[index2]')
                             second_indent = '        '
-                            out.append(f'        {second_indent}{prefix}WriteObject{suffix}({element}, "{command.name}");\n')
+                            out.append(f'        {second_indent}{prefix}WriteObject{suffix}({element}, vvl::Func::{command.name});\n')
                             out.append(f'            {second_indent}}}\n')
                             out.append(f'        {second_indent}}}\n')
                         else:
-                            out.append(f'        {second_indent}{prefix}WriteObject{suffix}({element}, "{command.name}");\n')
+                            out.append(f'        {second_indent}{prefix}WriteObject{suffix}({element}, vvl::Func::{command.name});\n')
                     out.append('        }\n')
                     out.append('    }\n')
                 else:
@@ -166,16 +166,16 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         member = str(member).replace("::", "->")
                         member = str(member).replace(".", "->")
                         suffix = 'ParentInstance' if 'surface' in member or 'swapchain' in member.lower() else ''
-                        out.append(f'    {prefix}WriteObject{suffix}({member}, "{command.name}");\n')
+                        out.append(f'    {prefix}WriteObject{suffix}({member}, vvl::Func::{command.name});\n')
             elif param.externSync:
                 if param.length:
                     out.append(f'''    if ({param.name}) {{
         for (uint32_t index = 0; index < {param.length}; index++) {{
-            {prefix}WriteObject{GetParentInstance(param)}({param.name}[index], "{command.name}");
+            {prefix}WriteObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
         }}
     }}\n''')
                 else:
-                    out.append(f'    {prefix}WriteObject{GetParentInstance(param)}({param.name}, "{command.name}");\n')
+                    out.append(f'    {prefix}WriteObject{GetParentInstance(param)}({param.name}, vvl::Func::{command.name});\n')
                     if ('Destroy' in command.name or 'Free' in command.name or 'ReleasePerformanceConfigurationINTEL' in command.name) and prefix == 'Finish':
                         out.append(f'    DestroyObject{GetParentInstance(param)}({param.name});\n')
             elif param.pointer and ('Create' in command.name or 'Allocate' in command.name or 'AcquirePerformanceConfigurationINTEL' in command.name) and prefix == 'Finish':
@@ -225,13 +225,13 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         param_len = param.length.replace("::", "->")
                         out.append(f'''    if ({param.name}) {{
         for (uint32_t index = 0; index < {dereference}{param.length}; index++) {{
-            {prefix}ReadObject{GetParentInstance(param)}({param.name}[index], "{command.name}");
+            {prefix}ReadObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
         }}
     }}\n''')
                     elif not param.pointer:
                         # Pointer params are often being created.
                         # They are not being read from.
-                        out.append(f'    {prefix}ReadObject{GetParentInstance(param)}({param.name}, "{command.name}");\n')
+                        out.append(f'    {prefix}ReadObject{GetParentInstance(param)}({param.name}, vvl::Func::{command.name});\n')
 
 
         for param in [x for x in command.params if x.externSync]:
