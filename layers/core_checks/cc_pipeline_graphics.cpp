@@ -35,14 +35,14 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
 
     for (uint32_t i = 0; i < count; i++) {
-        const Location &loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateGraphicsPipeline(*cgpl_state->pipe_state[i].get(), loc);
-        skip |= ValidatePipelineDerivatives(cgpl_state->pipe_state, i, loc);
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
+        skip |= ValidateGraphicsPipeline(*cgpl_state->pipe_state[i].get(), create_info_loc);
+        skip |= ValidatePipelineDerivatives(cgpl_state->pipe_state, i, create_info_loc);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
@@ -56,7 +56,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
                 vuid = "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576";
             }
             if (vuid) {
-                skip |= LogError(vuid, device, loc, "requires a valid renderPass, but one was not provided");
+                skip |= LogError(vuid, device, create_info_loc, "requires a valid renderPass, but one was not provided");
             }
         }
     }
@@ -68,9 +68,10 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         // emit errors for renderpass being invalid.
         subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
         if (subpass >= rp_state->createInfo.subpassCount) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06046", rp_state->renderPass(), loc.dot(Field::subpass),
-                             "(%" PRIu32 ") is out of range for this renderpass (0..%" PRIu32 ").", subpass,
-                             rp_state->createInfo.subpassCount - 1);
+            skip |=
+                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06046", rp_state->renderPass(),
+                         create_info_loc.dot(Field::subpass), "(%" PRIu32 ") is out of range for this renderpass (0..%" PRIu32 ").",
+                         subpass, rp_state->createInfo.subpassCount - 1);
             subpass_desc = nullptr;
         }
 
@@ -82,18 +83,18 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         }
     }
 
-    skip |= ValidateGraphicsPipelineLibrary(pipeline, loc);
-    skip |= ValidateGraphicsPipelinePreRasterState(pipeline, loc);
-    skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, loc);
-    skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, loc);
-    skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, loc);
-    skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, loc);
-    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, loc);
+    skip |= ValidateGraphicsPipelineLibrary(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelinePreRasterState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, create_info_loc);
+    skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
+    skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
+    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline);
-    skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, loc);
-    skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, loc);
-    skip |= ValidateGraphicsPipelineShaderState(pipeline, loc);
-    skip |= ValidateGraphicsPipelineBlendEnable(pipeline, loc);
+    skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
+    skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
 
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
         vvl::unordered_map<VkShaderStageFlags, uint32_t> unique_stage_map;
@@ -101,8 +102,9 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         for (const auto &stage_ci : pipeline.shader_stages_ci) {
             auto it = unique_stage_map.find(stage_ci.stage);
             if (it != unique_stage_map.end()) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stage-06897", device, loc.dot(Field::pStages, index),
-                                 "and pStages[%" PRIu32 "] both have %s", it->second, string_VkShaderStageFlagBits(stage_ci.stage));
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-stage-06897", device, create_info_loc.dot(Field::pStages, index),
+                             "and pStages[%" PRIu32 "] both have %s", it->second, string_VkShaderStageFlagBits(stage_ci.stage));
             }
             unique_stage_map[stage_ci.stage] = index;
             index++;
@@ -117,12 +119,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
             const auto *input_state = pipeline.InputState();
             if (!input_state) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device, loc.dot(Field::pVertexInputState),
-                                 "is NULL.");
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device,
+                                 create_info_loc.dot(Field::pVertexInputState), "is NULL.");
             } else {
                 const auto *binding_descriptions = pipeline.BindingDescriptions();
                 if (binding_descriptions) {
-                    skip |= ValidatePipelineVertexDivisors(*input_state, *binding_descriptions, loc);
+                    skip |= ValidatePipelineVertexDivisors(*input_state, *binding_descriptions, create_info_loc);
                 }
             }
         }
@@ -130,23 +132,23 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         if (!pipeline.InputAssemblyState()) {
             // TODO 6184 - Add tests and fix logic for all combinations
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031", device,
-                             loc.dot(Field::pInputAssemblyState), "is NULL.");
+                             create_info_loc.dot(Field::pInputAssemblyState), "is NULL.");
         }
     }
 
-    skip |= ValidateShaderModuleId(pipeline, loc);
-    skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, loc.dot(Field::flags),
+    skip |= ValidateShaderModuleId(pipeline, create_info_loc);
+    skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, create_info_loc.dot(Field::flags),
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
-    skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, loc.dot(Field::flags));
+    skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, create_info_loc.dot(Field::flags));
 
     const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
     if (discard_rectangle_state) {
         if (discard_rectangle_state->discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
-            skip |= LogError("VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582", device,
-                             loc.pNext(Struct::VkPipelineDiscardRectangleStateCreateInfoEXT, Field::discardRectangleCount),
-                             "(%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
-                             discard_rectangle_state->discardRectangleCount,
-                             phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
+            skip |= LogError(
+                "VUID-VkPipelineDiscardRectangleStateCreateInfoEXT-discardRectangleCount-00582", device,
+                create_info_loc.pNext(Struct::VkPipelineDiscardRectangleStateCreateInfoEXT, Field::discardRectangleCount),
+                "(%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
+                discard_rectangle_state->discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
         }
     }
 
@@ -157,14 +159,14 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         if (pipeline.fragment_output_state && attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
             ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits > 1)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593", device,
-                             loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::depthStencilAttachmentSamples),
+                             create_info_loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::depthStencilAttachmentSamples),
                              "(0x%" PRIx32 ") is invalid.", attachment_sample_count_info->depthStencilAttachmentSamples);
         }
     }
 
     if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pipeline.PNext());
         pipeline_robustness_info) {
-        skip |= ValidatePipelineRobustnessCreateInfo(pipeline, *pipeline_robustness_info, loc);
+        skip |= ValidatePipelineRobustnessCreateInfo(pipeline, *pipeline_robustness_info, create_info_loc);
     }
     return skip;
 }

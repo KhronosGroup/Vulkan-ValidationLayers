@@ -549,12 +549,12 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
     bool skip = false;
 
     if (pQueueInfo) {
-        const Location loc = error_obj.location.dot(Field::pQueueInfo);
+        const Location queue_info_loc = error_obj.location.dot(Field::pQueueInfo);
         const uint32_t queueFamilyIndex = pQueueInfo->queueFamilyIndex;
         const uint32_t queueIndex = pQueueInfo->queueIndex;
         const VkDeviceQueueCreateFlags flags = pQueueInfo->flags;
 
-        skip |= ValidateDeviceQueueFamily(queueFamilyIndex, loc.dot(Field::queueFamilyIndex),
+        skip |= ValidateDeviceQueueFamily(queueFamilyIndex, queue_info_loc.dot(Field::queueFamilyIndex),
                                           "VUID-VkDeviceQueueInfo2-queueFamilyIndex-01842");
 
         // ValidateDeviceQueueFamily() already checks if queueFamilyIndex but need to make sure flags match with it
@@ -734,12 +734,12 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
                                                   const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pCreateInfo);
-    skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, loc.dot(Field::queueFamilyIndex),
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
                                       "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     if ((enabled_features.core11.protectedMemory == VK_FALSE) &&
         ((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) != 0)) {
-        skip |= LogError("VUID-VkCommandPoolCreateInfo-flags-02860", device, loc.dot(Field::flags),
+        skip |= LogError("VUID-VkCommandPoolCreateInfo-flags-02860", device, create_info_loc.dot(Field::flags),
                          "includes VK_COMMAND_POOL_CREATE_PROTECTED_BIT, but the protectedMemory feature was not enabled.");
     }
 

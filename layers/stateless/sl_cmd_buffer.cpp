@@ -85,13 +85,13 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pBuffers[i] == VK_NULL_HANDLE) {
-            const Location loc = error_obj.location.dot(Field::pBuffers, i);
+            const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
             const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
             if (!(robustness2_features && robustness2_features->nullDescriptor)) {
-                skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04001", commandBuffer, loc, "is VK_NULL_HANDLE.");
+                skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04001", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else {
                 if (pOffsets[i] != 0) {
-                    skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04002", commandBuffer, loc,
+                    skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04002", commandBuffer, buffer_loc,
                                      "is VK_NULL_HANDLE, but pOffsets[%" PRIu32 "] is not 0.", i);
                 }
             }
@@ -237,13 +237,13 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pBuffers[i] == VK_NULL_HANDLE) {
-            const Location loc = error_obj.location.dot(Field::pBuffers, i);
+            const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
             const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
             if (!(robustness2_features && robustness2_features->nullDescriptor)) {
-                skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04111", commandBuffer, loc, "is VK_NULL_HANDLE.");
+                skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04111", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else {
                 if (pOffsets[i] != 0) {
-                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112", commandBuffer, loc,
+                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112", commandBuffer, buffer_loc,
                                      "is VK_NULL_HANDLE, but pOffsets[%" PRIu32 "] is not 0.", i);
                 }
             }
@@ -382,14 +382,16 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
                                                                   const VkRenderingInfo *pRenderingInfo,
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pRenderingInfo);
+    const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
 
     if (pRenderingInfo->viewMask == 0 && pRenderingInfo->layerCount == 0) {
-        skip |= LogError("VUID-VkRenderingInfo-viewMask-06069", commandBuffer, loc, "viewMask and layerCount are both zero");
+        skip |= LogError("VUID-VkRenderingInfo-viewMask-06069", commandBuffer, rendering_info_loc,
+                         "viewMask and layerCount are both zero");
     }
 
     if (pRenderingInfo->colorAttachmentCount > device_limits.maxColorAttachments) {
-        skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06106", commandBuffer, loc.dot(Field::colorAttachmentCount),
+        skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06106", commandBuffer,
+                         rendering_info_loc.dot(Field::colorAttachmentCount),
                          "(%" PRIu32
                          ") must be less than or equal to "
                          "maxColorAttachments (%" PRIu32 ").",
@@ -402,22 +404,23 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
         if (UniqueRenderingInfoImageViews(pRenderingInfo, rendering_fragment_shading_rate_attachment_info->imageView) == false) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06125", commandBuffer,
-                             loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView), "is %s.",
-                             FormatHandle(rendering_fragment_shading_rate_attachment_info->imageView).c_str());
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
+                             "is %s.", FormatHandle(rendering_fragment_shading_rate_attachment_info->imageView).c_str());
         }
 
         const VkImageLayout image_layout = rendering_fragment_shading_rate_attachment_info->imageLayout;
         if (image_layout != VK_IMAGE_LAYOUT_GENERAL &&
             image_layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
             skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147", commandBuffer,
-                             loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::layout), "is (%s).",
-                             string_VkImageLayout(image_layout));
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::layout),
+                             "is (%s).", string_VkImageLayout(image_layout));
         }
 
         if (!IsPowerOfTwo(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
             skip |=
                 LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                         rendering_info_loc
+                             .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                              .dot(Field::width),
                          "(%" PRIu32 ") must be a power of two.",
                          rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
@@ -428,7 +431,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width > max_frs_attach_texel_width) {
             skip |= LogError(
                 "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150", commandBuffer,
-                loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                rendering_info_loc
+                    .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                     .dot(Field::width),
                 "(%" PRIu32
                 ") must be less than or equal to "
@@ -441,7 +445,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width < min_frs_attach_texel_width) {
             skip |= LogError(
                 "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151", commandBuffer,
-                loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                rendering_info_loc
+                    .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                     .dot(Field::width),
                 "(%" PRIu32
                 ") must be greater than or equal to "
@@ -452,7 +457,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (!IsPowerOfTwo(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
             skip |=
                 LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                         rendering_info_loc
+                             .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                              .dot(Field::height),
                          "(%" PRIu32 ") must be a power of two.",
                          rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height);
@@ -463,7 +469,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height > max_frs_attach_texel_height) {
             skip |=
                 LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                         rendering_info_loc
+                             .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                              .dot(Field::height),
                          "(%" PRIu32
                          ") must be less than or equal to "
@@ -477,7 +484,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height < min_frs_attach_texel_height) {
             skip |=
                 LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
+                         rendering_info_loc
+                             .pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
                              .dot(Field::height),
                          "(%" PRIu32
                          ") must be greater than or equal to "
@@ -491,29 +499,29 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width /
              rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height) >
             max_frs_attach_texel_aspect_ratio) {
-            skip |=
-                LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize),
-                         "the quotient of width (%" PRIu32 ") and height (%" PRIu32
-                         ") "
-                         "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
-                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
-                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
-                         max_frs_attach_texel_aspect_ratio);
+            skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", commandBuffer,
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
+                                                      Field::shadingRateAttachmentTexelSize),
+                             "the quotient of width (%" PRIu32 ") and height (%" PRIu32
+                             ") "
+                             "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                             max_frs_attach_texel_aspect_ratio);
         }
 
         if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height /
              rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width) >
             max_frs_attach_texel_aspect_ratio) {
-            skip |=
-                LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", commandBuffer,
-                         loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize),
-                         "the quotient of height (%" PRIu32 ") and width (%" PRIu32
-                         ") "
-                         "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
-                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
-                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
-                         max_frs_attach_texel_aspect_ratio);
+            skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", commandBuffer,
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
+                                                      Field::shadingRateAttachmentTexelSize),
+                             "the quotient of height (%" PRIu32 ") and width (%" PRIu32
+                             ") "
+                             "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                             max_frs_attach_texel_aspect_ratio);
         }
     }
 
@@ -522,14 +530,14 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     if (fragment_density_map_attachment_info && (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE)) {
         if (UniqueRenderingInfoImageViews(pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06116", commandBuffer,
-                             loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView), "is %s.",
-                             FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
+                             "is %s.", FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
         }
 
         if (fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_GENERAL &&
             fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157", commandBuffer,
-                             loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                              "is %s, but "
                              "VkRenderingFragmentDensityMapAttachmentInfoEXT::imageLayout is %s.",
                              FormatHandle(fragment_density_map_attachment_info->imageView).c_str(),
@@ -539,7 +547,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
         if (rendering_fragment_shading_rate_attachment_info &&
             (rendering_fragment_shading_rate_attachment_info->imageView == fragment_density_map_attachment_info->imageView)) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06126", commandBuffer,
-                             loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
+                             rendering_info_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT, Field::imageView),
                              "and VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView are the same (%s).",
                              FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
         }
@@ -547,7 +555,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
 
     for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
         if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
-            const Location attachment_loc = loc.dot(Field::pColorAttachments, j);
+            const Location attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, j);
             const VkImageLayout image_layout = pRenderingInfo->pColorAttachments[j].imageLayout;
             const VkResolveModeFlagBits resolve_mode = pRenderingInfo->pColorAttachments[j].resolveMode;
             const VkImageLayout resolve_image_layout = pRenderingInfo->pColorAttachments[j].resolveImageLayout;
@@ -600,7 +608,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-        const Location attachment_loc = loc.dot(Field::pDepthAttachment);
+        const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
         const VkImageLayout layout = pRenderingInfo->pDepthAttachment->imageLayout;
         if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
@@ -643,7 +651,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     if (pRenderingInfo->pStencilAttachment != nullptr && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-        const Location attachment_loc = loc.dot(Field::pStencilAttachment);
+        const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
         const VkImageLayout layout = pRenderingInfo->pStencilAttachment->imageLayout;
         if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),
@@ -727,17 +735,18 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
                                                                     const VkClearRect *pRects, const ErrorObject &error_obj) const {
     bool skip = false;
     for (uint32_t rect = 0; rect < rectCount; rect++) {
-        const Location loc = error_obj.location.dot(Field::pRects, rect);
+        const Location rect_loc = error_obj.location.dot(Field::pRects, rect);
         if (pRects[rect].layerCount == 0) {
-            skip |= LogError("VUID-vkCmdClearAttachments-layerCount-01934", commandBuffer, loc.dot(Field::layerCount), "is zero.");
+            skip |=
+                LogError("VUID-vkCmdClearAttachments-layerCount-01934", commandBuffer, rect_loc.dot(Field::layerCount), "is zero.");
         }
         if (pRects[rect].rect.extent.width == 0) {
             skip |= LogError("VUID-vkCmdClearAttachments-rect-02682", commandBuffer,
-                             loc.dot(Field::rect).dot(Field::extent).dot(Field::width), "is zero.");
+                             rect_loc.dot(Field::rect).dot(Field::extent).dot(Field::width), "is zero.");
         }
         if (pRects[rect].rect.extent.height == 0) {
             skip |= LogError("VUID-vkCmdClearAttachments-rect-02683", commandBuffer,
-                             loc.dot(Field::rect).dot(Field::extent).dot(Field::height), "is zero.");
+                             rect_loc.dot(Field::rect).dot(Field::extent).dot(Field::height), "is zero.");
         }
     }
     return skip;

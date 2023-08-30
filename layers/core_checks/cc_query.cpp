@@ -210,16 +210,17 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                                                 const ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
             if (!enabled_features.core.pipelineStatisticsQuery) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00791", device, loc.dot(Field::queryType),
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00791", device, create_info_loc.dot(Field::queryType),
                                  "is VK_QUERY_TYPE_PIPELINE_STATISTICS but pipelineStatisticsQuery feature was not enabled.");
             } else if ((pCreateInfo->pipelineStatistics & (VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT |
                                                            VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT)) &&
                        !enabled_features.mesh_shader_features.meshShaderQueries) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069", device, loc.dot(Field::pipelineStatistics),
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069", device,
+                                 create_info_loc.dot(Field::pipelineStatistics),
                                  "(%s) contains mesh/task shader bit, but "
                                  "meshShaderQueries feature was not enabled.",
                                  string_VkQueryPipelineStatisticFlags(pCreateInfo->pipelineStatistics).c_str());
@@ -230,28 +231,29 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             if (!enabled_features.performance_query_features.performanceCounterQueryPools) {
                 skip |=
                     LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237", device,
-                             loc.dot(Field::queryType),
+                             create_info_loc.dot(Field::queryType),
                              "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but performanceCounterQueryPools feature was not enabled.");
             }
 
             auto perf_ci = LvlFindInChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
             if (!perf_ci) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, loc.dot(Field::queryType),
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, create_info_loc.dot(Field::queryType),
                                  "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext does not contain in instance of "
                                  "VkQueryPoolPerformanceCreateInfoKHR.");
             } else {
                 const auto &perf_counter_iter = physical_device_state->perf_counters.find(perf_ci->queueFamilyIndex);
                 if (perf_counter_iter == physical_device_state->perf_counters.end()) {
                     skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236", device,
-                                     loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex),
+                                     create_info_loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex),
                                      "(%" PRIu32 ") is not a valid queue family index.", perf_ci->queueFamilyIndex);
                 } else {
                     const QUEUE_FAMILY_PERF_COUNTERS *perf_counters = perf_counter_iter->second.get();
                     for (uint32_t idx = 0; idx < perf_ci->counterIndexCount; idx++) {
                         if (perf_ci->pCounterIndices[idx] >= perf_counters->counters.size()) {
-                            skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321", device,
-                                             loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::pCounterIndices, idx),
-                                             "(%" PRIu32 ") is not a valid counter index.", perf_ci->pCounterIndices[idx]);
+                            skip |= LogError(
+                                "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321", device,
+                                create_info_loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::pCounterIndices, idx),
+                                "(%" PRIu32 ") is not a valid counter index.", perf_ci->pCounterIndices[idx]);
                         }
                     }
                 }
@@ -268,8 +270,9 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
         }
         case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT: {
             if (!enabled_features.mesh_shader_features.meshShaderQueries) {
-                skip |= LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068", device, loc.dot(Field::queryType),
-                                 "is VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT but meshShaderQueries feature was not enabled.");
+                skip |=
+                    LogError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068", device, create_info_loc.dot(Field::queryType),
+                             "is VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT but meshShaderQueries feature was not enabled.");
             }
             break;
         }

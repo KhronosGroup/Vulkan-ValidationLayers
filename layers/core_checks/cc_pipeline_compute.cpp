@@ -22,9 +22,9 @@
 #include "generated/chassis.h"
 #include "core_validation.h"
 
-bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline, const Location &loc) const {
-    StageCreateInfo stage_create_info(loc.function, &pipeline);
-    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], loc.dot(Field::stage));
+bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+    StageCreateInfo stage_create_info(create_info_loc.function, &pipeline);
+    return ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[0], create_info_loc.dot(Field::stage));
 }
 
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -40,15 +40,15 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         if (!pipeline) {
             continue;
         }
-        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
-        skip |= ValidateComputePipelineShaderState(*pipeline, loc);
-        skip |= ValidateShaderModuleId(*pipeline, loc);
-        skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, loc.dot(Field::flags),
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
+        skip |= ValidateComputePipelineShaderState(*pipeline, create_info_loc);
+        skip |= ValidateShaderModuleId(*pipeline, create_info_loc);
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
 
         if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
             pipeline_robustness_info) {
-            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, loc);
+            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, create_info_loc);
         }
     }
     return skip;

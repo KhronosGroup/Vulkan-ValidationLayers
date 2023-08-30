@@ -2510,11 +2510,11 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return false;
     }
 
-    const Location loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     auto have_glsl_shader = IsExtEnabled(device_extensions.vk_nv_glsl_shader);
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
-        skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, loc.dot(Field::codeSize),
+        skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
                          "(%zu) must be a multiple of 4.", pCreateInfo->codeSize);
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
@@ -2541,7 +2541,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
                     skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-01379", "SPIR-V module not valid: %s",
                                        diag && diag->error ? diag->error : "(no error text)");
                 } else {
-                    skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-01379", device, loc.dot(Field::pCode),
+                    skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-01379", device, create_info_loc.dot(Field::pCode),
                                      "is not valid SPIR-V: %s", diag && diag->error ? diag->error : "(no error text)");
                 }
             }

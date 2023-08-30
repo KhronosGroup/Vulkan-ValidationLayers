@@ -716,7 +716,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     bool skip = false;
 
     if (pImageFormatInfo != nullptr) {
-        const Location loc = error_obj.location.dot(Field::pImageFormatInfo);
+        const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
         const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
@@ -725,7 +725,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                 legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
                 if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
                     skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", physicalDevice,
-                                     loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
+                                     format_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage), "is %s.",
                                      string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
                 }
             }
@@ -733,19 +733,21 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
         const auto image_drm_format = LvlFindInChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
         if (image_drm_format) {
             if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-                skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice, loc.dot(Field::tiling),
+                skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
+                                 format_info_loc.dot(Field::tiling),
                                  "(%s) but no VkPhysicalDeviceImageDrmFormatModifierInfoEXT in pNext chain.",
                                  string_VkImageTiling(pImageFormatInfo->tiling));
             }
             if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT && image_drm_format->queueFamilyIndexCount <= 1) {
                 skip |= LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
-                                 loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
+                                 format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
                                  "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
                                  image_drm_format->queueFamilyIndexCount);
             }
         } else {
             if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-                skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice, loc.dot(Field::tiling),
+                skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
+                                 format_info_loc.dot(Field::tiling),
                                  "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, but pNext chain not include "
                                  "VkPhysicalDeviceImageDrmFormatModifierInfoEXT.");
             }
@@ -755,7 +757,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
             const auto format_list = LvlFindInChain<VkImageFormatListCreateInfo>(pImageFormatInfo->pNext);
             if (!format_list || format_list->viewFormatCount == 0) {
                 skip |= LogError(
-                    "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313", physicalDevice, loc,
+                    "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313", physicalDevice, format_info_loc,
                     "tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT "
                     "bit, but the pNext chain does not include VkImageFormatListCreateInfo with non-zero viewFormatCount.");
             }
@@ -798,18 +800,18 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDev
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
                                                                            const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pNameInfo);
+    const Location name_info_loc = error_obj.location.dot(Field::pNameInfo);
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587", device, loc.dot(Field::objectType),
+        skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587", device, name_info_loc.dot(Field::objectType),
                          "cannot be VK_OBJECT_TYPE_UNKNOWN.");
     }
     if (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE)) {
-        skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588", device, loc.dot(Field::objectHandle),
+        skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588", device, name_info_loc.dot(Field::objectHandle),
                          "cannot be VK_NULL_HANDLE.");
     }
 
     if ((pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) && (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE))) {
-        skip |= LogError("VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589", device, loc.dot(Field::objectType),
+        skip |= LogError("VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589", device, name_info_loc.dot(Field::objectType),
                          "is VK_OBJECT_TYPE_UNKNOWN but objectHandle is VK_NULL_HANDLE");
     }
 

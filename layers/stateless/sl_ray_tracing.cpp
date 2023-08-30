@@ -214,32 +214,33 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                          "accelerationStructure feature was not enabled.");
     }
     if (pCreateInfo) {
-        const Location loc = error_obj.location.dot(Field::pCreateInfo);
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
         if (pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR &&
             (!acceleration_structure_features ||
              (acceleration_structure_features &&
               acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE))) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613", device, loc.dot(Field::createFlags),
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-03613", device,
+                             create_info_loc.dot(Field::createFlags),
                              "includes "
                              "VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR, "
                              "but accelerationStructureCaptureReplay feature is not enabled.");
         }
         if (pCreateInfo->deviceAddress &&
             !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03612", device, loc.dot(Field::createFlags),
-                             "is %s, but deviceAddress (%" PRIu64 ") is not zero.",
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03612", device,
+                             create_info_loc.dot(Field::createFlags), "is %s, but deviceAddress (%" PRIu64 ") is not zero.",
                              string_VkAccelerationStructureCreateFlagsKHR(pCreateInfo->createFlags).c_str(),
                              pCreateInfo->deviceAddress);
         }
         if (pCreateInfo->deviceAddress && (!acceleration_structure_features ||
                                            (acceleration_structure_features &&
                                             acceleration_structure_features->accelerationStructureCaptureReplay == VK_FALSE))) {
-            skip |= LogError("VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488", device, loc.dot(Field::deviceAddress),
-                             "is %" PRIu64 " but accelerationStructureCaptureReplay feature was not enabled.",
-                             pCreateInfo->deviceAddress);
+            skip |= LogError(
+                "VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488", device, create_info_loc.dot(Field::deviceAddress),
+                "is %" PRIu64 " but accelerationStructureCaptureReplay feature was not enabled.", pCreateInfo->deviceAddress);
         }
         if (SafeModulo(pCreateInfo->offset, 256) != 0) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-offset-03734", device, loc.dot(Field::offset),
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-offset-03734", device, create_info_loc.dot(Field::offset),
                              "%" PRIu64 " must be a multiple of 256 bytes", pCreateInfo->offset);
         }
 
@@ -248,7 +249,8 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
         if ((pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
             (!descriptor_buffer_features ||
              (descriptor_buffer_features && descriptor_buffer_features->descriptorBufferCaptureReplay == VK_FALSE))) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108", device, loc.dot(Field::createFlags),
+            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108", device,
+                             create_info_loc.dot(Field::createFlags),
                              "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but the "
                              "descriptorBufferCaptureReplay feature was not enabled.");
         }
@@ -257,9 +259,10 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
             LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
         if (opaque_capture_descriptor_buffer &&
             !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-            skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, loc.dot(Field::createFlags),
-                             "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but  "
-                             "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.");
+            skip |=
+                LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, create_info_loc.dot(Field::createFlags),
+                         "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but  "
+                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.");
         }
     }
     return skip;
@@ -295,9 +298,10 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
     bool skip = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-            ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index], loc.dot(Field::pStages, stage_index));
+            ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index],
+                                                  create_info_loc.dot(Field::pStages, stage_index));
         }
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
@@ -432,9 +436,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                          "The rayTracingPipeline feature was not enabled.");
     }
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-            const Location stage_loc = loc.dot(Field::pStages, stage_index);
+            const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);
             ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index], stage_loc);
 
             const auto stage = pCreateInfos[i].pStages[stage_index].stage;
@@ -450,21 +454,24 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         if (!raytracing_features || (raytracing_features && raytracing_features->rayTraversalPrimitiveCulling == VK_FALSE)) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-rayTraversalPrimitiveCulling-03596", device,
-                                 loc.dot(Field::flags), "is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                                 create_info_loc.dot(Field::flags), "is %s.",
+                                 string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-rayTraversalPrimitiveCulling-03597", device,
-                                 loc.dot(Field::flags), "is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                                 create_info_loc.dot(Field::flags), "is %s.",
+                                 string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         }
 
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfo>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
             (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pipelineStageCreationFeedbackCount-06652", device,
-                             loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pipelineStageCreationFeedbackCount),
-                             "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", feedback_struct->pipelineStageCreationFeedbackCount,
-                             loc.Fields().c_str(), pCreateInfos[i].stageCount);
+            skip |= LogError(
+                "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineStageCreationFeedbackCount-06652", device,
+                create_info_loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pipelineStageCreationFeedbackCount),
+                "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", feedback_struct->pipelineStageCreationFeedbackCount,
+                create_info_loc.Fields().c_str(), pCreateInfos[i].stageCount);
         }
 
         const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
@@ -475,41 +482,42 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
                                          VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905", device,
-                                 loc.dot(Field::flags), "vkCreateRayTracingPipelinesKHR(): pCreateInfos[%" PRIu32 "].flags is %s.",
-                                 i, string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                                 create_info_loc.dot(Field::flags),
+                                 "vkCreateRayTracingPipelinesKHR(): pCreateInfos[%" PRIu32 "].flags is %s.", i,
+                                 string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         }
 
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904", device, loc.dot(Field::flags), "is %s.",
-                             string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904", device, create_info_loc.dot(Field::flags),
+                             "is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
         }
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             if (pCreateInfos[i].pLibraryInterface == NULL) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465", device, loc.dot(Field::flags), "is %s.",
-                                 string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465", device, create_info_loc.dot(Field::flags),
+                                 "is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         }
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DISPATCH_BASE) {
-            skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03816", device, loc.dot(Field::flags), "is %s.",
+            skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03816", device, create_info_loc.dot(Field::flags), "is %s.",
                              string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
         }
 
         for (uint32_t group_index = 0; group_index < pCreateInfos[i].groupCount; ++group_index) {
-            const Location group_loc = loc.dot(Field::pGroups, group_index);
+            const Location group_loc = create_info_loc.dot(Field::pGroups, group_index);
             if ((pCreateInfos[i].pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) ||
                 (pCreateInfos[i].pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR)) {
                 if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) &&
                     (pCreateInfos[i].pGroups[group_index].anyHitShader == VK_SHADER_UNUSED_KHR)) {
-                    skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470", device, loc.dot(Field::flags),
-                                     "is %s, but %s is VK_SHADER_UNUSED_KHR.",
+                    skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470", device,
+                                     create_info_loc.dot(Field::flags), "is %s, but %s is VK_SHADER_UNUSED_KHR.",
                                      string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str(),
                                      group_loc.dot(Field::anyHitShader).Fields().c_str());
                 }
                 if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) &&
                     (pCreateInfos[i].pGroups[group_index].closestHitShader == VK_SHADER_UNUSED_KHR)) {
-                    skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471", device, loc.dot(Field::flags),
-                                     "is %s, but %s is VK_SHADER_UNUSED_KHR.",
+                    skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471", device,
+                                     create_info_loc.dot(Field::flags), "is %s, but %s is VK_SHADER_UNUSED_KHR.",
                                      string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str(),
                                      group_loc.dot(Field::closestHitShader).Fields().c_str());
                 }
@@ -519,7 +527,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 if (!(pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
                     skip |= LogError(
                         "VUID-VkRayTracingPipelineCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplay-03599", device,
-                        loc.dot(Field::flags), "vis %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                        create_info_loc.dot(Field::flags), "vis %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
                 }
             }
         }
@@ -527,20 +535,21 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             if (pCreateInfos[i].basePipelineIndex != -1) {
                 if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
-                    skip |=
-                        LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07986", device, loc.dot(Field::basePipelineIndex),
-                                 "is %" PRId32 " and basePipelineHandle is not VK_NULL_HANDLE.", pCreateInfos[i].basePipelineIndex);
+                    skip |= LogError(
+                        "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07986", device, create_info_loc.dot(Field::basePipelineIndex),
+                        "is %" PRId32 " and basePipelineHandle is not VK_NULL_HANDLE.", pCreateInfos[i].basePipelineIndex);
                 }
                 if (pCreateInfos[i].basePipelineIndex > static_cast<int32_t>(i)) {
-                    skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03415", device, loc.dot(Field::basePipelineIndex),
-                                     "is %" PRId32 ".", pCreateInfos[i].basePipelineIndex);
+                    skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03415", device,
+                                     create_info_loc.dot(Field::basePipelineIndex), "is %" PRId32 ".",
+                                     pCreateInfos[i].basePipelineIndex);
                 }
             }
             if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
                 if (pCreateInfos[i].basePipelineIndex < 0 ||
                     static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
                     skip |=
-                        LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985", device, loc.dot(Field::flags),
+                        LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985", device, create_info_loc.dot(Field::flags),
                                  "is %s but basePipelineIndex has invalid index value %" PRId32 ".",
                                  string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str(), pCreateInfos[i].basePipelineIndex);
                 }
@@ -549,47 +558,49 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR &&
             (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE)) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03598", device, loc.dot(Field::flags), "is %s.",
-                             string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03598", device, create_info_loc.dot(Field::flags),
+                             "is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
         }
 
         const bool library_enabled = IsExtEnabled(device_extensions.vk_khr_pipeline_library);
         if (!library_enabled) {
             if (pCreateInfos[i].pLibraryInfo) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device, loc.dot(Field::pLibraryInfo),
-                                 "is not NULL.");
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device,
+                                 create_info_loc.dot(Field::pLibraryInfo), "is not NULL.");
             }
             if (pCreateInfos[i].pLibraryInterface) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device,
-                                 loc.dot(Field::pLibraryInterface), "is not NULL.");
+                                 create_info_loc.dot(Field::pLibraryInterface), "is not NULL.");
             }
         }
 
         if (pCreateInfos[i].pLibraryInfo) {
             if ((pCreateInfos[i].pLibraryInfo->libraryCount > 0) && (pCreateInfos[i].pLibraryInterface == nullptr)) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590", device,
-                                 loc.dot(Field::pLibraryInfo).dot(Field::libraryCount),
+                                 create_info_loc.dot(Field::pLibraryInfo).dot(Field::libraryCount),
                                  "%" PRIu32 ", but pLibraryInterface is NULL.", pCreateInfos[i].pLibraryInfo->libraryCount);
             }
         }
 
         if (pCreateInfos[i].pLibraryInfo == nullptr) {
             if (pCreateInfos[i].stageCount == 0) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999", device, loc.dot(Field::pLibraryInfo),
-                                 "is NULL and stageCount is zero.");
+                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999", device,
+                                 create_info_loc.dot(Field::pLibraryInfo), "is NULL and stageCount is zero.");
             }
             if (((pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) && (pCreateInfos[i].groupCount == 0)) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700", device, loc.dot(Field::pLibraryInfo),
-                                 " is NULL and flags is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
+                skip |=
+                    LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700", device, create_info_loc.dot(Field::pLibraryInfo),
+                             " is NULL and flags is %s.", string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         } else if (pCreateInfos[i].pLibraryInfo->libraryCount == 0) {
             if (pCreateInfos[i].stageCount == 0) {
-                skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999", device,
-                                 loc.dot(Field::pLibraryInfo).dot(Field::libraryCount), "is zero and stageCount is zero.");
+                skip |=
+                    LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999", device,
+                             create_info_loc.dot(Field::pLibraryInfo).dot(Field::libraryCount), "is zero and stageCount is zero.");
             }
             if (((pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) && (pCreateInfos[i].groupCount == 0)) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700", device,
-                                 loc.dot(Field::pLibraryInfo).dot(Field::libraryCount), "is zero and flags is %s.",
+                                 create_info_loc.dot(Field::pLibraryInfo).dot(Field::libraryCount), "is zero and flags is %s.",
                                  string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         }
@@ -599,7 +610,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 phys_dev_ext_props.ray_tracing_props_khr.maxRayHitAttributeSize) {
                 skip |= LogError(
                     "VUID-VkRayTracingPipelineInterfaceCreateInfoKHR-maxPipelineRayHitAttributeSize-03605", device,
-                    loc.dot(Field::pLibraryInterface).dot(Field::maxPipelineRayHitAttributeSize),
+                    create_info_loc.dot(Field::pLibraryInterface).dot(Field::maxPipelineRayHitAttributeSize),
                     "(%" PRIu32 ") is larger than VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayHitAttributeSize (%" PRIu32
                     ").",
                     pCreateInfos[i].pLibraryInterface->maxPipelineRayHitAttributeSize,
@@ -609,8 +620,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
 
         if (deferredOperation != VK_NULL_HANDLE) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT) {
-                skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03587", device, loc.dot(Field::flags),
-                                 "is %s, but deferredOperation is not VK_NULL_HANDLE.",
+                skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03587", device,
+                                 create_info_loc.dot(Field::flags), "is %s, but deferredOperation is not VK_NULL_HANDLE.",
                                  string_VkPipelineCreateFlags(pCreateInfos[i].flags).c_str());
             }
         }
@@ -619,7 +630,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             for (uint32_t j = 0; j < pCreateInfos[i].pDynamicState->dynamicStateCount; ++j) {
                 if (pCreateInfos[i].pDynamicState->pDynamicStates[j] != VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicStates-03602", device,
-                                     loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, j), "is %s.",
+                                     create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, j), "is %s.",
                                      string_VkDynamicState(pCreateInfos[i].pDynamicState->pDynamicStates[j]));
                 }
             }
@@ -633,9 +644,9 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
     VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pInfo);
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
-        skip |= LogError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412", device, loc.dot(Field::mode), "is %s.",
+        skip |= LogError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412", device, info_loc.dot(Field::mode), "is %s.",
                          string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
     }
     const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
@@ -646,9 +657,9 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
     skip |= ValidateRequiredPointer(error_obj.location, "pInfo->dst.hostAddress", pInfo->dst.hostAddress,
                                     "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03732");
     if (SafeModulo((VkDeviceSize)pInfo->dst.hostAddress, 16) != 0) {
-        skip |=
-            LogError("VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03751", device, loc.dot(Field::dst).dot(Field::hostAddress),
-                     "(0x%" PRIx64 ") must be aligned to 16 bytes.", (VkDeviceAddress)pInfo->dst.hostAddress);
+        skip |= LogError("VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03751", device,
+                         info_loc.dot(Field::dst).dot(Field::hostAddress), "(0x%" PRIx64 ") must be aligned to 16 bytes.",
+                         (VkDeviceAddress)pInfo->dst.hostAddress);
     }
     return skip;
 }
@@ -656,15 +667,15 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
 bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo, const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pInfo);
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
         skip |=  // to update VUID to VkCmdCopyAccelerationStructureToMemoryInfoKHR after spec update
-            LogError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412", commandBuffer, loc.dot(Field::mode), "is %s.",
-                     string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
+            LogError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412", commandBuffer, info_loc.dot(Field::mode),
+                     "is %s.", string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
     }
     if (SafeModulo(pInfo->dst.deviceAddress, 256) != 0) {
         skip |= LogError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03740", commandBuffer,
-                         loc.dot(Field::dst).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
+                         info_loc.dot(Field::dst).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
                          pInfo->dst.deviceAddress);
     }
     return skip;
@@ -734,11 +745,11 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo, const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pInfo);
-    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, loc);
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
     if (SafeModulo(pInfo->src.deviceAddress, 256) != 0) {
         skip |= LogError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03743", commandBuffer,
-                         loc.dot(Field::src).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
+                         info_loc.dot(Field::src).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
                          pInfo->src.deviceAddress);
     }
     return skip;

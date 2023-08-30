@@ -97,29 +97,29 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
 
     if (pScissors) {
         for (uint32_t scissor_i = 0; scissor_i < scissorCount; ++scissor_i) {
-            const Location loc = error_obj.location.dot(Field::pScissors, scissor_i);
+            const Location scissor_loc = error_obj.location.dot(Field::pScissors, scissor_i);
             const auto &scissor = pScissors[scissor_i];  // will crash on invalid ptr
 
             if (scissor.offset.x < 0) {
-                skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer, loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRId32 ") is negative.", scissor.offset.x);
+                skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer,
+                                 scissor_loc.dot(Field::offset).dot(Field::x), "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
-                skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer, loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRId32 ") is negative.", scissor.offset.y);
+                skip |= LogError("VUID-vkCmdSetScissorWithCount-x-03399", commandBuffer,
+                                 scissor_loc.dot(Field::offset).dot(Field::y), "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03400", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03400", commandBuffer, scissor_loc,
                                  "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03401", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetScissorWithCount-offset-03401", commandBuffer, scissor_loc,
                                  "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }
@@ -212,29 +212,31 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     }
 
     for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
-        const Location loc = error_obj.location.dot(Field::pVertexBindingDescriptions, binding);
+        const Location binding_loc = error_obj.location.dot(Field::pVertexBindingDescriptions, binding);
         if (pVertexBindingDescriptions[binding].binding > device_limits.maxVertexInputBindings) {
-            skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-binding-04796", commandBuffer, loc.dot(Field::binding),
-                             "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
+            skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-binding-04796", commandBuffer,
+                             binding_loc.dot(Field::binding), "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
                              pVertexBindingDescriptions[binding].binding, device_limits.maxVertexInputBindings);
         }
 
         if (pVertexBindingDescriptions[binding].stride > device_limits.maxVertexInputBindingStride) {
-            skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-stride-04797", commandBuffer, loc.dot(Field::stride),
+            skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-stride-04797", commandBuffer, binding_loc.dot(Field::stride),
                              "(%" PRIu32 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
                              pVertexBindingDescriptions[binding].stride, device_limits.maxVertexInputBindingStride);
         }
 
         if (pVertexBindingDescriptions[binding].divisor == 0 &&
             (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateZeroDivisor)) {
-            skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798", commandBuffer, loc.dot(Field::divisor),
-                             "is zero but "
-                             "vertexAttributeInstanceRateZeroDivisor feature was not enabled");
+            skip |=
+                LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798", commandBuffer, binding_loc.dot(Field::divisor),
+                         "is zero but "
+                         "vertexAttributeInstanceRateZeroDivisor feature was not enabled");
         }
 
         if (pVertexBindingDescriptions[binding].divisor > 1) {
             if (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateDivisor) {
-                skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799", commandBuffer, loc.dot(Field::divisor),
+                skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799", commandBuffer,
+                                 binding_loc.dot(Field::divisor),
                                  "is %" PRIu32
                                  " (greater than 1) but "
                                  "vertexAttributeInstanceRateDivisor feature was not enabled",
@@ -243,14 +245,15 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                 if (pVertexBindingDescriptions[binding].divisor >
                     phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06226", commandBuffer,
-                                     loc.dot(Field::divisor), "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ")",
+                                     binding_loc.dot(Field::divisor),
+                                     "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ")",
                                      pVertexBindingDescriptions[binding].divisor,
                                      phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor);
                 }
 
                 if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06227", commandBuffer,
-                                     loc.dot(Field::divisor), "is %" PRIu32 " (greater than 1) but inputRate is %s.",
+                                     binding_loc.dot(Field::divisor), "is %" PRIu32 " (greater than 1) but inputRate is %s.",
                                      pVertexBindingDescriptions[binding].divisor,
                                      string_VkVertexInputRate(pVertexBindingDescriptions[binding].inputRate));
                 }
@@ -259,33 +262,37 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     }
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
-        const Location loc = error_obj.location.dot(Field::pVertexAttributeDescriptions, attribute);
+        const Location attribute_loc = error_obj.location.dot(Field::pVertexAttributeDescriptions, attribute);
         if (pVertexAttributeDescriptions[attribute].location > device_limits.maxVertexInputAttributes) {
-            skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-location-06228", commandBuffer, loc.dot(Field::location),
+            skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-location-06228", commandBuffer,
+                             attribute_loc.dot(Field::location),
                              "(%" PRIu32 ") is greater than maxVertexInputAttributes (%" PRIu32 ").",
                              pVertexAttributeDescriptions[attribute].location, device_limits.maxVertexInputAttributes);
         }
 
         if (pVertexAttributeDescriptions[attribute].binding > device_limits.maxVertexInputBindings) {
-            skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229", commandBuffer, loc.dot(Field::binding),
-                             "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
-                             pVertexAttributeDescriptions[attribute].binding, device_limits.maxVertexInputBindings);
+            skip |=
+                LogError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229", commandBuffer,
+                         attribute_loc.dot(Field::binding), "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
+                         pVertexAttributeDescriptions[attribute].binding, device_limits.maxVertexInputBindings);
         }
 
         if (pVertexAttributeDescriptions[attribute].offset > device_limits.maxVertexInputAttributeOffset) {
-            skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-offset-06230", commandBuffer, loc.dot(Field::offset),
-                             "(%" PRIu32 ") is greater than maxVertexInputAttributeOffset (%" PRIu32 ").",
-                             pVertexAttributeDescriptions[attribute].offset, device_limits.maxVertexInputAttributeOffset);
+            skip |=
+                LogError("VUID-VkVertexInputAttributeDescription2EXT-offset-06230", commandBuffer, attribute_loc.dot(Field::offset),
+                         "(%" PRIu32 ") is greater than maxVertexInputAttributeOffset (%" PRIu32 ").",
+                         pVertexAttributeDescriptions[attribute].offset, device_limits.maxVertexInputAttributeOffset);
         }
 
         VkFormatProperties properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, pVertexAttributeDescriptions[attribute].format, &properties);
         if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
-            skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-format-04805", commandBuffer, loc.dot(Field::format),
-                             "(%s) is not a "
-                             "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format. (supported bufferFeatures: %s)",
-                             string_VkFormat(pVertexAttributeDescriptions[attribute].format),
-                             string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
+            skip |=
+                LogError("VUID-VkVertexInputAttributeDescription2EXT-format-04805", commandBuffer, attribute_loc.dot(Field::format),
+                         "(%s) is not a "
+                         "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format. (supported bufferFeatures: %s)",
+                         string_VkFormat(pVertexAttributeDescriptions[attribute].format),
+                         string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
         }
     }
 
@@ -389,29 +396,29 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
 
     if (pExclusiveScissors) {
         for (uint32_t scissor_i = 0; scissor_i < exclusiveScissorCount; ++scissor_i) {
-            const Location loc = error_obj.location.dot(Field::pExclusiveScissors, scissor_i);
+            const Location scissor_loc = error_obj.location.dot(Field::pExclusiveScissors, scissor_i);
             const auto &scissor = pExclusiveScissors[scissor_i];  // will crash on invalid ptr
 
             if (scissor.offset.x < 0) {
-                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer, loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRId32 ") is negative.", scissor.offset.x);
+                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer,
+                                 scissor_loc.dot(Field::offset).dot(Field::x), "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
-                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer, loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRId32 ") is negative.", scissor.offset.y);
+                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-x-02037", commandBuffer,
+                                 scissor_loc.dot(Field::offset).dot(Field::y), "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02038", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02038", commandBuffer, scissor_loc,
                                  "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02039", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-offset-02039", commandBuffer, scissor_loc,
                                  "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }
@@ -548,29 +555,29 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
 
     if (pScissors) {
         for (uint32_t scissor_i = 0; scissor_i < scissorCount; ++scissor_i) {
-            const Location loc = error_obj.location.dot(Field::pScissors, scissor_i);
+            const Location scissor_loc = error_obj.location.dot(Field::pScissors, scissor_i);
             const auto &scissor = pScissors[scissor_i];  // will crash on invalid ptr
 
             if (scissor.offset.x < 0) {
-                skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, loc.dot(Field::offset).dot(Field::x),
+                skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, scissor_loc.dot(Field::offset).dot(Field::x),
                                  "(%" PRId32 ") is negative.", scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
-                skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, loc.dot(Field::offset).dot(Field::y),
+                skip |= LogError("VUID-vkCmdSetScissor-x-00595", commandBuffer, scissor_loc.dot(Field::offset).dot(Field::y),
                                  "(%" PRId32 ") is negative.", scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
             if (x_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetScissor-offset-00596", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetScissor-offset-00596", commandBuffer, scissor_loc,
                                  "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.x, scissor.extent.width, x_sum);
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
             if (y_sum > vvl::kI32Max) {
-                skip |= LogError("VUID-vkCmdSetScissor-offset-00597", commandBuffer, loc,
+                skip |= LogError("VUID-vkCmdSetScissor-offset-00597", commandBuffer, scissor_loc,
                                  "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                                  scissor.offset.y, scissor.extent.height, y_sum);
             }

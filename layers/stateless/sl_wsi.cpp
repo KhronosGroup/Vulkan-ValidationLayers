@@ -187,8 +187,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalD
     bool skip = false;
 
     const VkDisplayModeParametersKHR display_mode_parameters = pCreateInfo->parameters;
-    const Location loc = error_obj.location.dot(Field::pCreateInfo);
-    const Location param_loc = loc.dot(Field::parameters);
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location param_loc = create_info_loc.dot(Field::parameters);
 
     skip |= ValidateNotZero(display_mode_parameters.visibleRegion.width == 0, "VUID-VkDisplayModeParametersKHR-width-01990",
                             param_loc.dot(Field::visibleRegion).dot(Field::width));

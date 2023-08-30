@@ -74,11 +74,11 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     bool skip = false;
 
     if (pAllocateInfo) {
-        const Location loc = error_obj.location.dot(Field::pAllocateInfo);
+        const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
         auto chained_prio_struct = LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
         if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
             skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
-                             loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority), "is %f",
+                             allocate_info_loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority), "is %f",
                              chained_prio_struct->priority);
         }
 
@@ -92,7 +92,8 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
         auto opaque_alloc_info = LvlFindInChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
         if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
-            const Location address_loc = loc.pNext(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress);
+            const Location address_loc =
+                allocate_info_loc.pNext(Struct::VkMemoryOpaqueCaptureAddressAllocateInfo, Field::opaqueCaptureAddress);
             if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329", device, address_loc,
                                  "is non-zero (%" PRIu64
@@ -109,29 +110,29 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
             }
 
             if (import_info.total_import_ops > 0) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333", device, loc,
+                skip |= LogError("VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333", device, address_loc,
                                  "is non-zero (%" PRIu64 ") but an import operation is defined.",
                                  opaque_alloc_info->opaqueCaptureAddress);
             }
         }
 
         if (import_info.total_import_ops > 1) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-None-06657", device, loc, "%" PRIu32 " import operations are defined",
-                             import_info.total_import_ops);
+            skip |= LogError("VUID-VkMemoryAllocateInfo-None-06657", device, allocate_info_loc,
+                             "%" PRIu32 " import operations are defined", import_info.total_import_ops);
         }
 
         auto export_memory = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
         if (export_memory) {
             auto export_memory_nv = LvlFindInChain<VkExportMemoryAllocateInfoNV>(pAllocateInfo->pNext);
             if (export_memory_nv) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, loc,
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, allocate_info_loc,
                                  "pNext chain includes both VkExportMemoryAllocateInfo and "
                                  "VkExportMemoryAllocateInfoNV");
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             auto export_memory_win32_nv = LvlFindInChain<VkExportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext);
             if (export_memory_win32_nv) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, loc,
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00640", device, allocate_info_loc,
                                  "pNext chain includes both VkExportMemoryAllocateInfo and "
                                  "VkExportMemoryWin32HandleInfoNV");
             }
@@ -141,14 +142,14 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         if (LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext) &&
             LvlFindInChain<VkImportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext)) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00641", device, loc,
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-00641", device, allocate_info_loc,
                              "pNext chain includes both VkImportMemoryWin32HandleInfoKHR and "
                              "VkImportMemoryWin32HandleInfoNV");
         }
 #endif
 
         if (flags) {
-            const Location flags_loc = loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
+            const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
             VkBool32 capture_replay = false;
             VkBool32 buffer_device_address = false;
             const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);

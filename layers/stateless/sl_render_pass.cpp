@@ -58,7 +58,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
-    const Location &loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     VkBool32 separate_depth_stencil_layouts = false;
     const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
     if (vulkan_12_features) {
@@ -89,7 +89,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         }
     }
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-        const Location &attachment_loc = loc.dot(Field::pAttachments, i);
+        const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         // if not null, also confirms rp2 is being used
         const auto *attachment_description_stencil_layout =
             (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(
@@ -318,7 +318,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
-            skip |= LogError(vuid, device, loc.dot(Field::pSubpasses, i),
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i),
                              "cannot be used to create a render pass. maxColorAttachments is %d.", max_color_attachments);
         }
     }
@@ -330,7 +330,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         // src subpass bound check
         if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-pDependencies-06866";
-            skip |= LogError(vuid, device, loc.dot(Field::pDependencies, i).dot(Field::srcSubpass),
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::pDependencies, i).dot(Field::srcSubpass),
                              "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.srcSubpass,
                              pCreateInfo->subpassCount);
         }
@@ -338,7 +338,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         // dst subpass bound check
         if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-pDependencies-06867";
-            skip |= LogError(vuid, device, loc.dot(Field::pDependencies, i).dot(Field::dstSubpass),
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::pDependencies, i).dot(Field::dstSubpass),
                              "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.dstSubpass,
                              pCreateInfo->subpassCount);
         }
@@ -353,11 +353,11 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
         skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.srcSubpass, srcStageMask, vuid,
-                                             loc.dot(Field::pDependencies, i).dot(Field::srcSubpass));
+                                             create_info_loc.dot(Field::pDependencies, i).dot(Field::srcSubpass));
 
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
         skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.dstSubpass, dstStageMask, vuid,
-                                             loc.dot(Field::pDependencies, i).dot(Field::dstSubpass));
+                                             create_info_loc.dot(Field::pDependencies, i).dot(Field::dstSubpass));
     }
 
     return skip;

@@ -92,20 +92,20 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                          "command buffer fence before this call.",
                          FormatHandle(commandBuffer).c_str());
     }
-    const Location loc = error_obj.location.dot(Field::pBeginInfo);
+    const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
     if (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         // Primary Command Buffer
         const VkCommandBufferUsageFlags invalid_usage =
             (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
         if ((pBeginInfo->flags & invalid_usage) == invalid_usage) {
-            skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-02840", commandBuffer, loc.dot(Field::flags),
+            skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-02840", commandBuffer, begin_info_loc.dot(Field::flags),
                              "is %s for Primary %s (can't have both ONE_TIME_SUBMIT and SIMULTANEOUS_USE).",
                              string_VkCommandBufferUsageFlags(pBeginInfo->flags).c_str(), FormatHandle(commandBuffer).c_str());
         }
     } else {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
-        const Location inheritance_loc = loc.dot(Field::pInheritanceInfo);
+        const Location inheritance_loc = begin_info_loc.dot(Field::pInheritanceInfo);
         if (!info) {
             skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00051", commandBuffer, inheritance_loc,
                              "is null for Secondary %s.", FormatHandle(commandBuffer).c_str());
@@ -278,7 +278,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     skip |=
                         LogError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04786", commandBuffer,
-                                 loc.dot(Field::flags), "is %s for Secondary %s (and viewportScissor2D is VK_TRUE).",
+                                 begin_info_loc.dot(Field::flags), "is %s for Secondary %s (and viewportScissor2D is VK_TRUE).",
                                  string_VkCommandBufferUsageFlags(pBeginInfo->flags).c_str(), FormatHandle(commandBuffer).c_str());
                 }
                 if (p_inherited_viewport_scissor_info->viewportDepthCount == 0) {
@@ -306,9 +306,10 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             }
                         }
                     } else {
-                        skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer, loc.dot(Field::flags),
-                                         "includes VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
-                                         "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLE.");
+                        skip |=
+                            LogError("VUID-VkCommandBufferBeginInfo-flags-06000", commandBuffer, begin_info_loc.dot(Field::flags),
+                                     "includes VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
+                                     "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLE.");
                     }
                 }
             }
@@ -333,11 +334,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         const LogObjectList objlist(commandBuffer);
-        skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->deviceMask, objlist,
-                                                        loc.pNext(Struct::VkDeviceGroupCommandBufferBeginInfo, Field::deviceMask),
-                                                        "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106");
+        skip |= ValidateDeviceMaskToPhysicalDeviceCount(
+            chained_device_group_struct->deviceMask, objlist,
+            begin_info_loc.pNext(Struct::VkDeviceGroupCommandBufferBeginInfo, Field::deviceMask),
+            "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106");
         skip |= ValidateDeviceMaskToZero(chained_device_group_struct->deviceMask, objlist,
-                                         loc.pNext(Struct::VkDeviceGroupCommandBufferBeginInfo, Field::deviceMask),
+                                         begin_info_loc.pNext(Struct::VkDeviceGroupCommandBufferBeginInfo, Field::deviceMask),
                                          "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107");
     }
     return skip;
@@ -858,7 +860,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         const auto &sub_cb_state = *GetRead<CMD_BUFFER_STATE>(pCommandBuffers[i]);
-        const Location loc = error_obj.location.dot(Field::pCommandBuffers, i);
+        const Location cb_loc = error_obj.location.dot(Field::pCommandBuffers, i);
 
         if (enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D) {
             skip |= viewport_scissor_inheritance.VisitSecondary(i, sub_cb_state);
@@ -866,13 +868,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
         if (VK_COMMAND_BUFFER_LEVEL_SECONDARY != sub_cb_state.createInfo.level) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088", objlist, loc,
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00088", objlist, cb_loc,
                              "(%s) is not VK_COMMAND_BUFFER_LEVEL_SECONDARY.", FormatHandle(pCommandBuffers[i]).c_str());
         } else {
             if (!cb_state.activeRenderPass) {
                 if (sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00100", objlist, loc,
+                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00100", objlist, cb_loc,
                                      "(%s) is executed outside a render pass "
                                      "instance scope, but the Secondary Command Buffer does have the "
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
@@ -885,7 +887,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 auto secondary_rp_state = Get<RENDER_PASS_STATE>(inheritance_render_pass);
                 if (!(sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     const LogObjectList objlist(pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096", objlist, loc,
+                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096", objlist, cb_loc,
                                      "(%s) is executed within a %s "
                                      "instance scope, but the Secondary Command Buffer does not have the "
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
@@ -898,7 +900,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         // "render pass continue" usage flag
                         if (cb_state.activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
                             skip |= ValidateRenderPassCompatibility("primary command buffer", *cb_state.activeRenderPass.get(),
-                                                                    "secondary command buffer", *secondary_rp_state.get(), loc,
+                                                                    "secondary command buffer", *secondary_rp_state.get(), cb_loc,
                                                                     "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
                         }
                         //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
@@ -914,7 +916,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                 if (!cb_state.activeRenderPass->UsesDynamicRendering() && (cb_state.GetActiveSubpass() != inheritance_subpass)) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
-                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06019", objlist, loc,
+                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06019", objlist, cb_loc,
                                      "(%s) is executed within a %s "
                                      "instance scope begun by vkCmdBeginRenderPass(), but "
                                      "VkCommandBufferInheritanceInfo::subpass (%" PRIu32
@@ -926,7 +928,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 } else if (cb_state.activeRenderPass->UsesDynamicRendering()) {
                     if (inheritance_render_pass != VK_NULL_HANDLE) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
-                        skip |= LogError("VUID-vkCmdExecuteCommands-pBeginInfo-06025", objlist, loc,
+                        skip |= LogError("VUID-vkCmdExecuteCommands-pBeginInfo-06025", objlist, cb_loc,
                                          "(%s) is executed within a dynamic renderpass instance scope begun "
                                          "by vkCmdBeginRendering(), but "
                                          "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
@@ -940,7 +942,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             (rendering_info.flags & ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
                             skip |=
-                                LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, loc,
+                                LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, cb_loc,
                                          "(%s) is executed within a dynamic renderpass instance scope begun "
                                          "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
                                          "not match VkRenderingInfo::flags (%s) (excluding "
@@ -952,7 +954,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         if (inheritance_rendering_info.colorAttachmentCount != rendering_info.colorAttachmentCount) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
-                            skip |= LogError("VUID-vkCmdExecuteCommands-colorAttachmentCount-06027", objlist, loc,
+                            skip |= LogError("VUID-vkCmdExecuteCommands-colorAttachmentCount-06027", objlist, cb_loc,
                                              "(%s) is executed within a dynamic renderpass instance scope begun "
                                              "by vkCmdBeginRendering(), but "
                                              "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
@@ -969,7 +971,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 if (inheritance_rendering_info.pColorAttachmentFormats[color_i] != VK_FORMAT_UNDEFINED) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
-                                    skip |= LogError("VUID-vkCmdExecuteCommands-imageView-07606", objlist, loc,
+                                    skip |= LogError("VUID-vkCmdExecuteCommands-imageView-07606", objlist, cb_loc,
                                                      "(%s) is executed within a dynamic render pass instance "
                                                      "scope begun "
                                                      "by vkCmdBeginRendering(), VkRenderingInfo::pColorAttachments[%" PRIu32
@@ -986,7 +988,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
-                                    skip |= LogError("VUID-vkCmdExecuteCommands-imageView-06028", objlist, loc,
+                                    skip |= LogError("VUID-vkCmdExecuteCommands-imageView-06028", objlist, cb_loc,
                                                      "(%s) is executed within a dynamic render pass instance "
                                                      "scope begun "
                                                      "by vkCmdBeginRendering(), VkRenderingInfo::pColorAttachments[%" PRIu32
@@ -1007,7 +1009,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             if (image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                             cb_state.activeRenderPass->renderPass());
-                                skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, loc,
+                                skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
                                                  "instance scope begun "
                                                  "by vkCmdBeginRendering(), but "
@@ -1024,7 +1026,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             if (image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                             cb_state.activeRenderPass->renderPass());
-                                skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, loc,
+                                skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
                                                  "instance scope begun "
                                                  "by vkCmdBeginRendering(), but "
@@ -1040,7 +1042,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             if (format != VK_FORMAT_UNDEFINED) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                             cb_state.activeRenderPass->renderPass());
-                                skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06774", objlist, loc,
+                                skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06774", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
                                                  "instance scope begun by vkCmdBeginRendering(), and "
                                                  "VkRenderingInfo::pDepthAttachment does not define an "
@@ -1056,7 +1058,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             if (format != VK_FORMAT_UNDEFINED) {
                                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                             cb_state.activeRenderPass->renderPass());
-                                skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06775", objlist, loc,
+                                skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06775", objlist, cb_loc,
                                                  "(%s) is executed within a dynamic renderpass "
                                                  "instance scope begun by vkCmdBeginRendering(), and "
                                                  "VkRenderingInfo::pStencilAttachment does not define an "
@@ -1068,7 +1070,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         if (rendering_info.viewMask != inheritance_rendering_info.viewMask) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->renderPass());
-                            skip |= LogError("VUID-vkCmdExecuteCommands-viewMask-06031", objlist, loc,
+                            skip |= LogError("VUID-vkCmdExecuteCommands-viewMask-06031", objlist, cb_loc,
                                              "(%s) is executed within a dynamic renderpass instance scope begun "
                                              "by vkCmdBeginRendering(), but "
                                              "VkCommandBufferInheritanceRenderingInfo::viewMask (%" PRIu32
@@ -1093,7 +1095,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        "VUID-vkCmdExecuteCommands-pNext-06032", objlist, loc,
+                                        "VUID-vkCmdExecuteCommands-pNext-06032", objlist, cb_loc,
                                         "(%s) is executed within a dynamic renderpass instance "
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
@@ -1113,7 +1115,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        "VUID-vkCmdExecuteCommands-pNext-06033", objlist, loc,
+                                        "VUID-vkCmdExecuteCommands-pNext-06033", objlist, cb_loc,
                                         "(%s) is executed within a dynamic renderpass instance "
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
@@ -1131,7 +1133,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        "VUID-vkCmdExecuteCommands-pNext-06034", objlist, loc,
+                                        "VUID-vkCmdExecuteCommands-pNext-06034", objlist, cb_loc,
                                         "(%s) is executed within a dynamic renderpass instance "
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
@@ -1151,7 +1153,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        "VUID-vkCmdExecuteCommands-pNext-06035", objlist, loc,
+                                        "VUID-vkCmdExecuteCommands-pNext-06035", objlist, cb_loc,
                                         "(%s) is executed within a dynamic renderpass instance "
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%" PRIu32
@@ -1169,7 +1171,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
-                                    skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06036", objlist, loc,
+                                    skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06036", objlist, cb_loc,
                                                      "(%s) is executed within a dynamic renderpass "
                                                      "instance scope begun "
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
@@ -1186,7 +1188,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
                                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i],
                                                                 cb_state.activeRenderPass->renderPass());
-                                    skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06037", objlist, loc,
+                                    skip |= LogError("VUID-vkCmdExecuteCommands-pNext-06037", objlist, cb_loc,
                                                      "(%s) is executed within a dynamic renderpass "
                                                      "instance scope begun "
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
@@ -1203,18 +1205,18 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
         // TODO(mlentine): Move more logic into this method
         skip |= ValidateSecondaryCommandBufferState(cb_state, sub_cb_state);
-        skip |= ValidateCommandBufferState(sub_cb_state, loc, 0, "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
+        skip |= ValidateCommandBufferState(sub_cb_state, cb_loc, 0, "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (sub_cb_state.InUse()) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00091", objlist, loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00091", objlist, cb_loc,
                                  "Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                  FormatHandle(pCommandBuffers[i]).c_str());
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state.linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(&sub_cb_state))) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00092", objlist, loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00092", objlist, cb_loc,
                                  "Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT "
                                  "set if previously executed in %s",
                                  FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
@@ -1223,7 +1225,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             const auto insert_pair = linked_command_buffers.insert(&sub_cb_state);
             if (!insert_pair.second) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00093", objlist, loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00093", objlist, cb_loc,
                                  "Cannot duplicate %s in pCommandBuffers without "
                                  "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                  FormatHandle(commandBuffer).c_str());
@@ -1231,7 +1233,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
         if (!cb_state.activeQueries.empty() && !enabled_features.core.inheritedQueries) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00101", objlist, loc,
+            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00101", objlist, cb_loc,
                              "cannot be submitted with a query in flight and "
                              "inherited queries not supported on this device.");
         }
@@ -1276,7 +1278,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     for (auto index = iter->range.begin; index < iter->range.end; index++) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
                         const auto subresource = image_state->subresource_encoder.Decode(index);
-                        skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, loc,
+                        skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,
                                          "was executed using %s (subresource: aspectMask 0x%x array layer %" PRIu32
                                          ", "
                                          "mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
@@ -1291,19 +1293,19 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         // All commands buffers involved must be protected or unprotected
         if ((cb_state.unprotected == false) && (sub_cb_state.unprotected == true)) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01820", objlist, loc,
+            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01820", objlist, cb_loc,
                              "(%s) is a unprotected while primary command buffer (%s) is protected.",
                              FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
         } else if ((cb_state.unprotected == true) && (sub_cb_state.unprotected == false)) {
             const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01821", objlist, loc,
+            skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01821", objlist, cb_loc,
                              "(%s) is a protected while primary command buffer (%s) is unprotected.",
                              FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
         }
         if (active_occlusion_query) {
             if (sub_cb_state.inheritanceInfo.occlusionQueryEnable != VK_TRUE) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00102", objlist, loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00102", objlist, cb_loc,
                                  "(%s) was recorded with VkCommandBufferInheritanceInfo::occlusionQueryEnable set to VK_FALSE, but "
                                  "primary command buffer %s has an active occlusion query",
                                  FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
@@ -1311,7 +1313,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             if ((sub_cb_state.inheritanceInfo.queryFlags & active_occlusion_query->control_flags) !=
                 active_occlusion_query->control_flags) {
                 const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00103", objlist, loc,
+                skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00103", objlist, cb_loc,
                                  "(%s) was recorded with VkCommandBufferInheritanceInfo::queryFlags 0X%" PRIx32
                                  ", but primary command buffer %s has an active occlusion query with VkQueryControlFlags 0X%" PRIx32
                                  ".",
