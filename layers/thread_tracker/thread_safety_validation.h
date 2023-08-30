@@ -128,7 +128,7 @@ class counter {
         }
     }
 
-    void StartWrite(T object, const char *api_name) {
+    void StartWrite(T object, vvl::Func command) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -150,7 +150,7 @@ class counter {
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
+                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
                             << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
                             << " and thread " << tid;
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
@@ -171,7 +171,7 @@ class counter {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
                     std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
+                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
                             << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
                             << " and thread " << tid;
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
@@ -192,7 +192,7 @@ class counter {
         }
     }
 
-    void FinishWrite(T object, const char *api_name) {
+    void FinishWrite(T object, vvl::Func command) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -204,7 +204,7 @@ class counter {
         use_data->RemoveWriter();
     }
 
-    void StartRead(T object, const char *api_name) {
+    void StartRead(T object, vvl::Func command) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -223,8 +223,9 @@ class counter {
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             std::stringstream err_str;
-            err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName << " is simultaneously used in thread "
-                    << use_data->thread.load(std::memory_order_relaxed) << " and thread " << tid;
+            err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
+                    << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed) << " and thread "
+                    << tid;
             skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
@@ -235,7 +236,7 @@ class counter {
             // There are other readers of the object.
         }
     }
-    void FinishRead(T object, const char *api_name) {
+    void FinishRead(T object, vvl::Func command) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -322,29 +323,29 @@ class ThreadSafety : public ValidationObject {
         container_type = LayerObjectTypeThreading;
     };
 
-#define WRAPPER(type)                                                                                     \
-    void StartWriteObject(type object, const char *api_name) { c_##type.StartWrite(object, api_name); }   \
-    void FinishWriteObject(type object, const char *api_name) { c_##type.FinishWrite(object, api_name); } \
-    void StartReadObject(type object, const char *api_name) { c_##type.StartRead(object, api_name); }     \
-    void FinishReadObject(type object, const char *api_name) { c_##type.FinishRead(object, api_name); }   \
-    void CreateObject(type object) { c_##type.CreateObject(object); }                                     \
-    void DestroyObject(type object) {                                                                     \
-        c_##type.DestroyObject(object);                                                                   \
-        c_##type.DestroyObject(object);                                                                   \
+#define WRAPPER(type)                                                                                 \
+    void StartWriteObject(type object, vvl::Func command) { c_##type.StartWrite(object, command); }   \
+    void FinishWriteObject(type object, vvl::Func command) { c_##type.FinishWrite(object, command); } \
+    void StartReadObject(type object, vvl::Func command) { c_##type.StartRead(object, command); }     \
+    void FinishReadObject(type object, vvl::Func command) { c_##type.FinishRead(object, command); }   \
+    void CreateObject(type object) { c_##type.CreateObject(object); }                                 \
+    void DestroyObject(type object) {                                                                 \
+        c_##type.DestroyObject(object);                                                               \
+        c_##type.DestroyObject(object);                                                               \
     }
 
 #define WRAPPER_PARENT_INSTANCE(type)                                                                                           \
-    void StartWriteObjectParentInstance(type object, const char *api_name) {                                                    \
-        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, api_name);                                      \
+    void StartWriteObjectParentInstance(type object, vvl::Func command) {                                                       \
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, command);                                       \
     }                                                                                                                           \
-    void FinishWriteObjectParentInstance(type object, const char *api_name) {                                                   \
-        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, api_name);                                     \
+    void FinishWriteObjectParentInstance(type object, vvl::Func command) {                                                      \
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, command);                                      \
     }                                                                                                                           \
-    void StartReadObjectParentInstance(type object, const char *api_name) {                                                     \
-        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, api_name);                                       \
+    void StartReadObjectParentInstance(type object, vvl::Func command) {                                                        \
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, command);                                        \
     }                                                                                                                           \
-    void FinishReadObjectParentInstance(type object, const char *api_name) {                                                    \
-        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, api_name);                                      \
+    void FinishReadObjectParentInstance(type object, vvl::Func command) {                                                       \
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, command);                                       \
     }                                                                                                                           \
     void CreateObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.CreateObject(object); } \
     void DestroyObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object); }
@@ -363,43 +364,43 @@ class ThreadSafety : public ValidationObject {
     void DestroyObject(VkCommandBuffer object) { c_VkCommandBuffer.DestroyObject(object); }
 
     // VkCommandBuffer needs check for implicit use of command pool
-    void StartWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
+    void StartWriteObject(VkCommandBuffer object, vvl::Func command, bool lockPool = true) {
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                StartWriteObject(pool, api_name);
+                StartWriteObject(pool, command);
             }
         }
-        c_VkCommandBuffer.StartWrite(object, api_name);
+        c_VkCommandBuffer.StartWrite(object, command);
     }
-    void FinishWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
-        c_VkCommandBuffer.FinishWrite(object, api_name);
+    void FinishWriteObject(VkCommandBuffer object, vvl::Func command, bool lockPool = true) {
+        c_VkCommandBuffer.FinishWrite(object, command);
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                FinishWriteObject(pool, api_name);
+                FinishWriteObject(pool, command);
             }
         }
     }
-    void StartReadObject(VkCommandBuffer object, const char *api_name) {
+    void StartReadObject(VkCommandBuffer object, vvl::Func command) {
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
             // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and
             // vkDestroyCommandPool while *not* establishing a read guard against the command pool counter itself to avoid false
             // positive for non-externally sync'd command buffers
-            c_VkCommandPoolContents.StartRead(pool, api_name);
+            c_VkCommandPoolContents.StartRead(pool, command);
         }
-        c_VkCommandBuffer.StartRead(object, api_name);
+        c_VkCommandBuffer.StartRead(object, command);
     }
-    void FinishReadObject(VkCommandBuffer object, const char *api_name) {
-        c_VkCommandBuffer.FinishRead(object, api_name);
+    void FinishReadObject(VkCommandBuffer object, vvl::Func command) {
+        c_VkCommandBuffer.FinishRead(object, command);
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
-            c_VkCommandPoolContents.FinishRead(pool, api_name);
+            c_VkCommandPoolContents.FinishRead(pool, command);
         }
     }
 
