@@ -35,14 +35,6 @@ def get_android_manifest() -> str:
         sys.exit(-1)
     return manifest
 
-# Resources for our test application.
-def get_android_resources() -> str:
-    res = common_ci.RepoRelative('tests/android/res')
-    if not os.path.isdir(res):
-        print(f"Unable to find android resources for APK! {res}")
-        sys.exit(-1)
-    return res
-
 # Generate the APK from the CMake binaries
 def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
     apk_dir = common_ci.RepoRelative(f'build-android/bin')
@@ -54,7 +46,6 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
     shutil.copytree(CMAKE_INSTALL_DIR, apk_dir)
 
     android_manifest = get_android_manifest()
-    android_resources = get_android_resources()
 
     android_jar = f"{SDK_ROOT}/platforms/android-26/android.jar"
     if not os.path.isfile(android_jar):
@@ -67,7 +58,7 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
     test_apk = f'{apk_dir}/{apk_name}.apk'
 
     # Create APK
-    common_ci.RunShellCmd(f'aapt package -f -M {android_manifest} -I {android_jar} -S {android_resources} -F {unaligned_apk} {CMAKE_INSTALL_DIR}')
+    common_ci.RunShellCmd(f'aapt package -f -M {android_manifest} -I {android_jar} -F {unaligned_apk} {CMAKE_INSTALL_DIR}')
 
     # Align APK
     common_ci.RunShellCmd(f'zipalign -f 4 {unaligned_apk} {test_apk}')
