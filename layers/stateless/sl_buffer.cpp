@@ -89,9 +89,9 @@ bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    skip |= ExportMetalObjectsPNextUtil(
-        VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkBufferViewCreateInfo-pNext-06782",
-        "vkCreateBufferView():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
+    skip |=
+        ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkBufferViewCreateInfo-pNext-06782",
+                                    error_obj.location, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
 #endif  // VK_USE_PLATFORM_METAL_EXT
     return skip;
 }

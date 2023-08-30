@@ -664,7 +664,7 @@ class StatelessValidation : public ValidationObject {
                                                 const ErrorObject &error_obj) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const char *api_call,
+    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
                                      const char *sType, const void *pNext) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -914,10 +914,10 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
                                                         VkMemoryFdPropertiesKHR *pMemoryFdProperties,
                                                         const ErrorObject &error_obj) const;
-    bool ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
+    bool ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const Location &handle_type_loc,
                                              VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                              VkExternalSemaphoreHandleTypeFlags allowed_types) const;
-    bool ValidateExternalFenceHandleType(VkFence fence, const char *vuid, const char *caller,
+    bool ValidateExternalFenceHandleType(VkFence fence, const char *vuid, const Location &handle_type_loc,
                                          VkExternalFenceHandleTypeFlagBits handle_type,
                                          VkExternalFenceHandleTypeFlags allowed_types) const;
     bool manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
