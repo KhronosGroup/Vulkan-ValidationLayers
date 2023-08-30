@@ -90,7 +90,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
-        StageCreateInfo stage_create_info("vkCreateRayTracingPipelinesKHR", &pipeline);
+        StageCreateInfo stage_create_info(loc.function, &pipeline);
         skip |= ValidatePipelineShaderStage(stage_create_info, pipeline.stage_states[i], loc.dot(Field::pStages, i));
     }
 

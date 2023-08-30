@@ -254,7 +254,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
-            const StageCreateInfo stage_create_info("vkCreateShadersEXT", i, pCreateInfos[i]);
+            const StageCreateInfo stage_create_info(loc.function, i, pCreateInfos[i]);
             const auto spirv =
                 std::make_shared<SPIRV_MODULE_STATE>(pCreateInfos[i].codeSize, static_cast<const uint32_t*>(pCreateInfos[i].pCode));
             safe_VkShaderCreateInfoEXT safe_create_info = safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
