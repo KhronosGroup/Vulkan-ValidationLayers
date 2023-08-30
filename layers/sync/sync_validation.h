@@ -34,7 +34,7 @@ struct PresentedImage;
 class QueueBatchContext;
 struct QueueSubmitCmdState;
 class RenderPassAccessContext;
-struct ReplayGuard;
+class ReplayState;
 class ResourceAccessState;
 struct ResourceFirstAccess;
 class SyncEventsContext;
@@ -819,7 +819,7 @@ class SyncOpBase {
 
     virtual bool Validate(const CommandBufferAccessContext &cb_context) const = 0;
     virtual ResourceUsageTag Record(CommandBufferAccessContext *cb_context) = 0;
-    virtual bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const = 0;
+    virtual bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const = 0;
     virtual void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const = 0;
 
   protected:
@@ -889,7 +889,7 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 };
 
@@ -907,7 +907,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   protected:
@@ -928,7 +928,7 @@ class SyncOpResetEvent : public SyncOpBase {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
@@ -947,7 +947,7 @@ class SyncOpSetEvent : public SyncOpBase {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
@@ -970,7 +970,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
     const RenderPassAccessContext *GetRenderPassAccessContext() const { return rp_context_; }
 
@@ -991,7 +991,7 @@ class SyncOpNextSubpass : public SyncOpBase {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   protected:
@@ -1006,7 +1006,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) override;
-    bool ReplayValidate(CommandExecutionContext &exec_context, ResourceUsageTag recorded_tag) const override;
+    bool ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const override;
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   protected:
@@ -1371,7 +1371,6 @@ class CommandExecutionContext {
         assert(sync_state_);
         return *sync_state_;
     }
-    bool DetectFirstUseHazard(const ResourceUsageRange &tag_range) const;
 
     ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
     std::string FormatHazard(const HazardResult &hazard) const;
@@ -1381,35 +1380,24 @@ class CommandExecutionContext {
     virtual std::string FormatUsage(ResourceUsageTag tag) const = 0;
     virtual void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) = 0;
 
-    virtual void BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) {
+    virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
         // Must override if use by derived type is valid
         assert(false);
     }
 
-    virtual void NextSubpassReplaySetup() {
+    virtual void NextSubpassReplaySetup(ReplayState &replay) {
         // Must override if use by derived type is valid
         assert(false);
     }
 
-    virtual void EndRenderPassReplay() {
+    virtual void EndRenderPassReplayCleanup(ReplayState &replay) {
         // Must override if use by derived type is valid
         assert(false);
     }
 
     bool ValidForSyncOps() const;
-
-    ResourceUsageTag GetReplayBaseTag() const;
-
   protected:
-    friend ReplayGuard;
-
     const SyncValidator *sync_state_;
-    ReplayGuard *current_replay_;
-
-  private:
-    // Only allow the replay guard to manage the begin/end
-    void BeginCommandBufferReplay(ReplayGuard &replay) { current_replay_ = &replay; }
-    void EndCommandBufferReplay() { current_replay_ = nullptr; }
 };
 
 class CommandBufferAccessContext : public CommandExecutionContext {
@@ -1577,7 +1565,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 };
 
 // Allow keep track of the exec contexts replay state
-struct ReplayGuard {
+class ReplayState {
+  public:
     struct RenderPassReplayState {
         // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
         // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
@@ -1600,19 +1589,37 @@ struct ReplayGuard {
         operator bool() const { return begin_op != nullptr; }
     };
 
+    bool ValidateFirstUse();
     bool DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const;
 
-    ReplayGuard(CommandExecutionContext &exec_context_, const CommandBufferAccessContext &recorded_context_,
-                const ErrorObject &error_object, uint32_t index_);
-    ~ReplayGuard();
+    ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
+                const ErrorObject &error_object, uint32_t index);
+
+    CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
+    ResourceUsageTag GetBaseTag() const { return base_tag_; }
+
+    void BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) {
+        exec_context_.BeginRenderPassReplaySetup(*this, begin_op);
+    }
+    void NextSubpassReplaySetup() { exec_context_.NextSubpassReplaySetup(*this); }
+    void EndRenderPassReplayCleanup() { exec_context_.EndRenderPassReplayCleanup(*this); }
+
+    AccessContext *ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
+                                              const AccessContext &external_context) {
+        return rp_replay_.Begin(queue_flags, begin_op, external_context);
+    }
+    AccessContext *ReplayStateRenderPassNext() { return rp_replay_.Next(); }
+    void ReplayStateRenderPassEnd(AccessContext &external_context) { rp_replay_.End(external_context); }
+
+  protected:
     const AccessContext *GetRecordedAccessContext() const;
 
-    CommandExecutionContext &exec_context;
-    const CommandBufferAccessContext &recorded_context;
-    const ErrorObject &error_obj;
-    const uint32_t index;
-    const ResourceUsageTag base_tag;
-    RenderPassReplayState rp_replay;
+    CommandExecutionContext &exec_context_;
+    const CommandBufferAccessContext &recorded_context_;
+    const ErrorObject &error_obj_;
+    const uint32_t index_;
+    const ResourceUsageTag base_tag_;
+    RenderPassReplayState rp_replay_;
 };
 
 namespace syncval_state {
@@ -1823,9 +1830,9 @@ class QueueBatchContext : public CommandExecutionContext {
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
 
-    void BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) override;
-    void NextSubpassReplaySetup() override;
-    void EndRenderPassReplay() override;
+    void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) override;
+    void NextSubpassReplaySetup(ReplayState &replay) override;
+    void EndRenderPassReplayCleanup(ReplayState &replay) override;
 
     void Cleanup();
 
