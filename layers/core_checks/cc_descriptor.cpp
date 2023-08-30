@@ -139,12 +139,12 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
 // pipelineLayout[layoutIndex]
 bool CoreChecks::VerifySetLayoutCompatibility(
     const cvdescriptorset::DescriptorSet &descriptor_set,
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, const std::string &handle,
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, const VulkanTypedHandle &handle,
     const uint32_t layoutIndex, std::string &errorMsg) const {
     auto num_sets = set_layouts.size();
     if (layoutIndex >= num_sets) {
         std::stringstream error_str;
-        error_str << handle << ") only contains " << num_sets << " setLayouts corresponding to sets 0-" << num_sets - 1
+        error_str << FormatHandle(handle) << ") only contains " << num_sets << " setLayouts corresponding to sets 0-" << num_sets - 1
                   << ", but you're attempting to bind set to index " << layoutIndex;
         errorMsg = error_str.str();
         return false;
@@ -194,7 +194,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             if (!VerifySetLayoutCompatibility(*descriptor_set, pipeline_layout->set_layouts,
-                                              FormatHandle(pipeline_layout->Handle()), set_idx + firstSet, error_string)) {
+                                              pipeline_layout->Handle(), set_idx + firstSet, error_string)) {
                 skip |= LogError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358", pDescriptorSets[set_idx], set_loc,
                                  "(%s) being bound is not compatible with overlapping "
                                  "descriptorSetLayout at index %" PRIu32

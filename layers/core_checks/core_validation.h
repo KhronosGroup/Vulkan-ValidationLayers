@@ -864,7 +864,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet& descriptor_set,
                                       const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>>& set_layouts,
-                                      const std::string& handle, const uint32_t layoutIndex, std::string& errorMsg) const;
+                                      const VulkanTypedHandle& handle, const uint32_t layoutIndex, std::string& errorMsg) const;
 
     bool VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE& layout_a, const PIPELINE_LAYOUT_STATE& layout_b,
                                       std::string& errorMsg) const;

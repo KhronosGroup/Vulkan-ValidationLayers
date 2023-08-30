@@ -5545,7 +5545,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                                          "%s uses set #%" PRIu32 " but that set is not bound.", FormatHandle(*pipeline).c_str(),
                                          set_index);
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, pipeline_layout->set_layouts,
-                                                             FormatHandle(pipeline_layout->Handle()), set_index, error_string)) {
+                                                             pipeline_layout->Handle(), set_index, error_string)) {
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
                         LogObjectList objlist = cb_state.GetObjectList(bind_point);
@@ -5641,7 +5641,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                                          "%s uses set #%" PRIu32 " but that set is not bound.",
                                          FormatHandle(shader_state->shader()).c_str(), set_index);
                     } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, shader_state->set_layouts,
-                                                             FormatHandle(shader_state->shader()), set_index, error_string)) {
+                                                             shader_state->Handle(), set_index, error_string)) {
                         // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                         VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
                         const LogObjectList objlist(cb_state.commandBuffer(), set_handle, shader_state->shader());
