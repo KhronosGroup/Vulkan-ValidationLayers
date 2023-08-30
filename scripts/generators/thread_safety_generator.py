@@ -319,7 +319,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
         out = []
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
-            out.append(f'c_{handle.name}("{handle.name}", kVulkanObjectType{handle.name[2:]}, this),\n')
+            out.append(f'c_{handle.name}(kVulkanObjectType{handle.name[2:]}, this),\n')
             out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
         self.write("".join(out))
 
