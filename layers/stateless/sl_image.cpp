@@ -715,9 +715,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
             }
         }
 #ifdef VK_USE_PLATFORM_METAL_EXT
-        skip |= ExportMetalObjectsPNextUtil(
-            VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkImageViewCreateInfo-pNext-06787",
-            "vkCreateImageView():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
+        skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT,
+                                            "VUID-VkImageViewCreateInfo-pNext-06787", error_obj.location,
+                                            "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
 #endif  // VK_USE_PLATFORM_METAL_EXT
     }
     return skip;
