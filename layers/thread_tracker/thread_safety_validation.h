@@ -100,7 +100,6 @@ class alignas(kObjectUserDataAlignment) ObjectUseData {
 template <typename T>
 class counter {
   public:
-    const char *typeName;
     VulkanObjectType object_type;
     ValidationObject *object_data;
 
@@ -150,7 +149,7 @@ class counter {
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
+                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
                             << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
                             << " and thread " << tid;
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
@@ -171,7 +170,7 @@ class counter {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
                     std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
+                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
                             << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
                             << " and thread " << tid;
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
@@ -223,7 +222,7 @@ class counter {
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             std::stringstream err_str;
-            err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << typeName
+            err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
                     << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed) << " and thread "
                     << tid;
             skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
@@ -247,8 +246,7 @@ class counter {
         }
         use_data->RemoveReader();
     }
-    counter(const char *name = "", VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject *val_obj = nullptr) {
-        typeName = name;
+    counter(VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject *val_obj = nullptr) {
         object_type = type;
         object_data = val_obj;
     }
@@ -309,15 +307,15 @@ class ThreadSafety : public ValidationObject {
     ThreadSafety *parent_instance;
 
     ThreadSafety(ThreadSafety *parent)
-        : c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
-          c_VkDevice("VkDevice", kVulkanObjectTypeDevice, this),
-          c_VkInstance("VkInstance", kVulkanObjectTypeInstance, this),
-          c_VkQueue("VkQueue", kVulkanObjectTypeQueue, this),
-          c_VkCommandPoolContents("VkCommandPool", kVulkanObjectTypeCommandPool, this),
+        : c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
+          c_VkDevice(kVulkanObjectTypeDevice, this),
+          c_VkInstance(kVulkanObjectTypeInstance, this),
+          c_VkQueue(kVulkanObjectTypeQueue, this),
+          c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_instances.h"
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this),
+          c_uint64_t(kVulkanObjectTypeUnknown, this),
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
           parent_instance(parent) {
         container_type = LayerObjectTypeThreading;
