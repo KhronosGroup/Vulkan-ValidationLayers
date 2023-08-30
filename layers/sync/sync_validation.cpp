@@ -7705,7 +7705,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
         presented.tag += batch->GetTagRange().begin;
     }
 
-    skip |= batch->DoQueuePresentValidate("vkQueuePresentKHR", cmd_state->presented_images);
+    skip |= batch->DoQueuePresentValidate(error_obj.location, cmd_state->presented_images);
     batch->DoPresentOperations(cmd_state->presented_images);
     batch->LogPresentOperations(cmd_state->presented_images);
     batch->Cleanup();
@@ -8365,7 +8365,7 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
     CommonSetupAccessContext(prev, batches_resolved);
 }
 
-bool QueueBatchContext::DoQueuePresentValidate(const char *func_name, const PresentedImages &presented_images) {
+bool QueueBatchContext::DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images) {
     bool skip = false;
 
     HazardDetector detector(SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
@@ -8379,12 +8379,11 @@ bool QueueBatchContext::DoQueuePresentValidate(const char *func_name, const Pres
             const auto queue_handle = queue_state_->Handle();
             const auto swap_handle = BASE_NODE::Handle(presented.swapchain_state.lock());
             const auto image_handle = BASE_NODE::Handle(presented.image);
-            skip = sync_state_->LogError(queue_handle, string_SyncHazardVUID(hazard.hazard),
-                                         "%s: Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32
-                                         " %s, Access info %s.",
-                                         func_name, string_SyncHazard(hazard.hazard), presented.present_index,
-                                         sync_state_->FormatHandle(swap_handle).c_str(), presented.image_index,
-                                         sync_state_->FormatHandle(image_handle).c_str(), FormatHazard(hazard).c_str());
+            skip = sync_state_->LogError(
+                string_SyncHazardVUID(hazard.hazard), queue_handle, loc,
+                "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.",
+                string_SyncHazard(hazard.hazard), presented.present_index, sync_state_->FormatHandle(swap_handle).c_str(),
+                presented.image_index, sync_state_->FormatHandle(image_handle).c_str(), FormatHazard(hazard).c_str());
             if (skip) break;
         }
     }

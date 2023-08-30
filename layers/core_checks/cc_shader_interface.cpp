@@ -600,7 +600,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         const VkShaderStageFlagBits stage = stage_state.getStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
-            StageCreateInfo stage_create_info("vkCreateGraphicsPipelines", &pipeline);
+            StageCreateInfo stage_create_info(loc.function, &pipeline);
             skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, loc.dot(Field::pStages, i));
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {

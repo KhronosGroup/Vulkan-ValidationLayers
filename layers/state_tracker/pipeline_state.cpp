@@ -29,10 +29,10 @@ std::vector<VkPushConstantRange> const *StageCreateInfo::GetPushConstantRanges()
     return shader_object_const_ranges.get();
 }
 
-StageCreateInfo::StageCreateInfo(const std::string &name, const PIPELINE_STATE *pipeline)
-    : func_name(name), create_index(pipeline->create_index), pipeline(pipeline) {}
-StageCreateInfo::StageCreateInfo(const std::string &name, uint32_t create_index, const VkShaderCreateInfoEXT &create_info)
-    : func_name(name),
+StageCreateInfo::StageCreateInfo(vvl::Func command, const PIPELINE_STATE *pipeline)
+    : command(command), create_index(pipeline->create_index), pipeline(pipeline) {}
+StageCreateInfo::StageCreateInfo(vvl::Func command, uint32_t create_index, const VkShaderCreateInfoEXT &create_info)
+    : command(command),
       create_index(create_index),
       pipeline(nullptr),
       shader_object_const_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)) {}

@@ -54,7 +54,7 @@ class PIPELINE_CACHE_STATE : public BASE_NODE {
 };
 
 struct StageCreateInfo {
-    std::string func_name;
+    vvl::Func command;
     uint32_t create_index;
     const PIPELINE_STATE *pipeline;
 
@@ -62,8 +62,8 @@ struct StageCreateInfo {
 
     std::vector<VkPushConstantRange> const *GetPushConstantRanges() const;
 
-    StageCreateInfo(const std::string &name, const PIPELINE_STATE *pipeline);
-    StageCreateInfo(const std::string &name, uint32_t create_index, const VkShaderCreateInfoEXT &create_info);
+    StageCreateInfo(vvl::Func command, const PIPELINE_STATE *pipeline);
+    StageCreateInfo(vvl::Func command, uint32_t create_index, const VkShaderCreateInfoEXT &create_info);
 };
 
 class PIPELINE_STATE : public BASE_NODE {

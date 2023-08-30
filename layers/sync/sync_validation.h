@@ -1805,7 +1805,7 @@ class QueueBatchContext : public CommandExecutionContext {
     // For Present
     void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkPresentInfoKHR &present_info,
                             const PresentedImages &presented_images, SignaledSemaphores &signaled);
-    bool DoQueuePresentValidate(const char *func_name, const PresentedImages &presented_images);
+    bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
     void LogPresentOperations(const PresentedImages &presented_images);
 
