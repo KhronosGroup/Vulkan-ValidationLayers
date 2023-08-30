@@ -67,6 +67,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/fragment_shading_rate.cpp
     unit/fragment_shading_rate_positive.cpp
     unit/geometry_tessellation.cpp
+    unit/geometry_tessellation_positive.cpp
     unit/gpu_av.cpp
     unit/gpu_av_positive.cpp
     unit/graphics_library.cpp
