@@ -24,7 +24,7 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= ValidateArray("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
+        skip |= ValidateArray(error_obj.location, "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
                               &pCreateInfo->pAttachments, false, true, kVUIDUndefined, "VUID-VkFramebufferCreateInfo-flags-02778");
     }
     return skip;

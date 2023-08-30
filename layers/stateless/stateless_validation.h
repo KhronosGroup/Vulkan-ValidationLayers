@@ -96,28 +96,28 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidateNotZero(bool is_zero, const std::string &vuid, const Location &loc) const;
 
-    bool ValidateRequiredPointer(const char *apiName, const ParameterName &parameterName, const void *value,
+    bool ValidateRequiredPointer(const Location &loc, const ParameterName &parameterName, const void *value,
                                  const std::string &vuid) const;
 
     template <typename T1, typename T2>
-    bool ValidateArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, T1 count,
+    bool ValidateArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName, T1 count,
                        const T2 *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
                        const char *array_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         // Count parameters not tagged as optional cannot be 0
         if (countRequired && (count == 0)) {
-            skip_call |= LogError(device, count_required_vuid, "%s: parameter %s must be greater than 0.", apiName,
-                                  countName.get_name().c_str());
+            skip |=
+                LogError(count_required_vuid, device, loc, "parameter %s must be greater than 0.", countName.get_name().c_str());
         }
 
         // Array parameters not tagged as optional cannot be NULL, unless the count is 0
         if (arrayRequired && (count != 0) && (*array == nullptr)) {
-            skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s specified as NULL.", apiName,
-                                  arrayName.get_name().c_str());
+            skip |= LogError(array_required_vuid, device, loc, "required parameter %s specified as NULL.",
+                             arrayName.get_name().c_str());
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -129,7 +129,7 @@ class StatelessValidation : public ValidationObject {
      * The array parameter will typically be optional for this case (where count is
      * a pointer), allowing the caller to retrieve the available count.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param countName Name of count parameter.
      * @param arrayName Name of array parameter.
      * @param count Pointer to the number of elements in the array.
@@ -142,22 +142,22 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T1, typename T2>
-    bool ValidateArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, const T1 *count,
+    bool ValidateArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName, const T1 *count,
                        const T2 *array, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
                        const char *count_required_vuid, const char *array_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if (count == nullptr) {
             if (countPtrRequired) {
-                skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
-                                      apiName, countName.get_name().c_str());
+                skip |= LogError(kVUID_PVError_RequiredParameter, device, loc, "required parameter %s specified as NULL",
+                                 countName.get_name().c_str());
             }
         } else {
-            skip_call |= ValidateArray(apiName, countName, arrayName, *array ? (*count) : 0, &array, countValueRequired,
-                                       arrayRequired, count_required_vuid, array_required_vuid);
+            skip |= ValidateArray(loc, countName, arrayName, *array ? (*count) : 0, &array, countValueRequired, arrayRequired,
+                                  count_required_vuid, array_required_vuid);
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -167,7 +167,7 @@ class StatelessValidation : public ValidationObject {
      * not NULL, verify that each structure's sType field is set to the correct
      * VkStructureType value.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param parameterName Name of struct parameter being validated.
      * @param sTypeName Name of expected VkStructureType value.
      * @param value Pointer to the struct to validate.
@@ -176,21 +176,21 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructType(const char *apiName, const ParameterName &parameterName, const char *sTypeName, const T *value,
+    bool ValidateStructType(const Location &loc, const ParameterName &parameterName, const char *sTypeName, const T *value,
                             VkStructureType sType, bool required, const char *struct_vuid, const char *stype_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if (value == nullptr) {
             if (required) {
-                skip_call |= LogError(device, struct_vuid, "%s: required parameter %s specified as NULL", apiName,
-                                      parameterName.get_name().c_str());
+                skip |=
+                    LogError(struct_vuid, device, loc, "required parameter %s specified as NULL", parameterName.get_name().c_str());
             }
         } else if (value->sType != sType) {
-            skip_call |= LogError(device, stype_vuid, "%s: parameter %s->sType must be %s.", apiName,
-                                  parameterName.get_name().c_str(), sTypeName);
+            skip |=
+                LogError(stype_vuid, device, loc, "parameter %s->sType must be %s.", parameterName.get_name().c_str(), sTypeName);
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -200,7 +200,7 @@ class StatelessValidation : public ValidationObject {
      * the array contains 1 or more structures, verify that each structure's
      * sType field is set to the correct VkStructureType value.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param countName Name of count parameter.
      * @param arrayName Name of array parameter.
      * @param sTypeName Name of expected VkStructureType value.
@@ -212,26 +212,26 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructTypeArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
+    bool ValidateStructTypeArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName,
                                  const char *sTypeName, uint32_t count, const T *array, VkStructureType sType, bool countRequired,
                                  bool arrayRequired, const char *stype_vuid, const char *param_vuid,
                                  const char *count_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                       count_required_vuid, param_vuid);
+            skip |= ValidateArray(loc, countName, arrayName, count, &array, countRequired, arrayRequired, count_required_vuid,
+                                  param_vuid);
         } else {
             // Verify that all structs in the array have the correct type
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i].sType != sType) {
-                    skip_call |= LogError(device, stype_vuid, "%s: parameter %s[%d].sType must be %s", apiName,
-                                          arrayName.get_name().c_str(), i, sTypeName);
+                    skip |= LogError(stype_vuid, device, loc, "parameter %s[%d].sType must be %s", arrayName.get_name().c_str(), i,
+                                     sTypeName);
                 }
             }
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -241,7 +241,7 @@ class StatelessValidation : public ValidationObject {
      * the array contains 1 or more structures, verify that each structure's
      * sType field is set to the correct VkStructureType value.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param countName Name of count parameter.
      * @param arrayName Name of array parameter.
      * @param sTypeName Name of expected VkStructureType value.
@@ -253,26 +253,26 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructPointerTypeArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
+    bool ValidateStructPointerTypeArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName,
                                         const char *sTypeName, uint32_t count, const T *array, VkStructureType sType,
                                         bool countRequired, bool arrayRequired, const char *stype_vuid, const char *param_vuid,
                                         const char *count_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                       count_required_vuid, param_vuid);
+            skip |= ValidateArray(loc, countName, arrayName, count, &array, countRequired, arrayRequired, count_required_vuid,
+                                  param_vuid);
         } else {
             // Verify that all structs in the array have the correct type
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i]->sType != sType) {
-                    skip_call |= LogError(device, stype_vuid, "%s: parameter %s[%d]->sType must be %s", apiName,
-                                          arrayName.get_name().c_str(), i, sTypeName);
+                    skip |= LogError(stype_vuid, device, loc, "parameter %s[%d]->sType must be %s", arrayName.get_name().c_str(), i,
+                                     sTypeName);
                 }
             }
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -283,7 +283,7 @@ class StatelessValidation : public ValidationObject {
      * If the array contains 1 or more structures, verify that each structure's
      * sType field is set to the correct VkStructureType value.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param countName Name of count parameter.
      * @param arrayName Name of array parameter.
      * @param sTypeName Name of expected VkStructureType value.
@@ -296,24 +296,24 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateStructTypeArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
+    bool ValidateStructTypeArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName,
                                  const char *sTypeName, uint32_t *count, const T *array, VkStructureType sType,
                                  bool countPtrRequired, bool countValueRequired, bool arrayRequired, const char *stype_vuid,
                                  const char *param_vuid, const char *count_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if (count == nullptr) {
             if (countPtrRequired) {
-                skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
-                                      apiName, countName.get_name().c_str());
+                skip |= LogError(kVUID_PVError_RequiredParameter, device, loc, "required parameter %s specified as NULL",
+                                 countName.get_name().c_str());
             }
         } else {
-            skip_call |= ValidateStructTypeArray(apiName, countName, arrayName, sTypeName, (*count), array, sType,
-                                                 countValueRequired && (array != nullptr), arrayRequired, stype_vuid, param_vuid,
-                                                 count_required_vuid);
+            skip |= ValidateStructTypeArray(loc, countName, arrayName, sTypeName, (*count), array, sType,
+                                            countValueRequired && (array != nullptr), arrayRequired, stype_vuid, param_vuid,
+                                            count_required_vuid);
         }
 
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -321,21 +321,20 @@ class StatelessValidation : public ValidationObject {
      *
      * Verify that the specified handle is not VK_NULL_HANDLE.
      *
-     * @param api_name Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param parameter_name Name of struct parameter being validated.
      * @param value Handle to validate.
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRequiredHandle(const char *api_name, const ParameterName &parameter_name, T value) const {
-        bool skip_call = false;
+    bool ValidateRequiredHandle(const Location &loc, const ParameterName &parameter_name, T value) const {
+        bool skip = false;
 
         if (value == VK_NULL_HANDLE) {
-            skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as VK_NULL_HANDLE",
-                                  api_name, parameter_name.get_name().c_str());
+            skip |=
+                LogError(kVUID_PVError_RequiredParameter, device, loc, "%s is VK_NULL_HANDLE.", parameter_name.get_name().c_str());
         }
-
-        return skip_call;
+        return skip;
     }
 
     /**
@@ -350,7 +349,7 @@ class StatelessValidation : public ValidationObject {
      *       of the handles are allowed to be VK_NULL_HANDLE.  For arrays of handles
      *       that are allowed to contain VK_NULL_HANDLE, use ValidateArray() instead.
      *
-     * @param api_name Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param count_name Name of count parameter.
      * @param array_name Name of array parameter.
      * @param count Number of elements in the array.
@@ -361,46 +360,45 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateHandleArray(const char *api_name, const ParameterName &count_name, const ParameterName &array_name, uint32_t count,
+    bool ValidateHandleArray(const Location &loc, const ParameterName &count_name, const ParameterName &array_name, uint32_t count,
                              const T *array, bool count_required, bool array_required, const char *count_required_vuid) const {
-        bool skip_call = false;
+        bool skip = false;
 
         if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(api_name, count_name, array_name, count, &array, count_required, array_required,
-                                       count_required_vuid, kVUIDUndefined);
+            skip |= ValidateArray(loc, count_name, array_name, count, &array, count_required, array_required, count_required_vuid,
+                                  kVUIDUndefined);
         } else {
             // Verify that no handles in the array are VK_NULL_HANDLE
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == VK_NULL_HANDLE) {
-                    skip_call |= LogError(device, kVUID_PVError_RequiredParameter,
-                                          "%s: required parameter %s[%d] specified as VK_NULL_HANDLE", api_name,
-                                          array_name.get_name().c_str(), i);
+                    skip |= LogError(kVUID_PVError_RequiredParameter, device, loc,
+                                     "required parameter %s[%d] specified as VK_NULL_HANDLE", array_name.get_name().c_str(), i);
                 }
             }
         }
 
-        return skip_call;
+        return skip;
     }
 
-    bool ValidateStringArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
+    bool ValidateStringArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
                              const char *const *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
                              const char *array_required_vuid) const;
 
-    bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
-    bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
+    bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc, const uint32_t promoted_version) const;
+    bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
     bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const;
 
-    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
+    bool ValidatePnextStructContents(const Location &loc, const ParameterName &parameter_name, const VkBaseOutStructure *header,
                                      const char *pnext_vuid, bool is_physdev_api = false, bool is_const_param = true) const;
 
-    bool ValidateStructPnext(const char *api_name, const ParameterName &parameter_name, const char *allowed_struct_names,
+    bool ValidateStructPnext(const Location &loc, const ParameterName &parameter_name, const char *allowed_struct_names,
                              const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
                              uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
                              const bool is_physdev_api = false, const bool is_const_param = true) const;
 
-    bool ValidateBool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) const;
+    bool ValidateBool32(const Location &loc, const ParameterName &parameterName, VkBool32 value) const;
 
-    bool ValidateBool32Array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
+    bool ValidateBool32Array(const Location &loc, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
                              const VkBool32 *array, bool countRequired, bool arrayRequired) const;
 
     /**
@@ -413,7 +411,7 @@ class StatelessValidation : public ValidationObject {
      *
      * @note This function does not expect to process enumerations defining bitmask flag bits.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param parameterName Name of parameter being validated.
      * @param enumName Name of the enumeration being validated.
      * @param valid_values The list of valid values for the enumeration.
@@ -421,17 +419,16 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnum(const char *apiName, const ParameterName &parameterName, const char *enumName, T value,
+    bool ValidateRangedEnum(const Location &loc, const ParameterName &parameterName, const char *enumName, T value,
                             const char *vuid) const {
         bool skip = false;
         const auto valid_values = ValidParamValues<T>();
 
         if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
-            skip |=
-                LogError(device, vuid,
-                         "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
-                         "not an extension added token.",
-                         apiName, parameterName.get_name().c_str(), value, enumName);
+            skip |= LogError(vuid, device, loc,
+                             "value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
+                             "not an extension added token.",
+                             parameterName.get_name().c_str(), value, enumName);
         }
 
         return skip;
@@ -447,7 +444,7 @@ class StatelessValidation : public ValidationObject {
      *
      * @note This function does not expect to process enumerations defining bitmask flag bits.
      *
-     * @param apiName Name of API call being validated.
+     * @param loc Name of API call being validated.
      * @param countName Name of count parameter.
      * @param arrayName Name of array parameter.
      * @param enumName Name of the enumeration being validated.
@@ -459,69 +456,69 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnumArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
+    bool ValidateRangedEnumArray(const Location &loc, const ParameterName &countName, const ParameterName &arrayName,
                                  const char *enumName, uint32_t count, const T *array, bool countRequired,
                                  bool arrayRequired) const {
-        bool skip_call = false;
+        bool skip = false;
         const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
-                                       kVUIDUndefined);
+            skip |= ValidateArray(loc, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
+                                  kVUIDUndefined);
         } else {
             for (uint32_t i = 0; i < count; ++i) {
                 if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
-                    skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
-                                          "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
-                                          "enumeration tokens and is not an extension added token",
-                                          apiName, arrayName.get_name().c_str(), i, array[i], enumName);
+                    skip |= LogError(kVUID_PVError_UnrecognizedValue, device, loc,
+                                     "value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
+                                     "enumeration tokens and is not an extension added token",
+                                     arrayName.get_name().c_str(), i, array[i], enumName);
                 }
             }
         }
 
-        return skip_call;
+        return skip;
     }
 
     template <typename T>
-    bool ValidateRangedEnumArray(const char *apiName, const char *vuid, const ParameterName &countName,
+    bool ValidateRangedEnumArray(const Location &loc, const char *vuid, const ParameterName &countName,
                                  const ParameterName &arrayName, const char *enumName, uint32_t count, const T *array,
                                  bool countRequired, bool arrayRequired) const {
-        bool skip_call = false;
+        bool skip = false;
         const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, vuid, vuid);
+            skip |= ValidateArray(loc, countName, arrayName, count, &array, countRequired, arrayRequired, vuid, vuid);
         } else {
             for (uint32_t i = 0; i < count; ++i) {
                 if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
-                    skip_call |= LogError(device, vuid,
-                                          "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
-                                          "enumeration tokens and is not an extension added token",
-                                          apiName, arrayName.get_name().c_str(), i, array[i], enumName);
+                    skip |= LogError(vuid, device, loc,
+                                     "value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
+                                     "enumeration tokens and is not an extension added token",
+                                     arrayName.get_name().c_str(), i, array[i], enumName);
                 }
             }
         }
 
-        return skip_call;
+        return skip;
     }
 
-    bool ValidateReservedFlags(const char *api_name, const ParameterName &parameter_name, VkFlags value, const char *vuid) const;
+    bool ValidateReservedFlags(const Location &loc, const ParameterName &parameter_name, VkFlags value, const char *vuid) const;
 
     enum FlagType { kRequiredFlags, kOptionalFlags, kRequiredSingleBit, kOptionalSingleBit };
 
     // helper to implement validation of both 32 bit and 64 bit flags.
     template <typename FlagTypedef>
-    bool ValidateFlagsImplementation(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name,
+    bool ValidateFlagsImplementation(const Location &loc, const ParameterName &parameter_name, const char *flag_bits_name,
                                      FlagTypedef all_flags, FlagTypedef value, const FlagType flag_type, const char *vuid,
                                      const char *flags_zero_vuid = nullptr) const;
 
-    bool ValidateFlags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
+    bool ValidateFlags(const Location &loc, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
                        VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    bool ValidateFlags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags64 all_flags,
+    bool ValidateFlags(const Location &loc, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags64 all_flags,
                        VkFlags64 value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    bool ValidateFlagsArray(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
+    bool ValidateFlagsArray(const Location &loc, const ParameterName &count_name, const ParameterName &array_name,
                             const char *flag_bits_name, VkFlags all_flags, uint32_t count, const VkFlags *array,
                             bool count_required, const char *array_required_vuid) const;
 
@@ -575,21 +572,21 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidateApiVersion(uint32_t api_version, APIVersion effective_api_version) const;
 
-    bool ValidateString(const char *apiName, const ParameterName &stringName, const std::string &vuid,
+    bool ValidateString(const Location &loc, const ParameterName &stringName, const std::string &vuid,
                         const char *validateString) const;
 
     bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const;
 
     bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
-                                     const char *func_name) const;
+                                     const Location &loc) const;
     bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkAccelerationStructureNV object_handle,
-                                const char *func_name) const;
-    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const char *func_name) const;
+                                const Location &loc) const;
+    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
     bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkAccelerationStructureNV object_handle,
-                                             const char *func_nam, bool is_cmd) const;
+                                             const Location &loc) const;
     bool ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo, const Location &loc) const;
 
-    bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
+    bool OutputExtensionError(const Location &loc, const std::string &extension_name) const;
 
     void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) override;
 
@@ -623,15 +620,22 @@ class StatelessValidation : public ValidationObject {
                                                     const ErrorObject &error_obj) const;
 
     bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo *pCreateInfo, const Location &loc) const;
-    bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo &info, uint32_t index) const;
-    bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo &info, uint32_t index) const;
-    bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo &info, uint32_t index) const;
-    bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo &info, uint32_t index,
+                                                     const Location &loc) const;
+    bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo &info, uint32_t index,
+                                                    const Location &loc) const;
+    bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo &info, uint32_t index,
+                                                 const Location &loc) const;
+    bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &info, uint32_t index,
+                                                    const Location &loc) const;
     bool ValidatePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &attachment_state, uint32_t pipe_index,
-                                                   uint32_t attachment_index) const;
-    bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo &info, uint32_t index) const;
-    bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo &info, uint32_t index) const;
-    bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo &info, uint32_t index) const;
+                                                   uint32_t attachment_index, const Location &loc) const;
+    bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo &info, uint32_t index,
+                                                   const Location &loc) const;
+    bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo &info, uint32_t index,
+                                                     const Location &loc) const;
+    bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo &info, uint32_t index,
+                                                      const Location &loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -668,7 +672,7 @@ class StatelessValidation : public ValidationObject {
                                      const char *sType, const void *pNext) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-    bool ValidateWriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
+    bool ValidateWriteDescriptorSet(const Location &loc, const uint32_t descriptorWriteCount,
                                     const VkWriteDescriptorSet *pDescriptorWrites, const bool isPushDescriptor) const;
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,

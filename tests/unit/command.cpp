@@ -5506,8 +5506,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "vkCmdSetExclusiveScissorNV: required parameter pExclusiveScissors specified as NULL");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-pExclusiveScissors-parameter");
         vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
         m_errorMonitor->VerifyFound();
 

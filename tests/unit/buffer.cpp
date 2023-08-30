@@ -592,8 +592,7 @@ TEST_F(NegativeBuffer, VertexBuffer) {
 
     {
         // Attempt to bind a null buffer.
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "vkBindBufferMemory: required parameter buffer specified as VK_NULL_HANDLE");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
         VkBufferTest buffer_test(m_device, 0, VkBufferTest::eBindNullBuffer);
         (void)buffer_test;
         m_errorMonitor->VerifyFound();

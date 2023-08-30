@@ -203,8 +203,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
 
 TEST_F(NegativeSyncObject, BufferMemoryBarrierNoBuffer) {
     // Try to add a buffer memory barrier with no buffer.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "required parameter pBufferMemoryBarriers[0].buffer specified as VK_NULL_HANDLE");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_commandBuffer->begin();
