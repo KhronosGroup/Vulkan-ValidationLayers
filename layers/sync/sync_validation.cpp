@@ -6111,12 +6111,12 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
     assert(context);
     if (!context) return skip;
 
-    const Location loc = error_obj.location.dot(Field::pResolveImageInfo);
+    const Location image_info_loc = error_obj.location.dot(Field::pResolveImageInfo);
     auto src_image = Get<ImageState>(pResolveImageInfo->srcImage);
     auto dst_image = Get<ImageState>(pResolveImageInfo->dstImage);
 
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
-        const Location region_loc = loc.dot(Field::pRegions, region);
+        const Location region_loc = image_info_loc.dot(Field::pRegions, region);
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, SYNC_RESOLVE_TRANSFER_READ, resolve_region.srcSubresource,

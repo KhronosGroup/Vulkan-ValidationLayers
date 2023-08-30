@@ -3018,30 +3018,30 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkDevice device, const VkImag
 bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pCopyMemoryToImageInfo);
+    const Location copy_loc = error_obj.location.dot(Field::pCopyMemoryToImageInfo);
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
     auto image_state = Get<IMAGE_STATE>(dst_image);
 
-    skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, loc);
+    skip |= ValidateMemoryImageCopyCommon(device, pCopyMemoryToImageInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, dst_image, props->copyDstLayoutCount, props->pCopyDstLayouts,
-                                        pCopyMemoryToImageInfo->dstImageLayout, loc.dot(Field::dstImageLayout), "pCopyDstLayouts",
-                                        "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
+                                        pCopyMemoryToImageInfo->dstImageLayout, copy_loc.dot(Field::dstImageLayout),
+                                        "pCopyDstLayouts", "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
     return skip;
 };
 
 bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location loc = error_obj.location.dot(Field::pCopyImageToMemoryInfo);
+    const Location copy_loc = error_obj.location.dot(Field::pCopyImageToMemoryInfo);
     auto src_image = pCopyImageToMemoryInfo->srcImage;
     auto image_state = Get<IMAGE_STATE>(src_image);
 
-    skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, loc);
+    skip |= ValidateMemoryImageCopyCommon(device, pCopyImageToMemoryInfo, copy_loc);
     auto *props = &phys_dev_ext_props.host_image_copy_properties;
     skip |= ValidateHostCopyImageLayout(device, src_image, props->copySrcLayoutCount, props->pCopySrcLayouts,
-                                        pCopyImageToMemoryInfo->srcImageLayout, loc.dot(Field::srcImageLayout), "pCopySrcLayouts",
-                                        "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
+                                        pCopyImageToMemoryInfo->srcImageLayout, copy_loc.dot(Field::srcImageLayout),
+                                        "pCopySrcLayouts", "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
     return skip;
 };
 
