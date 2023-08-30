@@ -30,19 +30,6 @@ cd Vulkan-ValidationLayers
 
 cmake -S . -B build -D UPDATE_DEPS=ON -D BUILD_WERROR=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=Debug
 cmake --build build --config Debug
-
-# CMake 3.21+
-cmake -S . -B build --preset dev
-cmake --build build --config Debug
-```
-
-### CMakePresets.json (3.21+)
-
-[CMakePresets.json](./CMakePresets.json) can save developer time by specifying common build flags.
-
-```bash
-# Enables tests, enable werror, etc.
-cmake -S . -B build/ --preset dev
 ```
 
 ### Warnings as errors off by default!
@@ -53,7 +40,7 @@ System/language package managers have to build on multiple different platforms a
 
 By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings until CMake 3.24
 
-Add `-D BUILD_WERROR=ON` to your workflow. Or use the `dev` preset shown below which will also enabling warnings as errors.
+Add `-D BUILD_WERROR=ON` to your workflow.
 
 ## Generated source code
 
@@ -151,7 +138,7 @@ Run CMake to generate [Visual Studio project files](https://cmake.org/cmake/help
 
 ```bash
 # NOTE: By default CMake picks the latest version of Visual Studio as the default generator.
-cmake -S . -B build --preset dev
+cmake -S . -B build
 
 # Open the Visual Studio solution
 cmake --open build
@@ -175,7 +162,7 @@ To create and open an Xcode project:
 
 ```bash
 # Create the Xcode project
-cmake -S . -B build -G Xcode --preset dev
+cmake -S . -B build -G Xcode
 
 # Open the Xcode project
 cmake --open build
