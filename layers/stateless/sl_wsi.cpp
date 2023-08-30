@@ -171,7 +171,7 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
                                  error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
                                  pPresentInfo->swapchainCount);
             }
-            skip |= ValidateStructPnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
+            skip |= ValidateStructPnext(error_obj.location, "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
                                         GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
                                         "VUID-VkPresentInfoKHR-sType-unique");
         }
@@ -341,25 +341,24 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                                                                const ErrorObject &error_obj) const {
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_swapchain))
-        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2))
-        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_khr_surface))
-        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SURFACE_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, VK_KHR_SURFACE_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2))
-        skip |=
-            OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        skip |= OutputExtensionError(error_obj.location, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
-        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    skip |= ValidateStructType(
-        "vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
-        pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
-        "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
+        skip |= OutputExtensionError(error_obj.location, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    skip |= ValidateStructType(error_obj.location, "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
+                               pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
+                               "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter",
+                               "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
     if (pSurfaceInfo != NULL) {
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
                                                 VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
 
-        skip |= ValidateStructPnext("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->pNext",
+        skip |= ValidateStructPnext(error_obj.location, "pSurfaceInfo->pNext",
                                     "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
                                     pSurfaceInfo->pNext, allowed_structs.size(), allowed_structs.data(),
                                     GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
@@ -371,7 +370,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                              "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
         }
 
-        skip |= ValidateRequiredHandle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
+        skip |= ValidateRequiredHandle(error_obj.location, "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
     return skip;
 }

@@ -1867,7 +1867,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
 
 TEST_F(NegativeRenderPass, NullRenderPass) {
     // Bind a NULL RenderPass
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdBeginRenderPass: required parameter pRenderPassBegin specified as NULL");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

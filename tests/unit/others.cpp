@@ -574,7 +574,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_commandBuffer->SetViewport(0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter memory specified as VK_NULL_HANDLE");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "memory is VK_NULL_HANDLE");
     // Specify VK_NULL_HANDLE for a required handle
     // Expected to trigger an error with
     // StatelessValidation::ValidateRequiredHandle
