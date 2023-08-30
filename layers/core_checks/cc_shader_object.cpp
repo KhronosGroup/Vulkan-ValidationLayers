@@ -67,7 +67,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
     if (enabled_features.shader_object_features.shaderObject == VK_FALSE) {
         skip |=
-            LogError(device, "VUID-vkCreateShadersEXT-None-08400", "vkCreateShadersEXT(): shaderObject feature is not enabled.");
+            LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
 
     const uint32_t invalid = createInfoCount;
@@ -81,75 +81,65 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     uint32_t linked_spirv_index = invalid;
     uint32_t linked_binary_index = invalid;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        const Location loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkShaderCreateInfoEXT& createInfo = pCreateInfos[i];
         if (createInfo.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
             createInfo.stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             if (enabled_features.core.tessellationShader == VK_FALSE) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-stage-08419",
-                                 "vkCreateShadersEXT(): tessellationShader feature is not enabled, but createInfo[%" PRIu32
-                                 "].stage is %s.",
-                                 i, string_VkShaderStageFlagBits(createInfo.stage));
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08419", device, loc.dot(Field::stage),
+                                 "is %s, but the tessellationShader feature was not enabled.",
+                                 string_VkShaderStageFlagBits(createInfo.stage));
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
             if (enabled_features.core.geometryShader == VK_FALSE) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-stage-08420",
-                                 "vkCreateShadersEXT(): geometryShader feature is not enabled, but createInfo[%" PRIu32
-                                 "].stage is VK_SHADER_STAGE_GEOMETRY_BIT.",
-                                 i);
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08420", device, loc.dot(Field::stage),
+                                 "is VK_SHADER_STAGE_GEOMETRY_BIT, but the geometryShader feature was not enabled.");
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
             if (enabled_features.mesh_shader_features.taskShader == VK_FALSE) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-stage-08421",
-                                 "vkCreateShadersEXT(): taskShader feature is not enabled, but createInfo[%" PRIu32
-                                 "].stage is VK_SHADER_STAGE_TASK_BIT_EXT.",
-                                 i);
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08421", device, loc.dot(Field::stage),
+                                 "is VK_SHADER_STAGE_TASK_BIT_EXT, but the taskShader feature was not enabled.");
             }
         } else if (createInfo.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (enabled_features.mesh_shader_features.meshShader == VK_FALSE) {
-                skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-stage-08422",
-                                 "vkCreateShadersEXT(): meshShader feature is not enabled, but createInfo[%" PRIu32
-                                 "].stage is VK_SHADER_STAGE_MESH_BIT_EXT.",
-                                 i);
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-stage-08422", device, loc.dot(Field::stage),
+                                 "is VK_SHADER_STAGE_MESH_BIT_EXT, but the meshShader feature was not enabled.");
             }
         }
 
         if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0 &&
             enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate == VK_FALSE) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-flags-08487",
-                             "vkCreateShadersEXT(): attachmentFragmentShadingRate feature is not enabled, but createInfo[%" PRIu32
-                             "].flags contains VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT.",
-                             i);
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08487", device, loc.dot(Field::flags),
+                             "is %s, but the attachmentFragmentShadingRate feature was not enabled.",
+                             string_VkShaderCreateFlagsEXT(createInfo.flags).c_str());
         }
         if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT) != 0 &&
             enabled_features.fragment_density_map_features.fragmentDensityMap == VK_FALSE) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-flags-08489",
-                             "vkCreateShadersEXT(): fragmentDensityMap feature is not enabled, but createInfo[%" PRIu32
-                             "].flags contains VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT.",
-                             i);
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08489", device, loc.dot(Field::flags),
+                             "is %s, but the fragmentDensityMap feature was not enabled.",
+                             string_VkShaderCreateFlagsEXT(createInfo.flags).c_str());
         }
 
         if ((createInfo.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0 && createInfoCount == 1) {
-            skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08401",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but createInfoCount is 1.",
-                             i);
+            skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08401", device, loc.dot(Field::flags),
+                             "is %s, but createInfoCount is 1.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str());
         }
         if ((createInfo.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
             const auto nextStage = FindNextStage(createInfoCount, pCreateInfos, createInfo.stage);
             if (nextStage != 0 && createInfo.nextStage != nextStage) {
-                skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08409",
-                                 "vkCreateShadersEXT(): createInfo[%" PRIu32
-                                 "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but its next stage %s does not equal the "
-                                 "logically next stage %s which also has the VK_SHADER_CREATE_LINK_STAGE_BIT_EXT bit.",
-                                 i, string_VkShaderStageFlags(createInfo.nextStage).c_str(),
-                                 string_VkShaderStageFlags(nextStage).c_str());
+                skip |=
+                    LogError("VUID-vkCreateShadersEXT-pCreateInfos-08409", device, loc.dot(Field::flags),
+                             "is %s, but nextStage (%s) does not equal the "
+                             "logically next stage (%s) which also has the VK_SHADER_CREATE_LINK_STAGE_BIT_EXT bit.",
+                             string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str(), string_VkShaderStageFlags(nextStage).c_str());
             }
             for (uint32_t j = i; j < createInfoCount; ++j) {
                 if (i != j && createInfo.stage == pCreateInfos[j].stage) {
-                    skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08410",
-                                     "vkCreateShadersEXT(): createInfo[%" PRIu32 "] and createInfo[%" PRIu32
+                    skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08410", device, loc,
+                                     "and pCreateInfos[%" PRIu32
                                      "] both contain VK_SHADER_CREATE_LINK_STAGE_BIT_EXT and have the stage %s.",
-                                     i, j, string_VkShaderStageFlagBits(createInfo.stage));
+                                     j, string_VkShaderStageFlagBits(createInfo.stage));
                 }
             }
 
@@ -181,92 +171,83 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         if (enabled_features.core.tessellationShader == VK_FALSE &&
             (createInfo.nextStage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
              createInfo.nextStage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08428",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].nextStage is %s, but tessellationShader feature is not enabled.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08428", device, loc.dot(Field::nextStage),
+                             "is %s, but tessellationShader feature was not enabled.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if (enabled_features.core.geometryShader == VK_FALSE && createInfo.nextStage == VK_SHADER_STAGE_GEOMETRY_BIT) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08429",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].nextStage is VK_SHADER_STAGE_GEOMETRY_BIT, but tessellationShader feature is not enabled.",
-                             i);
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08429", device, loc.dot(Field::nextStage),
+                             "is VK_SHADER_STAGE_GEOMETRY_BIT, but tessellationShader feature was not enabled.");
         }
         if (createInfo.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT &&
             (createInfo.nextStage & ~VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) > 0) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08430",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].stage is VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, but nextStage is %s.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08430", device, loc.dot(Field::stage),
+                             "is VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, but nextStage is %s.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if (createInfo.stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
             (createInfo.nextStage & ~(VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) > 0) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08431",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].stage is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but nextStage is %s.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08431", device, loc.dot(Field::stage),
+                             "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but nextStage is %s.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if (createInfo.stage == VK_SHADER_STAGE_GEOMETRY_BIT && (createInfo.nextStage & ~VK_SHADER_STAGE_FRAGMENT_BIT) > 0) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08433",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].stage is VK_SHADER_STAGE_GEOMETRY_BIT, but nextStage is %s.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08433", device, loc.dot(Field::stage),
+                             "is VK_SHADER_STAGE_GEOMETRY_BIT, but nextStage is %s.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if ((createInfo.stage == VK_SHADER_STAGE_FRAGMENT_BIT || createInfo.stage == VK_SHADER_STAGE_COMPUTE_BIT) &&
             createInfo.nextStage > 0) {
             skip |=
-                LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08434",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32 "].stage is %s, but nextStage is %s.", i,
+                LogError("VUID-VkShaderCreateInfoEXT-nextStage-08434", device, loc.dot(Field::stage), "is %s, but nextStage is %s.",
                          string_VkShaderStageFlagBits(createInfo.stage), string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if (createInfo.stage == VK_SHADER_STAGE_TASK_BIT_EXT && (createInfo.nextStage & ~VK_SHADER_STAGE_MESH_BIT_EXT) > 0) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08435",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].stage is VK_SHADER_STAGE_TASK_BIT_EXT, but nextStage is %s.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08435", device, loc.dot(Field::stage),
+                             "is VK_SHADER_STAGE_TASK_BIT_EXT, but nextStage is %s.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
         if (createInfo.stage == VK_SHADER_STAGE_MESH_BIT_EXT && (createInfo.nextStage & ~VK_SHADER_STAGE_FRAGMENT_BIT) > 0) {
-            skip |= LogError(device, "VUID-VkShaderCreateInfoEXT-nextStage-08436",
-                             "vkCreateShadersEXT(): createInfo[%" PRIu32
-                             "].stage is VK_SHADER_STAGE_MESH_BIT_EXT, but nextStage is %s.",
-                             i, string_VkShaderStageFlags(createInfo.nextStage).c_str());
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08436", device, loc.dot(Field::stage),
+                             "is VK_SHADER_STAGE_MESH_BIT_EXT, but nextStage is %s.",
+                             string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
     }
 
     if (linked_stage != invalid && non_linked_graphics_stage != invalid) {
-        skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08402",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32
-                         "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but createInfo[%" PRIu32
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08402", device, error_obj.location,
+                         "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
+                         "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but pCreateInfos[%" PRIu32
                          "] stage is %s and does not have VK_SHADER_CREATE_LINK_STAGE_BIT_EXT.",
                          linked_stage, non_linked_graphics_stage,
                          string_VkShaderStageFlagBits(pCreateInfos[non_linked_graphics_stage].stage));
     }
     if (linked_stage != invalid && non_linked_task_mesh_stage != invalid) {
-        skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08403",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32
-                         "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but createInfo[%" PRIu32
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08403", device, error_obj.location,
+                         "vkCreateShadersEXT(): pCreateInfos[%" PRIu32
+                         "].flags contains VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but pCreateInfos[%" PRIu32
                          "] stage is %s and does not have VK_SHADER_CREATE_LINK_STAGE_BIT_EXT.",
                          linked_stage, non_linked_task_mesh_stage,
                          string_VkShaderStageFlagBits(pCreateInfos[non_linked_task_mesh_stage].stage));
     }
     if (linked_vert_stage != invalid && linked_task_mesh_stage != invalid) {
-        skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08404",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32 "].stage is %s and createInfo[%" PRIu32
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08404", device, error_obj.location,
+                         "pCreateInfos[%" PRIu32 "].stage is %s and pCreateInfos[%" PRIu32
                          "].stage is %s, but both contain VK_SHADER_CREATE_LINK_STAGE_BIT_EXT.",
                          linked_vert_stage, string_VkShaderStageFlagBits(pCreateInfos[linked_vert_stage].stage),
                          linked_task_mesh_stage, string_VkShaderStageFlagBits(pCreateInfos[linked_task_mesh_stage].stage));
     }
     if (linked_task_stage != invalid && linked_mesh_no_task_stage != invalid) {
-        skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08405",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32 "] is a linked task shader, but createInfo[%" PRIu32
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08405", device, error_obj.location,
+                         "pCreateInfos[%" PRIu32 "] is a linked task shader, but pCreateInfos[%" PRIu32
                          "] is a linked mesh shader with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT flag.",
                          linked_task_stage, linked_mesh_no_task_stage);
     }
     if (linked_spirv_index != invalid && linked_binary_index != invalid) {
-        skip |= LogError(device, "VUID-vkCreateShadersEXT-pCreateInfos-08411",
-                         "vkCreateShadersEXT(): createInfo[%" PRIu32
-                         "] is a linked shader with codeType VK_SHADER_CODE_TYPE_SPIRV_EXT, but createInfo[%" PRIu32
-                         "] is a linked shader with code type VK_SHADER_CODE_TYPE_BINARY_EXT.",
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08411", device, error_obj.location,
+                         "pCreateInfos[%" PRIu32
+                         "] is a linked shader with codeType VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCreateInfos[%" PRIu32
+                         "] is a linked shader with codeType VK_SHADER_CODE_TYPE_BINARY_EXT.",
                          linked_spirv_index, linked_binary_index);
     }
 
