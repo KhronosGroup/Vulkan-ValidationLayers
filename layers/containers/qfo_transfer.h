@@ -21,28 +21,13 @@
 #include "utils/hash_util.h"
 
 // Types to store queue family ownership (QFO) Transfers
-class COMMAND_POOL_STATE;
 
 template <typename Barrier>
 inline bool IsTransferOp(const Barrier &barrier) {
     return barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex;
 }
 
-// specializations for barriers that cannot do queue family ownership transfers
-template <>
-constexpr bool IsTransferOp(const VkMemoryBarrier &barrier) {
-    return false;
-}
-template <>
-constexpr bool IsTransferOp(const VkMemoryBarrier2KHR &barrier) {
-    return false;
-}
-template <>
-constexpr bool IsTransferOp(const VkSubpassDependency2 &barrier) {
-    return false;
-}
-
-static inline bool QueueFamilyIsExternal(const uint32_t queue_family_index) {
+static inline bool IsQueueFamilyExternal(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
