@@ -1003,7 +1003,7 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
 
     // Layout transitions in external instance are not tracked, so don't validate initial layout.
-    if (QueueFamilyIsExternal(mem_barrier.srcQueueFamilyIndex)) {
+    if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
         initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 

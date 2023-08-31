@@ -1592,7 +1592,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
 
         if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
             // TODO: Set memory invalid which is in mem_tracker currently
-        } else if (!QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
+        } else if (!IsQueueFamilyExternal(img_barrier.srcQueueFamilyIndex)) {
             skip |= UpdateCommandBufferImageLayoutMap(cb_state, loc, img_barrier, current_map, layout_updates);
         }
 
@@ -1777,9 +1777,9 @@ template <typename Barrier, typename TransferBarrier>
 void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STATE *cb_state, const Barrier &barrier,
                                              QFOTransferBarrierSets<TransferBarrier> &barrier_sets) {
     if (IsTransferOp(barrier)) {
-        if (cb_state->IsReleaseOp(barrier) && !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
+        if (cb_state->IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barrier);
-        } else if (cb_state->IsAcquireOp(barrier) && !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
+        } else if (cb_state->IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(barrier);
         }
     }
@@ -1960,13 +1960,13 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &loc, const
         return skip;
     }
     const TransferBarrier *barrier_record = nullptr;
-    if (cb_state->IsReleaseOp(barrier) && !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
+    if (cb_state->IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
         const auto found = barrier_sets.release.find(barrier);
         if (found != barrier_sets.release.cend()) {
             barrier_record = &(*found);
             transfer_type = "releasing";
         }
-    } else if (cb_state->IsAcquireOp(barrier) && !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
+    } else if (cb_state->IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
         const auto found = barrier_sets.acquire.find(barrier);
         if (found != barrier_sets.acquire.cend()) {
             barrier_record = &(*found);
@@ -2045,7 +2045,7 @@ class ValidatorState {
     // Logical helpers for semantic clarity
     inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
     inline bool IsValidOrSpecial(uint32_t queue_family) const {
-        return IsValid(queue_family) || QueueFamilyIsExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
+        return IsValid(queue_family) || IsQueueFamilyExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
     }
 
     // Helpers for LogMsg

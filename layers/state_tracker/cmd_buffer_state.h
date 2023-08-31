@@ -689,18 +689,10 @@ inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) co
     return false;
 }
 template <>
-inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkSubpassDependency2 &barrier) const {
-    return false;
-}
-template <>
 inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier &barrier) const {
     return false;
 }
 template <>
 inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkMemoryBarrier2KHR &barrier) const {
-    return false;
-}
-template <>
-inline bool CMD_BUFFER_STATE::IsAcquireOp(const VkSubpassDependency2 &barrier) const {
     return false;
 }
