@@ -316,7 +316,8 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     descriptor_write.pImageInfo = imageInfo;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00318");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00318");  // binding 2
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");  // binding 3
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
@@ -1262,7 +1263,6 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     image.memory().destroy();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -1343,7 +1343,6 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
 TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1879,10 +1878,16 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     ASSERT_TRUE(image_obj.initialized());
     VkImageView image_view = image_obj.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+
     VkDescriptorBufferInfo buff_info = {};
     buff_info.buffer = buffer.handle();
+    buff_info.range = VK_WHOLE_SIZE;
     VkDescriptorImageInfo img_info = {};
     img_info.imageView = image_view;
+    img_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    img_info.sampler = sampler.handle();
     auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -2212,8 +2217,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
 
 TEST_F(NegativeDescriptors, DSTypeMismatch) {
     // Create DS w/ layout of one type and attempt Update w/ mis-matched type
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, " binding #0 with type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER but update type is VK_DESCRIPTOR_TYPE_SAMPLER");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00319");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -2416,7 +2420,7 @@ TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
 TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     // Create DS w/ layout of 2 types, write update 1 and attempt to copy-update
     // into the other
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " binding #1 with type VK_DESCRIPTOR_TYPE_SAMPLER. Types do not match.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02632");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2447,7 +2451,7 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
 
     m_errorMonitor->VerifyFound();
     // Now perform a copy update that fails due to binding out of bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " does not have copy update src binding of 3.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcBinding-00345");
     copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_set.set_;
     copy_ds_update.srcBinding = 3;  // ERROR : Invalid binding for matching layout
@@ -2459,9 +2463,9 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 
     // Now perform a copy update that fails due to binding out of bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         " binding#1 with offset index of 1 plus update array offset of 0 and update of 5 "
-                                         "descriptors oversteps total number of descriptors in set: 2.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-srcArrayElement-00346");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstArrayElement-00348");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyDescriptorSet-dstBinding-02632");
 
     copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
     copy_ds_update.srcSet = descriptor_set.set_;
@@ -2501,7 +2505,7 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
                                        });
 
     auto ici = LvlInitStruct<VkImageCreateInfo>(
-        nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR}, VK_IMAGE_TYPE_3D, VK_FORMAT_R8G8B8A8_UNORM,
+        nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT}, VK_IMAGE_TYPE_3D, VK_FORMAT_R8G8B8A8_UNORM,
         VkExtent3D{32, 32, 32}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
     VkImageObj image(m_device);
@@ -2515,7 +2519,8 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
                                              VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
     vk_testing::ImageView view(*m_device, ivci);
 
-    // Meat of the test.
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkDescriptorImageInfo-imageView-07796");  // missing VK_EXT_image_2d_view_of_3d
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-descriptorType-06714");
 
     VkDescriptorImageInfo dii = {VK_NULL_HANDLE, view.handle(), VK_IMAGE_LAYOUT_GENERAL};
@@ -3261,7 +3266,9 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     write_inline_uniform.pData = &dummyData[0];
     descriptor_write.pNext = &write_inline_uniform;
 
+    // one for dataSiz and for descriptorCount
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02220");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 

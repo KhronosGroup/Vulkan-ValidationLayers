@@ -401,7 +401,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             VkDescriptorSet ds;
             VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
             ASSERT_VK_SUCCESS(err);
-            VkBufferObj buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            VkBufferObj buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
             VkDescriptorBufferInfo buffer_info[3] = {};
             for (int i = 0; i < 3; i++) {
                 buffer_info[i].buffer = buffer.handle();

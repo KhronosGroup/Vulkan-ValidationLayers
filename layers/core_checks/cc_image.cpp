@@ -1767,7 +1767,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                             // TODO - combine this logic
                             skip |= LogError("VUID-VkImageViewCreateInfo-image-06728", pCreateInfo->image,
                                              create_info_loc.dot(Field::viewType),
-                                             "(VK)_IMAGE_VIEW_TYPE_2D is not compatible "
+                                             "VK_IMAGE_VIEW_TYPE_2D is not compatible "
                                              "with image type "
                                              "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
                                              string_VkImageType(image_type));
