@@ -907,32 +907,31 @@ class CoreChecks : public ValidationStateTracker {
 
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
-    bool ValidateCopyUpdate(const VkCopyDescriptorSet* update, const DescriptorSet* dst_set, const DescriptorSet* src_set,
-                            const char* func_name, std::string* error_code, std::string* error_msg) const;
-    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet* update, const DescriptorSet* src_set, VkDescriptorType src_type,
-                                  uint32_t src_index, const DescriptorSet* dst_set, VkDescriptorType dst_type, uint32_t dst_index,
-                                  const char* func_name, std::string* error_code, std::string* error_msg) const;
+    bool ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Location& copy_loc) const;
+    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet& update, const DescriptorSet& src_set, VkDescriptorType src_type,
+                                  uint32_t src_index, const DescriptorSet& dst_set, VkDescriptorType dst_type, uint32_t dst_index,
+                                  const Location& copy_loc) const;
+    bool VerifyUpdateConsistency(const DescriptorSet& set, uint32_t binding, uint32_t offset, uint32_t update_count,
+                                 const char* vuid, const Location& set_loc) const;
     // Validate contents of a WriteUpdate
-    bool ValidateWriteUpdate(const DescriptorSet* descriptor_set, const VkWriteDescriptorSet* update, const char* func_name,
-                             std::string* error_code, std::string* error_msg, bool push) const;
-    bool VerifyWriteUpdateContents(const DescriptorSet* dest_set, const VkWriteDescriptorSet* update, const uint32_t index,
-                                   const char* func_name, std::string* error_code, std::string* error_msg, bool push) const;
+    bool ValidateWriteUpdate(const DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const Location& write_loc,
+                             bool push) const;
+    bool VerifyWriteUpdateContents(const DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const uint32_t index,
+                                   const Location& write_loc, bool push) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
     //  performs common functions with both sampler and image descriptors so they can share their common functions
-    bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const char* func_name, std::string*, std::string*) const;
+    bool ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
+                             const Location& image_info_loc) const;
     // Validate contents of a push descriptor update
-    bool ValidatePushDescriptorsUpdate(const DescriptorSet* push_set, uint32_t write_count, const VkWriteDescriptorSet* p_wds,
-                                       const char* func_name) const;
+    bool ValidatePushDescriptorsUpdate(const DescriptorSet& push_set, uint32_t descriptorWriteCount,
+                                       const VkWriteDescriptorSet* pDescriptorWrites, const Location& loc) const;
     // Descriptor Set Validation Functions
     bool ValidateSampler(VkSampler) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const* buffer_info, VkDescriptorType type, const char* func_name,
-                              std::string* error_code, std::string* error_msg) const;
-    template <typename T>
-    bool ValidateAccelerationStructureUpdate(T acc, const char* func_name, std::string* error_code, std::string* error_msg) const;
-    bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const UPDATE_TEMPLATE_STATE* template_state,
-                                                     const void* pData) const;
-    bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
-                                      const VkCopyDescriptorSet* p_cds, const char* func_name) const;
+    bool ValidateBufferUsage(const BUFFER_STATE& buffer_state, VkDescriptorType type, const Location& buffer_loc) const;
+    bool ValidateBufferUpdate(const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
+                              const Location& buffer_info_loc) const;
+    bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                      const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline, const Location& loc) const;
