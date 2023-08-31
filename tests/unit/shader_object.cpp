@@ -6934,7 +6934,8 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5208
+TEST_F(NegativeShaderObject, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
 

@@ -2341,23 +2341,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
         }
     }
 
-    uint32_t count = cb_state.activeRenderPass->UsesDynamicRendering()
-                         ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
-                         : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
-    if ((pipeline && pipeline->DualSourceBlending()) || (!pipeline && cb_state.HasDynamicDualSourceBlend(count))) {
-        if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            if (pipeline) {
-                objlist.add(pipeline->pipeline());
-            }
-            skip |=
-                LogError(objlist, "VUID-RuntimeSpirv-Fragment-06427",
-                         "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
-                         ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
-                         caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
-        }
-    }
-
     bool primitives_generated_query_with_rasterizer_discard =
         enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_TRUE;
     bool primitives_generated_query_with_non_zero_streams =
