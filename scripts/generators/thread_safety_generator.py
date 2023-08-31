@@ -65,10 +65,10 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             'vkDeviceWaitIdle',
             'vkRegisterDisplayEventEXT',
             'vkCreateRayTracingPipelinesKHR',
+            'vkQueuePresentKHR',
         ]
 
         self.blacklist = [
-            'vkQueuePresentKHR',
             # Currently not wrapping debug helper functions
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
