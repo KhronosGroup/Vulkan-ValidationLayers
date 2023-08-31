@@ -2479,6 +2479,15 @@ void PostCallRecordAcquireNextImageKHR(
     uint32_t*                                   pImageIndex,
     const RecordObject&                         record_obj) override;
 
+void PreCallRecordQueuePresentKHR(
+    VkQueue                                     queue,
+    const VkPresentInfoKHR*                     pPresentInfo) override;
+
+void PostCallRecordQueuePresentKHR(
+    VkQueue                                     queue,
+    const VkPresentInfoKHR*                     pPresentInfo,
+    const RecordObject&                         record_obj) override;
+
 void PreCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
     VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) override;
