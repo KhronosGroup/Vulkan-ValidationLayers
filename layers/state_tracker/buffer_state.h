@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 #pragma once
-#include <variant>
 #include "state_tracker/device_memory_state.h"
 #include "containers/range_vector.h"
 
@@ -30,6 +29,7 @@ class BUFFER_STATE : public BINDABLE {
     const safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &createInfo;
     const VkMemoryRequirements requirements;
+    const VkMemoryRequirements *const memory_requirements_pointer = &requirements;
     VkDeviceAddress deviceAddress = 0;
     // VkBufferUsageFlags2CreateInfoKHR can be used instead over the VkBufferCreateInfo::usage
     const VkBufferUsageFlags2KHR usage;
@@ -54,10 +54,11 @@ class BUFFER_STATE : public BINDABLE {
     }
 
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const { return {deviceAddress, deviceAddress + createInfo.size}; }
-
-  private:
-    std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
 };
+
+using BUFFER_STATE_LINEAR = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, BindableLinearMemoryTracker>;
+template <bool IS_RESIDENT>
+using BUFFER_STATE_SPARSE = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, BindableSparseMemoryTracker<IS_RESIDENT>>;
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
