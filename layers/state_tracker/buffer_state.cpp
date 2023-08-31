@@ -44,16 +44,8 @@ BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, cons
       createInfo(*safe_create_info.ptr()),
       requirements(GetMemoryRequirements(dev_data, buff)),
       usage(GetBufferUsageFlags(createInfo)),
-      supported_video_profiles(dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
-    if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
-        tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
-                                                      (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);
-        SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
-    } else {
-        tracker_.emplace<BindableLinearMemoryTracker>(&requirements);
-        SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));
-    }
-}
+      supported_video_profiles(
+          dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {}
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
