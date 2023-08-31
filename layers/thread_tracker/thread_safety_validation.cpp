@@ -740,3 +740,34 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
         }
     }
 }
+
+void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+    StartWriteObject(queue, vvl::Func::vkQueuePresentKHR);
+    uint32_t waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+    if (pPresentInfo->pWaitSemaphores != nullptr) {
+        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
+            StartReadObject(pPresentInfo->pWaitSemaphores[index], vvl::Func::vkQueuePresentKHR);
+        }
+    }
+    if (pPresentInfo->pSwapchains != nullptr) {
+        for (uint32_t index = 0; index < pPresentInfo->swapchainCount; ++index) {
+            StartWriteObjectParentInstance(pPresentInfo->pSwapchains[index], vvl::Func::vkQueuePresentKHR);
+        }
+    }
+}
+
+void ThreadSafety::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, 
+                                                 const RecordObject& record_obj) {
+    FinishWriteObject(queue, record_obj.location.function);
+    uint32_t waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+    if (pPresentInfo->pWaitSemaphores != nullptr) {
+        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
+            FinishReadObject(pPresentInfo->pWaitSemaphores[index], record_obj.location.function);
+        }
+    }
+    if (pPresentInfo->pSwapchains != nullptr) {
+        for (uint32_t index = 0; index < pPresentInfo->swapchainCount; ++index) {
+            FinishWriteObjectParentInstance(pPresentInfo->pSwapchains[index], record_obj.location.function);
+        }
+    }
+}
