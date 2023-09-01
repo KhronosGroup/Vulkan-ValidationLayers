@@ -1348,7 +1348,9 @@ TEST_F(NegativeDescriptorBuffer, Various) {
         }
     }
 
-    {
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(descriptor_buffer_features);
+    if (descriptor_buffer_features.descriptorBufferCaptureReplay) {
         uint32_t qfi = 0;
         auto buffCI = LvlInitStruct<VkBufferCreateInfo>();
         buffCI.flags = VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
@@ -1373,7 +1375,8 @@ TEST_F(NegativeDescriptorBuffer, Various) {
         vk::BindBufferMemory(m_device->device(), d_buffer.handle(), mem.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
-    {
+
+    if (descriptor_buffer_features.descriptorBufferCaptureReplay) {
         auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
         image_create_info.flags = VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
