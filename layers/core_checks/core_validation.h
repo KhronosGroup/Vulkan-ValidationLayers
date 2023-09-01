@@ -1017,17 +1017,16 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkImageSubresourceRange& subresourceRange, const char* image_layer_count_var_name,
                                        const VkImage image, const SubresourceRangeErrorCodes& errorCodes,
                                        const Location& loc) const;
-    bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass, uint32_t subpass,
+    bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                              IMAGE_STATE* image_state, VkSampleCountFlagBits msrtss_samples,
-                                                             uint32_t attachment_index, bool depth, const Location& loc) const;
+                                                             const Location& rasterization_samples_loc) const;
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
                                                               VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                              uint32_t attachment_index, const char* variable_name,
-                                                              const Location& loc) const;
+                                                              uint32_t attachment_index, const Location& rp_loc,
+                                                              const Location& attachment_reference_loc) const;
     bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkImageLayout layout, const IMAGE_VIEW_STATE& image_view_state,
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                                     uint32_t attachment_index, const char* variable_name,
-                                                                     const Location& loc) const;
+                                                                     const Location& layout_loc) const;
     bool ValidateHostCopyImageCreateInfos(VkDevice device, const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state,
                                           const Location& loc) const;
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const IMAGE_STATE& image_state) const;
@@ -1148,7 +1147,7 @@ class CoreChecks : public ValidationStateTracker {
     bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
 
     bool VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const FRAMEBUFFER_STATE& framebuffer_state, const Location& loc) const;
+                                               const FRAMEBUFFER_STATE& framebuffer_state, const Location& rp_begin_loc) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, const safe_VkAttachmentReference2& ref);
