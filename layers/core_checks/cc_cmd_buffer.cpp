@@ -405,7 +405,6 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
 bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, VkDeviceSize offset,
                                             VkIndexType indexType, const Location &loc) const {
     bool skip = false;
-    const char *api_call = loc.StringFunc();
     const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR;
     const LogObjectList objlist(cb_state.commandBuffer(), buffer_state.buffer());
     skip |= ValidateCmd(cb_state, loc);
@@ -413,7 +412,7 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const CMD_BUFFER_STATE &cb_state, co
     const char *vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
     skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
-    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, api_call, vuid);
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, loc.dot(Field::buffer), vuid);
 
     const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (!IsIntegerMultipleOf(offset, offset_align)) {
@@ -477,7 +476,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
             skip |=
                 ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", error_obj.location.dot(Field::pBuffers, i));
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindVertexBuffers()",
+            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pBuffers, i),
                                                   "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
             if (pOffsets[i] >= buffer_state->createInfo.size) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers-pOffsets-00626", objlist, error_obj.location.dot(Field::pOffsets, i),
@@ -500,7 +499,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer, dstBuffer);
 
-    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, "vkCmdUpdateBuffer()",
+    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, error_obj.location.dot(Field::dstBuffer),
                                           "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
@@ -1394,6 +1393,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
+        const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
         auto buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
         assert(buffer_state != nullptr);
 
@@ -1431,7 +1431,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
             }
         }
 
-        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, cmd_name,
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc,
                                               "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02364");
     }
 
@@ -1567,7 +1567,6 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
                                                       const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                       const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
                                                       const ErrorObject &error_obj) const {
-    const char *api_call = error_obj.location.StringFunc();
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
 
@@ -1579,11 +1578,11 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
             continue;  // Can be null handle if using nullDescriptor
         }
         const LogObjectList objlist(commandBuffer, pBuffers[i]);
-        const Location &buffer_loc = error_obj.location.dot(Field::pBuffers, i);
+        const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
         skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers2-pBuffers-03359", buffer_loc);
         skip |=
-            ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, api_call, "VUID-vkCmdBindVertexBuffers2-pBuffers-03360");
+            ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc, "VUID-vkCmdBindVertexBuffers2-pBuffers-03360");
 
         const VkDeviceSize offset = pOffsets[i];
         if (pSizes) {
@@ -1738,7 +1737,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
     if (image_state) {
         skip |= VerifyImageLayout(*cb_state, *image_state, subresource, imageLayout, VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV,
-                                  "vkCmdCopyImage()", "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                  error_obj.location.dot(Field::imageView), "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
                                   "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
     }
 

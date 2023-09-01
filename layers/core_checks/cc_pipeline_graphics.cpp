@@ -2295,7 +2295,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
 }
 
 bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE &cb_state,
-                                                            const char *caller, const DrawDispatchVuid &vuid) const {
+                                                            const Location &loc, const DrawDispatchVuid &vuid) const {
     bool skip = false;
 
     for (auto &stage_state : pipeline.stage_states) {
@@ -2304,12 +2304,11 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
                 if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
-                    skip |=
-                        LogError(stage_state.module_state->Handle(), vuid.viewport_count_primitive_shading_rate_04552,
-                                 "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
-                                 "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
-                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                 caller, string_VkShaderStageFlagBits(stage));
+                    skip |= LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), loc,
+                                     "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
+                                     "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                     "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                     string_VkShaderStageFlagBits(stage));
                 }
             }
         }
@@ -2608,7 +2607,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
         }
 
         if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
-            skip |= ValidateGraphicsPipelineShaderDynamicState(*pipeline, cb_state, caller, vuid);
+            skip |= ValidateGraphicsPipelineShaderDynamicState(*pipeline, cb_state, loc, vuid);
         }
     }
 

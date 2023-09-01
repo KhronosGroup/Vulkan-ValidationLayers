@@ -913,7 +913,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     assert(cb_state);
     assert(dst_buff_state);
     const LogObjectList buffer_objlist(commandBuffer, dstBuffer);
-    bool skip = ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buff_state, "vkCmdCopyQueryPoolResults()",
+    bool skip = ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buff_state, error_obj.location.dot(Field::dstBuffer),
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
     skip |= ValidateQueryPoolStride("VUID-vkCmdCopyQueryPoolResults-flags-00822", "VUID-vkCmdCopyQueryPoolResults-flags-00823",
                                     stride, "dstOffset", dstOffset, flags, error_obj.location);

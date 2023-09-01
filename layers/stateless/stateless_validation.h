@@ -969,7 +969,7 @@ class StatelessValidation : public ValidationObject {
                                                                const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                                const ErrorObject &error_obj) const;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo, const VulkanTypedHandle &handle,
-                                                  const Location &loc) const;
+                                                  const Location &info_loc) const;
     bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
                                                           const VulkanTypedHandle &handle, const Location &loc) const;
 

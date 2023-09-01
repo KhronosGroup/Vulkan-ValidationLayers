@@ -958,7 +958,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
             if (!already_validated) {
                 bool hit_error = false;
-                VerifyImageLayout(context.cb_state, *image_view_state, image_layout, String(context.command),
+                const Location loc(context.command);
+                VerifyImageLayout(context.cb_state, *image_view_state, image_layout, loc,
                                   "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                 if (hit_error) {
                     auto set = context.descriptor_set.GetSet();
@@ -1955,8 +1956,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
 
     // Validate that memory is bound to image
-    skip |=
-        ValidateMemoryIsBoundToImage(device, *image_node, image_info_loc.StringFunc(), kVUID_Core_Bound_Resource_FreedMemoryAccess);
+    skip |= ValidateMemoryIsBoundToImage(LogObjectList(image), *image_node, image_info_loc.dot(Field::image),
+                                         kVUID_Core_Bound_Resource_FreedMemoryAccess);
 
     const LogObjectList objlist(iv_state->Handle(), image_node->Handle());
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
@@ -2413,7 +2414,7 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                                       const Location &buffer_info_loc) const {
     bool skip = false;
     const auto &buffer_state = *Get<BUFFER_STATE>(buffer_info.buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.StringFunc(),
+    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
     skip |= ValidateBufferUsage(buffer_state, type, buffer_info_loc.dot(Field::buffer));
 
@@ -2902,10 +2903,14 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
             const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
-                auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(acc_info->pAccelerationStructures[di]);
+                VkAccelerationStructureNV as = acc_info->pAccelerationStructures[di];
+                auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(as);
                 // nullDescriptor feature allows this to be VK_NULL_HANDLE
                 if (as_state) {
-                    skip |= ValidateMemoryIsBoundToAccelerationStructure(device, *as_state, write_loc.StringFunc(), kVUIDUndefined);
+                    skip |= VerifyBoundMemoryIsValid(
+                        as_state->MemState(), LogObjectList(as), as_state->Handle(),
+                        write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, di),
+                        kVUIDUndefined);
                 }
             }
 
@@ -3136,11 +3141,11 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
             using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
             BufferAddressValidation<5> buffer_address_validator = {{{
                 {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052", LogObjectList(device),
-                 [this, commandBuffer](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                 [this, commandBuffer, binding_loc](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                      if (!out_error_msg) {
                          return !buffer_state->sparse && buffer_state->IsMemoryBound();
                      } else {
-                         return ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindDescriptorBuffersEXT()",
+                         return ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, binding_loc.dot(Field::address),
                                                               "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
                      }
                  }},
@@ -3692,11 +3697,14 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
     BufferAddressValidation<1> buffer_address_validator = {
         {{{"VUID-VkDescriptorDataEXT-type", LogObjectList(device),
-           [this, device, &vuid_memory_bound](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+           [this, device, &vuid_memory_bound, descriptor_info_loc](const BUFFER_STATE_PTR &buffer_state,
+                                                                   std::string *out_error_msg) {
                if (!out_error_msg) {
                    return !buffer_state->sparse && buffer_state->IsMemoryBound();
                } else {
-                   return ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()", vuid_memory_bound.data());
+                   return ValidateMemoryIsBoundToBuffer(
+                       device, *buffer_state, descriptor_info_loc.dot(Field::data).dot(Field::pUniformBuffer).dot(Field::address),
+                       vuid_memory_bound.data());
                }
            }}}}};
 
