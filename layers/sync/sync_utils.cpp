@@ -293,4 +293,12 @@ ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {
     return it->second;
 }
 
+const std::shared_ptr<const BUFFER_STATE> BufferBarrier::GetResourceState(const ValidationStateTracker &state_tracker) const {
+    return state_tracker.Get<BUFFER_STATE>(buffer);
+}
+
+const std::shared_ptr<const IMAGE_STATE> ImageBarrier::GetResourceState(const ValidationStateTracker &state_tracker) const {
+    return state_tracker.Get<IMAGE_STATE>(image);
+}
+
 }  // namespace sync_utils
