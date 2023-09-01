@@ -1006,7 +1006,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         bool pass = false;
                         if (gpuav_settings.cache_instrumented_shaders) {
                             csm_state.unique_shader_id =
-                                hash_util::shader_hash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
+                                hash_util::ShaderHash(module_state->spirv->words_.data(), module_state->spirv->words_.size());
                             auto it = instrumented_shaders.find(csm_state.unique_shader_id);
                             if (it != instrumented_shaders.end()) {
                                 csm_state.instrumented_spirv = it->second.second;

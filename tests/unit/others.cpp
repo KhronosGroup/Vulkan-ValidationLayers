@@ -356,7 +356,7 @@ TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
     std::vector<uint32_t> hashes;
     hashes.reserve(num_vuids);
     for (const auto &vuid_spec_text_pair : vuid_spec_text) {
-        const uint32_t hash = hash_util::vuid_hash(vuid_spec_text_pair.vuid);
+        const uint32_t hash = hash_util::VuidHash(vuid_spec_text_pair.vuid);
         hashes.push_back(hash);
     }
     std::sort(hashes.begin(), hashes.end());
@@ -366,12 +366,12 @@ TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
 
 TEST_F(VkLayerTest, VuidHashStability) {
     TEST_DESCRIPTION("Ensure stability of VUID hashes clients rely on for filtering");
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-VkRenderPassCreateInfo-pNext-01963") == 0xa19880e3);
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-BaryCoordKHR-BaryCoordKHR-04154") == 0xcc72e520);
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-FragDepth-FragDepth-04213") == 0x840af838);
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-RayTmaxKHR-RayTmaxKHR-04349") == 0x8e67514c);
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379") == 0x2f574188);
-    ASSERT_TRUE(hash_util::vuid_hash("VUID-StandaloneSpirv-MeshEXT-07111") == 0xee813cd2);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-VkRenderPassCreateInfo-pNext-01963") == 0xa19880e3);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-BaryCoordKHR-BaryCoordKHR-04154") == 0xcc72e520);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-FragDepth-FragDepth-04213") == 0x840af838);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-RayTmaxKHR-RayTmaxKHR-04349") == 0x8e67514c);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379") == 0x2f574188);
+    ASSERT_TRUE(hash_util::VuidHash("VUID-StandaloneSpirv-MeshEXT-07111") == 0xee813cd2);
 }
 
 TEST_F(VkLayerTest, VuidIdFilterString) {

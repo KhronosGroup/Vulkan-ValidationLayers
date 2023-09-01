@@ -175,7 +175,7 @@ using DescriptorSetLayoutId = cvdescriptorset::DescriptorSetLayoutId;
 cvdescriptorset::DescriptorSetLayoutDict descriptor_set_layout_dict;
 
 DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
-    return descriptor_set_layout_dict.look_up(DescriptorSetLayoutDef(p_create_info));
+    return descriptor_set_layout_dict.LookUp(DescriptorSetLayoutDef(p_create_info));
 }
 
 // Construct DescriptorSetLayout instance from given create info

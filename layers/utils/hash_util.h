@@ -32,7 +32,7 @@ namespace hash_util {
 
 // True iff both pointers are null or both are non-null
 template <typename T>
-bool similar_for_nullity(const T *const lhs, const T *const rhs) {
+bool SimilarForNullity(const T *const lhs, const T *const rhs) {
     return ((lhs != nullptr) && (rhs != nullptr)) || ((lhs == nullptr) && (rhs == nullptr));
 }
 
@@ -133,7 +133,7 @@ class Dictionary {
     // Find the unique entry match the provided value, adding if needed
     // TODO: segregate lookup from insert, using reader/write locks to reduce contention -- if needed
     template <typename U = T>
-    Id look_up(U &&value) {
+    Id LookUp(U &&value) {
         // We create an Id from the value, which will either be retained by dict (if new) or deleted on return (if extant)
         Id from_input = std::make_shared<T>(std::forward<U>(value));
 
@@ -158,8 +158,10 @@ class Dictionary {
     Dict dict;
 };
 
-uint32_t vuid_hash(std::string_view vuid);
+uint32_t VuidHash(std::string_view vuid);
 
-uint32_t shader_hash(const void *pCode, const size_t codeSize);
+uint32_t ShaderHash(const void *pCode, const size_t codeSize);
+
+uint64_t DescriptorVariableHash(const void *info, const size_t info_size);
 
 }  // namespace hash_util

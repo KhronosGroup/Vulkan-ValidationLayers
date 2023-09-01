@@ -30,7 +30,7 @@
 static inline bool operator==(const safe_VkDescriptorSetLayoutBinding &lhs, const safe_VkDescriptorSetLayoutBinding &rhs) {
     if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
         (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
-        !hash_util::similar_for_nullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
+        !hash_util::SimilarForNullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
         return false;
     }
     if (lhs.pImmutableSamplers) {  // either one will do as they *are* similar for nullity (i.e. either both null or both non-null)

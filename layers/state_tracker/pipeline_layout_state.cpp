@@ -65,7 +65,7 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
 
 static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId &pcr_id,
                                              const PipelineLayoutSetLayoutsId &set_layouts_id) {
-    return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
+    return pipeline_layout_compat_dict.LookUp(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
 }
 
 // For repeatable sorting, not very useful for "memory in range" search
@@ -86,7 +86,7 @@ struct PushConstantRangeCompare {
 PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges) {
     if (!pPushConstantRanges) {
         // Hand back the empty entry (creating as needed)...
-        return push_constant_ranges_dict.look_up(PushConstantRanges());
+        return push_constant_ranges_dict.LookUp(PushConstantRanges());
     }
 
     // Sort the input ranges to ensure equivalent ranges map to the same id
@@ -100,7 +100,7 @@ PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPus
     for (const auto *range : sorted) {
         ranges.emplace_back(*range);
     }
-    return push_constant_ranges_dict.look_up(std::move(ranges));
+    return push_constant_ranges_dict.LookUp(std::move(ranges));
 }
 
 static PushConstantRangesId GetPushConstantRangesFromLayouts(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
@@ -172,7 +172,7 @@ std::vector<PipelineLayoutCompatId> GetCompatForSet(
             set_layout_ids[i] = set_layouts[i]->GetLayoutId();
         }
     }
-    auto set_layouts_id = pipeline_layout_set_layouts_dict.look_up(set_layout_ids);
+    auto set_layouts_id = pipeline_layout_set_layouts_dict.LookUp(set_layout_ids);
 
     std::vector<PipelineLayoutCompatId> set_compat_ids;
     set_compat_ids.reserve(set_layouts.size());
