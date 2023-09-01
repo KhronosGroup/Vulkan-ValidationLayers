@@ -4879,6 +4879,9 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     if (!image_2D_view_of_3D_features.image2DViewOf3D) {
         GTEST_SKIP() << "Test requires unsupported image2DViewOf3D feature";
     }
+    if (!image_2D_view_of_3D_features.sampler2DViewOf3D) {
+        GTEST_SKIP() << "Test requires unsupported sampler2DViewOf3D feature";
+    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
