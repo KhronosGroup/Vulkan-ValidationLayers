@@ -349,7 +349,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
     bool accesses_2d = false;
     for (const auto& variable : entrypoint->resource_interface_variables) {
-        if (variable.image_dim != spv::Dim1D && variable.image_dim != spv::DimBuffer) {
+        if (variable.info.image_dim != spv::Dim1D && variable.info.image_dim != spv::DimBuffer) {
             accesses_2d = true;
             break;
         }

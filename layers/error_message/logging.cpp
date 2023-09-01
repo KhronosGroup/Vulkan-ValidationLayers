@@ -140,7 +140,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         object_name_infos.push_back(object_name_info);
     }
 
-    const uint32_t message_id_number = text_vuid ? hash_util::vuid_hash(text_vuid) : 0U;
+    const uint32_t message_id_number = text_vuid ? hash_util::VuidHash(text_vuid) : 0U;
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data = vku::InitStructHelper();
     callback_data.flags = 0;
@@ -341,7 +341,7 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view 
         return false;
     }
     // If message is in filter list, bail out very early
-    const uint32_t message_id = hash_util::vuid_hash(vuid_text);
+    const uint32_t message_id = hash_util::VuidHash(vuid_text);
     if (debug_data->filter_message_ids.find(message_id) != debug_data->filter_message_ids.end()) {
         return false;
     }

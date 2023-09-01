@@ -1246,7 +1246,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfo->pNext)) return;
     uint32_t shader_id;
     if (gpuav_settings.cache_instrumented_shaders) {
-        const uint32_t shader_hash = hash_util::shader_hash(pCreateInfo->pCode, pCreateInfo->codeSize);
+        const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
         if (gpuav_settings.cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
             return;
         }
@@ -1278,7 +1278,7 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (gpuav_settings.select_instrumented_shaders && !CheckForGpuAvEnabled(pCreateInfos[i].pNext)) continue;
         if (gpuav_settings.cache_instrumented_shaders) {
-            const uint32_t shader_hash = hash_util::shader_hash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
+            const uint32_t shader_hash = hash_util::ShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
             if (CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) {
                 continue;
             }

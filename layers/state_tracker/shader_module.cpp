@@ -1767,6 +1767,11 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
+uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const SPIRV_MODULE_STATE& module_state,
+                                                              const Instruction& base_type) {
+    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
+}
+
 NumericType ResourceInterfaceVariable::FindImageFormatType(const SPIRV_MODULE_STATE& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
 }
@@ -1781,6 +1786,11 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
+bool ResourceInterfaceVariable::IsAtomicOperation(const SPIRV_MODULE_STATE& module_state,
+                                                  const ResourceInterfaceVariable& variable) {
+    return !module_state.FindVariableAccesses(variable.id, module_state.static_data_.atomic_pointer_ids, true).empty();
+}
+
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ImageAccessMap& image_access_map)
     : VariableBase(module_state, insn, entrypoint.stage),
@@ -1788,25 +1798,26 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
       runtime_array(false),
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
-      image_format_type(FindImageFormatType(module_state, base_type)),
-      image_dim(base_type.FindImageDim()),
-      is_image_array(base_type.IsImageArray()),
-      is_multisampled(base_type.IsImageMultisampled()),
-      image_sampled_type_width(base_type.IsImageMultisampled()),
+      image_sampled_type_width(FindImageSampledTypeWidth(module_state, base_type)),
       is_storage_buffer(IsStorageBuffer(*this)) {
+    // to make sure no padding in-between the struct produce noise and force same data to become a different hash
+    info = {};  // will be cleared with c++11 initialization
+    info.image_format_type = FindImageFormatType(module_state, base_type);
+    info.image_dim = base_type.FindImageDim();
+    info.is_image_array = base_type.IsImageArray();
+    info.is_multisampled = base_type.IsImageMultisampled();
+    info.is_atomic_operation = IsAtomicOperation(module_state, *this);
+
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type
     switch (base_type.Opcode()) {
         case spv::OpTypeImage: {
-            image_sampled_type_width = module_state.GetTypeBitsSize(&base_type);
-
             const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
-            const spv::Dim image_dim = spv::Dim(base_type.Word(3));
             if (is_sampled_without_sampler) {
-                if (image_dim == spv::DimSubpassData) {
+                if (info.image_dim == spv::DimSubpassData) {
                     is_input_attachment = true;
                     input_attachment_index_read.resize(array_length);  // is zero if runtime array
-                } else if (image_dim == spv::DimBuffer) {
+                } else if (info.image_dim == spv::DimBuffer) {
                     is_storage_texel_buffer = true;
                 } else {
                     is_storage_image = true;
@@ -1822,16 +1833,16 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
             for (const auto& image_access_ptr : access_it->second) {
                 const auto& image_access = *image_access_ptr;
 
-                is_dref |= image_access.is_dref;
-                is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
-                is_sampler_sampled |= image_access.is_sampler_sampled;
-                is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
+                info.is_dref |= image_access.is_dref;
+                info.is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
+                info.is_sampler_sampled |= image_access.is_sampler_sampled;
+                info.is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
                 is_written_to |= image_access.is_written_to;
                 is_read_from |= image_access.is_read_from;
 
                 if (image_access.is_written_to) {
                     if (is_image_without_format) {
-                        is_write_without_format |= true;
+                        info.is_write_without_format |= true;
                         if (image_access.texel_component_count != kInvalidSpirvValue) {
                             write_without_formats_component_count_list.push_back(image_access.texel_component_count);
                         }
@@ -1840,7 +1851,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
 
                 if (image_access.is_read_from) {
                     if (is_image_without_format) {
-                        is_read_without_format |= true;
+                        info.is_read_without_format |= true;
                     }
 
                     // If accessed in an array, track which indexes were read, if not runtime array
@@ -1898,8 +1909,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
 
     // Type independent checks
     if (!module_state.FindVariableAccesses(id, static_data_.atomic_pointer_ids, true).empty()) {
-        is_atomic_operation = true;
+        info.is_atomic_operation = true;
     }
+
+    descriptor_hash = hash_util::DescriptorVariableHash(&info, sizeof(info));
 }
 
 PushConstantVariable::PushConstantVariable(const SPIRV_MODULE_STATE& module_state, const Instruction& insn,

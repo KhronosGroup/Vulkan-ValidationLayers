@@ -308,13 +308,28 @@ struct ResourceInterfaceVariable : public VariableBase {
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
 
-    const NumericType image_format_type;
-    bool IsImage() const { return image_format_type != NumericTypeUnknown; }
-    const spv::Dim image_dim;
-    const bool is_image_array;
-    const bool is_multisampled;
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
-    uint32_t image_sampled_type_width = 0;
+    const uint32_t image_sampled_type_width;
+
+    // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
+    // can't be checked at pipeline creation time as they depend on the Image or ImageView bound.
+    // That is perf-critical code and hashing if 2 variables have same info provides a 20% perf bonus
+    struct Info {
+        NumericType image_format_type;
+        spv::Dim image_dim;
+        bool is_image_array;
+        bool is_multisampled;
+        bool is_atomic_operation;
+
+        bool is_sampler_sampled{false};
+        bool is_sampler_implicitLod_dref_proj{false};
+        bool is_sampler_bias_offset{false};
+        bool is_read_without_format{false};   // For storage images
+        bool is_write_without_format{false};  // For storage images
+        bool is_dref{false};
+    } info;
+    uint64_t descriptor_hash = 0;
+    bool IsImage() const { return info.image_format_type != NumericTypeUnknown; }
 
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
@@ -325,21 +340,15 @@ struct ResourceInterfaceVariable : public VariableBase {
     const bool is_storage_buffer;
     bool is_input_attachment{false};
 
-    bool is_atomic_operation{false};
-    bool is_sampler_sampled{false};
-    bool is_sampler_implicitLod_dref_proj{false};
-    bool is_sampler_bias_offset{false};
-    bool is_read_without_format{false};   // For storage images
-    bool is_write_without_format{false};  // For storage images
-    bool is_dref{false};
-
     ResourceInterfaceVariable(const SPIRV_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn,
                               const ImageAccessMap &image_access_map);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SPIRV_MODULE_STATE &module_state);
+    static uint32_t FindImageSampledTypeWidth(const SPIRV_MODULE_STATE &module_state, const Instruction &base_type);
     static NumericType FindImageFormatType(const SPIRV_MODULE_STATE &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
+    static bool IsAtomicOperation(const SPIRV_MODULE_STATE &module_state, const ResourceInterfaceVariable &variable);
 };
 
 // Used to help detect if different variable is being used

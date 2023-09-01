@@ -2437,7 +2437,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
             cache = CastFromHandle<ValidationCache *>(core_validation_cache);
         }
         if (cache) {
-            hash = hash_util::shader_hash(pCreateInfo->pCode, pCreateInfo->codeSize);
+            hash = hash_util::ShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
             if (cache->Contains(hash)) {
                 return false;
             }
