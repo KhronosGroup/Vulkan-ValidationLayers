@@ -1223,6 +1223,57 @@ TEST_F(VkLayerTest, LeakAnObject) {
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
 }
 
+TEST_F(VkLayerTest, LeakABuffer) {
+    TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the buffer.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!IsPlatform(kMockICD)) {
+        // This test leaks a buffer (on purpose) and should not be run on a real driver
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    // Workaround for overzealous layers checking even the guaranteed 0th queue family
+    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    auto features = vk_testing::PhysicalDevice(gpu()).features();
+    if (!features.sparseBinding) {
+        GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
+    }
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.pEnabledFeatures = &features;
+
+    VkDevice leaky_device;
+    ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
+
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    buffer_create_info.size = 1;
+
+    VkBuffer buffer{};
+    ASSERT_VK_SUCCESS(vk::CreateBuffer(leaky_device, &buffer_create_info, nullptr, &buffer));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
+    vk::DestroyDevice(leaky_device, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    // There's no way we can destroy the buffer at this point.
+    // Even though DestroyDevice failed, the loader has already removed references to the device
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
+}
+
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     TEST_DESCRIPTION(
         "Try to destroy a render pass object using a device other than the one it was created on. This should generate a distinct "
