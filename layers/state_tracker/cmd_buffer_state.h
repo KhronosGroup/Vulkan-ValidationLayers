@@ -681,11 +681,19 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
 // specializations for barriers that cannot do queue family ownership transfers
 template <>
+inline bool CMD_BUFFER_STATE::IsReleaseOp(const sync_utils::MemoryBarrier &barrier) const {
+    return false;
+}
+template <>
 inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier &barrier) const {
     return false;
 }
 template <>
 inline bool CMD_BUFFER_STATE::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) const {
+    return false;
+}
+template <>
+inline bool CMD_BUFFER_STATE::IsAcquireOp(const sync_utils::MemoryBarrier &barrier) const {
     return false;
 }
 template <>

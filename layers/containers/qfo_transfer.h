@@ -18,6 +18,7 @@
  */
 #pragma once
 #include "custom_containers.h"
+#include "sync/sync_utils.h"
 #include "utils/hash_util.h"
 
 // Types to store queue family ownership (QFO) Transfers
@@ -58,17 +59,13 @@ struct QFOTransferBarrierBase {
 // Image barrier specific implementation
 struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
     using BaseType = QFOTransferBarrierBase<VkImage>;
+    using ImageBarrier = sync_utils::ImageBarrier;
     VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageSubresourceRange subresourceRange;
 
     QFOImageTransferBarrier() = default;
-    QFOImageTransferBarrier(const VkImageMemoryBarrier &barrier)
-        : BaseType(barrier.image, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex),
-          oldLayout(barrier.oldLayout),
-          newLayout(barrier.newLayout),
-          subresourceRange(barrier.subresourceRange) {}
-    QFOImageTransferBarrier(const VkImageMemoryBarrier2KHR &barrier)
+    QFOImageTransferBarrier(const ImageBarrier &barrier)
         : BaseType(barrier.image, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex),
           oldLayout(barrier.oldLayout),
           newLayout(barrier.newLayout),
@@ -99,14 +96,11 @@ struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
 // Buffer barrier specific implementation
 struct QFOBufferTransferBarrier : public QFOTransferBarrierBase<VkBuffer> {
     using BaseType = QFOTransferBarrierBase<VkBuffer>;
+    using BufferBarrier = sync_utils::BufferBarrier;
     VkDeviceSize offset = 0;
     VkDeviceSize size = 0;
     QFOBufferTransferBarrier() = default;
-    QFOBufferTransferBarrier(const VkBufferMemoryBarrier &barrier)
-        : BaseType(barrier.buffer, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex),
-          offset(barrier.offset),
-          size(barrier.size) {}
-    QFOBufferTransferBarrier(const VkBufferMemoryBarrier2KHR &barrier)
+    QFOBufferTransferBarrier(const BufferBarrier &barrier)
         : BaseType(barrier.buffer, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex),
           offset(barrier.offset),
           size(barrier.size) {}

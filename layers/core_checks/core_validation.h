@@ -30,6 +30,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"
 
 // Set of VUID that need to go between drawdispatch_validation.cpp and rest of CoreChecks
@@ -457,6 +458,10 @@ class CoreChecks : public ValidationStateTracker {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
+    using MemoryBarrier = sync_utils::MemoryBarrier;
+    using QueueFamilyBarrier = sync_utils::QueueFamilyBarrier;
+    using BufferBarrier = sync_utils::BufferBarrier;
+    using ImageBarrier = sync_utils::ImageBarrier;
 
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
@@ -540,13 +545,11 @@ class CoreChecks : public ValidationStateTracker {
                                         const Location& loc) const;
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, const Location& loc, const char* vuid) const;
     bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, const Location& loc) const;
-    template <typename ImgBarrier>
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, CMD_BUFFER_STATE* cb_state,
-                                                         const ImgBarrier& barrier);
-    template <typename ImgBarrier>
+                                                          const ImageBarrier& barrier);
     bool ValidateImageBarrierAttachment(const Location& loc, CMD_BUFFER_STATE const* cb_state, const FRAMEBUFFER_STATE* framebuffer,
                                         uint32_t active_subpass, const safe_VkSubpassDescription2& sub_desc,
-                                        const VkRenderPass rp_handle, const ImgBarrier& img_barrier,
+                                        const VkRenderPass rp_handle, const ImageBarrier& img_barrier,
                                         const CMD_BUFFER_STATE* primary_cb_state = nullptr) const;
 
     static bool ValidateConcurrentBarrierAtSubmit(const Location& loc, const ValidationStateTracker& state_data,
@@ -557,15 +560,11 @@ class CoreChecks : public ValidationStateTracker {
                                     const ErrorObject& error_obj) const;
     bool ValidateDependencies(const FRAMEBUFFER_STATE& framebuffer_state, const RENDER_PASS_STATE& render_pass_state,
                               const ErrorObject& error_obj) const;
-    template <typename Barrier>
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                               const Barrier& barrier, VkPipelineStageFlags2 src_stage_mask,
-                               VkPipelineStageFlags2 dst_stage_mask) const;
+                               const BufferBarrier& barrier) const;
 
-    template <typename Barrier>
     bool ValidateImageBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                              const Barrier& barrier, VkPipelineStageFlags2 src_stage_mask,
-                              VkPipelineStageFlags2 dst_stage_mask) const;
+                              const ImageBarrier& barrier) const;
 
     bool ValidateBarriers(const Location& loc, const CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
                           VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount, const VkMemoryBarrier* pMemBarriers,
@@ -588,26 +587,17 @@ class CoreChecks : public ValidationStateTracker {
                             VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
                                               const std::string& vuid) const;
-    template <typename Barrier>
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                               const Barrier& barrier, VkPipelineStageFlags src_stage_mask,
-                               VkPipelineStageFlags dst_stage_mask) const;
-    template <typename Barrier>
-    bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
-                               const Barrier& barrier) const;
+                               const MemoryBarrier& barrier) const;
 
     bool ValidateSubpassDependency(const ErrorObject& error_obj, const Location& loc, const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
-    template <typename ImgBarrier>
-    bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const ImgBarrier& barrier,
-                                      VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
-                                      const IMAGE_STATE& image_state) const;
-    template <typename BufBarrier>
-    bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const BufBarrier& barrier,
-                                      VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask,
-                                      const BUFFER_STATE& buffer_state) const;
+
+    bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
+                                      const QueueFamilyBarrier& barrier, const VulkanTypedHandle& handle,
+                                      VkSharingMode sharing_mode) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& loc,
                                                  VkSwapchainCreateInfoKHR const* create_info,
                                                  const SURFACE_STATE* surface_state) const;
@@ -1175,7 +1165,8 @@ class CoreChecks : public ValidationStateTracker {
     template <typename ImgBarrier>
     void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const IMAGE_STATE& image_state, const ImgBarrier& img_barrier,
                                      bool is_release_op);
-    void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, uint32_t bufferBarrierCount,
+    void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
+                        VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
                         const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
                         const VkImageMemoryBarrier* pImageMemBarriers);
     void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, const VkDependencyInfoKHR& dep_info);
