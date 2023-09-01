@@ -424,7 +424,8 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
 
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||
-        !extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        !extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask ||
+        !extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced) {
         GTEST_SKIP() << "DynamicState3 features not supported";
     }
 
