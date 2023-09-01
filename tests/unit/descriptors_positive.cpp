@@ -84,6 +84,16 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     vk::FreeDescriptorSets(m_device->device(), ds_pool_one.handle(), 1, &descriptorSet);
 }
 
+TEST_F(PositiveDescriptors, PoolSizeCountZero) {
+    TEST_DESCRIPTION("Allow poolSizeCount to zero.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 0;
+    vk_testing::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
+}
+
 TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     TEST_DESCRIPTION(
         "Ensure that the vkUpdateDescriptorSets validation code is ignoring VkWriteDescriptorSet members that are not related to "
