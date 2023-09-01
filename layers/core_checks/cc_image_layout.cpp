@@ -25,8 +25,7 @@
 #include "core_validation.h"
 #include "sync/sync_vuid_maps.h"
 
-bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask,
-                          VkFormat format);
+bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format);
 
 using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
 using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
@@ -908,9 +907,9 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
     return skip;
 }
 
-template <typename ImageBarrier>
+template <typename ImgBarrier>
 bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
-                                                   const ImageBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
+                                                   const ImgBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(img_barrier.image);

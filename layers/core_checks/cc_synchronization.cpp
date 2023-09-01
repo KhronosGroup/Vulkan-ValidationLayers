@@ -1502,9 +1502,9 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage 
 }
 
 // Verify image barriers are compatible with the images they reference.
-template <typename ImageBarrier>
+template <typename ImgBarrier>
 bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
-                                          uint32_t imageMemoryBarrierCount, const ImageBarrier *pImageMemoryBarriers) const {
+                                          uint32_t imageMemoryBarrierCount, const ImgBarrier *pImageMemoryBarriers) const {
     bool skip = false;
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
