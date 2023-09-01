@@ -185,13 +185,13 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
 
 std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                                       VkFormatFeatureFlags2KHR features) {
-    return CreateImageStateImpl<ImageStateBindingTraits<IMAGE_STATE>>(img, pCreateInfo, features);
+    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, features);
 }
 
 std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                                       VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                                       VkFormatFeatureFlags2KHR features) {
-    return CreateImageStateImpl<ImageStateBindingTraits<IMAGE_STATE>>(img, pCreateInfo, swapchain, swapchain_index, features);
+    return std::make_shared<IMAGE_STATE>(this, img, pCreateInfo, swapchain, swapchain_index, features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -340,21 +340,16 @@ struct BufferAddressInfillUpdateOps {
     const Mapped &insert_value;
 };
 
+std::shared_ptr<BUFFER_STATE> ValidationStateTracker::CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) {
+    return std::make_shared<BUFFER_STATE>(this, buf, pCreateInfo);
+}
+
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                                         const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
 
-    std::shared_ptr<BUFFER_STATE> buffer_state;
-    if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
-        if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) {
-            buffer_state = std::make_shared<BUFFER_STATE_SPARSE<true>>(this, *pBuffer, pCreateInfo);
-        } else {
-            buffer_state = std::make_shared<BUFFER_STATE_SPARSE<false>>(this, *pBuffer, pCreateInfo);
-        }
-    } else {
-        buffer_state = std::make_shared<BUFFER_STATE_LINEAR>(this, *pBuffer, pCreateInfo);
-    }
+    std::shared_ptr<BUFFER_STATE> buffer_state = CreateBufferState(*pBuffer, pCreateInfo);
 
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
@@ -384,6 +379,13 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     Add(std::move(buffer_state));
 }
 
+std::shared_ptr<BUFFER_VIEW_STATE> ValidationStateTracker::CreateBufferViewState(const std::shared_ptr<BUFFER_STATE> &bf,
+                                                                                 VkBufferView bv,
+                                                                                 const VkBufferViewCreateInfo *ci,
+                                                                                 VkFormatFeatureFlags2KHR buf_ff) {
+    return std::make_shared<BUFFER_VIEW_STATE>(bf, bv, ci, buf_ff);
+}
+
 void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
                                                             const RecordObject &record_obj) {
@@ -403,7 +405,13 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
         buffer_features = format_properties.bufferFeatures;
     }
 
-    Add(std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo, buffer_features));
+    Add(CreateBufferViewState(buffer_state, *pView, pCreateInfo, buffer_features));
+}
+
+std::shared_ptr<IMAGE_VIEW_STATE> ValidationStateTracker::CreateImageViewState(
+    const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+    const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
+    return std::make_shared<IMAGE_VIEW_STATE>(image_state, iv, ci, ff, cubic_props);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -440,7 +448,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
     }
 
-    Add(std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo, format_features, filter_cubic_props));
+    Add(CreateImageViewState(image_state, *pView, pCreateInfo, format_features, filter_cubic_props));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -2683,10 +2691,14 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
     crtpl_state->pipe_state.clear();
 }
 
+std::shared_ptr<SAMPLER_STATE> ValidationStateTracker::CreateSamplerState(VkSampler s, const VkSamplerCreateInfo *ci) {
+    return std::make_shared<SAMPLER_STATE>(s, ci);
+}
+
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                                          const RecordObject &record_obj) {
-    Add(std::make_shared<SAMPLER_STATE>(pSampler, pCreateInfo));
+    Add(CreateSamplerState(*pSampler, pCreateInfo));
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
         custom_border_color_sampler_count++;
@@ -2993,15 +3005,24 @@ void ValidationStateTracker::PostCallRecordCmdSetViewportShadingRatePaletteNV(Vk
     cb_state->dynamic_state_value.shading_rate_palette_count = viewportCount;
 }
 
+std::shared_ptr<ACCELERATION_STRUCTURE_STATE> ValidationStateTracker::CreateAccelerationStructureState(
+    VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci) {
+    return std::make_shared<ACCELERATION_STRUCTURE_STATE>(device, as, ci);
+}
+
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
                                                                          const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                                          const VkAllocationCallbacks *pAllocator,
                                                                          VkAccelerationStructureNV *pAccelerationStructure,
                                                                          const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> state =
-        std::make_shared<ACCELERATION_STRUCTURE_STATE_LINEAR>(device, *pAccelerationStructure, pCreateInfo);
-    Add(std::move(state));
+    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo));
+}
+
+std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> ValidationStateTracker::CreateAccelerationStructureState(
+    VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci, std::shared_ptr<BUFFER_STATE> &&buf_state,
+    VkDeviceAddress address) {
+    return std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(as, ci, std::move(buf_state), address);
 }
 
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
@@ -3014,8 +3035,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
     auto as_address_info = LvlInitStruct<VkAccelerationStructureDeviceAddressInfoKHR>();
     as_address_info.accelerationStructure = *pAccelerationStructure;
     const VkDeviceAddress as_address = DispatchGetAccelerationStructureDeviceAddressKHR(device, &as_address_info);
-    Add(std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state),
-                                                           as_address));
+    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo, std::move(buffer_state), as_address));
 }
 
 void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(

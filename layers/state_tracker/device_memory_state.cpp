@@ -19,6 +19,10 @@
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_state.h"
 
+using MemoryRange = BindableMemoryTracker::MemoryRange;
+using BoundMemoryRange = BindableMemoryTracker::BoundMemoryRange;
+using DeviceMemoryState = BindableMemoryTracker::DeviceMemoryState;
+
 // It is allowed to export memory into the handles of different types,
 // that's why we use set of flags (VkExternalMemoryHandleTypeFlags)
 static VkExternalMemoryHandleTypeFlags GetExportHandleTypes(const VkMemoryAllocateInfo *p_alloc_info) {
@@ -99,12 +103,6 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory memory, const VkMemoryAl
       fake_base_address(fake_address) {
 }
 
-VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
-    assert(!sparse);  // not implemented yet
-    const auto *binding = Binding();
-    return binding ? binding->memory_offset + binding->memory_state->fake_base_address : 0;
-}
-
 void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state,
                                              VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     if (!mem_state) return;
@@ -113,15 +111,207 @@ void BindableLinearMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<
     binding_ = {mem_state, memory_offset, 0u};
 }
 
-BindableMemoryTracker::DeviceMemoryState BindableLinearMemoryTracker::GetBoundMemoryStates() const {
+DeviceMemoryState BindableLinearMemoryTracker::GetBoundMemoryStates() const {
     return binding_.memory_state ? DeviceMemoryState{binding_.memory_state} : DeviceMemoryState{};
 }
 
-BindableMemoryTracker::BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(
-    const sparse_container::range<VkDeviceSize> &range) const {
+BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     return binding_.memory_state ? BoundMemoryRange{BoundMemoryRange::value_type{
                                        binding_.memory_state->deviceMemory(),
                                        BoundMemoryRange::value_type::second_type{
                                            {binding_.memory_offset + range.begin, binding_.memory_offset + range.end}}}}
                                  : BoundMemoryRange{};
 }
+
+unsigned BindableSparseMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
+    unsigned count = 0u;
+    auto guard = ReadLockGuard{binding_lock_};
+    for (const auto &range_state : binding_map_) {
+        count += (range_state.second.memory_state && range_state.second.memory_state->deviceMemory() == memory);
+    }
+    return count;
+}
+
+bool BindableSparseMemoryTracker::HasFullRangeBound() const {
+    if (!is_resident_) {
+        VkDeviceSize current_offset = 0u;
+        {
+            auto guard = ReadLockGuard{binding_lock_};
+            for (const auto &range : binding_map_) {
+                if (current_offset != range.first.begin || !range.second.memory_state || range.second.memory_state->Invalid()) {
+                    return false;
+                }
+                current_offset = range.first.end;
+            }
+        }
+
+        if (current_offset != resource_size_) return false;
+    }
+
+    return true;
+}
+
+void BindableSparseMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize memory_offset,
+                                             VkDeviceSize resource_offset, VkDeviceSize size) {
+    MEM_BINDING memory_data{mem_state, memory_offset, resource_offset};
+    BindingMap::value_type item{{resource_offset, resource_offset + size}, memory_data};
+
+    auto guard = WriteLockGuard{binding_lock_};
+
+    // Since we don't know which ranges will be removed, we need to unbind everything and rebind later
+    for (auto &value_pair : binding_map_) {
+        if (value_pair.second.memory_state) value_pair.second.memory_state->RemoveParent(parent);
+    }
+    binding_map_.overwrite_range(item);
+
+    for (auto &value_pair : binding_map_) {
+        if (value_pair.second.memory_state) value_pair.second.memory_state->AddParent(parent);
+    }
+}
+
+BoundMemoryRange BindableSparseMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
+    BoundMemoryRange mem_ranges;
+    auto guard = ReadLockGuard{binding_lock_};
+    auto range_bounds = binding_map_.bounds(range);
+
+    for (auto it = range_bounds.begin; it != range_bounds.end; ++it) {
+        const auto &[resource_range, memory_data] = *it;
+        if (memory_data.memory_state && memory_data.memory_state->deviceMemory() != VK_NULL_HANDLE) {
+            const VkDeviceSize memory_range_start = std::max(range.begin, memory_data.resource_offset) -
+                memory_data.resource_offset + memory_data.memory_offset;
+            const VkDeviceSize memory_range_end =
+                std::min(range.end, memory_data.resource_offset + resource_range.distance()) - memory_data.resource_offset +
+                memory_data.memory_offset;
+
+            mem_ranges[memory_data.memory_state->deviceMemory()].emplace_back(memory_range_start, memory_range_end);
+        }
+    }
+    return mem_ranges;
+}
+
+DeviceMemoryState BindableSparseMemoryTracker::GetBoundMemoryStates() const {
+    DeviceMemoryState dev_mem_states;
+
+    {
+        auto guard = ReadLockGuard{binding_lock_};
+        for (auto &binding : binding_map_) {
+            if (binding.second.memory_state) dev_mem_states.emplace(binding.second.memory_state);
+        }
+    }
+
+    return dev_mem_states;
+}
+
+
+BindableMultiplanarMemoryTracker::BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, uint32_t num_planes)
+    : planes_(num_planes) {
+    for (unsigned i = 0; i < num_planes; ++i) {
+        planes_[i].size = requirements[i].size;
+    }
+}
+unsigned BindableMultiplanarMemoryTracker::CountDeviceMemory(VkDeviceMemory memory) const {
+    unsigned count = 0u;
+    for (size_t i = 0u; i < planes_.size(); i++) {
+        const auto &plane = planes_[i];
+        count += (plane.binding.memory_state && plane.binding.memory_state->deviceMemory() == memory);
+    }
+
+    return count;
+}
+
+bool BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
+    bool full_range_bound = true;
+
+    for (unsigned i = 0u; i < planes_.size(); ++i) {
+        full_range_bound &= (planes_[i].binding.memory_state != nullptr);
+    }
+
+    return full_range_bound;
+}
+
+// resource_offset is the plane index
+void BindableMultiplanarMemoryTracker::BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state,
+                                                  VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
+    if (!mem_state) return;
+
+    assert(resource_offset < planes_.size());
+    mem_state->AddParent(parent);
+    planes_[static_cast<size_t>(resource_offset)].binding = {mem_state, memory_offset, 0u};
+}
+
+// range needs to be between [0, planes_[0].size + planes_[1].size + planes_[2].size)
+// To access plane 0 range must be [0, planes_[0].size)
+// To access plane 1 range must be [planes_[0].size, planes_[1].size)
+// To access plane 2 range must be [planes_[1].size, planes_[2].size)
+BoundMemoryRange BindableMultiplanarMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
+    BoundMemoryRange mem_ranges;
+    VkDeviceSize start_offset = 0u;
+    for (unsigned i = 0u; i < planes_.size(); ++i) {
+        const auto &plane = planes_[i];
+        MemoryRange plane_range{start_offset, start_offset + plane.size};
+        if (plane.binding.memory_state && range.intersects(plane_range)) {
+            VkDeviceSize range_end = range.end > plane_range.end ? plane_range.end : range.end;
+            const auto &dev_mem = plane.binding.memory_state->deviceMemory();
+            mem_ranges[dev_mem].emplace_back(MemoryRange{plane.binding.memory_offset + range.begin,
+                                                                                   plane.binding.memory_offset + range_end});
+        }
+        start_offset += plane.size;
+    }
+
+    return mem_ranges;
+}
+
+DeviceMemoryState BindableMultiplanarMemoryTracker::GetBoundMemoryStates() const {
+    DeviceMemoryState dev_mem_states;
+
+    for (unsigned i = 0u; i < planes_.size(); ++i) {
+        if (planes_[i].binding.memory_state) {
+            dev_mem_states.insert(planes_[i].binding.memory_state);
+        }
+    }
+
+    return dev_mem_states;
+}
+
+std::pair<VkDeviceMemory, MemoryRange> BINDABLE::GetResourceMemoryOverlap(
+        const MemoryRange &memory_region, const BINDABLE *other_resource,
+        const MemoryRange &other_memory_region) const {
+    if (!other_resource) return {VK_NULL_HANDLE, {}};
+
+    auto ranges = GetBoundMemoryRange(memory_region);
+    auto other_ranges = other_resource->GetBoundMemoryRange(other_memory_region);
+
+    for (const auto &[memory, memory_ranges] : ranges) {
+        // Check if we have memory from same VkDeviceMemory bound
+        auto it = other_ranges.find(memory);
+        if (it != other_ranges.end()) {
+            // Check if any of the bound memory ranges overlap
+            for (const auto &memory_range : memory_ranges) {
+                for (const auto &other_memory_range : it->second) {
+                    if (other_memory_range.intersects(memory_range)) {
+                        auto memory_space_intersection = other_memory_range & memory_range;
+                        return {memory, memory_space_intersection};
+                    }
+                }
+            }
+        }
+    }
+    return {VK_NULL_HANDLE, {}};
+}
+
+VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
+    assert(!sparse);  // not implemented yet
+    const auto *binding = Binding();
+    return binding ? binding->memory_offset + binding->memory_state->fake_base_address : 0;
+}
+
+void BINDABLE::CacheInvalidMemory() const {
+    need_to_recache_invalid_memory_ = false;
+    cached_invalid_memory_.clear();
+    for (auto const &bindable : GetBoundMemoryStates()) {
+        if (bindable->Invalid()) {
+            cached_invalid_memory_.insert(bindable);
+        }
+    }
+}
+

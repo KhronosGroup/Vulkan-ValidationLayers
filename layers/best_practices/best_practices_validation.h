@@ -969,12 +969,12 @@ class BestPractices : public ValidationStateTracker {
     }
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
                                                   VkFormatFeatureFlags2KHR features) final {
-        return CreateImageStateImpl<ImageStateBindingTraits<bp_state::Image>>(img, pCreateInfo, features);
+        return std::make_shared<bp_state::Image>(this, img, pCreateInfo, features);
     }
 
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
                                                   uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final {
-        return CreateImageStateImpl<ImageStateBindingTraits<bp_state::Image>>(img, pCreateInfo, swapchain, swapchain_index, features);
+        return std::make_shared<bp_state::Image>(this, img, pCreateInfo, swapchain, swapchain_index, features);
     }
 
     std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
