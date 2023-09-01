@@ -1639,7 +1639,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                 if (use_rp2 && IsValueIn(attachment_layout,
                                          {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
-                    if (LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(subpass.pDepthStencilAttachment->pNext)) {
+                    if (LvlFindInChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext)) {
                         const char *vuid = "VUID-VkSubpassDescription2-attachment-06251";
                         skip |= LogError(vuid, device, ds_loc.dot(Field::layout), "(%s) is invalid.",
                                          string_VkImageLayout(attachment_layout));
