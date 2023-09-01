@@ -682,12 +682,13 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
 }
 
 bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo,
-                                                                   const VulkanTypedHandle &handle, const Location &loc) const {
+                                                                   const VulkanTypedHandle &handle,
+                                                                   const Location &info_loc) const {
     bool skip = false;
     if (!(pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR ||
           pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
         const LogObjectList objlist(handle);
-        skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-mode-03410", objlist, loc.dot(Field::mode), "is %s.",
+        skip |= LogError("VUID-VkCopyAccelerationStructureInfoKHR-mode-03410", objlist, info_loc.dot(Field::mode), "is %s.",
                          string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
     }
     return skip;

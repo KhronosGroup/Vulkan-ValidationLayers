@@ -27,11 +27,13 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
         const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
         if (!export_info) {
-            skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00671",
-                             "vkGetMemoryFdKHR(): memory's pNext chain does not include a VkExportMemoryAllocateInfo structure.");
+            skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
+                             error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),
+                             "pNext chain does not include a VkExportMemoryAllocateInfo structure.");
         } else if ((export_info->handleTypes & pGetFdInfo->handleType) == 0) {
-            skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00671",
-                             "vkGetMemoryFdKHR(): the requested handle type (%s) is not included in the memory's "
+            skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
+                             error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),
+                             "the requested handle type (%s) is not included in the memory's "
                              "VkExportMemoryAllocateInfo::handleTypes (%s).",
                              string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalMemoryHandleTypeFlags(export_info->handleTypes).c_str());
@@ -43,14 +45,14 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkImportSemaphoreFdKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
         skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
 
         if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-            skip |= LogError(sem_state->Handle(), "VUID-VkImportSemaphoreFdInfoKHR-flags-03323",
-                             "%s(): VK_SEMAPHORE_IMPORT_TEMPORARY_BIT not allowed for timeline semaphores", func_name);
+            skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-flags-03323", sem_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::flags),
+                             "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
     return skip;
@@ -59,25 +61,27 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
 bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info, int *pFd,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkGetSemaphoreFdKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
         if ((info->handleType & sem_state->exportHandleTypes) == 0) {
-            skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132",
-                             "%s(): handleType %s was not VkExportSemaphoreCreateInfo::handleTypes (%s)", func_name,
+            skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-01132", sem_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             "(%s) is different from VkExportSemaphoreCreateInfo::handleTypes (%s).",
                              string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
 
         if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
             if (sem_state->type != VK_SEMAPHORE_TYPE_BINARY) {
-                skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-03253",
-                                 "%s(): can only export binary semaphores to %s", func_name,
-                                 string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
+                skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03253", sem_state->Handle(),
+                                 error_obj.location.dot(Field::info).dot(Field::handleType),
+                                 "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT, but semaphore type is %s.",
+                                 string_VkSemaphoreType(sem_state->type));
             }
             if (!sem_state->CanBeWaited()) {
-                skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254",
-                                 "%s(): must be signaled or have a pending signal operation", func_name);
+                skip |= LogError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03254", sem_state->Handle(),
+                                 error_obj.location.dot(Field::info).dot(Field::semaphore),
+                                 "must be signaled or have a pending signal operation.");
             }
         }
     }
@@ -102,19 +106,20 @@ bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImport
 bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd,
                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkGetFenceFdKHR";
     auto fence_state = Get<FENCE_STATE>(info->fence);
     if (fence_state) {
         if ((info->handleType & fence_state->exportHandleTypes) == 0) {
-            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetFdInfoKHR-handleType-01453",
-                             "%s: handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01453", fence_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s). ",
                              string_VkExternalFenceHandleTypeFlagBits(info->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
         if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == FENCE_UNSIGNALED) {
-            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetFdInfoKHR-handleType-01454",
-                             "%s(): cannot export to %s unless the fence has a pending signal operation or is already signaled",
-                             func_name, string_VkExternalFenceHandleTypeFlagBits(info->handleType));
+            skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01454", fence_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             "is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT which cannot be exported unless the fence has a pending "
+                             "signal operation or is already signaled.");
         }
     }
     return skip;
@@ -130,9 +135,9 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, c
         skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location, kVUIDUndefined);
 
         if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-            skip |= LogError(
-                sem_state->Handle(), "VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322",
-                "vkImportSemaphoreWin32HandleKHR(): VK_SEMAPHORE_IMPORT_TEMPORARY_BIT not allowed for timeline semaphores");
+            skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322", sem_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::semaphore),
+                             "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
     return skip;
@@ -141,12 +146,12 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device, c
 bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *info,
                                                            HANDLE *pHandle, const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkGetSemaphoreWin32HandleKHR";
     auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
     if (sem_state) {
         if ((info->handleType & sem_state->exportHandleTypes) == 0) {
-            skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126",
-                             "%s: handleType %s was not included in VkExportSemaphoreCreateInfo::handleTypes (%s)", func_name,
+            skip |= LogError("VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126", sem_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             "(%s) is different from VkExportSemaphoreCreateInfo::handleTypes (%s)",
                              string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
@@ -164,12 +169,12 @@ bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
 bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info, HANDLE *pHandle,
                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkGetFenceWin32HandleKHR";
     auto fence_state = Get<FENCE_STATE>(info->fence);
     if (fence_state) {
         if ((info->handleType & fence_state->exportHandleTypes) == 0) {
-            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448",
-                             "%s: handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+            skip |= LogError("VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448", fence_state->Handle(),
+                             error_obj.location.dot(Field::info).dot(Field::handleType),
+                             "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s)",
                              string_VkExternalFenceHandleTypeFlagBits(info->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
         }
@@ -190,8 +195,8 @@ bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(VkDevice devi
 
         if (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |=
-                LogError(sem_state->Handle(), "VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphoreType-04768",
-                         "%s(): VkSemaphoreTypeCreateInfo::semaphoreType field must not be VK_SEMAPHORE_TYPE_TIMELINE", func_name);
+                LogError("VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphoreType-04768", sem_state->Handle(),
+                         error_obj.location.dot(Field::info).dot(Field::semaphore), "was created with VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
     return skip;

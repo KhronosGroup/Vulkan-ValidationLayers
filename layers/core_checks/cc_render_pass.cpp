@@ -4037,7 +4037,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
                     // Verify that image memory is valid
                     auto image_data = Get<IMAGE_STATE>(ivci.image);
-                    skip |= ValidateMemoryIsBoundToImage(device, *image_data, "vkCreateFramebuffer()",
+                    skip |= ValidateMemoryIsBoundToImage(LogObjectList(ivci.image), *image_data, attachment_loc,
                                                          kVUID_Core_Bound_Resource_FreedMemoryAccess);
 
                     // Verify that view only has a single mip level

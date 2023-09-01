@@ -679,8 +679,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     const auto &cb_state = *cb_state_ptr;
     const auto &image_state = *image_state_ptr;
 
-    skip |=
-        ValidateMemoryIsBoundToImage(commandBuffer, image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
+    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, image), image_state, error_obj.location.dot(Field::image),
+                                         "VUID-vkCmdClearColorImage-image-00003");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR,
@@ -769,7 +769,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     const auto &image_state = *image_state_ptr;
 
     const VkFormat image_format = image_state.createInfo.format;
-    skip |= ValidateMemoryIsBoundToImage(commandBuffer, image_state, "vkCmdClearDepthStencilImage()",
+    skip |= ValidateMemoryIsBoundToImage(LogObjectList(commandBuffer, image), image_state, error_obj.location.dot(Field::image),
                                          "VUID-vkCmdClearDepthStencilImage-image-00010");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
@@ -1512,7 +1512,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     skip |= ValidateImageUsageFlags(VK_NULL_HANDLE, image_state, valid_usage_flags, false, "VUID-VkImageViewCreateInfo-image-04441",
                                     create_info_loc.dot(Field::image));
     // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
-    skip |= ValidateMemoryIsBoundToImage(device, image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
+    skip |= ValidateMemoryIsBoundToImage(LogObjectList(device, pCreateInfo->image), image_state, create_info_loc.dot(Field::image),
+                                         "VUID-VkImageViewCreateInfo-image-01020");
     // Checks imported from image layer
     skip |= ValidateCreateImageViewSubresourceRange(
         image_state, pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D || pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
@@ -2258,7 +2259,6 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
                                                          const VkHostImageLayoutTransitionInfoEXT *pTransitions,
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
-    const char *func_name = "vkTransitionImageLayoutEXT()";
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
         const Location transition_loc = error_obj.location.dot(Field::pTransitions, i);
@@ -2281,7 +2281,8 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
                                               transition.subresourceRange, "arrayLayers", image_state->image(),
                                               TransitionImageLayoutVUIDs, transition_loc.dot(Field::subresourceRange));
         skip |=
-            ValidateMemoryIsBoundToImage(device, *image_state, func_name, "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
+            ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state, transition_loc.dot(Field::image),
+                                         "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
 
         if ((image_state->disjoint == false) ||
             ((FormatIsColor(image_format) == true) && (FormatIsMultiplane(image_format) == false))) {

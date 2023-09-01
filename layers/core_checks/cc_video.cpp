@@ -1561,7 +1561,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                 }
 
                 skip |= VerifyImageLayout(*cb_state, *setup_resource.image_state, setup_resource.range,
-                                          VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "vkCmdDecodeVideoKHR()",
+                                          VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
                                           "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254", &hit_error);
             }
         } else {
@@ -1636,8 +1636,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         const char *vuid =
             dst_same_as_setup ? "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253" : "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252";
 
-        skip |= VerifyImageLayout(*cb_state, *dst_resource.image_state, dst_resource.range, expected_layout,
-                                  "vkCmdDecodeVideoKHR()", vuid, &hit_error);
+        skip |= VerifyImageLayout(*cb_state, *dst_resource.image_state, dst_resource.range, expected_layout, error_obj.location,
+                                  vuid, &hit_error);
 
         if (setup_resource) {
             if ((profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR) == 0 &&
@@ -1720,7 +1720,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                                          where, "VUID-vkCmdDecodeVideoKHR-codedOffset-07257");
 
                     skip |= VerifyImageLayout(*cb_state, *reference_resource.image_state, reference_resource.range,
-                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "vkCmdDecodeVideoKHR()",
+                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
                                               "VUID-vkCmdDecodeVideoKHR-pPictureResource-07255", &hit_error);
                 }
             } else {

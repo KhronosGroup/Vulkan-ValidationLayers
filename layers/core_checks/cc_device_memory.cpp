@@ -25,88 +25,70 @@
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,
-                                          const VulkanTypedHandle &typed_handle, const char *api_name, const char *vuid) const {
-    return VerifyBoundMemoryIsValid<SimpleErrorLocation>(mem_state, objlist, typed_handle, {api_name, vuid});
-}
-
-template <typename LocType>
-bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,
-                                          const VulkanTypedHandle &typed_handle, const LocType &location) const {
+                                          const VulkanTypedHandle &typed_handle, const Location &loc, const char *vuid) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
-        result |= LogError(objlist, location.Vuid(),
-                           "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
-                           location.FuncName(), FormatHandle(typed_handle).c_str(), type_name + 2);
+        result |=
+            LogError(vuid, objlist, loc, "(%s) used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
+                     FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (mem_state->Destroyed()) {
-        result |= LogError(objlist, location.Vuid(),
-                           "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
+        result |= LogError(vuid, objlist, loc,
+                           "(%s) used with no memory bound and previously bound memory was freed. Memory must not be freed "
                            "prior to this operation.",
-                           location.FuncName(), FormatHandle(typed_handle).c_str());
+                           FormatHandle(typed_handle).c_str());
     }
     return result;
 }
 
 // Check to see if memory was ever bound to this image
-template <typename HandleT, typename LocType>
-bool CoreChecks::ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE &image_state, const LocType &location) const {
+bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, const IMAGE_STATE &image_state, const Location &loc,
+                                              const char *vuid) const {
     bool result = false;
     if (image_state.create_from_swapchain != VK_NULL_HANDLE) {
         if (!image_state.bind_swapchain) {
-            const LogObjectList objlist(handle, image_state.Handle(), image_state.create_from_swapchain);
             result |= LogError(
-                objlist, location.Vuid(),
-                "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
+                vuid, objlist, loc,
+                "(%s) is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
                 "includes VkBindImageMemorySwapchainInfoKHR.",
-                location.FuncName(), FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str());
+                FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str());
         } else if (image_state.create_from_swapchain != image_state.bind_swapchain->swapchain()) {
-            const LogObjectList objlist(handle, image_state.Handle(), image_state.create_from_swapchain,
-                                        image_state.bind_swapchain->Handle());
-            result |= LogError(
-                objlist, location.Vuid(),
-                "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
-                "swapchain",
-                location.FuncName(), FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str(),
-                FormatHandle(image_state.bind_swapchain->Handle()).c_str());
+            result |=
+                LogError(vuid, objlist, loc,
+                         "(%s) is created by %s, but the image is bound by %s. The image should be created and bound by the same "
+                         "swapchain",
+                         FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str(),
+                         FormatHandle(image_state.bind_swapchain->Handle()).c_str());
         }
     } else if (image_state.IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (!image_state.sparse) {
-        const LogObjectList objlist(handle, image_state.Handle());
         // No need to optimize this since the size will only be 3 at most
         const auto &memory_states = image_state.GetBoundMemoryStates();
         if (memory_states.empty()) {
-            result |= LogError(objlist, location.Vuid(),
-                               "%s: %s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
-                               location.FuncName(), FormatHandle(image_state).c_str());
+            result |=
+                LogError(vuid, objlist, loc, "%s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
+                         FormatHandle(image_state).c_str());
         } else {
             for (const auto &state : memory_states) {
-                result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), location);
+                result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), loc, vuid);
             }
         }
     }
     return result;
 }
-// Instantiate the versions of the template needed by other .cpp files
-template bool CoreChecks::ValidateMemoryIsBoundToImage<VkDevice, CoreChecks::SimpleErrorLocation>(
-    VkDevice_T *, IMAGE_STATE const &, CoreChecks::SimpleErrorLocation const &) const;
-template bool
-CoreChecks::ValidateMemoryIsBoundToImage<VkCommandBuffer, vvl::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>>(
-    VkCommandBuffer, IMAGE_STATE const &, vvl::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor> const &) const;
-template bool CoreChecks::ValidateMemoryIsBoundToImage<VkCommandBuffer, CoreChecks::SimpleErrorLocation>(
-    VkCommandBuffer, IMAGE_STATE const &, CoreChecks::SimpleErrorLocation const &) const;
 
 // Check to see if host-visible memory was bound to this buffer
-bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE &buffer_state, const char *api_name,
+bool CoreChecks::ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE &buffer_state, const Location &buffer_loc,
                                                           const char *vuid) const {
     bool result = false;
-    result |= ValidateMemoryIsBoundToBuffer(device, buffer_state, api_name, vuid);
+    result |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_loc, vuid);
     if (!result) {
         const auto mem_state = buffer_state.MemState();
         if (mem_state) {
             if ((phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags &
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-                result |= LogError(buffer_state.Handle(), vuid, "%s: %s used with memory that is not host visible.", api_name,
+                result |= LogError(vuid, buffer_state.Handle(), buffer_loc, "(%s) used with memory that is not host visible.",
                                    FormatHandle(buffer_state).c_str());
             }
         }
@@ -1765,14 +1747,14 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
 
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     if (buffer_state) {
-        const char *apiName = error_obj.location.StringFunc();
+        const Location info_loc = error_obj.location.dot(Field::pInfo);
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
-            skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, apiName, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+            skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::buffer),
+                                                  "VUID-VkBufferDeviceAddressInfo-buffer-02600");
         }
 
         skip |= ValidateBufferUsageFlags(LogObjectList(device), *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
-                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601",
-                                         error_obj.location.dot(Field::pInfo).dot(Field::buffer));
+                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", info_loc.dot(Field::buffer));
     }
 
     return skip;

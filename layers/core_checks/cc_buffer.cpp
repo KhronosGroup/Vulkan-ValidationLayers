@@ -316,7 +316,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                          string_VkFormat(pCreateInfo->format));
     }
 
-    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, "vkCreateBufferView()", "VUID-VkBufferViewCreateInfo-buffer-00935");
+    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, create_info_loc.dot(Field::buffer),
+                                          "VUID-VkBufferViewCreateInfo-buffer-00935");
     // In order to create a valid buffer view, the buffer must have been created with at least one of the following flags:
     // UNIFORM_TEXEL_BUFFER_BIT or STORAGE_TEXEL_BUFFER_BIT
     skip |= ValidateBufferUsageFlags(objlist, buffer_state,
@@ -444,8 +445,8 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     }
     const LogObjectList objlist(commandBuffer, dstBuffer);
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
-    skip |=
-        ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
+    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::dstBuffer),
+                                          "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmd(cb_state, error_obj.location);
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,

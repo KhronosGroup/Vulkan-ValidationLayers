@@ -2225,7 +2225,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
     if (buffer_state) {
         auto buf_loc = loc.dot(Field::buffer);
         const auto &mem_vuid = GetBufferBarrierVUID(buf_loc, BufferError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToBuffer(cb_state->commandBuffer(), *buffer_state, loc.StringFunc(), mem_vuid.c_str());
+        skip |= ValidateMemoryIsBoundToBuffer(cb_state->commandBuffer(), *buffer_state, buf_loc, mem_vuid.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, loc, mem_barrier, src_stage_mask, dst_stage_mask, *buffer_state);
 
@@ -2284,14 +2284,14 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         if (old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || old_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
             auto layout_loc = loc.dot(Field::oldLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadSync2OldLayout);
-            skip |= LogError(cb_state->commandBuffer(), vuid,
+            skip |= LogError(objects, vuid,
                              "%s Image Layout cannot be transitioned from %s if the synchronization2 feature is not enabled",
                              layout_loc.Message().c_str(), string_VkImageLayout(old_layout));
         }
         if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || new_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
             auto layout_loc = loc.dot(Field::newLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadSync2NewLayout);
-            skip |= LogError(cb_state->commandBuffer(), vuid,
+            skip |= LogError(objects, vuid,
                              "%s Image Layout cannot be transitioned to %s if the synchronization2 feature is not enabled",
                              layout_loc.Message().c_str(), string_VkImageLayout(new_layout));
         }
@@ -2301,9 +2301,8 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         if (new_layout == VK_IMAGE_LAYOUT_UNDEFINED || new_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             auto layout_loc = loc.dot(Field::newLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadLayout);
-            skip |=
-                LogError(cb_state->commandBuffer(), vuid, "%s Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.",
-                         layout_loc.Message().c_str());
+            skip |= LogError(objects, vuid, "%s Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.",
+                             layout_loc.Message().c_str());
         }
     }
 
@@ -2311,7 +2310,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
             auto layout_loc = loc.dot(Field::newLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadAttFeedbackLoopLayout);
-            skip |= LogError(cb_state->commandBuffer(), vuid,
+            skip |= LogError(objects, vuid,
                              "%s Image Layout cannot be transitioned to VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT if "
                              "the attachmentFeedbackLoopLayout feature is not enabled",
                              layout_loc.Message().c_str());
@@ -2321,8 +2320,9 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     auto image_data = Get<IMAGE_STATE>(mem_barrier.image);
     if (image_data) {
         auto image_loc = loc.dot(Field::image);
-
-        skip |= ValidateMemoryIsBoundToImage(cb_state->commandBuffer(), *image_data, loc);
+        // TODO - use LocationVuidAdapter
+        const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kNoMemory);
+        skip |= ValidateMemoryIsBoundToImage(objects, *image_data, image_loc, vuid.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, loc, mem_barrier, src_stage_mask, dst_stage_mask, *image_data);
 

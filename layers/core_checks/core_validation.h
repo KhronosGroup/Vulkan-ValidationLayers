@@ -468,14 +468,6 @@ class CoreChecks : public ValidationStateTracker {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
-    struct SimpleErrorLocation {
-        const char* func_name;
-        const char* vuid;
-        const char* FuncName() const { return func_name; }
-        const std::string Vuid() const { return vuid; }
-        SimpleErrorLocation(const char* func_name_, const char* vuid_) : func_name(func_name_), vuid(vuid_) {}
-    };
-
     bool ValidateSetMemBinding(VkDeviceMemory memory, const BINDABLE& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
@@ -708,45 +700,21 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                                                     VkPipelineStageFlags2KHR stage_mask) const;
     template <typename HandleT>
-    bool ValidateMemoryIsBoundToBuffer(HandleT handle, const BUFFER_STATE& buffer_state, const char* api_name,
-                                       const char* error_code) const {
+    bool ValidateMemoryIsBoundToBuffer(HandleT handle, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
+                                       const char* vuid) const {
         bool result = false;
         if (!buffer_state.sparse) {
             const LogObjectList objlist(handle, buffer_state.Handle());
-            result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), api_name, error_code);
+            result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
         }
         return result;
     }
 
-    bool ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE&, const char*, const char*) const;
+    bool ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE&, const Location& buffer_loc, const char* vuid) const;
 
-    template <typename HandleT>
-    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE& image_state, const char* api_name,
-                                      const char* error_code) const {
-        return ValidateMemoryIsBoundToImage<HandleT, SimpleErrorLocation>(handle, image_state,
-                                                                          SimpleErrorLocation(api_name, error_code));
-    }
-    template <typename HandleT>
-    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE& image_state, const Location& loc) const {
-        using LocationAdapter = vvl::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>;
-        return ValidateMemoryIsBoundToImage<HandleT, LocationAdapter>(handle, image_state,
-                                                                      LocationAdapter(loc, sync_vuid_maps::ImageError::kNoMemory));
-    }
-    template <typename HandleT, typename Location>
-    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE&, const Location&) const;
+    bool ValidateMemoryIsBoundToImage(const LogObjectList& objlist, const IMAGE_STATE& image_state, const Location& loc,
+                                      const char* vuid) const;
 
-    template <typename HandleT>
-    bool ValidateMemoryIsBoundToAccelerationStructure(HandleT handle, const ACCELERATION_STRUCTURE_STATE& as_state,
-                                                      const char* api_name, const char* error_code) const {
-        const LogObjectList objlist(handle, as_state.Handle());
-        return VerifyBoundMemoryIsValid(as_state.MemState(), objlist, as_state.Handle(), api_name, error_code);
-    }
-    template <typename HandleT>
-    bool ValidateMemoryIsBoundToAccelerationStructure(HandleT handle, const ACCELERATION_STRUCTURE_STATE_KHR& as_state,
-                                                      const char* api_name, const char* error_code) const {
-        const LogObjectList objlist(handle, as_state.Handle());
-        return VerifyBoundMemoryIsValid(as_state.buffer_state->MemState(), objlist, as_state.Handle(), api_name, error_code);
-    }
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const Location& loc, const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE& cb_state, const Location& loc, VkQueueFlags flags, const char* vuid) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const Location& loc) const;
@@ -938,7 +906,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelinePortability(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline, const Location& loc) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
-                                                    const char* caller, const DrawDispatchVuid& vuid) const;
+                                                    const Location& loc, const DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pipeline, const Location& loc) const;
     bool ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE& pipeline, const Location& loc) const;
     bool ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE& pipeline, const Location& loc) const;
@@ -1121,32 +1089,32 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
-                                VkImageLayout explicit_layout, const RangeFactory& range_factory, const char* caller,
+                                VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& image_loc,
                                 const char* layout_mismatch_msg_code, bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           const Location& image_loc, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
-                           VkImageLayout explicit_layout, const char* caller, const char* layout_mismatch_msg_code,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
+                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const Location& image_loc,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
-        return VerifyImageLayout(cb_state, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
-                                 layout_mismatch_msg_code, error);
+        return VerifyImageLayout(cb_state, image_state, range, 0, explicit_layout, optimal_layout, image_loc,
+                                 layout_invalid_msg_code, layout_mismatch_msg_code, error);
     }
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
                            const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           const Location& image_loc, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, const char* caller, const char* layout_mismatch_msg_code,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
     bool CheckItgExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
@@ -1289,10 +1257,7 @@ class CoreChecks : public ValidationStateTracker {
     void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE& cb_state);
 
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
-                                  const VulkanTypedHandle& typed_handle, const char* api_name, const char* error_code) const;
-    template <typename LocType>
-    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
-                                  const VulkanTypedHandle& typed_handle, const LocType& location) const;
+                                  const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
 
     bool ValidateLayoutVsAttachmentDescription(const VkImageLayout first_layout, const uint32_t attachment,
                                                const VkAttachmentDescription2& attachment_description,
@@ -1731,9 +1696,9 @@ class CoreChecks : public ValidationStateTracker {
                                                            uint32_t viewportCount,
                                                            const VkShadingRatePaletteNV* pShadingRatePalettes,
                                                            const ErrorObject& error_obj) const override;
-    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles, const char* func_name) const;
-    bool ValidateGeometryAABBNV(const VkGeometryAABBNV& geometry, const char* func_name) const;
-    bool ValidateGeometryNV(const VkGeometryNV& geometry, const char* func_name) const;
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles, const Location& loc) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV& geometry, const Location& loc) const;
+    bool ValidateGeometryNV(const VkGeometryNV& geometry, const Location& loc) const;
     bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureNV* pAccelerationStructure,
@@ -2329,7 +2294,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                   const uint32_t* const* ppMaxPrimitiveCounts,
                                                                   const ErrorObject& error_obj) const override;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR* pInfo, const VulkanTypedHandle& handle,
-                                                  const Location& loc) const;
+                                                  const Location& info_loc) const;
     bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                         const ErrorObject& error_obj) const override;
