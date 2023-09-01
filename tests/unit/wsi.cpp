@@ -1654,7 +1654,6 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
 TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with signaled semaphore");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1697,7 +1696,6 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
 TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with pending semaphore wait operation");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
