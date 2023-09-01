@@ -1137,6 +1137,11 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
                     version_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288" : "VUID-vkAcquireNextImageKHR-semaphore-01286";
                 skip |= LogError(vuid, semaphore, loc, "Semaphore must not be currently signaled.");
             }
+            if (semaphore_state->InUse()) {
+                const char *vuid =
+                    version_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01781" : "VUID-vkAcquireNextImageKHR-semaphore-01779";
+                skip |= LogError(vuid, semaphore, loc, "Semaphore must not have any pending operations.");
+            }
         }
     }
 
