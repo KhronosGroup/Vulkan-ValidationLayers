@@ -261,3 +261,134 @@ TEST(CustomContainer, SmallVectorNotDefaultInsertableDefaultValue) {
         ASSERT_TRUE(HaveSameElements(v9, ref));
     }
 }
+TEST(CustomContainer, SmallVectorConstruct) {
+    using SmallVector = small_vector<std::string, 5, size_t>;
+    const SmallVector ref_small = {"one", "two", "three", "four"};
+    SmallVector ref_large = {"one", "two", "three", "four", "five", "six"};
+
+    // Small construct and emplace vs. list (tests list contruction, really)
+    SmallVector v_small_emplace;
+    v_small_emplace.emplace_back("one");
+    v_small_emplace.emplace_back("two");
+    v_small_emplace.emplace_back("three");
+    v_small_emplace.emplace_back("four");
+    ASSERT_TRUE(HaveSameElements(ref_small, v_small_emplace));
+
+    // Copy construct from small_store
+    SmallVector v_small_copy(ref_small);
+    ASSERT_TRUE(HaveSameElements(ref_small, v_small_copy));
+
+    // Move construct from small_store
+    SmallVector v_small_move_src(ref_small);
+    SmallVector v_small_move_dst(std::move(v_small_move_src));
+    ASSERT_TRUE(HaveSameElements(ref_small, v_small_move_dst));
+
+    // Small construct and emplace vs. list (tests list contruction, really)
+    SmallVector v_large_emplace;
+    v_large_emplace.emplace_back("one");
+    v_large_emplace.emplace_back("two");
+    v_large_emplace.emplace_back("three");
+    v_large_emplace.emplace_back("four");
+    v_large_emplace.emplace_back("five");
+    v_large_emplace.emplace_back("six");
+    ASSERT_TRUE(HaveSameElements(ref_large, v_large_emplace));
+
+    // Copy construct from large_store
+    SmallVector v_large_copy(ref_large);
+    ASSERT_TRUE(HaveSameElements(ref_large, v_large_copy));
+
+    // Move construct from large_store
+    SmallVector v_large_move_src(ref_large);
+    SmallVector v_large_move_dst(std::move(v_large_move_src));
+    ASSERT_TRUE(HaveSameElements(ref_large, v_large_move_dst));
+}
+
+TEST(CustomContainer, SmallVectorAssign) {
+    using SmallVector = small_vector<std::string, 5, size_t>;
+    const SmallVector ref_xxs = {"one", "two"};
+    const SmallVector ref_xs = {"one", "two", "three"};
+    const SmallVector ref_small = {"one", "two", "three", "four"};
+
+    const SmallVector ref_large = {"one", "two", "three", "four", "five", "six"};
+    const SmallVector ref_xl = {"one", "two", "three", "four", "five", "six", "seven"};
+    const SmallVector ref_xxl = {"one", "two", "three", "four", "five", "six", "seven", "eight"};
+
+    SmallVector v_src(ref_large);
+    SmallVector v_dst(ref_small);
+
+    // Copy from large store to small store
+    v_dst = v_src;
+    ASSERT_TRUE(HaveSameElements(ref_large, v_src));
+    ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
+
+    // Quick small to large check to reset...
+    v_dst = ref_small;
+    ASSERT_TRUE(HaveSameElements(ref_small, v_dst));
+
+    // Copy from large store to small store
+    v_dst = std::move(v_src);
+    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
+
+    // Same store type copy/move
+
+    // Small
+    //
+    // Copy small to small reducing
+    v_src = ref_xs;
+    v_dst = ref_small;
+    v_dst = v_src;
+    ASSERT_TRUE(HaveSameElements(ref_xs, v_src));
+    ASSERT_TRUE(HaveSameElements(ref_xs, v_dst));
+
+    // Move small to small reducing
+    v_src = ref_xs;
+    v_dst = ref_small;
+    v_dst = std::move(v_src);
+    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(HaveSameElements(ref_xs, v_dst));
+
+    // Copy small to small increasing
+    v_src = ref_small;
+    v_dst = ref_xs;
+    v_dst = v_src;
+    ASSERT_TRUE(HaveSameElements(ref_small, v_src));
+    ASSERT_TRUE(HaveSameElements(ref_small, v_dst));
+
+    // Move small to small increasing
+    v_src = ref_small;
+    v_dst = ref_xs;
+    v_dst = std::move(v_src);
+    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(HaveSameElements(ref_small, v_dst));
+
+    // Large
+    //
+    // Copy large to large reducing
+    v_src = ref_large;
+    v_dst = ref_xl;
+    v_dst = v_src;
+    ASSERT_TRUE(HaveSameElements(ref_large, v_src));
+    ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
+
+    // Move large to large reducing
+    v_src = ref_large;
+    v_dst = ref_xl;
+    v_dst = std::move(v_src);
+    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(HaveSameElements(ref_large, v_dst));
+
+    // Copy large to large increasing
+    v_src = ref_xxl;
+    v_dst = ref_xl;
+    v_dst = v_src;
+    ASSERT_TRUE(HaveSameElements(ref_xxl, v_src));
+    ASSERT_TRUE(HaveSameElements(ref_xxl, v_dst));
+
+    // Move large to large increasing
+    v_src = ref_xxl;
+    v_dst = ref_xl;
+    v_dst = std::move(v_src);
+    ASSERT_TRUE(v_src.empty());
+    ASSERT_TRUE(HaveSameElements(ref_xxl, v_dst));
+}
