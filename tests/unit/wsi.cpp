@@ -2179,6 +2179,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     surface_info.pNext = &present_mode;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSurfacePresentModeEXT-presentMode-07780");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeEXT-presentMode-parameter");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
@@ -2216,6 +2217,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
+        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-GeneralParameterError-UnrecognizedValue");
         vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
         m_errorMonitor->VerifyFound();
     }
@@ -2402,7 +2404,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     uint32_t release_index = static_cast<uint32_t>(swapchain_images.size()) + 2;
     auto release_info = LvlInitStruct<VkReleaseSwapchainImagesInfoEXT>();
     release_info.swapchain = m_swapchain;
-    release_info.imageIndexCount = static_cast<uint32_t>(swapchain_images.size());
+    release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
     vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
