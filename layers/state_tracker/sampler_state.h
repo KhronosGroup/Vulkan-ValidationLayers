@@ -60,8 +60,8 @@ class SAMPLER_STATE : public BASE_NODE {
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci)
-        : BASE_NODE(*ps, kVulkanObjectTypeSampler),
+    SAMPLER_STATE(const VkSampler s, const VkSamplerCreateInfo *pci)
+        : BASE_NODE(s, kVulkanObjectTypeSampler),
           createInfo(*pci),
           samplerConversion(GetConversion(pci)),
           customCreateInfo(GetCustomCreateInfo(pci)) {}

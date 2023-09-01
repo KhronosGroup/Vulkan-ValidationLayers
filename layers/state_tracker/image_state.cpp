@@ -215,6 +215,17 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(
           dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+    if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+        bool is_resident = (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
+        tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
+        SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
+    } else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
+        tracker_.emplace<BindableMultiplanarMemoryTracker>(requirements.data(), FormatPlaneCount(pCreateInfo->format));
+        SetMemoryTracker(&std::get<BindableMultiplanarMemoryTracker>(tracker_));
+    } else {
+        tracker_.emplace<BindableLinearMemoryTracker>(requirements.data());
+        SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));
+    }
 }
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
@@ -249,6 +260,9 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
           dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
+
+    tracker_.emplace<BindableNoMemoryTracker>(requirements.data());
+    SetMemoryTracker(&std::get<BindableNoMemoryTracker>(tracker_));
 }
 
 void IMAGE_STATE::Destroy() {

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <utility>
+#include <variant>
 
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_layout_map.h"
@@ -111,7 +112,6 @@ class IMAGE_STATE : public BINDABLE {
     static constexpr int MAX_PLANES = 3;
     using MemoryReqs = std::array<VkMemoryRequirements, MAX_PLANES>;
     const MemoryReqs requirements;
-    const VkMemoryRequirements *const memory_requirements_pointer = &requirements[0];
     std::array<bool, MAX_PLANES> memory_requirements_checked = {};
 
     const bool sparse_residency;
@@ -256,16 +256,13 @@ class IMAGE_STATE : public BINDABLE {
         }
         return false;
     }
-};
 
-template <typename ImageState>
-struct ImageStateBindingTraits {
-    using NoBinding = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableNoMemoryTracker>;
-    using Linear = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableLinearMemoryTracker>;
-    template <bool IS_RESIDENT>
-    using Sparse = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableSparseMemoryTracker<IS_RESIDENT>>;
-    template <unsigned PLANE_COUNT>
-    using Multiplanar = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableMultiplanarMemoryTracker<PLANE_COUNT>>;
+  private:
+    std::variant<std::monostate,
+                 BindableNoMemoryTracker,
+                 BindableLinearMemoryTracker,
+                 BindableSparseMemoryTracker,
+                 BindableMultiplanarMemoryTracker> tracker_;
 };
 
 // State for VkImageView objects.
