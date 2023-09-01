@@ -3769,7 +3769,7 @@ TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (InstanceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+    if (DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
         GTEST_SKIP() << "need VK_EXT_discard_rectangles version 1";
     }
 
