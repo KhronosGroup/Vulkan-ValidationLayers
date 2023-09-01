@@ -1541,6 +1541,65 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
+    TEST_DESCRIPTION("Test vkAcquireNextImageKHR with pending semaphore wait operation");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddSurfaceExtension();
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+
+    vk_testing::Semaphore semaphore(*m_device);
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    // Add a wait, but don't let it finish.
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    VkPipelineStageFlags waitMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    submit_info.pWaitDstStageMask = &waitMask;
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    uint32_t dummy;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-01779");
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &dummy);
+    m_errorMonitor->VerifyFound();
+
+    auto acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
+    acquire_info.swapchain = m_swapchain;
+    acquire_info.timeout = kWaitTimeout;
+    acquire_info.semaphore = semaphore.handle();
+    acquire_info.fence = VK_NULL_HANDLE;
+    acquire_info.deviceMask = 0x1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-semaphore-01781");
+    vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
+    m_errorMonitor->VerifyFound();
+
+    // finish the wait
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    // now it should be possible to acquire
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &dummy);
+}
+
 TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     AddSurfaceExtension();
