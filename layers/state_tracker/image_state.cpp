@@ -745,7 +745,7 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
             log_internal_error(err, phys_dev, surface_info2.surface);
             return result;
         }
-        std::vector<VkSurfaceFormat2KHR> formats2(count);
+        std::vector<VkSurfaceFormat2KHR> formats2(count, LvlInitStruct<VkSurfaceFormat2KHR>());
 
         if (const VkResult err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, formats2.data());
             err != VK_SUCCESS) {
