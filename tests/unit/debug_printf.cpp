@@ -533,7 +533,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vvl::span<const uint32_t>{vs_spv});
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
@@ -694,7 +694,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
             }
         )glsl";
         const auto vs_i64_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source_int64);
-        vk_testing::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv);
+        vk_testing::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
         CreatePipelineHelper pre_raster_i64(*this);
         pre_raster_i64.InitPreRasterLibInfo(&pre_raster_i64_stage.stage_ci);
@@ -840,7 +840,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -999,7 +999,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();

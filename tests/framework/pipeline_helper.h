@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
+ * Copyright (c) 2023 The Khronos Group Inc.
+ * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +18,8 @@
 //
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
-struct CreatePipelineHelper {
+class CreatePipelineHelper {
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
@@ -129,7 +129,8 @@ struct CreatePipelineHelper {
     }
 };
 
-struct CreateComputePipelineHelper {
+class CreateComputePipelineHelper {
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
@@ -195,7 +196,8 @@ struct CreateComputePipelineHelper {
 // Helper class for to create ray tracing pipeline tests
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
-struct RayTracingPipelineHelper {
+class RayTracingPipelineHelper {
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;

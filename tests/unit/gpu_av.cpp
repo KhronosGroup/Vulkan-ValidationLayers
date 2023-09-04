@@ -2279,7 +2279,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
@@ -2462,7 +2462,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();

@@ -1192,9 +1192,7 @@ struct GraphicsPipelineLibraryStage {
     VkShaderModuleCreateInfo shader_ci;
     VkPipelineShaderStageCreateInfo stage_ci;
 
-    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT,
-                                 const char *name = "main")
-        : spv(spv) {
+    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage, const char *name = "main") : spv(spv) {
         shader_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
         shader_ci.codeSize = spv.size() * sizeof(uint32_t);
         shader_ci.pCode = spv.data();

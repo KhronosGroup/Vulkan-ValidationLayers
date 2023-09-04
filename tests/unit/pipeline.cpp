@@ -2000,26 +2000,35 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     compute_pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 
-    CreatePipelineHelper graphics_pipe(*this);
-    graphics_pipe.InitShaderInfo();
+    {
+        CreatePipelineHelper graphics_pipe(*this);
+        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_normal});
+        graphics_pipe.CreateGraphicsPipeline();
+    }
 
-    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_normal});
-    graphics_pipe.CreateGraphicsPipeline();
+    {
+        CreatePipelineHelper graphics_pipe(*this);
+        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_vert});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+        graphics_pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_vert});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
-    graphics_pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
+    {
+        CreatePipelineHelper graphics_pipe(*this);
+        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_frag});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+        graphics_pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_frag});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
-    graphics_pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-
-    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_combined0, &ds_layout_combined1});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
-    graphics_pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
+    {
+        CreatePipelineHelper graphics_pipe(*this);
+        graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_combined0, &ds_layout_combined1});
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+        graphics_pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
