@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_nv.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
@@ -822,7 +823,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
     }
-    nv::rt::RayTracingPipelineHelper rt_pipe(*this);
+    RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.InitInfo(true /*isKHR*/);
     rt_pipe.rp_ci_KHR_.flags = VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
     rt_pipe.InitState();
@@ -1187,7 +1188,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
 
     const auto vkGetRayTracingShaderGroupHandlesKHR =
         GetInstanceProcAddr<PFN_vkGetRayTracingShaderGroupHandlesKHR>("vkGetRayTracingShaderGroupHandlesKHR");
-    nv::rt::RayTracingPipelineHelper rt_pipe(*this);
+    RayTracingPipelineHelper rt_pipe(*this);
     rt_pipe.rp_ci_KHR_ = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     rt_pipe.rp_ci_KHR_.flags =
         VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
@@ -1844,14 +1845,14 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
 
-    auto set_feedback = [&feedback_info](nv::rt::RayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
+    auto set_feedback = [&feedback_info](RayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
 
     feedback_info.pipelineStageCreationFeedbackCount = 3;
-    nv::rt::RayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
+    RayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
-    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_feedback,
-                                                  "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
+    RayTracingPipelineHelper::OneshotTest(*this, set_feedback,
+                                          "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
 
 TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
@@ -1877,9 +1878,9 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
                             "foo");
 
-    auto set_info = [&](nv::rt::RayTracingPipelineHelper &helper) {
+    auto set_info = [&](RayTracingPipelineHelper &helper) {
         helper.shader_stages_ = {helper.rgs_->GetStageCreateInfo(), helper.chs_->GetStageCreateInfo(),
                                  miss_shader.GetStageCreateInfo()};
     };
-    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    RayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
 }

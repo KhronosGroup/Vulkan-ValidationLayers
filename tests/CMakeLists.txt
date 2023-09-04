@@ -23,6 +23,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/android_hardware_buffer.h
     framework/layer_validation_tests.h
     framework/layer_validation_tests.cpp
+    framework/pipeline_helper.h
+    framework/pipeline_helper.cpp
     framework/test_common.h
     framework/shader_templates.h
     framework/error_monitor.cpp

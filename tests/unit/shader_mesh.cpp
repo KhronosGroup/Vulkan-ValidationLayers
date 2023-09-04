@@ -10,6 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate mesh shader shared memory does not exceed maxMeshSharedMemorySize");

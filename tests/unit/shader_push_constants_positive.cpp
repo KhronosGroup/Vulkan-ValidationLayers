@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     TEST_DESCRIPTION("Test overlapping push-constant ranges.");

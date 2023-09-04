@@ -13,6 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_nv.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
@@ -177,6 +178,6 @@ TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto ignore_update = [](nv::rt::RayTracingPipelineHelper &helper) {};
-    nv::rt::RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
+    auto ignore_update = [](RayTracingPipelineHelper &helper) {};
+    RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }

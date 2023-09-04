@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativePipelineTopology, PolygonMode) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
