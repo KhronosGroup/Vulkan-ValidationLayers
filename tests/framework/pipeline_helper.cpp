@@ -166,16 +166,6 @@ void CreatePipelineHelper::InitInfo() {
 }
 
 void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
-    InitDescriptorSetInfo();
-    InitInputAndVertexInfo();
-    InitMultisampleInfo();
-    InitPipelineLayoutInfo();
-    InitViewportInfo();
-    InitDynamicStateInfo();
-    InitRasterizationInfo();
-    InitLineRasterizationInfo();
-    InitBlendStateInfo();
-
     gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
 
@@ -186,21 +176,9 @@ void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
 
     gp_ci_.stageCount = 0;
     shader_stages_.clear();
-
-    InitPipelineCacheInfo();
 }
 
 void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
-    InitDescriptorSetInfo();
-    InitInputAndVertexInfo();
-    InitMultisampleInfo();
-    InitPipelineLayoutInfo();
-    InitViewportInfo();
-    InitDynamicStateInfo();
-    InitRasterizationInfo();
-    InitLineRasterizationInfo();
-    InitBlendStateInfo();
-
     gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
 
@@ -216,21 +194,9 @@ void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreat
 
     gp_ci_.stageCount = 1;  // default is just the Vertex shader
     gp_ci_.pStages = info;
-
-    InitPipelineCacheInfo();
 }
 
 void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
-    InitDescriptorSetInfo();
-    InitInputAndVertexInfo();
-    InitMultisampleInfo();
-    InitPipelineLayoutInfo();
-    InitViewportInfo();
-    InitDynamicStateInfo();
-    InitRasterizationInfo();
-    InitLineRasterizationInfo();
-    InitBlendStateInfo();
-
     gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
@@ -249,21 +215,9 @@ void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreate
 
     gp_ci_.stageCount = 1;  // default is just the Fragment shader
     gp_ci_.pStages = info;
-
-    InitPipelineCacheInfo();
 }
 
 void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
-    InitDescriptorSetInfo();
-    InitInputAndVertexInfo();
-    InitMultisampleInfo();
-    InitPipelineLayoutInfo();
-    InitViewportInfo();
-    InitDynamicStateInfo();
-    InitRasterizationInfo();
-    InitLineRasterizationInfo();
-    InitBlendStateInfo();
-
     gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
@@ -280,8 +234,6 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
 
     gp_ci_.stageCount = 0;
     shader_stages_.clear();
-
-    InitPipelineCacheInfo();
 }
 
 void CreatePipelineHelper::InitState() {
