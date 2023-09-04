@@ -1507,25 +1507,18 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage 
 }
 
 // Verify image barriers are compatible with the images they reference.
-template <typename ImgBarrier>
-bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
-                                          uint32_t imageMemoryBarrierCount, const ImgBarrier *pImageMemoryBarriers) const {
+bool CoreChecks::ValidateBarriersToImages(const Location &loc, const CMD_BUFFER_STATE *cb_state, const ImageBarrier &img_barrier,
+                                          CommandBufferImageLayoutMap &layout_updates_state) const {
     bool skip = false;
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
-    // Scoreboard for duplicate layout transition barriers within the list
-    // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
     const CommandBufferImageLayoutMap &current_map = cb_state->GetImageSubresourceLayoutMap();
-    CommandBufferImageLayoutMap layout_updates;
 
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        auto loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
-        const auto &img_barrier = pImageMemoryBarriers[i];
-
+    {
         auto image_state = Get<IMAGE_STATE>(img_barrier.image);
         if (!image_state) {
-            continue;
+            return skip;
         }
 
         if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
@@ -1598,7 +1591,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
             // TODO: Set memory invalid which is in mem_tracker currently
         } else if (!IsQueueFamilyExternal(img_barrier.srcQueueFamilyIndex)) {
-            skip |= UpdateCommandBufferImageLayoutMap(cb_state, loc, img_barrier, current_map, layout_updates);
+            skip |= UpdateCommandBufferImageLayoutMap(cb_state, loc, img_barrier, current_map, layout_updates_state);
         }
 
         // checks color format and (single-plane or non-disjoint)
@@ -2282,6 +2275,10 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
     bool skip = false;
     LogObjectList objects(cb_state->commandBuffer());
 
+    // Tracks duplicate layout transition for image barriers.
+    // Keeps state between ValidateBarriersToImages calls.
+    CommandBufferImageLayoutMap layout_updates_state;
+
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
         const MemoryBarrier barrier(pMemBarriers[i], src_stage_mask, dst_stage_mask);
@@ -2292,11 +2289,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
         const ImageBarrier barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, barrier);
-    }
-    {
-        // need to know struct for VUID map
-        const Location loc(outer_loc.function, Struct::VkImageMemoryBarrier, outer_loc.field);
-        skip |= ValidateBarriersToImages(loc, cb_state, imageMemBarrierCount, pImageMemBarriers);
+        skip |= ValidateBarriersToImages(loc, cb_state, barrier, layout_updates_state);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
@@ -2310,6 +2303,11 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
 bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                         const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
+
+    // Tracks duplicate layout transition for image barriers.
+    // Keeps state between ValidateBarriersToImages calls.
+    CommandBufferImageLayoutMap layout_updates_state;
+
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const Location loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
         const MemoryBarrier mem_barrier(dep_info->pMemoryBarriers[i]);
@@ -2320,13 +2318,8 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         const ImageBarrier mem_barrier(dep_info->pImageMemoryBarriers[i]);
         skip |= ValidateMemoryBarrier(objects, loc, cb_state, mem_barrier);
         skip |= ValidateImageBarrier(objects, loc, cb_state, mem_barrier);
+        skip |= ValidateBarriersToImages(loc, cb_state, mem_barrier, layout_updates_state);
     }
-    {
-        // need to know struct for VUID map
-        const Location loc(outer_loc.function, Struct::VkImageMemoryBarrier2, outer_loc.field);
-        skip |= ValidateBarriersToImages(loc, cb_state, dep_info->imageMemoryBarrierCount, dep_info->pImageMemoryBarriers);
-    }
-
     for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; ++i) {
         const Location loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         const BufferBarrier mem_barrier(dep_info->pBufferMemoryBarriers[i]);

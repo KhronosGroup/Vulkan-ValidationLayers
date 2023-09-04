@@ -1146,16 +1146,14 @@ class CoreChecks : public ValidationStateTracker {
 
     void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE& render_pass_state);
 
-    template <typename ImgBarrier>
-    bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& loc, const ImgBarrier& img_barrier,
+    bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& loc, const ImageBarrier& img_barrier,
                                            const CommandBufferImageLayoutMap& current_map,
                                            CommandBufferImageLayoutMap& layout_updates) const;
 
     bool ValidateBarrierLayoutToImageUsage(const Location& loc, VkImage image, VkImageLayout layout, VkImageUsageFlags usage) const;
 
-    template <typename ImgBarrier>
-    bool ValidateBarriersToImages(const Location& loc, const CMD_BUFFER_STATE* cb_state, uint32_t imageMemoryBarrierCount,
-                                  const ImgBarrier* pImageMemoryBarriers) const;
+    bool ValidateBarriersToImages(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImageBarrier& image_barrier,
+                                  CommandBufferImageLayoutMap& layout_updates_state) const;
 
     void RecordQueuedQFOTransfers(CMD_BUFFER_STATE* cb_state);
 

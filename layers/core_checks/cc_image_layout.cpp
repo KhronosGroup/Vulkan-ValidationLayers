@@ -907,9 +907,8 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
     return skip;
 }
 
-template <typename ImgBarrier>
 bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
-                                                   const ImgBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
+                                                   const ImageBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(img_barrier.image);
@@ -957,15 +956,6 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_st
     }
     return skip;
 }
-
-template bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
-                                                            const VkImageMemoryBarrier &img_barrier,
-                                                            const CommandBufferImageLayoutMap &current_map,
-                                                            CommandBufferImageLayoutMap &layout_updates) const;
-template bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
-                                                            const VkImageMemoryBarrier2KHR &img_barrier,
-                                                            const CommandBufferImageLayoutMap &current_map,
-                                                            CommandBufferImageLayoutMap &layout_updates) const;
 
 bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImageLayout> &layouts) const {
     const auto *layout_range_map = image_state.layout_range_map.get();
