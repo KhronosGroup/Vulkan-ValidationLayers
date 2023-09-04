@@ -174,9 +174,6 @@ class VkLayerTest : public VkLayerTestBase {
 
     void VKTriangleTest(BsoFailSelect failCase);
 
-    void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,
-                                BsoFailSelect failCase);
-
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
     void AddSurfaceExtension();

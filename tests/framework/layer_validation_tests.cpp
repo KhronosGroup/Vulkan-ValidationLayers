@@ -637,7 +637,44 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, depth_attachment));
     m_commandBuffer->begin();
 
-    GenericDrawPreparation(m_commandBuffer, pipelineobj, descriptorSet, failCase);
+    {
+        m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color,
+                                         m_stencil_clear_color);
+
+        m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
+        // Make sure depthWriteEnable is set so that Depth fail test will work
+        // correctly
+        // Make sure stencilTestEnable is set so that Stencil fail test will work
+        // correctly
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        if (failCase == BsoFailDepthBounds) {
+            ds_ci.depthBoundsTestEnable = VK_TRUE;
+            ds_ci.maxDepthBounds = 0.0f;
+            ds_ci.minDepthBounds = 0.0f;
+        }
+        ds_ci.stencilTestEnable = VK_TRUE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        pipelineobj.SetDepthStencil(&ds_ci);
+        pipelineobj.SetViewport(m_viewports);
+        pipelineobj.SetScissor(m_scissors);
+        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+        VkResult err = pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+        ASSERT_VK_SUCCESS(err);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
+        m_commandBuffer->BindDescriptorSet(descriptorSet);
+    }
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -673,51 +710,6 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
 
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     }
-
-    // finalize recording of the command buffer
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer(true);
-    DestroyRenderTarget();
-}
-
-void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj,
-                                         VkDescriptorSetObj &descriptorSet, BsoFailSelect failCase) {
-    commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
-
-    commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-    // Make sure depthWriteEnable is set so that Depth fail test will work
-    // correctly
-    // Make sure stencilTestEnable is set so that Stencil fail test will work
-    // correctly
-    VkStencilOpState stencil = {};
-    stencil.failOp = VK_STENCIL_OP_KEEP;
-    stencil.passOp = VK_STENCIL_OP_KEEP;
-    stencil.depthFailOp = VK_STENCIL_OP_KEEP;
-    stencil.compareOp = VK_COMPARE_OP_NEVER;
-
-    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
-    ds_ci.depthTestEnable = VK_FALSE;
-    ds_ci.depthWriteEnable = VK_TRUE;
-    ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
-    ds_ci.depthBoundsTestEnable = VK_FALSE;
-    if (failCase == BsoFailDepthBounds) {
-        ds_ci.depthBoundsTestEnable = VK_TRUE;
-        ds_ci.maxDepthBounds = 0.0f;
-        ds_ci.minDepthBounds = 0.0f;
-    }
-    ds_ci.stencilTestEnable = VK_TRUE;
-    ds_ci.front = stencil;
-    ds_ci.back = stencil;
-
-    pipelineobj.SetDepthStencil(&ds_ci);
-    pipelineobj.SetViewport(m_viewports);
-    pipelineobj.SetScissor(m_scissors);
-    descriptorSet.CreateVKDescriptorSet(commandBuffer);
-    VkResult err = pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    ASSERT_VK_SUCCESS(err);
-    vk::CmdBindPipeline(commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
-    commandBuffer->BindDescriptorSet(descriptorSet);
 }
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
