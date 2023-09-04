@@ -800,7 +800,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
         pipe.cp_ci_.stage = stage;
         pipe.dsl_bindings_ = {};
         pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
-        pipe.CreateComputePipeline(true, false);
+        pipe.CreateComputePipeline(false);
     };
 
     // workgroup size = 4

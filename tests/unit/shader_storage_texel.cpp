@@ -253,7 +253,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(true, false);                // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;

@@ -164,7 +164,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06376");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpImage-06377");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
 
     m_errorMonitor->VerifyFound();
 }

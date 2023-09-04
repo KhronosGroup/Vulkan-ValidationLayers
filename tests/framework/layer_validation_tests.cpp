@@ -1562,17 +1562,11 @@ void CreatePipelineHelper::LateBindPipelineInfo() {
     }
 }
 
-VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool implicit_destroy, bool do_late_bind) {
-    VkResult err;
+VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind) {
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
-    err = vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
-    return err;
+    return vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
 }
 
 CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
@@ -1644,17 +1638,11 @@ void CreateComputePipelineHelper::LateBindPipelineInfo() {
     cp_ci_.stage = cs_.get()->GetStageCreateInfo();
 }
 
-VkResult CreateComputePipelineHelper::CreateComputePipeline(bool implicit_destroy, bool do_late_bind) {
-    VkResult err;
+VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
-    err = vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
-    return err;
+    return vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
 BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {

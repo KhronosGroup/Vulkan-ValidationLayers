@@ -43,7 +43,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInput) {
     CreatePipelineHelper pipe(*this);
     pipe.InitVertexInputLibInfo();
     pipe.InitState();
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(false));
 }
 
 TEST_F(PositiveGraphicsLibrary, PreRaster) {
@@ -106,7 +106,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutput) {
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentOutputLibInfo();
     pipe.InitState();
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(false));
 }
 
 TEST_F(PositiveGraphicsLibrary, FragmentMixedAttachmentSamplesAMD) {
@@ -129,7 +129,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentMixedAttachmentSamplesAMD) {
     // It's legal for this fragment library to not have a raster state defined.
     ASSERT_TRUE(pipe.gp_ci_.pRasterizationState == nullptr);
 
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(false));
 }
 
 TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
@@ -143,7 +143,7 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     VkPipelineLayout layout = VK_NULL_HANDLE;
 
@@ -180,12 +180,12 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.gp_ci_.layout = layout;
-        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -240,7 +240,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -264,7 +264,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -282,12 +282,12 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -442,7 +442,7 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
     pipe.InitState();
     pipe.cb_ci_.pAttachments = nullptr;
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
-    pipe.CreateGraphicsPipeline(true, false);
+    pipe.CreateGraphicsPipeline(false);
 }
 
 TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
@@ -469,7 +469,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     vertex_input_lib.InitState();
     vertex_input_lib.gp_ci_.pDynamicState = &dynamic_create_info;
     vertex_input_lib.gp_ci_.pInputAssemblyState = &ia_state;
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     // change here and make sure other libraries don't consume this
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -511,14 +511,14 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.gp_ci_.pDynamicState = &dynamic_create_info;
         frag_shader_lib.gp_ci_.pInputAssemblyState = &ia_state;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.gp_ci_.pDynamicState = &dynamic_create_info;
     frag_out_lib.gp_ci_.pInputAssemblyState = &ia_state;
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -575,7 +575,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     vertex_input_lib.InitState();
     vertex_input_lib.gp_ci_.pDynamicState = &dynamic_create_info;
     vertex_input_lib.gp_ci_.pInputAssemblyState = &ia_state;
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     // change here and make sure other libraries don't consume this
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -617,14 +617,14 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.gp_ci_.renderPass = render_pass;
     frag_out_lib.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -681,7 +681,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     vertex_input_lib.InitState();
     vertex_input_lib.gp_ci_.pDynamicState = &dynamic_create_info;
     vertex_input_lib.gp_ci_.pInputAssemblyState = &ia_state;
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     // change here and make sure other libraries don't consume this
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -723,14 +723,14 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.gp_ci_.renderPass = render_pass;
     frag_out_lib.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -785,7 +785,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -824,7 +824,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
@@ -832,7 +832,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     frag_out_lib.gp_ci_.renderPass = render_pass;
     frag_out_lib.gp_ci_.subpass = subpass;
     frag_out_lib.gp_ci_.pDynamicState = &dynamic_create_info;
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -887,7 +887,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -927,14 +927,14 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.pDynamicState = &dynamic_create_info;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.gp_ci_.renderPass = render_pass;
     frag_out_lib.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -974,7 +974,7 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -1032,12 +1032,12 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.gp_ci_.layout = layout;
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -1092,7 +1092,7 @@ TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
 
     pipe.gp_ci_.stageCount = 2;
     pipe.gp_ci_.pStages = stages;
-    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(false));
 }
 
 TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
@@ -1241,7 +1241,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     fo_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
     fo_lib.InitState();
     fo_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
-    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(false));
 
     // Create an executable pipeline with rasterization disabled
     VkPipeline libraries[4] = {
@@ -1326,12 +1326,12 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     CreatePipelineHelper vi_lib(*this);
     vi_lib.InitVertexInputLibInfo();
     vi_lib.InitState();
-    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper fo_lib(*this);
     fo_lib.InitFragmentOutputLibInfo();
     fo_lib.InitState();
-    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(false));
 
     // Create a GPL and subpass that utilizes depth
     {
@@ -1376,7 +1376,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
         dynamic_create_info.dynamicStateCount = 1;
         pr_lib.gp_ci_.pDynamicState = &dynamic_create_info;
         pr_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
-        ASSERT_VK_SUCCESS(pr_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pr_lib.CreateGraphicsPipeline(false));
     }
 
     VkPipeline libraries[4] = {
@@ -1531,7 +1531,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     fs_pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     fs_pipe.gp_ci_.layout = pipe.gp_ci_.layout;
     fs_pipe.InitState();
-    ASSERT_VK_SUCCESS(fs_pipe.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(fs_pipe.CreateGraphicsPipeline(false));
 
     // Create a complete pipeline with the above pre-raster fs libraries
     CreatePipelineHelper vi_pipe(*this);

@@ -745,7 +745,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         pipe.dsl_bindings_ = {};
         pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
 
-        pipe.CreateComputePipeline(true, false);
+        pipe.CreateComputePipeline(false);
     };
 
     // these two pipelines should not cause any warning
@@ -799,7 +799,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
         pipe.dsl_bindings_ = {};
         pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
 
-        pipe.CreateComputePipeline(true, false);
+        pipe.CreateComputePipeline(false);
     };
 
     // these two pipelines should not cause any warning
@@ -865,7 +865,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
         pipe.cp_ci_.stage = stage;
         pipe.cp_ci_.layout = pipe_layout->handle();
 
-        pipe.CreateComputePipeline(true, false);
+        pipe.CreateComputePipeline(false);
     };
 
     auto* this_ptr = this;  // Required for older compilers with c++20 compatibility

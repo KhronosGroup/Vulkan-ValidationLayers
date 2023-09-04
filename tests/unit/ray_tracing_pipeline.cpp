@@ -1197,7 +1197,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     rt_pipe.rp_ci_KHR_.pGroups = &group_create_info;
     rt_pipe.rp_ci_KHR_.layout = pipeline_layout.handle();
     rt_pipe.rp_ci_KHR_.pLibraryInterface = &interface_ci;
-    VkResult err = rt_pipe.CreateKHRRayTracingPipeline(false, false);
+    VkResult err = rt_pipe.CreateKHRRayTracingPipeline(false);
     ASSERT_VK_SUCCESS(err);
 
     std::vector<uint8_t> handle_buffer;

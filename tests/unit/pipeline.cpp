@@ -419,7 +419,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_VERTEX_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-stage-00701");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
 

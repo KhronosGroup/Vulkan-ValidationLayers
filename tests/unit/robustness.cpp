@@ -97,7 +97,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
     pipe.cp_ci_.stage.pNext = &pipeline_robustness_info;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
-    pipe.CreateComputePipeline(true, false);
+    pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -142,7 +142,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
-    pipe.CreateComputePipeline(true, false);
+    pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
 

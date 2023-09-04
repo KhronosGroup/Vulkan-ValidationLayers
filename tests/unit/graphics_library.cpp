@@ -446,14 +446,14 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
-    pipe.CreateGraphicsPipeline(true, false);
+    pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 
     pipe.gp_ci_.layout = pipe.pipeline_layout_.handle();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
-    pipe.CreateGraphicsPipeline(true, false);
+    pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 
     pipe.gp_ci_.renderPass = renderPass();
@@ -461,7 +461,7 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
     pipe.gp_ci_.pStages = nullptr;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stageCount-06604");
-    pipe.CreateGraphicsPipeline(true, false);
+    pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -505,7 +505,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
         pipe.gp_ci_.pStages = pipe.shader_stages_.data();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
-        pipe.CreateGraphicsPipeline(true, false);
+        pipe.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -547,7 +547,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
     vertex_input_lib.InitState();
     // Ensure this library is created _without_ VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT
     vertex_input_lib.gp_ci_.flags &= ~VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[1] = {
         vertex_input_lib.pipeline_,
@@ -630,7 +630,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -654,7 +654,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06756");
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -694,7 +694,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -717,7 +717,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
         frag_shader_lib.InitState();
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06757");
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -757,7 +757,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -775,7 +775,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(false));
     }
 
     VkPipeline libraries[2] = {
@@ -816,7 +816,7 @@ TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06642");
-    pipe.CreateGraphicsPipeline(true, false);
+    pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
 
@@ -863,7 +863,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -887,7 +887,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -906,12 +906,12 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -1057,7 +1057,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     VkPipelineLayout layout = VK_NULL_HANDLE;
 
@@ -1096,12 +1096,12 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
         frag_shader_lib.gp_ci_.layout = layout;
-        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     VkPipeline libraries[4] = {
         vertex_input_lib.pipeline_,
@@ -1148,12 +1148,12 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
     CreatePipelineHelper vi_lib(*this);
     vi_lib.InitVertexInputLibInfo();
     vi_lib.InitState();
-    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper fo_lib(*this);
     fo_lib.InitFragmentOutputLibInfo();
     fo_lib.InitState();
-    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(false));
 
     // Check pre-raster library with shader accessing FS-only descriptor
     {
@@ -1169,7 +1169,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         vs_lib.InitState();
         vs_lib.gp_ci_.layout = pipeline_layout.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
-        vs_lib.CreateGraphicsPipeline(true, false);
+        vs_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
@@ -1178,7 +1178,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
         fs_lib.InitState();
         fs_lib.gp_ci_.layout = pipeline_layout.handle();
-        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline(false));
     }
 
     // Check FS library with shader accessing FS-only descriptor
@@ -1194,7 +1194,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         vs_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
         vs_lib.InitState();
         vs_lib.gp_ci_.layout = pipeline_layout.handle();
-        ASSERT_VK_SUCCESS(vs_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(vs_lib.CreateGraphicsPipeline(false));
 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
         vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1203,7 +1203,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         fs_lib.InitState();
         fs_lib.gp_ci_.layout = pipeline_layout.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
-        fs_lib.CreateGraphicsPipeline(true, false);
+        fs_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1260,7 +1260,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     vi_bad_lib.InitState();
     iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;  // otherwise we get a failure about invalid topology
     vi_bad_lib.gp_ci_.pInputAssemblyState = &iasci_bad;
-    vi_bad_lib.CreateGraphicsPipeline(true, false);
+    vi_bad_lib.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper fs_lib(*this);
     fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
@@ -1270,7 +1270,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     CreatePipelineHelper fo_lib(*this);
     fo_lib.InitFragmentOutputLibInfo();
     fo_lib.InitState();
-    fo_lib.CreateGraphicsPipeline(true, false);
+    fo_lib.CreateGraphicsPipeline(false);
 
     // libs[0] == vertex input lib
     // libs[1] == pre-raster lib
@@ -1314,7 +1314,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         vi_patch_lib.InitVertexInputLibInfo();
         vi_patch_lib.InitState();
         vi_patch_lib.gp_ci_.pInputAssemblyState = &iasci;
-        vi_patch_lib.CreateGraphicsPipeline(true, false);
+        vi_patch_lib.CreateGraphicsPipeline(false);
 
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
@@ -1353,7 +1353,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         // stype-check on
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
-        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1366,7 +1366,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         tsci_bad.patchControlPoints = 0;
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
-        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1378,7 +1378,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
         pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
-        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        pre_raster_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1390,14 +1390,14 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         iasci_bad = iasci;
         iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         vi_lib.gp_ci_.pInputAssemblyState = &iasci_bad;
-        vi_lib.CreateGraphicsPipeline(true, false);
+        vi_lib.CreateGraphicsPipeline(false);
 
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.pTessellationState = &tsci;
         pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
-        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        pre_raster_lib.CreateGraphicsPipeline(false);
 
         libs[0] = vi_lib.pipeline_;
         libs[1] = pre_raster_lib.pipeline_;
@@ -1423,11 +1423,11 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         vertex_input_lib.InitVertexInputLibInfo();
         vertex_input_lib.InitState();
         vertex_input_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
-        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
         CreatePipelineHelper frag_out_lib(*this);
         frag_out_lib.InitFragmentOutputLibInfo();
-        ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
         VkPipeline libraries[2] = {
             vertex_input_lib.pipeline_,
@@ -1447,7 +1447,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         CreatePipelineHelper vertex_input_lib(*this);
         vertex_input_lib.InitVertexInputLibInfo();
         vertex_input_lib.InitState();
-        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
         auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = 1;
@@ -1458,7 +1458,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         frag_out_lib.gp_ci_.flags =
             VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06645");
-        frag_out_lib.CreateGraphicsPipeline(true, false);
+        frag_out_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1468,7 +1468,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         vertex_input_lib.InitState();
         vertex_input_lib.gp_ci_.flags =
             VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
-        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
         auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = 1;
@@ -1478,7 +1478,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
         frag_out_lib.InitFragmentOutputLibInfo(&link_info);
         frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06647");
-        frag_out_lib.CreateGraphicsPipeline(true, false);
+        frag_out_lib.CreateGraphicsPipeline(false);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1524,7 +1524,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -1548,7 +1548,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_lib.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -1567,13 +1567,13 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
         frag_shader_lib.InitState();
 
         frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.InitState();
-    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(false));
 
     std::array libraries = {
         vertex_input_lib.pipeline_,
@@ -1622,7 +1622,7 @@ TEST_F(NegativeGraphicsLibrary, BindLibraryPipeline) {
     CreatePipelineHelper pipeline(*this);
     pipeline.InitVertexInputLibInfo();
     pipeline.InitState();
-    ASSERT_VK_SUCCESS(pipeline.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(pipeline.CreateGraphicsPipeline(false));
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-03382");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline_);
@@ -1886,7 +1886,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
         pre_raster_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_lib.handle();
-        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(false));
     }
 
     CreatePipelineHelper frag_shader_lib(*this);
@@ -1897,7 +1897,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage.stage_ci);
         frag_shader_lib.InitState();
         frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
-        frag_shader_lib.CreateGraphicsPipeline(true, false);
+        frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
     VkPipeline libraries[4] = {

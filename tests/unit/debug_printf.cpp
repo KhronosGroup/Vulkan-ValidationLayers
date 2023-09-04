@@ -529,7 +529,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
     vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vvl::span<const uint32_t>{vs_spv});
@@ -539,7 +539,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     pre_raster.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
-    pre_raster.CreateGraphicsPipeline(true, false);
+    pre_raster.CreateGraphicsPipeline(false);
 
     const auto render_pass = pre_raster.gp_ci_.renderPass;
     const auto subpass = pre_raster.gp_ci_.subpass;
@@ -550,13 +550,13 @@ TEST_F(NegativeDebugPrintf, GPL) {
     fragment.gp_ci_.renderPass = render_pass;
     fragment.gp_ci_.subpass = subpass;
     fragment.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    fragment.CreateGraphicsPipeline(true, false);
+    fragment.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
     frag_out.gp_ci_.renderPass = render_pass;
     frag_out.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -699,7 +699,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         pre_raster_i64.gp_ci_.layout = pipeline_layout.handle();
         pre_raster_i64.gp_ci_.renderPass = render_pass;
         pre_raster_i64.gp_ci_.subpass = subpass;
-        pre_raster_i64.CreateGraphicsPipeline(true, false);
+        pre_raster_i64.CreateGraphicsPipeline(false);
 
         std::array<VkPipeline, 4> libraries_i64 = {
             vi.pipeline_,
@@ -817,7 +817,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -848,7 +848,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
-    pre_raster.CreateGraphicsPipeline(true, false);
+    pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
         #version 450
@@ -867,11 +867,11 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
     fragment.gp_ci_.layout = fs_layout;
-    fragment.CreateGraphicsPipeline(true, false);
+    fragment.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -976,7 +976,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -1007,7 +1007,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
-    pre_raster.CreateGraphicsPipeline(true, false);
+    pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
         #version 450
@@ -1026,11 +1026,11 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
     fragment.gp_ci_.layout = fs_layout;
-    fragment.CreateGraphicsPipeline(true, false);
+    fragment.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
