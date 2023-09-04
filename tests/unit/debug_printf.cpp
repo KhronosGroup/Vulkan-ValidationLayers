@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 void NegativeDebugPrintf::InitDebugPrintfFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};

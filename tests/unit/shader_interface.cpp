@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");

@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 struct icd_spv_header {
     uint32_t magic = 0x07230203;

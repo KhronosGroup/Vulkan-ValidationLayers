@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(PositivePipelineTopology, PointSizeWriteInFunction) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize in vertex shader function.");

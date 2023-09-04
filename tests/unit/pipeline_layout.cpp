@@ -13,6 +13,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout using more than the physical limit of SetLayouts.");

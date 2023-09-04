@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");

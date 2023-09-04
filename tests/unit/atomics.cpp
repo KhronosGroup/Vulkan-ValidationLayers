@@ -14,6 +14,7 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
