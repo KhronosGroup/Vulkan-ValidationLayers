@@ -91,7 +91,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
 
@@ -167,7 +167,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
 
@@ -280,7 +280,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(true, false);                // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
@@ -440,7 +440,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(true, false);                // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
@@ -566,7 +566,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07955");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
 
@@ -636,7 +636,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-apiVersion-07954");
-    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
 

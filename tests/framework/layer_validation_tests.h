@@ -720,6 +720,7 @@ struct CreatePipelineHelper {
     CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);
     ~CreatePipelineHelper();
 
+    VkPipeline Handle() { return pipeline_; }
     void InitDescriptorSetInfo();
     void InitInputAndVertexInfo();
     void InitMultisampleInfo();
@@ -742,7 +743,7 @@ struct CreatePipelineHelper {
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo();
-    VkResult CreateGraphicsPipeline(bool implicit_destroy = true, bool do_late_bind = true);
+    VkResult CreateGraphicsPipeline(bool do_late_bind = true);
 
     void InitVertexInputLibInfo(void *p_next = nullptr);
 
@@ -825,7 +826,7 @@ struct CreateComputePipelineHelper {
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo();
-    VkResult CreateComputePipeline(bool implicit_destroy = true, bool do_late_bind = true);
+    VkResult CreateComputePipeline(bool do_late_bind = true);
 
     // Helper function to create a simple test case (positive or negative)
     //

@@ -269,35 +269,22 @@ void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {
     }
 }
 
-VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool implicit_destroy, bool do_late_bind) {
-    VkResult err;
+VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool do_late_bind) {
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
-
     PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
         (PFN_vkCreateRayTracingPipelinesNV)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
-    err = vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
-    return err;
+    return vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
 }
 
-VkResult RayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool implicit_destroy, bool do_late_bind) {
-    VkResult err;
+VkResult RayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool do_late_bind) {
     if (do_late_bind) {
         LateBindPipelineInfo(true /*isKHR*/);
     }
-    if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
-        pipeline_ = VK_NULL_HANDLE;
-    }
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
         (PFN_vkCreateRayTracingPipelinesKHR)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesKHR");
-    err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
-    return err;
+    return vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
 }
 
 void GetSimpleGeometryForAccelerationStructureTests(const vk_testing::Device &device, vk_testing::Buffer *vbo,

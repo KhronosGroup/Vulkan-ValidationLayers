@@ -54,8 +54,8 @@ struct RayTracingPipelineHelper {
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo(bool isKHR = false);
-    VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
-    VkResult CreateKHRRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
+    VkResult CreateNVRayTracingPipeline(bool do_late_bind = true);
+    VkResult CreateKHRRayTracingPipeline(bool do_late_bind = true);
     // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &

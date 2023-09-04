@@ -2285,13 +2285,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
-    pre_raster.CreateGraphicsPipeline(true, false);
+    pre_raster.CreateGraphicsPipeline(false);
 
     const auto render_pass = pre_raster.gp_ci_.renderPass;
     const auto subpass = pre_raster.gp_ci_.subpass;
@@ -2301,13 +2301,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     fragment.gp_ci_.layout = pipeline_layout.handle();
     fragment.gp_ci_.renderPass = render_pass;
     fragment.gp_ci_.subpass = subpass;
-    fragment.CreateGraphicsPipeline(true, false);
+    fragment.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
     frag_out.gp_ci_.renderPass = render_pass;
     frag_out.gp_ci_.subpass = subpass;
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,
@@ -2466,7 +2466,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
     vi.InitState();
-    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -2477,7 +2477,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout_vs.handle();
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
-    pre_raster.CreateGraphicsPipeline(true, false);
+    pre_raster.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
         #version 450
@@ -2508,11 +2508,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(1, &fragment_stage.stage_ci);
     fragment.gp_ci_.layout = pipeline_layout_fs.handle();
-    fragment.CreateGraphicsPipeline(true, false);
+    fragment.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out(*this);
     frag_out.InitFragmentOutputLibInfo();
-    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(false));
 
     std::array<VkPipeline, 4> libraries = {
         vi.pipeline_,

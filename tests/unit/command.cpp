@@ -6691,7 +6691,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     depth_pipe.LateBindPipelineInfo();
     depth_pipe.gp_ci_.renderPass = render_pass.handle();
     depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
-    depth_pipe.CreateGraphicsPipeline(true, false);
+    depth_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_pipe(*this);
     stencil_pipe.InitInfo();
@@ -6699,7 +6699,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_pipe.LateBindPipelineInfo();
     stencil_pipe.gp_ci_.renderPass = render_pass.handle();
     stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
-    stencil_pipe.CreateGraphicsPipeline(true, false);
+    stencil_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_disabled_pipe(*this);
     stencil_disabled_pipe.InitInfo();
@@ -6707,7 +6707,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_disabled_pipe.LateBindPipelineInfo();
     stencil_disabled_pipe.gp_ci_.renderPass = render_pass.handle();
     stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
-    stencil_disabled_pipe.CreateGraphicsPipeline(true, false);
+    stencil_disabled_pipe.CreateGraphicsPipeline(false);
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -6721,7 +6721,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_dynamic_pipe.LateBindPipelineInfo();
     stencil_dynamic_pipe.gp_ci_.renderPass = render_pass.handle();
     stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
-    stencil_dynamic_pipe.CreateGraphicsPipeline(true, false);
+    stencil_dynamic_pipe.CreateGraphicsPipeline(false);
 
     VkFramebufferCreateInfo framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
     framebuffer_ci.width = 32;
