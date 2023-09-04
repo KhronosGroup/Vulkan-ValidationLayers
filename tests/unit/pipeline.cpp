@@ -41,7 +41,6 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateComputePipeline();
 
@@ -64,7 +63,6 @@ TEST_F(NegativePipeline, BasicCompute) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
     pipe.CreateComputePipeline();
@@ -94,7 +92,6 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -256,7 +253,6 @@ TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
     {
         // Use helper to create graphics pipeline
         CreatePipelineHelper helper(*this);
-        helper.InitInfo();
         helper.InitState();
         helper.CreateGraphicsPipeline();
 
@@ -413,7 +409,6 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     )glsl";
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.InitInfo();
     cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -1096,11 +1091,9 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
     // Multiple pipeline, middle has missing entrypoint
     {
         CreateComputePipelineHelper pipe_0(*this);  // valid
-        pipe_0.InitInfo();
         pipe_0.InitState();
         pipe_0.LateBindPipelineInfo();
         CreateComputePipelineHelper pipe_1(*this);  // invalid
-        pipe_1.InitInfo();
         pipe_1.cs_ = std::make_unique<VkShaderObj>(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
                                                    SPV_SOURCE_GLSL, nullptr, "foo");
         pipe_1.InitState();
@@ -1177,7 +1170,6 @@ TEST_F(NegativePipeline, NullStagepName) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
     pipe.shader_stages_[0].pName = nullptr;
     pipe.InitState();
@@ -2000,7 +1992,6 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     const VkDescriptorSetLayoutObj ds_layout_combined1(m_device, layout_binding_combined1);
 
     CreateComputePipelineHelper compute_pipe(*this);
-    compute_pipe.InitInfo();
     compute_pipe.InitShaderInfo();
     compute_pipe.InitState();
     compute_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_comp});
@@ -2010,7 +2001,6 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     m_errorMonitor->VerifyFound();
 
     CreatePipelineHelper graphics_pipe(*this);
-    graphics_pipe.InitInfo();
     graphics_pipe.InitShaderInfo();
 
     graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_normal});
@@ -2056,7 +2046,6 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -2427,12 +2416,10 @@ TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper other_pipe(*this);
-    other_pipe.InitInfo();
     other_pipe.InitState();
     other_pipe.CreateGraphicsPipeline();
 
@@ -2512,7 +2499,6 @@ TEST_F(NegativePipeline, DiscardRectangle) {
     discard_rectangle_state.pDiscardRectangles = discard_rectangles.data();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &discard_rectangle_state;
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -2535,7 +2521,6 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXT) {
     VkPipelineColorWriteCreateInfoEXT color_write = LvlInitStruct<VkPipelineColorWriteCreateInfoEXT>();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.cb_ci_.pNext = &color_write;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608");
@@ -2645,7 +2630,6 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     multi_sample_state.minSampleShading = 1.0;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.gp_ci_.pMultisampleState = &multi_sample_state;
     pipe.gp_ci_.renderPass = render_pass.handle();
@@ -2728,7 +2712,6 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     conservative_state.extraPrimitiveOverestimationSize = -1.0f;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_.pNext = &conservative_state;
     pipe.InitState();
 

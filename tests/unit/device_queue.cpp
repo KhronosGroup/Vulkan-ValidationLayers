@@ -330,11 +330,9 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
     VkCommandBufferObj commandBuffer(m_device, &commandPool);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.InitState();
     g_pipe.CreateGraphicsPipeline();
     CreateComputePipelineHelper c_pipe(*this);
-    c_pipe.InitInfo();
     c_pipe.InitState();
     c_pipe.CreateComputePipeline();
 

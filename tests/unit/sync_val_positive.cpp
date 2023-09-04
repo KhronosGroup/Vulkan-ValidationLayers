@@ -90,7 +90,6 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     rpbi.renderArea.extent.height = height;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = render_pass;
     pipe.InitState();
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());

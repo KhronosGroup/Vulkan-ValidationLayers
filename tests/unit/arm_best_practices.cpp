@@ -159,7 +159,6 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     pipe_cb_state_ci.pAttachments = &blend_att;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     pipe.cb_ci_ = pipe_cb_state_ci;
     pipe.InitState();
@@ -218,7 +217,6 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     pipe_ms_state_ci.pSampleMask = NULL;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -364,14 +362,12 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
 
     auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.InitState();
         pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
         pipe.CreateGraphicsPipeline();
 
         // pipeline with primitive restarts enabled
         CreatePipelineHelper pr_pipe(*this);
-        pr_pipe.InitInfo();
         pr_pipe.InitState();
         pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
         pr_pipe.CreateGraphicsPipeline();
@@ -441,7 +437,6 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -563,7 +558,6 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_.depthBiasConstantFactor = 0.0f;
     pipe.rs_state_ci_.depthBiasSlopeFactor = 0.0f;
@@ -656,14 +650,12 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     ds_depth_equal_ci.depthCompareOp = VK_COMPARE_OP_EQUAL;
 
     CreatePipelineHelper pipe_depth_only(*this);
-    pipe_depth_only.InitInfo();
     pipe_depth_only.gp_ci_.pColorBlendState = &cb_depth_only_ci;
     pipe_depth_only.gp_ci_.pDepthStencilState = &ds_depth_only_ci;
     pipe_depth_only.InitState();
     pipe_depth_only.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_depth_equal(*this);
-    pipe_depth_equal.InitInfo();
     pipe_depth_equal.gp_ci_.pColorBlendState = &cb_depth_equal_ci;
     pipe_depth_equal.gp_ci_.pDepthStencilState = &ds_depth_equal_ci;
     pipe_depth_equal.InitState();
@@ -740,7 +732,6 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     CreateComputePipelineHelper pipe(*this);
 
     auto makePipelineWithShader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitInfo();
         pipe.InitState();
         pipe.cp_ci_.stage = stage;
         pipe.dsl_bindings_ = {};
@@ -794,7 +785,6 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     CreateComputePipelineHelper pipe(*this);
 
     auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitInfo();
         pipe.InitState();
         pipe.cp_ci_.stage = stage;
         pipe.dsl_bindings_ = {};
@@ -859,7 +849,6 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
         sampler_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         sampler_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-        pipe.InitInfo();
         pipe.InitState();
         auto ds_layout = std::unique_ptr<VkDescriptorSetLayoutObj>(new VkDescriptorSetLayoutObj(m_device, {sampler_binding}));
         auto pipe_layout = std::unique_ptr<VkPipelineLayoutObj>(new VkPipelineLayoutObj(m_device, {ds_layout.get()}));
@@ -921,10 +910,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[1]));
 
     CreatePipelineHelper graphics_pipeline(*this);
-
-    graphics_pipeline.vs_ = std::make_unique<VkShaderObj>(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    graphics_pipeline.fs_ = std::make_unique<VkShaderObj>(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    graphics_pipeline.InitInfo();
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
     VkDynamicState ds = VK_DYNAMIC_STATE_VIEWPORT;
@@ -1027,11 +1012,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
     CreatePipelineHelper graphics_pipeline(*this);
-
-    graphics_pipeline.vs_ = std::make_unique<VkShaderObj>(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    graphics_pipeline.fs_ = std::make_unique<VkShaderObj>(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    graphics_pipeline.InitInfo();
-
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
     graphics_pipeline.InitState();
@@ -1135,11 +1115,6 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     VkFramebuffer fb = CreateFramebuffer(WIDTH, HEIGHT, image->targetView(FMT), rp.handle());
 
     CreatePipelineHelper graphics_pipeline(*this);
-
-    graphics_pipeline.vs_ = std::make_unique<VkShaderObj>(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    graphics_pipeline.fs_ = std::make_unique<VkShaderObj>(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    graphics_pipeline.InitInfo();
-
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
     graphics_pipeline.InitState();
@@ -1246,11 +1221,6 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), rp.handle()));
 
     CreatePipelineHelper graphics_pipeline(*this);
-
-    graphics_pipeline.vs_ = std::make_unique<VkShaderObj>(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    graphics_pipeline.fs_ = std::make_unique<VkShaderObj>(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    graphics_pipeline.InitInfo();
-
     graphics_pipeline.dsl_bindings_.resize(2);
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     // Tests that we correctly handle weird binding layouts.
@@ -1505,7 +1475,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
     CreatePipelineHelper pipe_all(*this);
-    pipe_all.InitInfo();
     pipe_all.InitState();
     pipe_all.cb_attachments_[0].colorWriteMask = 0xf;
     pipe_all.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -1515,7 +1484,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_all.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_color(*this);
-    pipe_color.InitInfo();
     pipe_color.InitState();
     pipe_color.cb_attachments_[0].colorWriteMask = 0xf;
     pipe_color.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -1523,7 +1491,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_color.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_depth(*this);
-    pipe_depth.InitInfo();
     pipe_depth.InitState();
     pipe_depth.cb_attachments_[0].colorWriteMask = 0;
     pipe_depth.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -1532,7 +1499,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_depth.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_stencil(*this);
-    pipe_stencil.InitInfo();
     pipe_stencil.InitState();
     pipe_stencil.cb_attachments_[0].colorWriteMask = 0;
     pipe_stencil.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};

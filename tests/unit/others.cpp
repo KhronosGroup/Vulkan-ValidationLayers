@@ -733,7 +733,6 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
                                                &tessellationDomainOriginStateInfo, 0, 3};
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2150,7 +2149,6 @@ TEST_F(VkLayerTest, ValidateStride) {
                                          &buffer_memory_barrier, 0, nullptr);
 
         CreatePipelineHelper helper(*this);
-        helper.InitInfo();
         helper.InitState();
         helper.CreateGraphicsPipeline();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2341,7 +2339,6 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08741");
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();

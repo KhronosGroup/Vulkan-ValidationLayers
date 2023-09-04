@@ -28,49 +28,53 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    CreateComputePipelineHelper pipe(*this);
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06927");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06927");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06928");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06928");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06929");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06929");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
@@ -89,7 +93,6 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
 
     CreateComputePipelineHelper pipe(*this);
 
-    pipe.InitInfo();
     pipe.InitState();
     pipe.LateBindPipelineInfo();
 
@@ -124,7 +127,6 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
 
     CreateComputePipelineHelper pipe(*this);
 
-    pipe.InitInfo();
     pipe.InitState();
     pipe.LateBindPipelineInfo();
 
@@ -182,39 +184,41 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    CreateComputePipelineHelper pipe(*this);
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06931");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06931");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06932");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.InitState();
+        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
+        pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06932");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-
-    pipe.InitInfo();
-    pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
-    pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
-    pipe.cp_ci_.pNext = &pipeline_robustness_info;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06933");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06933");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 // Need to fix check to check if feature is exposed
@@ -253,12 +257,8 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsuppor
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     CreateComputePipelineHelper pipe(*this);
-
-    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info;
-
-    pipe.InitInfo();
     pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -290,7 +290,6 @@ TEST_F(NegativeRobustness, PipelineRobustnessRobustImageAccessNotExposed) {
     }
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;

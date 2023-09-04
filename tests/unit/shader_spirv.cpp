@@ -1300,7 +1300,6 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     stage_ci.pSpecializationInfo = &specialization_info;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
@@ -1375,7 +1374,6 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
     pipe.InitState();
@@ -1386,7 +1384,6 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
     entry.size = sizeof(decltype(data));
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
-    pipe.InitState();
     pipe.CreateComputePipeline();
 }
 
@@ -1719,7 +1716,6 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device);
@@ -1759,7 +1755,6 @@ TEST_F(NegativeShaderSpirv, NonSemanticInfoEnabled) {
         )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});

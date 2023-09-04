@@ -42,7 +42,6 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
     const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
@@ -141,7 +140,6 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -189,7 +187,6 @@ TEST_F(NegativeShaderPushConstants, Range) {
     const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
@@ -297,7 +294,6 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ci_ = pipeline_layout_info;
     g_pipe.InitState();
@@ -307,7 +303,6 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     vk_testing::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe_small_range(*this);
-    g_pipe_small_range.InitInfo();
     g_pipe_small_range.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe_small_range.pipeline_layout_ci_ = pipeline_layout_info;
     g_pipe_small_range.InitState();
@@ -441,10 +436,8 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ci_ = pipeline_layout_info;
-    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07987");
     pipe.CreateGraphicsPipeline();
@@ -452,7 +445,8 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
 
     // Make sure Vertex is ok when used
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pipe.InitState();
+    vk_testing::PipelineLayout pipeline_layout_good(*m_device, pipeline_layout_info);
+    pipe.gp_ci_.layout = pipeline_layout_good.handle();
     pipe.CreateGraphicsPipeline();
 }
 
@@ -492,7 +486,6 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
     pipe.InitState();

@@ -536,7 +536,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vvl::span<const uint32_t>{vs_spv});
 
     CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
@@ -546,7 +546,9 @@ TEST_F(NegativeDebugPrintf, GPL) {
     const auto subpass = pre_raster.gp_ci_.subpass;
 
     CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(0, nullptr);
+    fragment.InitFragmentLibInfo(nullptr);
+    fragment.gp_ci_.stageCount = 0;
+    fragment.shader_stages_.clear();
     fragment.gp_ci_.layout = pipeline_layout.handle();
     fragment.gp_ci_.renderPass = render_pass;
     fragment.gp_ci_.subpass = subpass;
@@ -695,7 +697,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         vk_testing::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv);
 
         CreatePipelineHelper pre_raster_i64(*this);
-        pre_raster_i64.InitPreRasterLibInfo(1, &pre_raster_i64_stage.stage_ci);
+        pre_raster_i64.InitPreRasterLibInfo(&pre_raster_i64_stage.stage_ci);
         pre_raster_i64.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
         pre_raster_i64.gp_ci_.layout = pipeline_layout.handle();
         pre_raster_i64.gp_ci_.renderPass = render_pass;
@@ -845,7 +847,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
@@ -866,7 +868,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+    fragment.InitFragmentLibInfo(&fs_stage.stage_ci);
     fragment.gp_ci_.layout = fs_layout;
     fragment.CreateGraphicsPipeline(false);
 
@@ -1004,7 +1006,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = vs_layout;
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
@@ -1025,7 +1027,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+    fragment.InitFragmentLibInfo(&fs_stage.stage_ci);
     fragment.gp_ci_.layout = fs_layout;
     fragment.CreateGraphicsPipeline(false);
 

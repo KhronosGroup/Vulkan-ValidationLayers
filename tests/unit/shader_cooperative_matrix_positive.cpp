@@ -76,7 +76,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
@@ -188,7 +187,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     replace(css, "%type_R%", get_type_name(props.ResultType));
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr);
     pipe.InitState();

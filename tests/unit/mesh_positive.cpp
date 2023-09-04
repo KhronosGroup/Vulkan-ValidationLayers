@@ -49,7 +49,6 @@ TEST_F(PositiveMesh, BasicUsage) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     pipe.gp_ci_.pVertexInputState = nullptr;
@@ -110,7 +109,6 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
-    helper.InitInfo();
     helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
@@ -162,7 +160,6 @@ TEST_F(PositiveMesh, PointSize) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
-    helper.InitInfo();
     helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.

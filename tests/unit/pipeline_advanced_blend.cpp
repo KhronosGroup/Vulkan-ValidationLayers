@@ -139,7 +139,6 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     color_blend_advanced.srcPremultiplied = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.cb_ci_.pNext = &color_blend_advanced;
     if (!blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
@@ -179,7 +178,6 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
 
     VkPipelineColorBlendAttachmentState attachment_state = {};
     attachment_state.blendEnable = VK_TRUE;

@@ -960,7 +960,6 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.InitInfo();
     helper.InitState();
     helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
     helper.gp_ci_.renderPass = render_pass.handle();
@@ -1075,7 +1074,6 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     ds_state.front.writeMask = 0x1;
     ds_state.back.writeMask = 0x1;
     CreatePipelineHelper helper(*this);
-    helper.InitInfo();
     helper.InitState();
     helper.gp_ci_.pDepthStencilState = &ds_state;
     helper.gp_ci_.renderPass = render_pass.handle();

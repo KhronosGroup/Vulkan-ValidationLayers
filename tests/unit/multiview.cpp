@@ -43,7 +43,6 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
         GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
     }
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -291,7 +290,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     {
         // No need to create individual pipelines for each subpass since we are checking no bound pipeline
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
@@ -324,7 +322,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     {
         // Pipeline for subpass 0
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
 
         VkDynamicState dyn_states = VK_DYNAMIC_STATE_LINE_WIDTH;
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
@@ -392,7 +389,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         vk_testing::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vk_testing::DescriptorSetLayout *>{});
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
         pipe.InitState();
@@ -467,7 +463,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj const fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
         pipe.InitState();
@@ -540,7 +535,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.vi_ci_.vertexBindingDescriptionCount = 1;
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
@@ -621,7 +615,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.vi_ci_.vertexBindingDescriptionCount = 1;
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
@@ -756,7 +749,6 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     render_pass_begin_info.renderArea.extent.height = 32;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -1333,7 +1325,6 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.gp_ci_.renderPass = render_pass.handle();
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
@@ -1363,7 +1354,6 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.gp_ci_.renderPass = render_pass.handle();
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
@@ -1403,7 +1393,6 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     pipeline_rendering_info.viewMask = 0x1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.CreateGraphicsPipeline();

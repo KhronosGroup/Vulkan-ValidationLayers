@@ -452,7 +452,6 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     pipe_ms_state_ci.pSampleMask = NULL;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -769,7 +768,6 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     vi_state_ci.pVertexAttributeDescriptions = attributes.data();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.vi_ci_ = vi_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -900,13 +898,11 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-RenderPass-inefficient-clear");
 
     CreatePipelineHelper pipe_masked(*this);
-    pipe_masked.InitInfo();
     pipe_masked.InitState();
     pipe_masked.cb_attachments_[0].colorWriteMask = 0;
     pipe_masked.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_writes(*this);
-    pipe_writes.InitInfo();
     pipe_writes.InitState();
     pipe_writes.cb_attachments_[0].colorWriteMask = 0xf;
     pipe_writes.CreateGraphicsPipeline();
@@ -1251,7 +1247,6 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_.depthBiasConstantFactor = 1.0f;
     pipe.InitState();
@@ -1356,7 +1351,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
@@ -2093,7 +2087,6 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitDescriptorSetInfo();
     pipe.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;

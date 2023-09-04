@@ -51,7 +51,6 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -113,7 +112,6 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -268,7 +266,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -358,7 +355,6 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -469,7 +465,6 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     secondary.end();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -493,12 +488,10 @@ TEST_F(NegativeTransformFeedback, BindPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe_one(*this);
-    pipe_one.InitInfo();
     pipe_one.InitState();
     pipe_one.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_two(*this);
-    pipe_two.InitInfo();
     pipe_two.InitState();
     pipe_two.CreateGraphicsPipeline();
 
@@ -523,7 +516,6 @@ TEST_F(NegativeTransformFeedback, EndRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -556,7 +548,6 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
 
     {
         CreatePipelineHelper pipeline(*this);
-        pipeline.InitInfo();
         pipeline.InitState();
         pipeline.CreateGraphicsPipeline();
 
@@ -652,7 +643,6 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto rasterization_state_stream_ci = LvlInitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
     pipe.InitState();
@@ -1079,7 +1069,6 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto rasterization_state_stream_ci = LvlInitStruct<VkPipelineRasterizationStateStreamCreateInfoEXT>();
     rasterization_state_stream_ci.rasterizationStream = transfer_feedback_props.maxTransformFeedbackStreams;
     pipe.rs_state_ci_.pNext = &rasterization_state_stream_ci;
@@ -1146,7 +1135,6 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     vk_testing::Framebuffer fb(*m_device, fbci);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -1174,7 +1162,6 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 

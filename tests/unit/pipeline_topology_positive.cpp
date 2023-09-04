@@ -26,7 +26,6 @@ TEST_F(PositivePipelineTopology, PointSizeWriteInFunction) {
     VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     {
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         pipe.InitState();
@@ -52,7 +51,6 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
     VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
     // Set Input Assembly to TOPOLOGY POINT LIST
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -171,7 +169,6 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
 
     {
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
         // Set Input Assembly to TOPOLOGY POINT LIST
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -313,7 +310,6 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
         };
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -381,7 +377,6 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.InitState();
@@ -441,7 +436,6 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     dyn_state_ci.pDynamicStates = &dyn_state;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_.emplace_back(gs.GetStageCreateInfo());
@@ -501,7 +495,6 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;

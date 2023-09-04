@@ -79,7 +79,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSpecInfo) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
@@ -133,7 +132,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRUnsupportedStage) {
     )glsl";
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
@@ -194,7 +192,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRParametersMatchProperties) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -256,7 +253,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
@@ -332,7 +328,6 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRSameScope) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
@@ -475,7 +470,6 @@ TEST_F(NegativeShaderCooperativeMatrix, DISABLED_MatchSizeWithProperties) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.cs_ = std::make_unique<VkShaderObj>(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
                                                  SPV_SOURCE_ASM, nullptr);
         pipe.InitState();
@@ -574,7 +568,6 @@ TEST_F(NegativeShaderCooperativeMatrix, DISABLED_KHRSignedCheck) {
         const char *css = csSourceStr.c_str();
         CreateComputePipelineHelper pipe(*this);
 
-        pipe.InitInfo();
         pipe.cs_ =
             std::make_unique<VkShaderObj>(this, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr);
         pipe.InitState();

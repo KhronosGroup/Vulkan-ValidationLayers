@@ -662,7 +662,6 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         VkShaderObj fs_fail(this, fsSource_fail, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
-        g_pipe.InitInfo();
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp.handle();
@@ -684,7 +683,6 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
-        g_pipe.InitInfo();
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp.handle();
@@ -828,14 +826,12 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     CreatePipelineHelper pipe1(*this);
-    pipe1.InitInfo();
     pipe1.gp_ci_.renderPass = render_pass.handle();
     pipe1.gp_ci_.subpass = 0;
     pipe1.InitState();
     pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
-    pipe2.InitInfo();
     pipe2.gp_ci_.renderPass = render_pass.handle();
     pipe2.gp_ci_.subpass = 1;
     pipe2.InitState();

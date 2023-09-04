@@ -109,7 +109,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -164,7 +163,6 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     dynamic_create_info.dynamicStateCount = 4;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cb_ci_.pAttachments = nullptr;
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
     pipe.InitState();

@@ -114,7 +114,6 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_robustness_features));
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
