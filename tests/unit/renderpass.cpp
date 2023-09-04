@@ -3732,7 +3732,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     ms_state.alphaToOneEnable = VK_FALSE;
 
     CreatePipelineHelper pipe_helper(*this);
-    pipe_helper.InitInfo();
     pipe_helper.InitState();
     pipe_helper.gp_ci_.renderPass = test_rp.handle();
     pipe_helper.pipe_ms_state_ci_ = ms_state;
@@ -3850,7 +3849,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     // Positive Test: Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with
     // VK_SAMPLE_COUNT_2_BIT
     CreatePipelineHelper dr_pipe_helper(*this);
-    dr_pipe_helper.InitInfo();
     dr_pipe_helper.InitState();
     dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
     dr_pipe_helper.pipe_ms_state_ci_ = ms_state;
@@ -3866,7 +3864,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
 
     // Positive Test: Same as previous test but using render pass and should not get error 07284
     CreatePipelineHelper test_pipe(*this);
-    test_pipe.InitInfo();
     test_pipe.InitState();
     test_pipe.pipe_ms_state_ci_ = ms_state;
     test_pipe.CreateGraphicsPipeline();

@@ -379,7 +379,6 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
 
     const auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = render_pass;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.InitState();
@@ -1520,7 +1519,6 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkEvent event_handle = event.handle();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
@@ -1610,7 +1608,6 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkShaderObj fs(this, csSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.InitState();
     g_pipe.vi_ci_.pVertexBindingDescriptions = &VertexInputBindingDescription;
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -2084,18 +2081,15 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     ds_ci.back = stencil;
 
     CreatePipelineHelper g_pipe_ds(*this), g_pipe_dp(*this), g_pipe_st(*this);
-    g_pipe_ds.InitInfo();
     g_pipe_ds.gp_ci_.renderPass = rp_ds.handle();
     g_pipe_ds.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe_ds.InitState();
     ASSERT_VK_SUCCESS(g_pipe_ds.CreateGraphicsPipeline());
-    g_pipe_dp.InitInfo();
     g_pipe_dp.gp_ci_.renderPass = rp_dp.handle();
     ds_ci.stencilTestEnable = VK_FALSE;
     g_pipe_dp.gp_ci_.pDepthStencilState = &ds_ci;
     g_pipe_dp.InitState();
     ASSERT_VK_SUCCESS(g_pipe_dp.CreateGraphicsPipeline());
-    g_pipe_st.InitInfo();
     g_pipe_st.gp_ci_.renderPass = rp_st.handle();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.stencilTestEnable = VK_TRUE;
@@ -2344,7 +2338,6 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     vk_testing::Framebuffer fb1(*m_device, fbci);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.gp_ci_.renderPass = rp.handle();
 
     VkStencilOpState stencil = {};
@@ -2654,7 +2647,6 @@ struct CreateRenderPassHelper {
     }
 
     void InitPipelineHelper(CreatePipelineHelper& g_pipe) {
-        g_pipe.InitInfo();
         g_pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = render_pass->handle();
@@ -2689,7 +2681,6 @@ struct SyncTestPipeline {
           sampler() {}
     void InitState() {
         sampler.init(*test.DeviceObj(), sampler_info);
-        g_pipe.InitInfo();
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = rp;
@@ -3084,13 +3075,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         vk_testing::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
-        g_pipe_0.InitInfo();
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
         ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.InitInfo();
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
@@ -3167,13 +3156,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         vk_testing::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
-        g_pipe_0.InitInfo();
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
         ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.InitInfo();
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
@@ -3252,13 +3239,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         vk_testing::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
-        g_pipe_0.InitInfo();
         g_pipe_0.gp_ci_.renderPass = rp.handle();
         g_pipe_0.InitState();
         ASSERT_VK_SUCCESS(g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.InitInfo();
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
@@ -4058,7 +4043,6 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.InitState();
@@ -4278,7 +4262,6 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkShaderObj fs(this, csSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.InitState();
     g_pipe.vi_ci_.pVertexBindingDescriptions = &VertexInputBindingDescription;
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;

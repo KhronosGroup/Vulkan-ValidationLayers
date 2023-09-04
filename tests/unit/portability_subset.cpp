@@ -254,7 +254,6 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_FALSE};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
@@ -290,7 +289,6 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     VkVertexInputBindingDescription vertex_desc{
         0,                            // binding
         vertex_stride,                // stride
@@ -327,7 +325,6 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     VkVertexInputBindingDescription vertex_desc{
         0,                            // binding
         4,                            // stride
@@ -391,7 +388,6 @@ TEST_F(NegativePortabilitySubset, RasterizationState) {
     m_renderPass_info = rp_info;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_.polygonMode = VK_POLYGON_MODE_POINT;
     pipe.InitState();
 
@@ -424,7 +420,6 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     //  front.reference != back.reference should trigger 04453
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
@@ -457,7 +452,6 @@ TEST_F(NegativePortabilitySubset, ColorBlendAttachmentState) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     pipe.InitState();
 
@@ -562,7 +556,6 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.ia_ci_ = iasci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.tess_ci_ = tsci;
@@ -629,7 +622,6 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         VkShaderObj fs_obj(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper raster_pipe(*this);
-        raster_pipe.InitInfo();
         iasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         raster_pipe.ia_ci_ = iasci;
         raster_pipe.ia_ci_ = iasci;

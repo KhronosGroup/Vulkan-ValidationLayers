@@ -982,7 +982,6 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &discard_rectangle_state;
     pipe.gp_ci_.pDynamicState = &dyn_state_ci;
     pipe.InitState();

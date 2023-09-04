@@ -585,7 +585,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         stage_ci.module = VK_NULL_HANDLE;
         stage_ci.pName = "main";
 
-        pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         pre_raster_lib.InitState();
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
@@ -609,7 +609,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         m_errorMonitor->VerifyFound();
 
         CreatePipelineHelper protected_pre_raster_lib(*this);
-        protected_pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        protected_pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         protected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         protected_pre_raster_lib.InitState();
         protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
@@ -622,7 +622,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         m_errorMonitor->VerifyFound();
 
         CreatePipelineHelper unprotected_pre_raster_lib(*this);
-        unprotected_pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        unprotected_pre_raster_lib.InitPreRasterLibInfo(&stage_ci);
         unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         unprotected_pre_raster_lib.InitState();
         unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
@@ -691,7 +691,6 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -946,7 +945,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this, 2u);
-    g_pipe.InitInfo();
     g_pipe.gp_ci_.renderPass = render_pass.handle();
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

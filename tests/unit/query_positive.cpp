@@ -98,7 +98,6 @@ TEST_F(PositiveQuery, BasicQuery) {
     vk_testing::QueryPool query_pool(*m_device, query_pool_info);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -175,7 +174,6 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     ASSERT_VK_SUCCESS(res);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 

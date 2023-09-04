@@ -238,7 +238,6 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -2077,7 +2076,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
         pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.gp_ci_.pNext = &pipeline_rendering_info;
         pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
         pipe.InitState();
@@ -2113,7 +2111,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
         pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.gp_ci_.pNext = &pipeline_rendering_info;
         pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
         pipe.InitState();
@@ -2974,7 +2971,6 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineWithAttachmentSampleCount
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
@@ -3004,7 +3000,6 @@ TEST_F(NegativeDynamicRendering, CreatePipelineWithoutFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
 
@@ -3392,7 +3387,6 @@ TEST_F(NegativeDynamicRendering, ShaderLayerBuiltIn) {
     pipeline_rendering_info.viewMask = 0x1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3441,7 +3435,6 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3464,7 +3457,6 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentFormat) {
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
@@ -3508,7 +3500,6 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
 
     CreatePipelineHelper lib(*this);
     lib.cb_ci_ = color_blend_state_create_info;
-    lib.InitInfo();
     lib.gp_ci_.pNext = &library_create_info;
     lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib.InitState();
@@ -3520,7 +3511,6 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     pipeline_rendering_info.viewMask = 0x1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &library_create_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.shader_stages_ = {pipe.fs_->GetStageCreateInfo()};
@@ -3545,7 +3535,6 @@ TEST_F(NegativeDynamicRendering, AttachmentSampleCount) {
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>(&samples_info);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
@@ -3605,7 +3594,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
 
     CreatePipelineHelper lib2(*this);
     lib2.cb_ci_ = color_blend_state_create_info;
-    lib2.InitFragmentLibInfo(1, &fs_stage_ci, &pipeline_rendering_info);
+    lib2.InitFragmentLibInfo(&fs_stage_ci, &pipeline_rendering_info);
     lib2.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib2.ds_ci_ = ds_ci;
     lib2.InitState();
@@ -3668,7 +3657,7 @@ TEST_F(NegativeDynamicRendering, LibraryRenderPass) {
     fs_stage_ci.pName = "main";
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitFragmentLibInfo(1, &fs_stage_ci, &library_create_info);
+    pipe.InitFragmentLibInfo(&fs_stage_ci, &library_create_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
     // If not Frag Output with frag shader, need depth/stencil struct
@@ -3693,7 +3682,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingMultisampleState) {
 
     {
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.gp_ci_.pMultisampleState = nullptr;
         pipe.InitState();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631");
@@ -3704,7 +3692,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingMultisampleState) {
 
     {
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
         pipe.gp_ci_.pMultisampleState = nullptr;
         pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
@@ -4050,7 +4037,6 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentFormat) {
     pipeline_rendering_info.pColorAttachmentFormats = &format;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
@@ -5042,7 +5028,6 @@ TEST_F(NegativeDynamicRendering, Pipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -6203,7 +6188,6 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
     pipeline_rendering_info.pColorAttachmentFormats = &format;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -6735,7 +6719,6 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     dynamic_create_info.dynamicStateCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
     pipe.dyn_state_ci_ = dynamic_create_info;
     pipe.InitState();
@@ -6820,7 +6803,6 @@ TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
     if (::testing::Test::IsSkipped()) return;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pMultisampleState = nullptr;
     pipe.InitState();

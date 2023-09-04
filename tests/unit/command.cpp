@@ -839,7 +839,6 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -868,7 +867,6 @@ TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -1032,7 +1030,6 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.CreateGraphicsPipeline();
@@ -1077,7 +1074,6 @@ TEST_F(NegativeCommand, DrawTimeImageMultisampleMismatchWithPipeline) {
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.CreateGraphicsPipeline();
@@ -1121,7 +1117,6 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
     pipe.CreateGraphicsPipeline();
@@ -4768,7 +4763,6 @@ TEST_F(NegativeCommand, MultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4856,7 +4850,6 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4906,7 +4899,6 @@ TEST_F(NegativeCommand, MultiDrawWholeSizeMaintenance5) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4950,7 +4942,6 @@ TEST_F(NegativeCommand, MultiDrawMaintenance5Mixed) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4996,7 +4987,6 @@ TEST_F(NegativeCommand, MultiDrawFeatures) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5035,7 +5025,6 @@ TEST_F(NegativeCommand, IndirectDraw) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -5103,7 +5092,6 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     }
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5139,7 +5127,6 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -5233,7 +5220,6 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -5348,7 +5334,6 @@ TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5696,7 +5681,6 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
@@ -5789,7 +5773,6 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
@@ -5978,7 +5961,6 @@ TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.cb_attachments_[0].blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
@@ -6663,7 +6645,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_disabled_state_info.back.writeMask = 0;
 
     CreatePipelineHelper depth_pipe(*this);
-    depth_pipe.InitInfo();
     depth_pipe.InitState();
     depth_pipe.LateBindPipelineInfo();
     depth_pipe.gp_ci_.renderPass = render_pass.handle();
@@ -6671,7 +6652,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     depth_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_pipe(*this);
-    stencil_pipe.InitInfo();
     stencil_pipe.InitState();
     stencil_pipe.LateBindPipelineInfo();
     stencil_pipe.gp_ci_.renderPass = render_pass.handle();
@@ -6679,7 +6659,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_disabled_pipe(*this);
-    stencil_disabled_pipe.InitInfo();
     stencil_disabled_pipe.InitState();
     stencil_disabled_pipe.LateBindPipelineInfo();
     stencil_disabled_pipe.gp_ci_.renderPass = render_pass.handle();
@@ -6692,7 +6671,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper stencil_dynamic_pipe(*this);
-    stencil_dynamic_pipe.InitInfo();
     stencil_dynamic_pipe.dyn_state_ci_ = dyn_state_ci;
     stencil_dynamic_pipe.InitState();
     stencil_dynamic_pipe.LateBindPipelineInfo();

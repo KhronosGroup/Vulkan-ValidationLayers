@@ -352,7 +352,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -403,7 +402,6 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -448,7 +446,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
 
     {
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
@@ -468,7 +465,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         void main() {}
         )glsl";
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
@@ -489,7 +485,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         void main() {}
         )glsl";
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
@@ -505,7 +500,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         subgroup_properties.maxSubgroupSize >= 16) {
         subgroup_size_control.requiredSubgroupSize = 10;  // non-power of 2
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
@@ -519,7 +513,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     if (subgroup_properties.minSubgroupSize > 1) {
         subgroup_size_control.requiredSubgroupSize = 1;  // below min
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
@@ -533,7 +526,6 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     {
         subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2;  // above max
         CreateComputePipelineHelper cs_pipeline(*this);
-        cs_pipeline.InitInfo();
         cs_pipeline.InitState();
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
@@ -580,7 +572,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesNotEnabled) {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.InitState();
     pipe.LateBindPipelineInfo();
@@ -635,7 +626,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
     stage_ci.pName = "main";
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
@@ -688,7 +678,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
     stage_ci.pName = "main";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.cp_ci_.stage = stage_ci;
     pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
@@ -742,7 +731,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.shader_stages_[0].flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     pipe.InitState();
@@ -799,7 +787,6 @@ TEST_F(NegativeSubgroup, SubgroupUniformControlFlow) {
         )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
@@ -858,7 +845,6 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.InitState();
         pipe.LateBindPipelineInfo();
@@ -885,7 +871,6 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
         )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.InitState();
         pipe.LateBindPipelineInfo();
@@ -912,7 +897,6 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.LateBindPipelineInfo();
     pipe.cp_ci_.stage.pNext = &subgroup_size_control;

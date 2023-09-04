@@ -62,7 +62,6 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -100,7 +99,6 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {
         VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
         VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
@@ -147,7 +145,6 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     vi_ci.vertexAttributeDescriptionCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -211,7 +208,6 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT};
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -291,7 +287,6 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     discard_rect_ci.pDiscardRectangles = discard_rectangles.data();
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.gp_ci_.pNext = &discard_rect_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -327,7 +322,6 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
 
     // Create a render pass without any color attachments
@@ -404,7 +398,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
@@ -441,7 +434,6 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT};
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
@@ -486,7 +478,6 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
@@ -495,7 +486,6 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_no_dynamic(*this);
-    pipe_no_dynamic.InitInfo();
     pipe_no_dynamic.InitState();
     pipe_no_dynamic.CreateGraphicsPipeline();
 
@@ -519,7 +509,6 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LINE_WIDTH, VK_DYNAMIC_STATE_BLEND_CONSTANTS};
 
     CreatePipelineHelper pipe_line(*this);
-    pipe_line.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_states[0];
@@ -528,7 +517,6 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     pipe_line.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_blend(*this);
-    pipe_blend.InitInfo();
     dyn_state_ci.pDynamicStates = &dyn_states[1];
     pipe_blend.dyn_state_ci_ = dyn_state_ci;
     pipe_blend.InitState();
@@ -565,7 +553,6 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -839,7 +826,6 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.pipe_ms_state_ci_ = ms_state_ci;
@@ -872,7 +858,6 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();

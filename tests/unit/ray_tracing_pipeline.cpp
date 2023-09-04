@@ -994,7 +994,6 @@ TEST_F(NegativeRayTracingPipeline, BindPoint) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -1135,7 +1134,6 @@ TEST_F(NegativeRayTracingPipeline, PipelineType) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateComputePipeline();
 

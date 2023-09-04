@@ -42,7 +42,6 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
                                                  "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-caches");
         }
         CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
         pipeline_Array[i] = pipe.pipeline_;
@@ -235,7 +234,6 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
                                          "UNASSIGNED-BestPractices-CreatePipelines-AvoidPrimitiveRestart");
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.ia_ci_.primitiveRestartEnable = true;
     pipe.CreateGraphicsPipeline();
@@ -266,7 +264,6 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     dynamic_state_info.pDynamicStates = dynamic_states_array;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.dyn_state_ci_ = dynamic_state_info;
     pipe.CreateGraphicsPipeline();
@@ -738,7 +735,6 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     VkBufferObj vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -796,7 +792,6 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
     CreateComputePipelineHelper pipe(*this);
 
     auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
-        pipe.InitInfo();
         pipe.InitState();
         pipe.cp_ci_.stage = stage;
         pipe.dsl_bindings_ = {};

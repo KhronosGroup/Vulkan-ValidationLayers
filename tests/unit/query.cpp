@@ -2044,7 +2044,6 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_ = rs_ci;
     // Rasterization discard enable prohibits fragment shader.
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
@@ -2113,7 +2112,6 @@ TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     rasterization_streams.rasterizationStream = 1;
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.rs_state_ci_.pNext = &rasterization_streams;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();

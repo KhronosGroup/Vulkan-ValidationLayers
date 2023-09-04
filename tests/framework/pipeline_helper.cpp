@@ -14,7 +14,9 @@
 #include "pipeline_helper.h"
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count)
-    : cb_attachments_(color_attachments_count), layer_test_(test) {}
+    : cb_attachments_(color_attachments_count), layer_test_(test) {
+    InitInfo();
+}
 
 CreatePipelineHelper::~CreatePipelineHelper() {
     VkDevice device = layer_test_.device();
@@ -182,10 +184,13 @@ void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
     gp_ci_.pVertexInputState = &vi_ci_;
     gp_ci_.pInputAssemblyState = &ia_ci_;
 
+    gp_ci_.stageCount = 0;
+    shader_stages_.clear();
+
     InitPipelineCacheInfo();
 }
 
-void CreatePipelineHelper::InitPreRasterLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
     InitDescriptorSetInfo();
     InitInputAndVertexInfo();
     InitMultisampleInfo();
@@ -209,13 +214,13 @@ void CreatePipelineHelper::InitPreRasterLibInfo(uint32_t count, const VkPipeline
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
 
-    gp_ci_.stageCount = count;
+    gp_ci_.stageCount = 1;  // default is just the Vertex shader
     gp_ci_.pStages = info;
 
     InitPipelineCacheInfo();
 }
 
-void CreatePipelineHelper::InitFragmentLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
     InitDescriptorSetInfo();
     InitInputAndVertexInfo();
     InitMultisampleInfo();
@@ -242,7 +247,7 @@ void CreatePipelineHelper::InitFragmentLibInfo(uint32_t count, const VkPipelineS
     // TODO if renderPass is null, MS info is not needed
     gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
 
-    gp_ci_.stageCount = count;
+    gp_ci_.stageCount = 1;  // default is just the Fragment shader
     gp_ci_.pStages = info;
 
     InitPipelineCacheInfo();
@@ -272,6 +277,9 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     // otherwise needs to be shared across libraries in the same executable pipeline
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
+
+    gp_ci_.stageCount = 0;
+    shader_stages_.clear();
 
     InitPipelineCacheInfo();
 }
@@ -324,7 +332,7 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind) {
     return vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) { InitInfo(); }
 
 CreateComputePipelineHelper::~CreateComputePipelineHelper() {
     VkDevice device = layer_test_.device();
@@ -409,7 +417,7 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
     return vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
-RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) {}
+RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) { InitInfo(); }
 RayTracingPipelineHelper::~RayTracingPipelineHelper() {
     VkDevice device = layer_test_.device();
     if (pipeline_cache_ != VK_NULL_HANDLE) {

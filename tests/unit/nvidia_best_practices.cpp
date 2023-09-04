@@ -600,14 +600,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
 
     CreatePipelineHelper vsPipe(*this);
-    vsPipe.InitInfo();
     vsPipe.shader_stages_ = {vs.GetStageCreateInfo()};
     vsPipe.InitState();
     vsPipe.gp_ci_.pNext = &pipeline_rendering_info;
     vsPipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper vgsPipe(*this);
-    vgsPipe.InitInfo();
     vgsPipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo()};
     vgsPipe.InitState();
     vgsPipe.gp_ci_.pNext = &pipeline_rendering_info;

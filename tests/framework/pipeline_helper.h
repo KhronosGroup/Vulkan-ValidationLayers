@@ -78,15 +78,17 @@ struct CreatePipelineHelper {
 
     template <typename StageContainer>
     void InitPreRasterLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
-        InitPreRasterLibInfo(static_cast<uint32_t>(stages.size()), stages.data(), p_next);
+        InitPreRasterLibInfo(stages.data(), p_next);
+        gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
     }
-    void InitPreRasterLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+    void InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
 
     template <typename StageContainer>
     void InitFragmentLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
-        InitFragmentLibInfo(static_cast<uint32_t>(stages.size()), stages.data(), p_next);
+        InitFragmentLibInfo(stages.data(), p_next);
+        gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
     }
-    void InitFragmentLibInfo(uint32_t count, const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+    void InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
 
     void InitFragmentOutputLibInfo(void *p_next = nullptr);
 
@@ -97,7 +99,6 @@ struct CreatePipelineHelper {
     template <typename Test, typename OverrideFunc, typename ErrorContainer>
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const ErrorContainer &errors) {
         CreatePipelineHelper helper(test);
-        helper.InitInfo();
         info_override(helper);
         helper.InitState();
 
@@ -164,7 +165,6 @@ struct CreateComputePipelineHelper {
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors,
                             bool positive_test = false) {
         CreateComputePipelineHelper helper(test);
-        helper.InitInfo();
         info_override(helper);
         // Allow lambda to decide if to skip trying to compile pipeline to prevent crashing
         if (helper.override_skip_) {
@@ -239,7 +239,6 @@ struct RayTracingPipelineHelper {
     static void OneshotTest(Test& test, const OverrideFunc& info_override, const std::vector<Error>& errors,
                             const VkFlags flags = kErrorBit) {
         RayTracingPipelineHelper helper(test);
-        helper.InitInfo();
         info_override(helper);
         helper.InitState();
 
@@ -256,7 +255,6 @@ struct RayTracingPipelineHelper {
     template <typename Test, typename OverrideFunc>
     static void OneshotPositiveTest(Test& test, const OverrideFunc& info_override, const VkFlags message_flag_mask = kErrorBit) {
         RayTracingPipelineHelper helper(test);
-        helper.InitInfo();
         info_override(helper);
         helper.InitState();
 

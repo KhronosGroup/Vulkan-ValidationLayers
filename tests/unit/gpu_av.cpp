@@ -2061,7 +2061,6 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
@@ -2140,7 +2139,6 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     indirect_buffer.memory().unmap();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
     pipe.InitState();
     pipe.CreateComputePipeline();
 
@@ -2289,7 +2287,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
     pre_raster.CreateGraphicsPipeline(false);
@@ -2298,7 +2296,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     const auto subpass = pre_raster.gp_ci_.subpass;
 
     CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(0, nullptr);
+    fragment.InitFragmentLibInfo(nullptr);
+    fragment.gp_ci_.stageCount = 0;
+    fragment.shader_stages_.clear();
     fragment.gp_ci_.layout = pipeline_layout.handle();
     fragment.gp_ci_.renderPass = render_pass;
     fragment.gp_ci_.subpass = subpass;
@@ -2474,7 +2474,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
-    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout_vs.handle();
     pre_raster.gp_ci_.pDynamicState = &dyn_state;
@@ -2507,7 +2507,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     vk_testing::GraphicsPipelineLibraryStage fragment_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
-    fragment.InitFragmentLibInfo(1, &fragment_stage.stage_ci);
+    fragment.InitFragmentLibInfo(&fragment_stage.stage_ci);
     fragment.gp_ci_.layout = pipeline_layout_fs.handle();
     fragment.CreateGraphicsPipeline(false);
 
