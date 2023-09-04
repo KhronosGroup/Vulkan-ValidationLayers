@@ -558,9 +558,9 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     int AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj *texture);
     void CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer);
 
-    VkDescriptorSet GetDescriptorSetHandle() const;
-    VkPipelineLayout GetPipelineLayout() const;
-    VkDescriptorSetLayout GetDescriptorSetLayout() const;
+    VkDescriptorSet GetDescriptorSetHandle() const { return m_set ? m_set->handle() : VK_NULL_HANDLE; }
+    VkPipelineLayout GetPipelineLayout() const { return m_pipeline_layout.handle(); }
+    VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_layout.handle(); }
 
   protected:
     VkDeviceObj *m_device;

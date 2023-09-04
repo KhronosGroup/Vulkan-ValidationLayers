@@ -123,6 +123,7 @@ void CreatePipelineHelper::InitGraphicsPipelineInfo() {
     //    VkPipelineMultisampleStateCreateInfo
     //    VkPipelineColorBlendStateCreateInfo
     gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    gp_ci_.layout = VK_NULL_HANDLE;
     gp_ci_.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
     gp_ci_.pVertexInputState = &vi_ci_;
     gp_ci_.pInputAssemblyState = &ia_ci_;
@@ -298,7 +299,9 @@ void CreatePipelineHelper::InitPipelineCache() {
 
 void CreatePipelineHelper::LateBindPipelineInfo() {
     // By value or dynamically located items must be late bound
-    gp_ci_.layout = pipeline_layout_.handle();
+    if (gp_ci_.layout == VK_NULL_HANDLE) {
+        gp_ci_.layout = pipeline_layout_.handle();
+    }
     if (gp_ci_.stageCount == 0) {
         gp_ci_.stageCount = shader_stages_.size();
         gp_ci_.pStages = shader_stages_.data();
@@ -353,6 +356,7 @@ void CreateComputePipelineHelper::InitShaderInfo() {
 void CreateComputePipelineHelper::InitComputePipelineInfo() {
     cp_ci_ = LvlInitStruct<VkComputePipelineCreateInfo>();
     cp_ci_.flags = 0;
+    cp_ci_.layout = VK_NULL_HANDLE;
 }
 
 void CreateComputePipelineHelper::InitPipelineCacheInfo() {
@@ -392,7 +396,9 @@ void CreateComputePipelineHelper::InitPipelineCache() {
 
 void CreateComputePipelineHelper::LateBindPipelineInfo() {
     // By value or dynamically located items must be late bound
-    cp_ci_.layout = pipeline_layout_.handle();
+    if (cp_ci_.layout == VK_NULL_HANDLE) {
+        cp_ci_.layout = pipeline_layout_.handle();
+    }
     cp_ci_.stage = cs_.get()->GetStageCreateInfo();
 }
 

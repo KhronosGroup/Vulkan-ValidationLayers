@@ -20,7 +20,6 @@
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
 struct CreatePipelineHelper {
-  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
@@ -130,7 +129,6 @@ struct CreatePipelineHelper {
 };
 
 struct CreateComputePipelineHelper {
-  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
@@ -198,7 +196,6 @@ struct CreateComputePipelineHelper {
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
 struct RayTracingPipelineHelper {
-  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;

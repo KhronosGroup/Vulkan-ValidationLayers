@@ -1150,17 +1150,6 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
     return m_nextSlot++;
 }
 
-VkPipelineLayout VkDescriptorSetObj::GetPipelineLayout() const { return m_pipeline_layout.handle(); }
-
-VkDescriptorSetLayout VkDescriptorSetObj::GetDescriptorSetLayout() const { return m_layout.handle(); }
-
-VkDescriptorSet VkDescriptorSetObj::GetDescriptorSetHandle() const {
-    if (m_set)
-        return m_set->handle();
-    else
-        return VK_NULL_HANDLE;
-}
-
 void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer) {
     if (m_type_counts.size()) {
         // create VkDescriptorPool
