@@ -526,13 +526,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,
                                         const VkDeviceQueueCreateInfo* infos, const Location& loc) const;
 
-    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& loc,
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& loc,
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const Location& image_loc,
                                   const char* vuid, const char* more_message = "") const;
-    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& loc,
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
                                  const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& loc,
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const;
 
     bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo* pCreateInfo, const IMAGE_STATE& image_state,
