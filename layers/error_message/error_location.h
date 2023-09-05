@@ -53,12 +53,8 @@ struct Location {
 
     // the dot() method is for walking down into a structure that is being validated
     // eg:  loc.dot(Field::pMemoryBarriers, 5).dot(Field::srcStagemask)
-    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index) const {
+    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
         Location result(*this, s, sub_field, sub_index, false);
-        return result;
-    }
-    Location dot(vvl::Struct s, vvl::Field sub_field) const {
-        Location result(*this, s, sub_field, kNoIndex, false);
         return result;
     }
     Location dot(vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
@@ -67,12 +63,8 @@ struct Location {
     }
 
     // same as dot() but will mark these were part of a pNext struct
-    Location pNext(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index) const {
+    Location pNext(vvl::Struct s, vvl::Field sub_field = vvl::Field::Empty, uint32_t sub_index = kNoIndex) const {
         Location result(*this, s, sub_field, sub_index, true);
-        return result;
-    }
-    Location pNext(vvl::Struct s, vvl::Field sub_field) const {
-        Location result(*this, s, sub_field, kNoIndex, true);
         return result;
     }
 
