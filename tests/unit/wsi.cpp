@@ -3130,6 +3130,154 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
+TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
+    TEST_DESCRIPTION("Present immediately after acquire and do not wait on the acquire semaphore.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Acquire image using a semaphore
+    const vkt::Semaphore semaphore(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &image_index);
+
+    // Present without waiting on the acquire semaphore
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 0;
+    present.pWaitSemaphores = nullptr;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
+    vk::QueuePresentKHR(m_default_queue, &present);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
+    TEST_DESCRIPTION("Present after submission. Neither submission nor present waits on the acquire semaphore.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Acquire image using a semaphore
+    const vkt::Semaphore semaphore(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &image_index);
+
+    // Dummy submit that signals semaphore that will be waited by the present. Does not wait on the acquire semaphore.
+    const vkt::Semaphore submit_semaphore(*m_device);
+    constexpr VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    m_commandBuffer->begin();
+    m_commandBuffer->end();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = &stage_mask;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &submit_semaphore.handle();
+    vk::QueueSubmit(m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    // Present waits on submit semaphore. Does not wait on the acquire semaphore.
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 1;  // only submit semaphore
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
+    vk::QueuePresentKHR(m_default_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_default_queue);
+}
+
+TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
+    TEST_DESCRIPTION("Present immediately after acquire and do not wait on the acquire fence.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Acquire image using a fence
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index);
+
+    // Present without waiting on the acquire fence
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 0;
+    present.pWaitSemaphores = nullptr;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
+    vk::QueuePresentKHR(m_default_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    // NOTE: this test validates vkQueuePresentKHR.
+    // At this point it's fine to wait for the fence to avoid in-use errors during test exit
+    // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+}
+
+TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
+    TEST_DESCRIPTION("Present immediately after acquire and do not wait on the acquire semaphore or fence.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Acquire image using a semaphore and fence
+    const vkt::Semaphore semaphore(*m_device);
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
+
+    // Present without waiting on the acquire semaphore and fence
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 0;
+    present.pWaitSemaphores = nullptr;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
+    vk::QueuePresentKHR(m_default_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    // NOTE: this test validates vkQueuePresentKHR.
+    // At this point it's fine to wait for the fence to avoid in-use errors during test exit
+    // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+}
+
 TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with retired swapchain");
     SetTargetApiVersion(VK_API_VERSION_1_1);
