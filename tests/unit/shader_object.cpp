@@ -1969,7 +1969,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, BlendEnableIncompatibleFormat) {
+TEST_F(NegativeShaderObject, BlendEnabledWithNonBlendableFormat) {
     TEST_DESCRIPTION("Draw with shader objects with blend enabled for attachment format that does not support blending.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08643");
