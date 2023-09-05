@@ -465,6 +465,74 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     vk::QueueWaitIdle(m_default_queue);
 }
 
+TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
+    TEST_DESCRIPTION("Image acquire specifies both semaphore and fence to signal. Only fence is being waited on.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Ask image acquire operation to signal both a semaphore and a fence
+    const vkt::Semaphore semaphore(*m_device);
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+
+    // Present without waiting for the semaphore. That's fine because we waited on the fence
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 0;
+    present.pWaitSemaphores = nullptr;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    vk::QueuePresentKHR(m_default_queue, &present);
+
+    vk::QueueWaitIdle(m_default_queue);
+}
+
+TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
+    TEST_DESCRIPTION("Image acquire specifies both semaphore and fence to signal. Only semaphore is being waited on.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    for (auto image : swapchain_images) {
+        SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    // Ask image acquire operation to signal both a semaphore and a fence
+    const vkt::Semaphore semaphore(*m_device);
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = 0;
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
+
+    // Present without waiting on the fence. That's fine because present waits for the semaphore
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &semaphore.handle();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    vk::QueuePresentKHR(m_default_queue, &present);
+
+    // NOTE: this test validates vkQueuePresentKHR.
+    // At this point it's fine to wait for the fence to avoid in-use errors during test exit
+    // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+
+    vk::QueueWaitIdle(m_default_queue);
+}
+
 TEST_F(PositiveWsi, SwapchainImageLayout) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
