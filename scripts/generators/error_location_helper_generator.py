@@ -23,6 +23,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         BaseGenerator.__init__(self)
 
         self.fields = set()
+        self.pointer_fields = set()
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -52,10 +53,24 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         for command in [x for x in self.vk.commands.values() if not x.alias]:
             for param in command.params:
                 self.fields.add(param.name)
+                if param.pointer:
+                    self.pointer_fields.add(param.name)
         for struct in self.vk.structs.values():
             for member in struct.members:
                 self.fields.add(member.name)
+                if param.pointer:
+                    self.pointer_fields.add(param.name)
+
+        # Pointers in spec start with 'p' except a few cases when dealing with external items (etc WSI).
+        # These are names that are also not pointers and removing them in effort to keep the code
+        # simpler and just have a few cases where we use a 'dot' instead of an 'arrow' for the error messages.
+        self.pointer_fields.remove('buffer') # VkImportAndroidHardwareBufferInfoANDROID
+        self.pointer_fields.remove('display') # VkWaylandSurfaceCreateInfoKHR
+        self.pointer_fields.remove('window') # VkAndroidSurfaceCreateInfoKHR (and few others)
+
+        # Sort alphabetically
         self.fields = sorted(self.fields)
+        self.pointer_fields = sorted(self.pointer_fields)
 
         if self.filename == 'error_location_helper.h':
             self.generateHeader()
@@ -102,6 +117,8 @@ enum class Func {
 const char* String(Func func);
 const char* String(Struct structure);
 const char* String(Field field);
+
+bool IsFieldPointer(Field field);
 }  // namespace vvl
 ''')
         self.write("".join(out))
@@ -146,6 +163,17 @@ const char* String(Field field) {
             out.append(f'    {{"{field}", {len(field) + 1}}},\n')
         out.append('''    };
     return table[(int)field].data();
+}
+
+bool IsFieldPointer(Field field) {
+    switch (field) {
+''')
+        for field in self.pointer_fields:
+            out.append(f'    case Field::{field}:\n')
+        out.append('''        return true;
+    default:
+        return false;
+    }
 }
 }  // namespace vvl
 ''')
