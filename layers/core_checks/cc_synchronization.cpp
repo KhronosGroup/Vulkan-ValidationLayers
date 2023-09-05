@@ -1190,8 +1190,8 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
         // In dynamic rendering, vkCmdPipelineBarrier is only allowed for VK_EXT_shader_tile_image
-        skip |= ValidateBarriersForShaderTileImage(objlist, loc, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                                                   bufferMemoryBarrierCount, imageMemoryBarrierCount, srcStageMask, dstStageMask);
+        skip |= ValidateShaderTileImageBarriers(objlist, loc, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+                                                bufferMemoryBarrierCount, imageMemoryBarrierCount, srcStageMask, dstStageMask);
     }
     skip |= ValidateBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -1222,9 +1222,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
         // In dynamic rendering, vkCmdPipelineBarrier2 is only allowed for  VK_EXT_shader_tile_image
-        skip |= ValidateBarriersForShaderTileImage(
-            objlist, loc, pDependencyInfo->dependencyFlags, pDependencyInfo->memoryBarrierCount, pDependencyInfo->pMemoryBarriers,
-            pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->imageMemoryBarrierCount);
+        skip |= ValidateShaderTileImageBarriers(objlist, loc, *pDependencyInfo);
     }
     skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), pDependencyInfo);
     return skip;
@@ -2339,63 +2337,74 @@ bool CoreChecks::ValidateAccessMaskForShaderTileImage(const LogObjectList &objli
     return skip;
 }
 
-template <typename Barrier>
-bool CoreChecks::ValidateBarriersForShaderTileImage(const LogObjectList &objlist, const Location &outer_loc,
-                                                    VkDependencyFlags dependencyFlags, uint32_t memBarrierCount,
-                                                    const Barrier *pMemBarriers, uint32_t bufferBarrierCount,
-                                                    uint32_t imageMemBarrierCount, VkPipelineStageFlags src_stage_mask,
-                                                    VkPipelineStageFlags dst_stage_mask) const {
+bool CoreChecks::ValidateShaderTileImageBarriers(const LogObjectList &objlist, const Location &outer_loc,
+                                                 const VkDependencyInfo &dep_info) const {
+    bool skip = false;
+    const auto &vuid =
+        sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageBarrierError);
+
+    skip |= ValidateShaderTimeImageCommon(objlist, outer_loc, vuid, dep_info.dependencyFlags, dep_info.bufferMemoryBarrierCount,
+                                          dep_info.imageMemoryBarrierCount);
+
+    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
+        Location loc(outer_loc.function, Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
+        const auto &mem_barrier = dep_info.pMemoryBarriers[i];
+        skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::srcStageMask), mem_barrier.srcStageMask, vuid);
+        skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::dstStageMask), mem_barrier.dstStageMask, vuid);
+        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask, vuid);
+        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::dstAccessMask), mem_barrier.dstAccessMask, vuid);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderTileImageBarriers(const LogObjectList &objlist, const Location &outer_loc,
+                                                 VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
+                                                 const VkMemoryBarrier *memory_barriers, uint32_t buffer_barrier_count,
+                                                 uint32_t image_barrier_count, VkPipelineStageFlags src_stage_mask,
+                                                 VkPipelineStageFlags dst_stage_mask) const {
+    bool skip = false;
+    const auto &vuid =
+        sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageBarrierError);
+
+    skip |= ValidateShaderTimeImageCommon(objlist, outer_loc, vuid, dependency_flags, buffer_barrier_count, image_barrier_count);
+    skip |= ValidatePipelineStageForShaderTileImage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, vuid);
+    skip |= ValidatePipelineStageForShaderTileImage(objlist, outer_loc.dot(Field::dstStageMask), dst_stage_mask, vuid);
+
+    for (uint32_t i = 0; i < memory_barrier_count; ++i) {
+        Location loc(outer_loc.function, Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
+        const auto &mem_barrier = memory_barriers[i];
+        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask, vuid);
+        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::dstAccessMask), mem_barrier.dstAccessMask, vuid);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderTimeImageCommon(const LogObjectList &objlist, const Location &outer_loc,
+                                               const std::string &barrier_error_vuid, VkDependencyFlags dependency_flags,
+                                               uint32_t buffer_barrier_count, uint32_t image_barrier_count) const {
     bool skip = false;
 
-    using sync_vuid_maps::GetShaderTileImageVUID;
-    using sync_vuid_maps::ShaderTileImageError;
-
-    static_assert(std::is_same_v<Barrier, VkMemoryBarrier> || std::is_same_v<Barrier, VkMemoryBarrier2>);
-
     // Check shader tile image features
-    const auto tile_image_features = enabled_features.shader_tile_image_features;
+    const auto &tile_image_features = enabled_features.shader_tile_image_features;
     const bool features_enabled = tile_image_features.shaderTileImageColorReadAccess ||
                                   tile_image_features.shaderTileImageDepthReadAccess ||
                                   tile_image_features.shaderTileImageStencilReadAccess;
-
     if (!features_enabled) {
-        const auto &vuid = GetShaderTileImageVUID(outer_loc, ShaderTileImageError::kShaderTileImageFeatureError);
-        skip |= LogError(objlist, vuid,
+        const auto &feature_error_vuid =
+            sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageFeatureError);
+        skip |= LogError(objlist, feature_error_vuid,
                          "%s can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
                          "VK_EXT_shader_tile_image features.",
                          outer_loc.StringFunc());
-        return skip;
     }
 
-    const auto &vuid = GetShaderTileImageVUID(outer_loc, ShaderTileImageError::kShaderTileImageBarrierError);
-
-    if ((dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) != VK_DEPENDENCY_BY_REGION_BIT) {
-        skip |= LogError(objlist, vuid, "%s should contain VK_DEPENDENCY_BY_REGION_BIT.",
+    // Check basic parameter requirements for shader tile image barriers
+    if ((dependency_flags & VK_DEPENDENCY_BY_REGION_BIT) != VK_DEPENDENCY_BY_REGION_BIT) {
+        skip |= LogError(objlist, barrier_error_vuid, "%s should contain VK_DEPENDENCY_BY_REGION_BIT.",
                          outer_loc.dot(Field::dependencyFlags).Message().c_str());
     }
-
-    if (bufferBarrierCount != 0 || imageMemBarrierCount != 0) {
-        skip |= LogError(objlist, vuid, "%s can only include memory barriers.", outer_loc.StringFunc());
-    }
-
-    constexpr bool mem_barrier2 = std::is_same_v<Barrier, VkMemoryBarrier2>;
-
-    if constexpr (!mem_barrier2) {
-        skip |= ValidatePipelineStageForShaderTileImage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, vuid);
-        skip |= ValidatePipelineStageForShaderTileImage(objlist, outer_loc.dot(Field::dstStageMask), dst_stage_mask, vuid);
-    }
-
-    for (uint32_t i = 0; i < memBarrierCount; ++i) {
-        const Barrier &mem_barrier = pMemBarriers[i];
-        auto structure = mem_barrier2 ? Struct::VkMemoryBarrier2 : Struct::VkMemoryBarrier;
-        Location loc(outer_loc.function, structure, Field::pMemoryBarriers, i);
-        if constexpr (mem_barrier2) {
-            skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::srcStageMask), mem_barrier.srcStageMask, vuid);
-            skip |= ValidatePipelineStageForShaderTileImage(objlist, loc.dot(Field::dstStageMask), mem_barrier.dstStageMask, vuid);
-        }
-
-        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask, vuid);
-        skip |= ValidateAccessMaskForShaderTileImage(objlist, loc.dot(Field::dstAccessMask), mem_barrier.dstAccessMask, vuid);
+    if (buffer_barrier_count != 0 || image_barrier_count != 0) {
+        skip |= LogError(objlist, barrier_error_vuid, "%s can only include memory barriers.", outer_loc.StringFunc());
     }
     return skip;
 }

@@ -571,11 +571,18 @@ class CoreChecks : public ValidationStateTracker {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
 
-    template <typename Barrier>
-    bool ValidateBarriersForShaderTileImage(const LogObjectList& objlist, const Location& outer_loc,
-                                            VkDependencyFlags dependencyFlags, uint32_t memBarrierCount,
-                                            const Barrier* pMemBarriers, uint32_t bufferBarrierCount, uint32_t imageMemBarrierCount,
-                                            VkPipelineStageFlags src_stage_mask = 0, VkPipelineStageFlags dst_stage_mask = 0) const;
+    bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
+                                         const VkDependencyInfo& dep_info) const;
+
+    bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
+                                         VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
+                                         const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
+                                         uint32_t image_barrier_count, VkPipelineStageFlags src_stage_mask,
+                                         VkPipelineStageFlags dst_stage_mask) const;
+
+    bool ValidateShaderTimeImageCommon(const LogObjectList& objlist, const Location& outer_loc,
+                                       const std::string& barrier_error_vuid, VkDependencyFlags dependency_flags,
+                                       uint32_t buffer_barrier_count, uint32_t image_barrier_count) const;
 
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& loc,
                                              VkPipelineStageFlags2KHR stage_mask) const;
