@@ -250,6 +250,9 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     }
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
+    if (!features2.features.shaderInt64) {
+        GTEST_SKIP() << "shaderInt64 is not supported";
+    }
     features2.features.robustBufferAccess = VK_FALSE;
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
