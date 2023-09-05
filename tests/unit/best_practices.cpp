@@ -2088,7 +2088,6 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.InitDescriptorSetInfo();
     pipe.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     pipe.dsl_bindings_[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     pipe.InitState();

@@ -1992,7 +1992,6 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     const VkDescriptorSetLayoutObj ds_layout_combined1(m_device, layout_binding_combined1);
 
     CreateComputePipelineHelper compute_pipe(*this);
-    compute_pipe.InitShaderInfo();
     compute_pipe.InitState();
     compute_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_comp});
 

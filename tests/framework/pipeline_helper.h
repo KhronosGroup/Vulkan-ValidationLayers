@@ -50,25 +50,10 @@ class CreatePipelineHelper {
     ~CreatePipelineHelper();
 
     VkPipeline Handle() { return pipeline_; }
-    void InitDescriptorSetInfo();
-    void InitInputAndVertexInfo();
-    void InitMultisampleInfo();
-    void InitPipelineLayoutInfo();
-    void InitViewportInfo();
-    void InitDynamicStateInfo();
     void InitShaderInfo();
     void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
-    void InitRasterizationInfo();
-    void InitLineRasterizationInfo();
-    void InitBlendStateInfo();
-    void InitGraphicsPipelineInfo();
-    void InitPipelineCacheInfo();
-
-    // Not called by default during init_info
-    void InitTesselationState();
 
     // TDB -- add control for optional and/or additional initialization
-    void InitInfo();
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo();
@@ -145,14 +130,9 @@ class CreateComputePipelineHelper {
     CreateComputePipelineHelper(VkLayerTest &test);
     ~CreateComputePipelineHelper();
 
-    void InitDescriptorSetInfo();
-    void InitPipelineLayoutInfo();
     void InitShaderInfo();
-    void InitComputePipelineInfo();
-    void InitPipelineCacheInfo();
 
     // TDB -- add control for optional and/or additional initialization
-    void InitInfo();
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo();
