@@ -475,8 +475,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateSetMemBinding(VkDeviceMemory memory, const BINDABLE& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
-    bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
-    bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_state, const char* action, const char* error_code) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
@@ -621,7 +619,8 @@ class CoreChecks : public ValidationStateTracker {
                                 const ErrorObject& error_obj) const;
     bool ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges,
                                                const ErrorObject& error_obj) const;
-    bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE& cb_state, const CMD_BUFFER_STATE& sub_cb_state) const;
+    bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE& cb_state, const CMD_BUFFER_STATE& sub_cb_state,
+                                             const Location& cb_loc) const;
     bool ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE& cb_state,
                                             VkCommandBuffer secondaryBuffer, const CMD_BUFFER_STATE& sub_cb_state,
                                             const Location& loc) const;

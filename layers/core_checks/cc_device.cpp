@@ -748,21 +748,34 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
-    auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
     bool skip = false;
-    if (cp_state) {
-        // Verify that command buffers in pool are complete (not in-flight)
-        skip |=
-            CheckCommandBuffersInFlight(cp_state.get(), "destroy command pool with", "VUID-vkDestroyCommandPool-commandPool-00041");
+    auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    // Verify that command buffers in pool are complete (not in-flight)
+    for (auto &entry : cp_state->commandBuffers) {
+        auto cb_state = entry.second;
+        if (cb_state->InUse()) {
+            const LogObjectList objlist(cb_state->Handle(), commandPool);
+            skip |= LogError("VUID-vkDestroyCommandPool-commandPool-00041", objlist, error_obj.location,
+                             "Attempt to destroy command pool with %s still in use.", FormatHandle(cb_state->Handle()).c_str());
+        }
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                                  const ErrorObject &error_obj) const {
-    auto command_pool_state = Get<COMMAND_POOL_STATE>(commandPool);
-    return CheckCommandBuffersInFlight(command_pool_state.get(), "reset command pool with",
-                                       "VUID-vkResetCommandPool-commandPool-00040");
+    bool skip = false;
+    auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    // Verify that command buffers in pool are complete (not in-flight)
+    for (auto &entry : cp_state->commandBuffers) {
+        auto cb_state = entry.second;
+        if (cb_state->InUse()) {
+            const LogObjectList objlist(cb_state->Handle(), commandPool);
+            skip |= LogError("VUID-vkResetCommandPool-commandPool-00040", objlist, error_obj.location,
+                             "Attempt to reset command pool with %s still in use.", FormatHandle(cb_state->Handle()).c_str());
+        }
+    }
+    return skip;
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
