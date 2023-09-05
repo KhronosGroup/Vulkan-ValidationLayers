@@ -1969,8 +1969,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetLogicOp) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnable) {
-    TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendEnableEXT.");
+TEST_F(NegativeShaderObject, BlendEnableIncompatibleFormat) {
+    TEST_DESCRIPTION("Draw with shader objects with blend enabled for attachment format that does not support blending.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08643");
 
@@ -1996,6 +1996,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnable) {
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
     BindVertFragShader(vertShader, fragShader);
+    VkBool32 enabled = VK_TRUE;
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &enabled);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
