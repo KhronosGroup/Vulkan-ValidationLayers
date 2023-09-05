@@ -427,7 +427,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
             const LogObjectList objlist(cb_state.commandBuffer(), queue);
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
             skip |= LogError(vuid, objlist, loc,
-                             "Primary %s created in queue family %d is being submitted on %s "
+                             "Primary command buffer %s created in queue family %d is being submitted on %s "
                              "from queue family %d.",
                              FormatHandle(cb_state).c_str(), pool->queueFamilyIndex, FormatHandle(queue).c_str(),
                              queue_state->queueFamilyIndex);

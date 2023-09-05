@@ -273,7 +273,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            skip |= ValidateGraphicsPipelineBindPoint(cb_state.get(), pipeline_state);
+            skip |= ValidateGraphicsPipelineBindPoint(cb_state.get(), pipeline_state, error_obj.location);
 
             if (cb_state->activeRenderPass &&
                 phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {

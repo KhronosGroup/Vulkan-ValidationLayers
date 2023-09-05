@@ -79,7 +79,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         // Issue raised in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3436
         // The combination of GPL/DynamicRendering and Portability has spec issues that need to be clarified
         if (IsExtEnabled(device_extensions.vk_khr_portability_subset) && !pipeline.IsGraphicsLibrary()) {
-            skip |= ValidateGraphicsPipelinePortability(pipeline);
+            skip |= ValidateGraphicsPipelinePortability(pipeline, create_info_loc);
         }
     }
 
@@ -171,14 +171,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     if (!enabled_features.portability_subset_features.triangleFans &&
         (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)) {
-        skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] (portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452", device, create_info_loc,
+                         "(portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported.");
     }
 
     // Validate vertex inputs
@@ -186,11 +184,11 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
         const uint32_t min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
         if ((desc.stride < min_alignment) || (min_alignment == 0) || ((desc.stride % min_alignment) != 0)) {
             skip |= LogError(
-                device, "VUID-VkVertexInputBindingDescription-stride-04456",
-                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] (portability error): Vertex input stride (%" PRIu32
+                "VUID-VkVertexInputBindingDescription-stride-04456", device, create_info_loc,
+                "(portability error): Vertex input stride (%" PRIu32
                 ") must be at least as large as and a "
                 "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment (%" PRIu32 ").",
-                pipeline.create_index, desc.stride, min_alignment);
+                desc.stride, min_alignment);
         }
     }
 
@@ -202,11 +200,11 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
                 const auto &desc = pipeline.vertex_input_state->binding_descriptions[vertex_binding_map_it->second];
                 if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
                     skip |= LogError(
-                        device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
-                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] (portability error): attribute.offset (%" PRIu32
+                        "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457", device, create_info_loc,
+                        "(portability error): attribute.offset (%" PRIu32
                         ") + "
-                        "sizeof(vertex_description.format) (%" PRIu32 ") is larger than the vertex stride (%" PRIu32 ")",
-                        pipeline.create_index, attrib.offset, FormatElementSize(attrib.format), desc.stride);
+                        "sizeof(vertex_description.format) (%" PRIu32 ") is larger than the vertex stride (%" PRIu32 ").",
+                        attrib.offset, FormatElementSize(attrib.format), desc.stride);
                 }
             }
         }
@@ -217,10 +215,8 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
         // Validate polygon mode
         if (!enabled_features.portability_subset_features.pointPolygons && !raster_state_ci->rasterizerDiscardEnable &&
             (raster_state_ci->polygonMode == VK_POLYGON_MODE_POINT)) {
-            skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] (portability error): point polygons are not supported",
-                             pipeline.create_index);
+            skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458", device, create_info_loc,
+                             "(portability error): point polygons are not supported.");
         }
 
         // Validate depth-stencil state
@@ -228,11 +224,9 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
             (raster_state_ci->cullMode == VK_CULL_MODE_NONE)) {
             const auto ds_state = pipeline.DepthStencilState();
             if (ds_state && ds_state->stencilTestEnable && (ds_state->front.reference != ds_state->back.reference)) {
-                skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] (portability error): VkStencilOpState::reference must be the "
-                                 "same for front and back",
-                                 pipeline.create_index);
+                skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453", device, create_info_loc,
+                                 "(portability error): VkStencilOpState::reference must be the "
+                                 "same for front and back.");
             }
         }
 
@@ -251,19 +245,21 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
                  ++color_attachment_index) {
                 if ((attachments[color_attachment_index].srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA) ||
                     (attachments[color_attachment_index].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] (portability error): srcColorBlendFactor for color attachment %d must "
+                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454", device,
+                                     create_info_loc,
+                                     "(portability error): srcColorBlendFactor for color attachment %" PRIu32
+                                     " must "
                                      "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
-                                     pipeline.create_index, color_attachment_index);
+                                     color_attachment_index);
                 }
                 if ((attachments[color_attachment_index].dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA) ||
                     (attachments[color_attachment_index].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] (portability error): dstColorBlendFactor for color attachment %d must "
+                    skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455", device,
+                                     create_info_loc,
+                                     "(portability error): dstColorBlendFactor for color attachment %" PRIu32
+                                     " must "
                                      "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
-                                     pipeline.create_index, color_attachment_index);
+                                     color_attachment_index);
                 }
             }
         }
@@ -272,7 +268,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
     // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
@@ -293,7 +289,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
     if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
         ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894", device, loc,
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894", device, create_info_loc,
                          "does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
     }
@@ -301,15 +297,15 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         if (!pipeline.HasFullState()) {
             skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-None-06573", device, loc,
+                LogError("VUID-VkGraphicsPipelineCreateInfo-None-06573", device, create_info_loc,
                          "does not contain a complete set of state and %s is not enabled. The following state is missing: [ %s].",
                          VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME, full_pipeline_state_msg.c_str());
         } else if (!pipeline.PipelineLayoutState()) {
             skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, loc.dot(Field::layout),
+                LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
                          "is not a valid pipeline layout, but %s is not enabled.", VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         } else if (!pipeline.RenderPassState()) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603", device, loc.dot(Field::renderPass),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603", device, create_info_loc.dot(Field::renderPass),
                              "is not a valid render pass, but %s is not enabled.", VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         }
     } else {
@@ -318,14 +314,15 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
 
         if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
             if (is_library) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device, loc.dot(Field::flags),
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device,
+                                 create_info_loc.dot(Field::flags),
                                  "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
                                  "graphicsPipelineLibrary feature is not enabled.",
                                  string_VkPipelineCreateFlags(pipeline_flags).c_str());
             }
 
             if (!pipeline.HasFullState()) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607", device, loc,
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607", device, create_info_loc,
                                  "does not contain a complete set of state and "
                                  "graphicsPipelineLibrary feature is not enabled. "
                                  "The following state is missing: [ %s].",
@@ -335,17 +332,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
 
         if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
             ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895", device, loc,
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895", device, create_info_loc,
                              "does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
                              string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
         }
 
         if (pipeline.HasFullState()) {
             if (is_library) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, loc,
-                                 "defines a complete set of state, but pCreateInfos[%" PRIu32
-                                 "].flags (%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
-                                 pipeline.create_index, string_VkPipelineCreateFlags(pipeline_flags).c_str());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, create_info_loc.dot(Field::flags),
+                                 "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but defines a complete set of state.",
+                                 string_VkPipelineCreateFlags(pipeline_flags).c_str());
             }
 
             // A valid pipeline layout must _always_ be provided, even if the pipeline is defined completely from libraries.
@@ -353,10 +349,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
             // context
             auto &pipe_ci = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
             if (!pipe_ci.layout) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, loc,
-                                 "defines a complete set of state, but pCreateInfos[%" PRIu32
-                                 "].layout is not a valid VkPipelineLayout.",
-                                 pipeline.create_index);
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-07826", device, create_info_loc.dot(Field::layout),
+                                 "is not a valid VkPipelineLayout, but defines a complete set of state.");
             }
 
             // graphics_lib_type effectively tracks which parts of the pipeline are defined by graphics libraries.
@@ -379,7 +373,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                         objs.add(layout_state->Handle());
                         objs.add(pipeline.PreRasterPipelineLayoutState()->Handle());
                         skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objs, loc.dot(Field::layout),
+                            LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objs, create_info_loc.dot(Field::layout),
                                      "is incompatible with the layout specified in the pre-raster sub-state: %s", err_msg.c_str());
                     }
                     if (std::string err_msg;
@@ -387,7 +381,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                         LogObjectList objs(device);
                         objs.add(layout_state->Handle());
                         objs.add(pipeline.FragmentShaderPipelineLayoutState()->Handle());
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objs, loc.dot(Field::layout),
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objs, create_info_loc.dot(Field::layout),
                                          "is incompatible with the layout specified in the fragment shader sub-state: %s",
                                          err_msg.c_str());
                     }
@@ -411,7 +405,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                                              fs_flags = std::make_pair(VK_PIPELINE_LAYOUT_CREATE_FLAG_BITS_MAX_ENUM,
                                                                                        GPLValidInfo{});
         const auto gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline.PNext());
-        const Location &gpl_flags_loc = loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags);
+        const Location &gpl_flags_loc = create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags);
         if (gpl_info) {
             if ((gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                                     VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0) {
@@ -420,7 +414,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                 //       associated with the sub-state
                 const auto layout_state = Get<PIPELINE_LAYOUT_STATE>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
                 if (!layout_state) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, loc,
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06642", device, create_info_loc,
                                      "is a graphics library created with %s state, but does not have a valid layout specified.",
                                      string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
                 }
@@ -451,7 +445,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
             for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                 if (lib) {
-                    const Location &library_loc = loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
+                    const Location &library_loc =
+                        create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
                     const VkPipelineCreateFlags lib_pipeline_flags = lib->create_flags;
                     if (lib->PipelineLayoutState()) {
                         if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
@@ -467,24 +462,24 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                         (lib_pipeline_flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
                     if (has_link_time_opt && !lib_has_retain_link_time_opt) {
                         const LogObjectList objlist(device, lib->Handle());
-                        skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06609", objlist, library_loc,
-                                     "(%s) was created with %s, which is missing "
-                                     "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
-                                     string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                                     string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
-                                     loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags(pipeline_flags).c_str());
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06609", objlist, library_loc,
+                                         "(%s) was created with %s, which is missing "
+                                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                                         string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
+                                         create_info_loc.dot(Field::flags).Fields().c_str(),
+                                         string_VkPipelineCreateFlags(pipeline_flags).c_str());
                     }
 
                     if (has_retain_link_time_opt && !lib_has_retain_link_time_opt) {
                         const LogObjectList objlist(device, lib->Handle());
-                        skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06610", objlist, library_loc,
-                                     "(%s) was created with %s, which is missing "
-                                     "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
-                                     string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                                     string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
-                                     loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags(pipeline_flags).c_str());
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06610", objlist, library_loc,
+                                         "(%s) was created with %s, which is missing "
+                                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                                         string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
+                                         create_info_loc.dot(Field::flags).Fields().c_str(),
+                                         string_VkPipelineCreateFlags(pipeline_flags).c_str());
                     }
 
                     const bool lib_has_capture_internal =
@@ -501,7 +496,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                              string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
                                              gpl_flags_loc.Fields().c_str(), string_VkPipelineCreateFlags(gpl_info->flags).c_str(),
-                                             loc.dot(Field::flags).Fields().c_str(),
+                                             create_info_loc.dot(Field::flags).Fields().c_str(),
                                              string_VkPipelineCreateFlags(pipeline_flags).c_str());
                         }
                     } else {
@@ -520,7 +515,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                              string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
                                              gpl_flags_loc.Fields().c_str(), string_VkPipelineCreateFlags(gpl_info->flags).c_str(),
-                                             loc.dot(Field::flags).Fields().c_str(),
+                                             create_info_loc.dot(Field::flags).Fields().c_str(),
                                              string_VkPipelineCreateFlags(pipeline_flags).c_str());
                         }
                     }
@@ -554,7 +549,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                                  string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                                  string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
                                                  string_VkPipelineCreateFlagBits(check_info.bit),
-                                                 loc.dot(Field::flags).Fields().c_str(),
+                                                 create_info_loc.dot(Field::flags).Fields().c_str(),
                                                  string_VkPipelineCreateFlags(pipeline_flags).c_str());
                             }
                         } else {
@@ -565,7 +560,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                                  string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                                  string_VkPipelineCreateFlags(lib_pipeline_flags).c_str(),
                                                  string_VkPipelineCreateFlagBits(check_info.bit),
-                                                 loc.dot(Field::flags).Fields().c_str(),
+                                                 create_info_loc.dot(Field::flags).Fields().c_str(),
                                                  string_VkPipelineCreateFlags(pipeline_flags).c_str());
                             }
                         }
@@ -587,8 +582,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
         if (pipeline.library_create_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
             if (gpl_info) {
-                skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *pipeline.library_create_info, rendering_struct, loc, -1,
-                                                     "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+                skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *pipeline.library_create_info, rendering_struct,
+                                                     create_info_loc, -1, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
 
                 const uint32_t flags_count =
                     GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
@@ -617,7 +612,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                 const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                 const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
                 skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, *pipeline.library_create_info, lib_rendering_struct,
-                                                     loc, i, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
+                                                     create_info_loc, i, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
             }
         }
 
@@ -641,13 +636,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                     const char *pre_raster_str = (pre_raster_indset != 0) ? "defined with" : "not defined with";
                     const char *fs_str = (fs_indset != 0) ? "defined with" : "not defined with";
                     skip |= LogError(
-                        device, vuid,
-                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                        "] is attempting to create a graphics pipeline library with pre-raster and fragment shader state. However "
+                        vuid, device, create_info_loc,
+                        "is attempting to create a graphics pipeline library with pre-raster and fragment shader state. However "
                         "the "
                         "pre-raster layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, and the "
                         "fragment shader layout create flags (%s) are %s VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT",
-                        pipeline.create_index, string_VkPipelineLayoutCreateFlags(pre_raster_flags.first).c_str(), pre_raster_str,
+                        string_VkPipelineLayoutCreateFlags(pre_raster_flags.first).c_str(), pre_raster_str,
                         string_VkPipelineLayoutCreateFlags(fs_flags.first).c_str(), fs_str);
                 }
 
@@ -664,8 +658,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                     const auto fs_dsl =
                         (i < fs_set_layouts.size()) ? fs_set_layouts[i] : vvl::base_type<decltype(fs_set_layouts)>::value_type{};
                     const char *vuid_tmp = nullptr;
-                    std::ostringstream msg("vkCreateGraphicsPipelines(): ");
-                    msg << "pCreateInfos[" << pipeline.create_index << "] ";
+                    std::ostringstream msg;
                     if (!pre_raster_dsl && fs_dsl) {
                         // Null DSL at pSetLayouts[i] in pre-raster state. Make sure that shader bindings in corresponding DSL in
                         // fragment shader state do not overlap.
@@ -759,7 +752,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                         }
                     }
                     if (vuid_tmp) {
-                        skip |= LogError(device, vuid_tmp, "%s", msg.str().c_str());
+                        skip |= LogError(vuid_tmp, device, create_info_loc, "%s", msg.str().c_str());
                     }
                 }
             }
@@ -769,12 +762,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto *color_blend_state = pipeline.ColorBlendState();
     const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && color_blend_state) {
-        const Location color_loc = loc.dot(Field::pColorBlendState);
+        const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
         const auto subpass = pipeline.Subpass();
         const auto *subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
 
@@ -817,9 +810,9 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const Location ia_loc = loc.dot(Field::pInputAssemblyState);
+    const Location ia_loc = create_info_loc.dot(Field::pInputAssemblyState);
 
     // if vertex_input_state is not set, will be null
     const auto *ia_state = pipeline.InputAssemblyState();
@@ -890,65 +883,65 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     // Only validate once during creation
     if (pipeline.OwnsSubState(pipeline.pre_raster_state)) {
         const VkShaderStageFlags stages = pipeline.create_info_shaders;
         if ((stages & PreRasterState::ValidShaderStages()) == 0) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896", device, loc,
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896", device, create_info_loc,
                              "contains pre-raster state, but stages (%s) does not contain any pre-raster shaders.",
                              string_VkShaderStageFlags(stages).c_str());
         }
 
         if (!enabled_features.core.geometryShader && (stages & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00704", device, loc,
-                             "stages include Geometry Shader but geometryShader feature was not enabled.");
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00704", device, create_info_loc,
+                             "pStages include Geometry Shader but geometryShader feature was not enabled.");
         }
         if (!enabled_features.core.tessellationShader &&
             (stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00705", device, loc,
-                             "stages include Tessellation Shader but tessellationShader feature was not enabled.");
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00705", device, create_info_loc,
+                             "pStages include Tessellation Shader but tessellationShader feature was not enabled.");
         }
 
         // VS or mesh is required
         if (!(stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT))) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stage-02096", device, loc,
-                             "no stage contains a Vertex Shader or Mesh Shader.");
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stage-02096", device, create_info_loc,
+                             "no stage in pStages contains a Vertex Shader or Mesh Shader.");
         }
         // Can't mix mesh and VTG
         if ((stages & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) &&
             (stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                        VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02095", device, loc,
-                             "Geometric shader stages must either be all mesh (mesh | task) "
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02095", device, create_info_loc,
+                             "in pStages, Geometric shader stages must either be all mesh (mesh | task) "
                              "or all VTG (vertex, tess control, tess eval, geom).");
         }
 
         // VK_SHADER_STAGE_MESH_BIT_EXT and VK_SHADER_STAGE_MESH_BIT_NV are equivalent
         if (!(enabled_features.mesh_shader_features.meshShader) && (stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-02091", device, loc,
-                             "stages include Mesh Shader but meshShader feature was not enabled.");
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-02091", device, create_info_loc,
+                             "pStages include Mesh Shader but meshShader feature was not enabled.");
         }
 
         // VK_SHADER_STAGE_TASK_BIT_EXT and VK_SHADER_STAGE_TASK_BIT_NV are equivalent
         if (!(enabled_features.mesh_shader_features.taskShader) && (stages & VK_SHADER_STAGE_TASK_BIT_EXT)) {
-            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-02092", device, loc,
-                             "stages include Task Shader but taskShader feature was not enabled.");
+            skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-02092", device, create_info_loc,
+                             "pStages include Task Shader but taskShader feature was not enabled.");
         }
 
         // Either both or neither TC/TE shaders should be defined
         const bool has_control = (stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
         const bool has_eval = (stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
         if (has_control && !has_eval) {
-            skip |= LogError(
-                device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729",
-                "There is a VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT but no VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT stage.");
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00729", device, create_info_loc,
+                             "pStages include a VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT but no "
+                             "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT stage.");
         }
         if (!has_control && has_eval) {
-            skip |= LogError(
-                device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00730",
-                "There is a VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT but no VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT stage.");
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00730", device, create_info_loc,
+                             "pStages include a VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT but no "
+                             "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT stage.");
         }
     }
     return skip;
@@ -956,9 +949,9 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
 
 bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &pipeline,
                                                          const safe_VkSubpassDescription2 *subpass_desc,
-                                                         const Location &loc) const {
+                                                         const Location &create_info_loc) const {
     bool skip = false;
-    const Location color_loc = loc.dot(Field::pColorBlendState);
+    const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
     const auto color_blend_state = pipeline.ColorBlendState();
     if (color_blend_state) {
         const auto &rp_state = pipeline.RenderPassState();
@@ -976,10 +969,12 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
         const auto* rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
         if (rendering_struct && attachment_sample_count_info &&
             (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06063", device, loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::attachmentCount),
-                             "(%" PRIu32 ") is different then %s (%" PRIu32 ").",
-                              attachment_sample_count_info->colorAttachmentCount, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
-                             rendering_struct->colorAttachmentCount);
+            skip |=
+                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06063", device,
+                         create_info_loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::attachmentCount),
+                         "(%" PRIu32 ") is different then %s (%" PRIu32 ").", attachment_sample_count_info->colorAttachmentCount,
+                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
+                         rendering_struct->colorAttachmentCount);
         }
 
         if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
@@ -1080,9 +1075,9 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
 
 bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE &pipeline,
                                                             const safe_VkSubpassDescription2 *subpass_desc,
-                                                            const Location &loc) const {
+                                                            const Location &create_info_loc) const {
     bool skip = false;
-    const Location raster_loc = loc.dot(Field::pRasterizationState);
+    const Location raster_loc = create_info_loc.dot(Field::pRasterizationState);
     const auto raster_state = pipeline.RasterizationState();
     if (raster_state) {
         if ((raster_state->depthClampEnable == VK_TRUE) && (!enabled_features.core.depthClamp)) {
@@ -1107,7 +1102,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
             if (has_ms_state) {
                 const auto ms_state = pipeline.MultisampleState();
                 if (ms_state && (ms_state->alphaToOneEnable == VK_TRUE) && (!enabled_features.core.alphaToOne)) {
-                    skip |= LogError("VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785", device, loc.dot(Field::pMultisampleState).dot(Field::alphaToOneEnable),
+                    skip |= LogError("VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785", device,
+                                     create_info_loc.dot(Field::pMultisampleState).dot(Field::alphaToOneEnable),
                                      "is VK_TRUE, but the alphaToOne feature was not enabled.");
                 }
             }
@@ -1118,7 +1114,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
             if (has_ds_state) {
                 if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
                     subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                    const Location ds_loc = loc.dot(Field::pDepthStencilState);
+                    const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
                     const auto ds_state = pipeline.DepthStencilState();
                     if (!ds_state) {
                         // TODO 6184 - Add tests and fix logic for all combinations
@@ -1127,9 +1123,9 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                                          "and subpass uses a depth/stencil attachment.");
                     } else if (ds_state->depthBoundsTestEnable == VK_TRUE) {
                         if (!enabled_features.core.depthBounds) {
-                            skip |= LogError(
-                                "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",device, ds_loc.dot(Field::depthBoundsTestEnable),
-                                "depthBoundsTestEnable is VK_TRUE, but depthBounds feature was not enabled.");
+                            skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
+                                             ds_loc.dot(Field::depthBoundsTestEnable),
+                                             "depthBoundsTestEnable is VK_TRUE, but depthBounds feature was not enabled.");
                         }
 
                         if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
@@ -1168,7 +1164,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                 if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
                     !pipeline.fragment_output_state->color_blend_state) {
                     // TODO 6184 - Add tests and fix logic for all combinations
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09030", device, loc.dot(Field::pColorBlendState),
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09030", device,
+                                     create_info_loc.dot(Field::pColorBlendState),
                                      "is NULL when rasterization is enabled and "
                                      "subpass uses color attachments.");
                 }
@@ -1177,15 +1174,19 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                     if (!enabled_features.core11.multiviewTessellationShader &&
                         (pipeline.create_info_shaders &
                          (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06047", device, loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
-                                         "is 0x%" PRIx32 " and pStages includes tessellation shaders, but the "
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06047", device,
+                                         create_info_loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
+                                         "is 0x%" PRIx32
+                                         " and pStages includes tessellation shaders, but the "
                                          "multiviewTessellationShader features was not enabled.",
                                          subpass_desc->viewMask);
                     }
                     if (!enabled_features.core11.multiviewGeometryShader &&
                         (pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06048", device, loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
-                                         "is 0x%" PRIx32 " and pStages includes geometry shader, but the "
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06048", device,
+                                         create_info_loc.dot(Field::pSubpasses, pipeline.Subpass()).dot(Field::viewMask),
+                                         "is 0x%" PRIx32
+                                         " and pStages includes geometry shader, but the "
                                          "multiviewGeometryShader features was not enabled.",
                                          subpass_desc->viewMask);
                     }
@@ -1274,9 +1275,9 @@ bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSa
 
 bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &pipeline,
                                                           const safe_VkSubpassDescription2 *subpass_desc,
-                                                          const Location &loc) const {
+                                                          const Location &create_info_loc) const {
     bool skip = false;
-    const Location ms_loc = loc.dot(Field::pMultisampleState);
+    const Location ms_loc = create_info_loc.dot(Field::pMultisampleState);
     const auto *multisample_state = pipeline.MultisampleState();
     if (subpass_desc && multisample_state) {
         const auto &rp_state = pipeline.RenderPassState();
@@ -1437,13 +1438,14 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                         }
 
                         if (!combination_found) {
-                            skip |= LogError(
-                                "VUID-VkGraphicsPipelineCreateInfo-coverageReductionMode-02722", device, loc,
-                                "the specified combination of coverage "
-                                "reduction mode (%s), pMultisampleState->rasterizationSamples (%" PRIu32 "), sample counts for "
-                                "the subpass color and depth/stencil attachments is not a valid combination returned by "
-                                "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV.",
-                                string_VkCoverageReductionModeNV(coverage_reduction_mode), raster_samples);
+                            skip |=
+                                LogError("VUID-VkGraphicsPipelineCreateInfo-coverageReductionMode-02722", device, create_info_loc,
+                                         "specifies a combination of coverage "
+                                         "reduction mode (%s), pMultisampleState->rasterizationSamples (%" PRIu32
+                                         "), sample counts for "
+                                         "the subpass color and depth/stencil attachments is not a valid combination returned by "
+                                         "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV.",
+                                         string_VkCoverageReductionModeNV(coverage_reduction_mode), raster_samples);
                         }
                     }
                 }
@@ -1451,12 +1453,13 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
             const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
             if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
                 (msrtss_info->rasterizationSamples != multisample_state->rasterizationSamples)) {
-                skip |= LogError(
-                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854", rp_state->renderPass(), loc.dot(Field::pSubpasses, pipeline.Subpass()).pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples),
-                    "(%" PRIu32
-                    ") is not equal to %s (%" PRIu32 ") and multisampledRenderToSingleSampledEnable is VK_TRUE.",
-                    msrtss_info->rasterizationSamples, ms_loc.dot(Field::rasterizationSamples).Fields().c_str(),
-                    multisample_state->rasterizationSamples);
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06854", rp_state->renderPass(),
+                                 create_info_loc.dot(Field::pSubpasses, pipeline.Subpass())
+                                     .pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples),
+                                 "(%" PRIu32 ") is not equal to %s (%" PRIu32
+                                 ") and multisampledRenderToSingleSampledEnable is VK_TRUE.",
+                                 msrtss_info->rasterizationSamples, ms_loc.dot(Field::rasterizationSamples).Fields().c_str(),
+                                 multisample_state->rasterizationSamples);
             }
         }
 
@@ -1596,9 +1599,9 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const Location ds_loc = loc.dot(Field::pDepthStencilState);
+    const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
     const auto ds_state = pipeline.DepthStencilState();
     const auto &rp_state = pipeline.RenderPassState();
     const bool null_rp = (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE);
@@ -2016,11 +2019,13 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipe
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE &pipeline,
+                                                                  const Location &create_info_loc) const {
     bool skip = false;
     const auto *fragment_shading_rate_state = LvlFindInChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
     if (fragment_shading_rate_state && !pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
-        const Location fragment_loc = loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize);
+        const Location fragment_loc =
+            create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::fragmentSize);
 
         if (fragment_shading_rate_state->fragmentSize.width == 0) {
             skip |=
@@ -2072,14 +2077,16 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
 
         if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
             fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                              "is %s, but the primitiveFragmentShadingRate feature was not enabled.",
                              string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]));
         }
 
         if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
             fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                              "is %s, but the attachmentFragmentShadingRate feature was not enabled.",
                              string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]));
         }
@@ -2087,7 +2094,8 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
         if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
             (fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
              fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-            skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
                              "is %s, but the fragmentShadingRateNonTrivialCombinerOps feature is not enabled.",
                              string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]));
         }
@@ -2095,7 +2103,8 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
         if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
             (fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
              fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-            skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
                              "is %s, but the fragmentShadingRateNonTrivialCombinerOps feature is not enabled.",
                              string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]));
         }
@@ -2104,21 +2113,23 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
         if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
             const auto enums = ValidParamValues<VkFragmentShadingRateCombinerOpKHR>();
             if (std::find(enums.begin(), enums.end(), combiner_ops[0]) == enums.end()) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
-                                 "(0x%" PRIx32 ") is invalid.",
-                                 combiner_ops[0]);
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
+                             "(0x%" PRIx32 ") is invalid.", combiner_ops[0]);
             }
             if (std::find(enums.begin(), enums.end(), combiner_ops[1]) == enums.end()) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568", device, loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
-                                 "(0x%" PRIx32 ") is invalid.",
-                                 combiner_ops[1]);
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568", device,
+                             create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 1),
+                             "(0x%" PRIx32 ") is invalid.", combiner_ops[1]);
             }
         }
     }
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
     if (rendering_struct) {
@@ -2131,20 +2142,22 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                  (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
                 !pipeline.DepthStencilState()) {
                 // TODO 6184 - Add tests and fix logic for all combinations
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09033", device, loc.dot(Field::pDepthStencilState),
-                                 "is NULL, but %s is %s and stencilAttachmentFormat is %s.",
-                                 loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat).Fields().c_str(),
-                                 string_VkFormat(rendering_struct->depthAttachmentFormat),
-                                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033", device, create_info_loc.dot(Field::pDepthStencilState),
+                    "is NULL, but %s is %s and stencilAttachmentFormat is %s.",
+                    create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat).Fields().c_str(),
+                    string_VkFormat(rendering_struct->depthAttachmentFormat),
+                    string_VkFormat(rendering_struct->stencilAttachmentFormat));
             }
 
             if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
                 pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
                 // TODO 6184 - Add tests and fix logic for all combinations
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, loc.dot(Field::pColorBlendState),
-                                 "is NULL, but %s is %" PRIu32 ".",
-                                 loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
-                                  rendering_struct->colorAttachmentCount);
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
+                    "is NULL, but %s is %" PRIu32 ".",
+                    create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
+                    rendering_struct->colorAttachmentCount);
             }
         }
 
@@ -2152,28 +2165,37 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             const VkShaderStageFlags stages = pipeline.create_info_shaders;
             if (!enabled_features.core11.multiviewTessellationShader &&
                 (stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
-                skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                                 "is %" PRIu32 ") and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
-                                 rendering_struct->viewMask);
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057", device,
+                    create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                    "is %" PRIu32
+                    ") and pStages contains tesselation shaders, but the multiviewTessellationShader feature was not enabled.",
+                    rendering_struct->viewMask);
             }
 
             if (!enabled_features.core11.multiviewGeometryShader && (stages & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-                skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                                 "is %" PRIu32 ") and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06058", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                                 "is %" PRIu32
+                                 ") and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
                                  rendering_struct->viewMask);
             }
 
             if (!enabled_features.mesh_shader_features.multiviewMeshShader && (stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-                skip |= LogError( "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                                 "is %" PRIu32 ") and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07064", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                                 "is %" PRIu32
+                                 ") and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
                                  rendering_struct->viewMask);
             }
 
             if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
                 for (const auto &stage : pipeline.stage_states) {
                     if (stage.spirv_state->static_data_.has_builtin_layer) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06059", device, loc.dot(Field::pMultisampleState),
-                                         "is NULL, but pipeline created with fragment shader state and renderPass != VK_NULL_HANDLE.");
+                        skip |=
+                            LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06059", device,
+                                     create_info_loc.dot(Field::pMultisampleState),
+                                     "is NULL, but pipeline created with fragment shader state and renderPass != VK_NULL_HANDLE.");
                     }
                 }
             }
@@ -2188,16 +2210,19 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                         (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
                          (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
                         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06062", device,
-                        loc.dot(Field::pColorBlendState).dot(Field::pAttachments, color_index).dot(Field::blendEnable),
+                                         create_info_loc.dot(Field::pColorBlendState)
+                                             .dot(Field::pAttachments, color_index)
+                                             .dot(Field::blendEnable),
                                          "is VK_TRUE.");
                     }
 
                     if ((format_features &
                          (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                        skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",  device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, color_index),
-                                     "(%s) potential format features are %s.",
-                                     string_VkFormat(color_format), string_VkFormatFeatureFlags2(format_features).c_str());
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
+                                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo,
+                                                               Field::pColorAttachmentFormats, color_index),
+                                         "(%s) potential format features are %s.", string_VkFormat(color_format),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
                     }
                 }
             }
@@ -2205,17 +2230,21 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
                 VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
                 if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",  device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
-                                     "(%s) potential format features are %s.", string_VkFormat(rendering_struct->depthAttachmentFormat),
-                                     string_VkFormatFeatureFlags2(format_features).c_str());
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06585", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
+                                 "(%s) potential format features are %s.", string_VkFormat(rendering_struct->depthAttachmentFormat),
+                                 string_VkFormatFeatureFlags2(format_features).c_str());
                 }
             }
 
             if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
                 VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
                 if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06586", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
-                                     "(%s) potential format features are %s.", string_VkFormat(rendering_struct->stencilAttachmentFormat),
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06586", device,
+                                     create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
+                                     "(%s) potential format features are %s.",
+                                     string_VkFormat(rendering_struct->stencilAttachmentFormat),
                                      string_VkFormatFeatureFlags2(format_features).c_str());
                 }
             }
@@ -2223,7 +2252,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                 (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
                 (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06589", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06589", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
                                  "(%s) is not equal to stencilAttachmentFormat (%s).",
                                  string_VkFormat(rendering_struct->depthAttachmentFormat),
                                  string_VkFormat(rendering_struct->stencilAttachmentFormat));
@@ -2232,16 +2262,17 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
 
         if (pipeline.IsRenderPassStateRequired()) {
             if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiview-06577", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                                 "is %" PRIu32 ", but the multiview feature was not enabled.",
-                                 rendering_struct->viewMask);
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiview-06577", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                                 "is %" PRIu32 ", but the multiview feature was not enabled.", rendering_struct->viewMask);
             }
 
             if (MostSignificantBit(rendering_struct->viewMask) >=
                 static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06578", device, loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                                 "is 0x%" PRIx32 ", but maxMultiviewViewCount is %" PRIu32 "",
-                                 rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06578", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                                 "is 0x%" PRIx32 ", but maxMultiviewViewCount is %" PRIu32 "", rendering_struct->viewMask,
+                                 phys_dev_props_core11.maxMultiviewViewCount);
             }
         }
     }
@@ -2249,7 +2280,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE &pipeline,
+                                                   const Location &loc) const {
     bool skip = false;
 
     if (cb_state->inheritedViewportDepths.size() != 0) {
@@ -2258,16 +2290,16 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
         bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
         if (!dyn_viewport || !dyn_scissor) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline.pipeline());
-            skip |= LogError(objlist, "VUID-vkCmdBindPipeline-commandBuffer-04808",
-                             "vkCmdBindPipeline(): Graphics pipeline incompatible with viewport/scissor inheritance.");
+            skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04808", objlist, loc,
+                             "Graphics pipeline incompatible with viewport/scissor inheritance.");
         }
         const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
         if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
             (pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
             if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline.pipeline());
-                skip |= LogError(objlist, "VUID-vkCmdBindPipeline-commandBuffer-04809",
-                                 "vkCmdBindPipeline(): commandBuffer is a secondary command buffer with "
+                skip |= LogError("VUID-vkCmdBindPipeline-commandBuffer-04809", objlist, loc.dot(Field::commandBuffer),
+                                 "is a secondary command buffer with "
                                  "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled, pipelineBindPoint is "
                                  "VK_PIPELINE_BIND_POINT_GRAPHICS and pipeline was created with "
                                  "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = %" PRIu32

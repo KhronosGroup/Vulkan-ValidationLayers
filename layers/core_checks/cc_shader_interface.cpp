@@ -28,13 +28,15 @@
 #include "utils/shader_utils.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
-                                              const EntryPoint &entrypoint) const {
+                                              const EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
+    const Location vi_loc = create_info_loc.dot(Field::pVertexInputState);
 
     struct AttribInputPair {
         const VkFormat *attribute_input = nullptr;
         const Instruction *shader_input = nullptr;
+        uint32_t attribute_index = 0;
     };
     // For vertex input, we only need to care about Location.
     // You are not allowed to offset into the Component words
@@ -52,8 +54,9 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
             const uint32_t bytes_in_location = 16;
             const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
             for (uint32_t j = 0; j < num_locations; ++j) {
-                location_map[vi->pVertexAttributeDescriptions[i].location + j].attribute_input =
-                    &(vi->pVertexAttributeDescriptions[i].format);
+                const uint32_t index = vi->pVertexAttributeDescriptions[i].location + j;
+                location_map[index].attribute_input = &(vi->pVertexAttributeDescriptions[i].format);
+                location_map[index].attribute_index = i;
             }
         }
     }
@@ -98,13 +101,13 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
         if (attribute_input && !shader_input) {
             skip |= LogPerformanceWarning(module_state.handle(), kVUID_Core_Shader_OutputNotConsumed,
                                           "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                          "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader",
+                                          "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader.",
                                           pipeline.create_index, location);
         } else if (!attribute_input && shader_input) {
-            skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-Input-07904",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] Vertex shader consumes input at location %" PRIu32 " but not provided",
-                             pipeline.create_index, location);
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-07904", module_state.handle(),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions),
+                             "does not have a Location %" PRIu32 " but vertex shader has an input variable at that Location.",
+                             location);
         } else if (attribute_input && shader_input) {
             const VkFormat attribute_format = *attribute_input;
             const auto attribute_type = GetFormatType(attribute_format);
@@ -113,39 +116,41 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
 
             // Type checking
             if (!(attribute_type & var_numeric_type)) {
-                skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-Input-08733",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
-                                 pipeline.create_index, string_VkFormat(attribute_format), location,
-                                 module_state.DescribeType(var_base_type_id).c_str());
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                             "(%s) at Location %" PRIu32 " does not match vertex shader input type (%s).",
+                             string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
             } else {
                 // 64-bit can't be used if both the Vertex Attribute AND Shader Input Variable are both not 64-bit.
                 const bool attribute64 = FormatIs64bit(attribute_format);
                 const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
                 if (attribute64 && !shader64) {
-                    skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
-                                     " is a 64-bit format (%s) but vertex shader input is 32-bit type (%s)",
-                                     pipeline.create_index, location, string_VkFormat(attribute_format),
-                                     module_state.DescribeType(var_base_type_id).c_str());
+                    skip |= LogError(
+                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
+                        vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                        "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 32-bit type (%s).",
+                        string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
                 } else if (!attribute64 && shader64) {
-                    skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
-                                     " is a not a 64-bit format (%s) but vertex shader input is 64-bit type (%s)",
-                                     pipeline.create_index, location, string_VkFormat(attribute_format),
-                                     module_state.DescribeType(var_base_type_id).c_str());
+                    skip |= LogError(
+                        "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
+                        vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                        "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 64-bit type (%s).",
+                        string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
                 } else if (attribute64 && shader64) {
                     // Unlike 32-bit, the components for 64-bit inputs have to match exactly
                     const uint32_t attribute_components = FormatComponentCount(attribute_format);
                     const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
                     if (attribute_components < input_components) {
-                        skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
-                                         " is a %" PRIu32 "-wide 64-bit format (%s) but vertex shader input is %" PRIu32
-                                         "-wide 64-bit type (%s), 64-bit vertex input don't have default values and require "
-                                         "components to match what is used in the shader.",
-                                         pipeline.create_index, location, attribute_components, string_VkFormat(attribute_format),
-                                         input_components, module_state.DescribeType(var_base_type_id).c_str());
+                        skip |= LogError(
+                            "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
+                            vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                            "(%s) is a %" PRIu32 "-wide 64-bit format, but at location %" PRIu32
+                            " the vertex shader input is %" PRIu32
+                            "-wide 64-bit type (%s). (64-bit vertex input don't have default values and require "
+                            "components to match what is used in the shader)",
+                            string_VkFormat(attribute_format), attribute_components, location, input_components,
+                            module_state.DescribeType(var_base_type_id).c_str());
                     }
                 }
             }
@@ -158,17 +163,17 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
 }
 
 bool CoreChecks::ValidateInterfaceFragmentOutput(const PIPELINE_STATE &pipeline, const SPIRV_MODULE_STATE &module_state,
-                                                 const EntryPoint &entrypoint) const {
+                                                 const EntryPoint &entrypoint, const Location &create_info_loc) const {
     bool skip = false;
     const auto *ms_state = pipeline.MultisampleState();
     if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) && ms_state && ms_state->alphaToCoverageEnable) {
         // TODO - DualSource blend has two outputs at location zero, so Index == 0 is the one that's required.
         // Currently lack support to test each index.
         if (!entrypoint.has_alpha_to_coverage_variable && !pipeline.DualSourceBlending()) {
-            skip |= LogError(module_state.handle(), "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891",
-                             "vkCreateGraphicsPipelines(): alphaToCoverageEnable is set, but pCreateInfos[%" PRIu32
-                             "] fragment shader doesn't declare a variable that covers Location 0, Component 3.",
-                             pipeline.create_index);
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", module_state.handle(),
+                             create_info_loc.dot(Field::pMultisampleState).dot(Field::alphaToCoverageEnable),
+                             "is VK_TRUE, but the fragment shader doesn't declare a variable that covers "
+                             "Location 0, Component 3.");
         }
     }
     return skip;
@@ -395,7 +400,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
 
 bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &producer, const EntryPoint &producer_entrypoint,
                                                 const SPIRV_MODULE_STATE &consumer, const EntryPoint &consumer_entrypoint,
-                                                uint32_t pipe_index) const {
+                                                const Location &create_info_loc) const {
     bool skip = false;
 
     if (producer_entrypoint.has_passthrough) {
@@ -455,10 +460,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                     (component_info.output_width != component_info.input_width)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
                     skip |=
-                        LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-07754",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on Location %" PRIu32
-                                 " Component %" PRIu32 ", between\n%s stage:\n%s\n%s stage:\n%s\n",
-                                 pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage),
+                        LogError("VUID-RuntimeSpirv-OpEntryPoint-07754", objlist, create_info_loc,
+                                 "(SPIR-V Interface) Type mismatch on Location %" PRIu32 " Component %" PRIu32
+                                 ", between\n%s stage:\n%s\n%s stage:\n%s\n",
+                                 location, component, string_VkShaderStageFlagBits(producer_stage),
                                  producer.DescribeType(output_var->type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
                                  consumer.DescribeType(input_var->type_id).c_str());
                 }
@@ -468,10 +473,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                     (consumer_stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
                     (input_var->is_patch != output_var->is_patch)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |= LogError(objlist, "VUID-RuntimeSpirv-OpVariable-08746",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] at Location %" PRIu32
-                                     " Component %" PRIu32 " Tessellation Control is %s while Tessellation Evaluation is %s",
-                                     pipe_index, location, component, input_var->is_patch ? "patch" : "vertex",
+                    skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
+                                     "(SPIR-V Interface) at Location %" PRIu32 " Component %" PRIu32
+                                     " Tessellation Control is %s while Tessellation Evaluation is %s",
+                                     location, component, input_var->is_patch ? "patch" : "vertex",
                                      output_var->is_patch ? "patch" : "vertex");
                 }
 
@@ -483,14 +488,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                     const uint32_t input_vec_size = input_var->base_type.Word(3);
                     if (output_vec_size > input_vec_size) {
                         const LogObjectList objlist(producer.handle(), consumer.handle());
-                        skip |=
-                            LogError(objlist, "VUID-RuntimeSpirv-maintenance4-06817",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] starting at Location %" PRIu32
-                                     " Component %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
-                                     ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
-                                     "between input and output vectors.",
-                                     pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
-                                     string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
+                        skip |= LogError("VUID-RuntimeSpirv-maintenance4-06817", objlist, create_info_loc,
+                                         "(SPIR-V Interface) starting at Location %" PRIu32 " Component %" PRIu32
+                                         " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
+                                         ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
+                                         "between input and output vectors.",
+                                         location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
+                                         string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
                         break;  // Only need to report for the first component found
                     }
                 }
@@ -502,11 +506,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                 if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
                     skip |= LogPerformanceWarning(objlist, kVUID_Core_Shader_OutputNotConsumed,
-                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                  "] %s declared to output location %" PRIu32 " Component %" PRIu32
-                                                  " but is not an Input declared by %s.",
-                                                  pipe_index, string_VkShaderStageFlagBits(producer_stage), location, component,
-                                                  string_VkShaderStageFlagBits(consumer_stage));
+                                                  "%s (SPIR-V Interface) %s declared to output location %" PRIu32
+                                                  " Component %" PRIu32 " but is not an Input declared by %s.",
+                                                  create_info_loc.Fields().c_str(), string_VkShaderStageFlagBits(producer_stage),
+                                                  location, component, string_VkShaderStageFlagBits(consumer_stage));
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot
@@ -516,10 +519,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
                     break;  // When going inbetween Tessellation or Geometry, array size can be different
                 }
                 const LogObjectList objlist(producer.handle(), consumer.handle());
-                skip |= LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-08743",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s declared input at Location %" PRIu32
-                                 " Component %" PRIu32 " but it is not an Output declared in %s",
-                                 pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
+                skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-08743", objlist, create_info_loc,
+                                 "(SPIR-V Interface) %s declared input at Location %" PRIu32 " Component %" PRIu32
+                                 " but it is not an Output declared in %s",
+                                 string_VkShaderStageFlagBits(consumer_stage), location, component,
                                  string_VkShaderStageFlagBits(producer_stage));
                 break;  // Only need to report for the first component found
             }
@@ -577,16 +580,15 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
         }
         msg << "}\n";
         const LogObjectList objlist(producer.handle(), consumer.handle());
-        skip |= LogError(objlist, "VUID-RuntimeSpirv-OpVariable-08746",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Mistmatch in BuiltIn blocks:\n %s", pipe_index,
-                         msg.str().c_str());
+        skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
+                         "(SPIR-V Interface) Mistmatch in BuiltIn blocks:\n %s", msg.str().c_str());
     }
     return skip;
 }
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
     if (!(pipeline.pre_raster_state || pipeline.fragment_shader_state)) {
@@ -600,8 +602,8 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         const VkShaderStageFlagBits stage = stage_state.getStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
-            StageCreateInfo stage_create_info(loc.function, &pipeline);
-            skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, loc.dot(Field::pStages, i));
+            StageCreateInfo stage_create_info(create_info_loc.function, &pipeline);
+            skip |= ValidatePipelineShaderStage(stage_create_info, stage_state, create_info_loc.dot(Field::pStages, i));
         }
         if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage_state;
@@ -616,11 +618,13 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->spirv_state &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateInterfaceVertexInput(pipeline, *vertex_stage->spirv_state.get(), *vertex_stage->entrypoint);
+        skip |=
+            ValidateInterfaceVertexInput(pipeline, *vertex_stage->spirv_state.get(), *vertex_stage->entrypoint, create_info_loc);
     }
 
     if (pipeline.fragment_shader_state && fragment_stage && fragment_stage->entrypoint && fragment_stage->spirv_state) {
-        skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->spirv_state.get(), *fragment_stage->entrypoint);
+        skip |= ValidateInterfaceFragmentOutput(pipeline, *fragment_stage->spirv_state.get(), *fragment_stage->entrypoint,
+                                                create_info_loc);
     }
 
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
@@ -636,7 +640,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         }
         if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
             skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
-                                                   *consumer.entrypoint, pipeline.create_index);
+                                                   *consumer.entrypoint, create_info_loc);
         }
     }
     return skip;

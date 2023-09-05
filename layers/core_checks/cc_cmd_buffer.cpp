@@ -54,7 +54,7 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
         if (cb_state && cb_state->InUse()) {
             const LogObjectList objlist(pCommandBuffers[i], commandPool);
             skip |= LogError("VUID-vkFreeCommandBuffers-pCommandBuffers-00047", objlist,
-                             error_obj.location.dot(Field::pCommandBuffers, i), "Attempt to free %s which is in use.",
+                             error_obj.location.dot(Field::pCommandBuffers, i), "(%s) is in use.",
                              FormatHandle(pCommandBuffers[i]).c_str());
         }
     }
@@ -379,8 +379,8 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
 
     if (cb_state->InUse()) {
         const LogObjectList objlist(commandBuffer, cmd_pool);
-        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location,
-                         "Attempt to reset %s which is in use.", FormatHandle(commandBuffer).c_str());
+        skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location, "(%s) is in use.",
+                         FormatHandle(commandBuffer).c_str());
     }
 
     return skip;
@@ -540,7 +540,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                 const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
                 skip |= LogError(kVUID_Core_DrawState_InvalidSecondaryCommandBuffer, objlist, cb_loc,
                                  "called with invalid %s which has invalid active %s"
-                                 " of type %s but a query of that type has been started on secondary %s.",
+                                 " of type %s but a query of that type has been started on secondary command buffer %s.",
                                  FormatHandle(cb_state).c_str(), FormatHandle(query_object.pool).c_str(),
                                  string_VkQueryType(query_pool_state->createInfo.queryType), FormatHandle(sub_cb_state).c_str());
             }
@@ -551,9 +551,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
         const LogObjectList objlist(sub_cb_state.commandBuffer(), cb_state.commandBuffer());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00094", objlist, cb_loc,
-                         "Primary %s created in queue family %" PRIu32
-                         " has secondary "
-                         "%s created in queue family %" PRIu32 ".",
+                         "Primary command buffer %s created in queue family %" PRIu32
+                         " has secondary command buffer %s created in queue family %" PRIu32 ".",
                          FormatHandle(cb_state).c_str(), primary_pool->queueFamilyIndex, FormatHandle(sub_cb_state).c_str(),
                          secondary_pool->queueFamilyIndex);
     }
