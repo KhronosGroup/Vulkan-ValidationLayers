@@ -1157,12 +1157,11 @@ class CoreChecks : public ValidationStateTracker {
 
     void RecordQueuedQFOTransfers(CMD_BUFFER_STATE* cb_state);
 
-    template <typename ImgBarrier>
-    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const ImgBarrier* barrier);
+    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
+    void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 
-    template <typename ImgBarrier>
-    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const IMAGE_STATE& image_state, const ImgBarrier& img_barrier,
-                                     bool is_release_op);
+    void RecordTransitionImageLayout(CMD_BUFFER_STATE* cb_state, const ImageBarrier& image_barrier);
     void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
                         VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
                         const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,

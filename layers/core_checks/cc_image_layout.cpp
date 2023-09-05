@@ -978,15 +978,17 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
     return true;
 }
 
-template <typename ImgBarrier>
-void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state,
-                                             const ImgBarrier &mem_barrier, bool is_release_op) {
+void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const ImageBarrier &mem_barrier) {
     if (enabled_features.core13.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
         }
     }
-    auto normalized_isr = image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    auto image_state = Get<IMAGE_STATE>(mem_barrier.image);
+    if (!image_state) {
+        return;
+    }
+    auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
@@ -996,15 +998,6 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 
-    if (is_release_op) {
-        cb_state->SetImageInitialLayout(image_state, normalized_isr, initial_layout);
-    } else {
-        cb_state->SetImageLayout(image_state, normalized_isr, new_layout, initial_layout);
-    }
-}
-
-template <typename ImgBarrier>
-void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count, const ImgBarrier *barriers) {
     // For ownership transfers, the barrier is specified twice; as a release
     // operation on the yielding queue family, and as an acquire operation
     // on the acquiring queue family. This barrier may also include a layout
@@ -1014,20 +1007,29 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t bar
     // choose to perform it as part of the acquire operation.
     //
     // However, we still need to record initial layout for the "initial layout" validation
-    for (uint32_t i = 0; i < barrier_count; i++) {
-        const auto &mem_barrier = barriers[i];
-        const bool is_release_op = cb_state->IsReleaseOp(mem_barrier);
-        auto image_state = Get<IMAGE_STATE>(mem_barrier.image);
-        if (image_state) {
-            RecordTransitionImageLayout(cb_state, *image_state, mem_barrier, is_release_op);
-        }
+    if (cb_state->IsReleaseOp(mem_barrier)) {
+        cb_state->SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
+    } else {
+        cb_state->SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
     }
 }
 
-template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
-                                                 const VkImageMemoryBarrier *barrier);
-template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
-                                                 const VkImageMemoryBarrier2KHR *barrier);
+void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
+                                        const VkImageMemoryBarrier2 *image_barriers) {
+    for (uint32_t i = 0; i < barrier_count; i++) {
+        const ImageBarrier barrier(image_barriers[i]);
+        RecordTransitionImageLayout(cb_state, barrier);
+    }
+}
+
+void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
+                                        const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
+                                        VkPipelineStageFlags dst_stage_mask) {
+    for (uint32_t i = 0; i < barrier_count; i++) {
+        const ImageBarrier barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
+        RecordTransitionImageLayout(cb_state, barrier);
+    }
+}
 
 bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subres_range, const IMAGE_STATE &image_state) const {
     if (!(subres_range.layerCount) || !(subres_range.levelCount)) return false;
