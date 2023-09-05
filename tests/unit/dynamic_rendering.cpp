@@ -2609,8 +2609,8 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapRenderAreaWithoutDeviceGroupE
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicRendering, WithBarrier) {
-    TEST_DESCRIPTION("Test setting buffer memory barrier when dynamic rendering is active.");
+TEST_F(NegativeDynamicRendering, BarrierShaderTileFeaturesNotEnabled) {
+    TEST_DESCRIPTION("Test setting memory barrier without shader tile features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
     InitBasicDynamicRendering(&sync2_features);
@@ -2626,26 +2626,28 @@ TEST_F(NegativeDynamicRendering, WithBarrier) {
 
     m_commandBuffer->BeginRendering(begin_rendering_info);
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
-    buf_barrier.buffer = buffer.handle();
-    buf_barrier.offset = 0;
-    buf_barrier.size = VK_WHOLE_SIZE;
-    buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    auto barrier2 = LvlInitStruct<VkMemoryBarrier2>();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier2.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
     auto dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
-    dependency_info.bufferMemoryBarrierCount = 1;
-    dependency_info.pBufferMemoryBarriers = &buf_barrier;
+    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-shaderTileImageColorReadAccess-08718");
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
+    auto barrier = LvlInitStruct<VkMemoryBarrier>();
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-shaderTileImageColorReadAccess-08718");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier, 0, nullptr, 0,
+                           nullptr);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRendering();
