@@ -256,15 +256,23 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
-    bool imported_ahb = false;
+    bool imported_buffer = false;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
     if (auto imported_ahb_info = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
         imported_ahb_info != nullptr) {
-        imported_ahb = imported_ahb_info->buffer != nullptr;
+        imported_buffer = imported_ahb_info->buffer != nullptr;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_SCREEN_QNX)
+    //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
+    //  buffer value. Memory imported has another VUID to check size and allocationSize match up
+    if (auto imported_buffer_info = LvlFindInChain<VkImportScreenBufferInfoQNX>(pAllocateInfo->pNext);
+        imported_buffer_info != nullptr) {
+        imported_buffer = imported_buffer_info->buffer != nullptr;
+    }
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     auto dedicated_allocate_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
@@ -283,7 +291,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                  FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
                 if (!IsZeroAllocationSizeAllowed(pAllocateInfo) &&
-                    (pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
+                    (pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_buffer == false)) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-02964", objlist,
                                      allocate_info_loc.dot(Field::allocationSize),
                                      "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
@@ -302,7 +310,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
             auto buffer_state = Get<BUFFER_STATE>(dedicated_allocate_info->buffer);
             if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
-                (imported_ahb == false)) {
+                (imported_buffer == false)) {
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
                                  allocate_info_loc.dot(Field::allocationSize),
                                  "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
