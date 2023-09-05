@@ -22,9 +22,9 @@
 void Location::AppendFields(std::ostream& out) const {
     if (prev) {
         prev->AppendFields(out);
-        const bool needs_dot = prev->structure != vvl::Struct::Empty || prev->field != vvl::Field::Empty;
-        if (needs_dot) {
-            out << ".";
+        // check if need connector from last item
+        if (prev->structure != vvl::Struct::Empty || prev->field != vvl::Field::Empty) {
+            out << ((prev->index == kNoIndex && IsFieldPointer(prev->field)) ? "->" : ".");
         }
     }
     if (field != vvl::Field::Empty) {
@@ -32,7 +32,7 @@ void Location::AppendFields(std::ostream& out) const {
             out << "pNext<" << vvl::String(structure) << ">.";
         }
         out << vvl::String(field);
-        if (index != Location::kNoIndex) {
+        if (index != kNoIndex) {
             out << "[" << index << "]";
         }
     }

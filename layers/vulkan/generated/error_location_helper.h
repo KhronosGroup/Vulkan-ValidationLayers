@@ -4171,6 +4171,8 @@ enum class Field {
 const char* String(Func func);
 const char* String(Struct structure);
 const char* String(Field field);
+
+bool IsFieldPointer(Field field);
 }  // namespace vvl
 
 // NOLINTEND
