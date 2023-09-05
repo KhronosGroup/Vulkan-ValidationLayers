@@ -2366,7 +2366,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
         if (transition.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= ValidateHostCopyCurrentLayout(device, transition.oldLayout, transition.subresourceRange, i, *image_state,
                                                   transition_loc.dot(Field::oldLayout), "transition",
-                                                  "WIP: Should there be a VUID for this?");
+                                                  "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09229");
         }
     }
     return skip;
