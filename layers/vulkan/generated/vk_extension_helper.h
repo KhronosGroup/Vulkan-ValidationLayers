@@ -664,6 +664,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_filter_cubic_clamp{kNotEnabled};
     ExtEnabled vk_ext_attachment_feedback_loop_dynamic_state{kNotEnabled};
     ExtEnabled vk_qnx_external_memory_screen_buffer{kNotEnabled};
+    ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -1340,6 +1341,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME},
                            {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME}}})},
 #endif
+            {VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_descriptor_pool_overallocation, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_acceleration_structure, {{
                            {&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
                            {&DeviceExtensions::vk_ext_descriptor_indexing, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME},
@@ -1852,6 +1855,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     VK_QNX_EXTERNAL_MEMORY_SCREEN_BUFFER_EXTENSION_NAME,
 #endif
+    VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_EXTENSION_NAME,
     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
