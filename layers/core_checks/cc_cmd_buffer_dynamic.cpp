@@ -666,7 +666,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                     const auto attachment = (*cb_state.active_attachments)[i];
                     if (attachment && FormatIsColor(attachment->create_info.format) &&
                         (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
-                        cb_state.dynamic_state_value.color_blend_enable_attachments[i] == VK_TRUE) {
+                        cb_state.dynamic_state_value.color_blend_enabled[i] == VK_TRUE) {
                         skip |= LogError(vuid.set_color_blend_enable_08643, cb_state.commandBuffer(), loc,
                                          "Render pass attachment %" PRIu32
                                          " has format %s, which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
