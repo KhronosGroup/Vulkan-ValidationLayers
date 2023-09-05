@@ -1532,6 +1532,38 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
+    TEST_DESCRIPTION("Draw with shader objects to an attachment format that does not support blending.");
+
+    InitBasicShaderObject();
+    if (::testing::Test::IsSkipped()) return;
+
+    VkFormatProperties props;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_R32_UINT, &props);
+
+    if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0 ||
+        (props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0) {
+        GTEST_SKIP() << "color attachment format not suitable.";
+    }
+
+    InitDynamicRenderTarget(VK_FORMAT_R32_UINT);
+
+    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+
+    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    SetDefaultDynamicStates();
+    BindVertFragShader(vertShader, fragShader);
+    VkBool32 enabled = VK_FALSE;
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &enabled);
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
     TEST_DESCRIPTION("Draw in secondary command buffers with render pass continue flag.");
 
