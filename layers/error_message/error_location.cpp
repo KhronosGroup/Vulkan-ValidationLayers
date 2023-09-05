@@ -27,10 +27,10 @@ void Location::AppendFields(std::ostream& out) const {
             out << ((prev->index == kNoIndex && IsFieldPointer(prev->field)) ? "->" : ".");
         }
     }
+    if (isPNext && structure != vvl::Struct::Empty) {
+        out << "pNext<" << vvl::String(structure) << (field != vvl::Field::Empty ? ">." : ">");
+    }
     if (field != vvl::Field::Empty) {
-        if (isPNext && structure != vvl::Struct::Empty) {
-            out << "pNext<" << vvl::String(structure) << ">.";
-        }
         out << vvl::String(field);
         if (index != kNoIndex) {
             out << "[" << index << "]";
