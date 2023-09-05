@@ -480,16 +480,15 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     }
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer, dstBuffer);
+    const Location buffer_loc = error_obj.location.dot(Field::dstBuffer);
 
-    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, error_obj.location.dot(Field::dstBuffer),
-                                          "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
+    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                     "VUID-vkCmdUpdateBuffer-dstBuffer-00034", error_obj.location.dot(Field::dstBuffer));
+                                     "VUID-vkCmdUpdateBuffer-dstBuffer-00034", buffer_loc);
     skip |= ValidateCmd(cb_state, error_obj.location);
-    skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, error_obj.location, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-    skip |=
-        ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, error_obj.location, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
+    skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
+    skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
     if (dstOffset >= dst_buffer_state->createInfo.size) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00032", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", dstOffset, dst_buffer_state->createInfo.size);
