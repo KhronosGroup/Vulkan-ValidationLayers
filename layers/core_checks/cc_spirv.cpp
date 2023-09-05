@@ -290,18 +290,6 @@ static std::string string_descriptorTypeSet(const std::set<uint32_t> &descriptor
     return ss.str();
 }
 
-bool CoreChecks::RequirePropertyFlag(const SPIRV_MODULE_STATE &module_state, VkBool32 check, char const *flag,
-                                     char const *structure, const char *vuid) const {
-    if (!check) {
-        if (LogError(module_state.handle(), vuid, "Shader requires flag %s set in %s but it is not set on the device", flag,
-                     structure)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool CoreChecks::RequireFeature(const SPIRV_MODULE_STATE &module_state, VkBool32 feature, char const *feature_name,
                                 const char *vuid) const {
     if (!feature) {
@@ -342,8 +330,11 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE &mo
         if (scope_type == spv::ScopeSubgroup) {
             // "Group operations with subgroup scope" must have stage support
             const VkSubgroupFeatureFlags supported_stages = phys_dev_props_core11.subgroupSupportedStages;
-            skip |= RequirePropertyFlag(module_state, supported_stages & stage, string_VkShaderStageFlagBits(stage),
-                                        "VkPhysicalDeviceSubgroupProperties::supportedStages", "VUID-RuntimeSpirv-None-06343");
+            if ((supported_stages & stage) == 0) {
+                skip = LogError("VUID-RuntimeSpirv-None-06343", module_state.handle(), loc,
+                                "%s is not supported in subgroupSupportedStages (%s).", string_VkShaderStageFlagBits(stage),
+                                string_VkShaderStageFlags(supported_stages).c_str());
+            }
         }
 
         if (!enabled_features.core12.shaderSubgroupExtendedTypes) {

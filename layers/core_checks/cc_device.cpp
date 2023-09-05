@@ -750,13 +750,14 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    if (!cp_state) { return false; }
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {
         auto cb_state = entry.second;
         if (cb_state->InUse()) {
             const LogObjectList objlist(cb_state->Handle(), commandPool);
-            skip |= LogError("VUID-vkDestroyCommandPool-commandPool-00041", objlist, error_obj.location,
-                             "Attempt to destroy command pool with %s still in use.", FormatHandle(cb_state->Handle()).c_str());
+            skip |= LogError("VUID-vkDestroyCommandPool-commandPool-00041", objlist, error_obj.location, "(%s) is in use.",
+                             FormatHandle(cb_state->Handle()).c_str());
         }
     }
     return skip;
@@ -766,13 +767,14 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     auto cp_state = Get<COMMAND_POOL_STATE>(commandPool);
+    if (!cp_state) { return false; }
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {
         auto cb_state = entry.second;
         if (cb_state->InUse()) {
             const LogObjectList objlist(cb_state->Handle(), commandPool);
-            skip |= LogError("VUID-vkResetCommandPool-commandPool-00040", objlist, error_obj.location,
-                             "Attempt to reset command pool with %s still in use.", FormatHandle(cb_state->Handle()).c_str());
+            skip |= LogError("VUID-vkResetCommandPool-commandPool-00040", objlist, error_obj.location, "(%s) is in use.",
+                             FormatHandle(cb_state->Handle()).c_str());
         }
     }
     return skip;

@@ -612,7 +612,8 @@ class CoreChecks : public ValidationStateTracker {
                                                    const SURFACE_STATE* surface_state) const;
     bool ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const* pCreateInfo, const SURFACE_STATE* surface_state,
                                  const SWAPCHAIN_NODE* old_swapchain_state, const Location& loc) const;
-    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline,
+                                           const Location& loc) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const Location& loc,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors) const;
     bool ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappedMemoryRange* pMemoryRanges,
@@ -898,24 +899,24 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
 
     // Stuff from shader_validation
-    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline, const Location& loc) const;
-    bool ValidateGraphicsPipelinePortability(const PIPELINE_STATE& pipeline) const;
-    bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline, const Location& loc) const;
+    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelinePortability(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
                                                     const Location& loc, const DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pipeline, const Location& loc) const;
-    bool ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE& pipeline, const Location& loc) const;
-    bool ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE& pipeline, const Location& loc) const;
+    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                 const Location& loc) const;
+                                                 const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                    const Location& loc) const;
+                                                    const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                  const Location& loc) const;
-    bool ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE& pipeline, const Location& loc) const;
+                                                  const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline, const Location& loc) const;
-    bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline, const Location& loc) const;
+    bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE& pipeline, const VkPipelineRobustnessCreateInfoEXT& create_info,
                                               const Location& loc) const;
@@ -975,9 +976,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateExecutionModes(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
                                 const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateInterfaceVertexInput(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
-                                      const EntryPoint& entrypoint) const;
+                                      const EntryPoint& entrypoint, const Location& create_info_loc) const;
     bool ValidateInterfaceFragmentOutput(const PIPELINE_STATE& pipeline, const SPIRV_MODULE_STATE& module_state,
-                                         const EntryPoint& entrypoint) const;
+                                         const EntryPoint& entrypoint, const Location& create_info_loc) const;
     bool ValidateShaderInputAttachment(const SPIRV_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable, const Location& loc) const;
     bool ValidateConservativeRasterization(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
@@ -988,12 +989,10 @@ class CoreChecks : public ValidationStateTracker {
                                const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateSpecializations(const safe_VkSpecializationInfo* spec, const StageCreateInfo& create_info,
                                  const Location& loc) const;
-    bool RequirePropertyFlag(const SPIRV_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
-                             const char* vuid) const;
     bool RequireFeature(const SPIRV_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name, const char* vuid) const;
     bool ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE& producer, const EntryPoint& producer_entrypoint,
                                         const SPIRV_MODULE_STATE& consumer, const EntryPoint& consumer_entrypoint,
-                                        uint32_t pipe_index) const;
+                                        const Location& create_info_loc) const;
     bool ValidateVariables(const SPIRV_MODULE_STATE& module_state, const Location& loc) const;
     bool ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE& module_state, const StageCreateInfo& stage_create_info,
                                           const EntryPoint& entrypoint, const Location& loc) const;
