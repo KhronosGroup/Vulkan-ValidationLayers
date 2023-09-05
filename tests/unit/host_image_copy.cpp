@@ -1271,6 +1271,13 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
+    // Bad oldLayout
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09229");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
                           m_device->phy().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                           VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_CREATE_DISJOINT_BIT,
