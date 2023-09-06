@@ -3334,11 +3334,11 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const SyncStageAccessInfoTyp
     // subpasses.  Anything older than that should have been checked at the start of each subpass, taking into account all of
     // the raster ordering rules.
     if (IsRead(usage_info)) {
-        if (last_write.has_value() && (last_write->write_tag >= start_tag)) {
+        if (last_write.has_value() && (last_write->tag_ >= start_tag)) {
             hazard.Set(this, usage_info, READ_RACING_WRITE, *last_write);
         }
     } else {
-        if (last_write.has_value() && (last_write->write_tag >= start_tag)) {
+        if (last_write.has_value() && (last_write->tag_ >= start_tag)) {
             hazard.Set(this, usage_info, WRITE_RACING_WRITE, *last_write);
         } else if (last_reads.size() > 0) {
             // Any reads during the other subpass will conflict with this write, so we need to check them all.
@@ -3404,7 +3404,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
 
-    if (last_write.has_value() && (last_write->write_tag >= event_tag)) {
+    if (last_write.has_value() && (last_write->tag_ >= event_tag)) {
         // Any write after the event precludes the possibility of being in the first access scope for the layout transition
         hazard.Set(this, usage_info, WRITE_AFTER_WRITE, *last_write);
     } else {
@@ -3647,18 +3647,6 @@ void ResourceAccessState::ClearPending() {
     if (last_write.has_value()) last_write->ClearPending();
 }
 
-void ResourceAccessWriteState::ClearPending() {
-    pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
-    pending_write_barriers.reset();
-    pending_layout_ordering_ = OrderingBarrier();
-}
-
-void ResourceAccessWriteState::SetQueueId(QueueId id) {
-    if (write_queue == QueueSyncState::kQueueIdInvalid) {
-        write_queue = id;
-    }
-}
-
 void ResourceAccessState::ClearFirstUse() {
     first_accesses_.clear();
     first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
@@ -3760,12 +3748,12 @@ void ResourceAccessState::ApplySemaphore(const SemaphoreScope &signal, const Sem
         assert(last_write.has_value());
         // Will deflect RAW wait queue, WAW needs a chained barrier on wait queue
         read_execution_barriers = wait.exec_scope;
-        last_write->write_barriers = wait.valid_accesses;
+        last_write->barriers_ = wait.valid_accesses;
     } else {
         read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
-        if (last_write.has_value()) last_write->write_barriers.reset();
+        if (last_write.has_value()) last_write->barriers_.reset();
     }
-    if (last_write.has_value()) last_write->write_dependency_chain = read_execution_barriers;
+    if (last_write.has_value()) last_write->dependency_chain_ = read_execution_barriers;
 }
 
 // Read access predicate for queue wait
@@ -3930,47 +3918,6 @@ bool ResourceAccessState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipeli
 bool ResourceAccessState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
                                             QueueId scope_queue, ResourceUsageTag scope_tag) const {
     return last_write.has_value() && last_write->WriteInEventScope(src_exec_scope, src_access_scope, scope_queue, scope_tag);
-}
-
-bool ResourceAccessWriteState::WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const {
-    return 0 != (write_dependency_chain & src_exec_scope);
-}
-
-bool ResourceAccessWriteState::WriteInScope(const SyncStageAccessFlags &src_access_scope) const {
-    assert(last_write);
-    return src_access_scope[last_write->stage_access_index];
-}
-
-bool ResourceAccessWriteState::WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const {
-    return (write_barriers & src_access_scope).any();
-}
-
-bool ResourceAccessWriteState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
-                                                         SyncStageAccessFlags src_access_scope) const {
-    assert(last_write);
-    return WriteInChain(src_exec_scope) || WriteInScope(src_access_scope);
-}
-
-bool ResourceAccessWriteState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
-                                                              const SyncStageAccessFlags &src_access_scope) const {
-    assert(last_write);
-    return WriteInChain(src_exec_scope) || ((queue == write_queue) && WriteInScope(src_access_scope));
-}
-
-bool ResourceAccessWriteState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope,
-                                                 const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
-                                                 ResourceUsageTag scope_tag) const {
-    // The scope logic for events is, if we're asking, the resource usage was flagged as "in the first execution scope" at
-    // the time of the SetEvent, thus all we need check is whether the access is the same one (i.e. before the scope tag
-    // in order to know if it's in the excecution scope
-    assert(last_write);
-    return (write_tag < scope_tag) && WriteInQueueSourceScopeOrChain(scope_queue, src_exec_scope, src_access_scope);
-}
-
-bool ResourceAccessWriteState::WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope,
-                                                   const SyncStageAccessFlags &src_access_scope) const {
-    assert(last_write);
-    return WriteInChain(src_exec_scope) && WriteBarrierInScope(src_access_scope);
 }
 
 // As ReadStates must be unique by stage, this is as good a sort as needed
@@ -8981,23 +8928,23 @@ const AccessContext *ReplayState::GetRecordedAccessContext() const {
 
 // intiially zero, but accumulating the dstStages of barriers if they chain.
 
-ResourceAccessWriteState::ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_)
-    : last_write(&usage_info_),
-      write_barriers(),
-      write_tag(tag_),
-      write_queue(QueueSyncState::kQueueIdInvalid),
-      write_dependency_chain(VK_PIPELINE_STAGE_2_NONE_KHR),
+ResourceAccessWriteState::ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag)
+    : access_(&usage_info),
+      barriers_(),
+      tag_(tag),
+      queue_(QueueSyncState::kQueueIdInvalid),
+      dependency_chain_(VK_PIPELINE_STAGE_2_NONE_KHR),
       pending_layout_ordering_(),
-      pending_write_dep_chain(VK_PIPELINE_STAGE_2_NONE),
-      pending_write_barriers() {}
+      pending_dep_chain_(VK_PIPELINE_STAGE_2_NONE),
+      pending_barriers_() {}
 
 bool ResourceAccessWriteState::IsWriteHazard(const SyncStageAccessInfoType &usage_info) const {
-    return !write_barriers[usage_info.stage_access_index];
+    return !barriers_[usage_info.stage_access_index];
 }
 
 bool ResourceAccessWriteState::IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const {
-    assert(last_write);
-    return (write_queue == queue_id) && ordering.access_scope[last_write->stage_access_index];
+    assert(access_);
+    return (queue_ == queue_id) && ordering.access_scope[access_->stage_access_index];
 }
 
 bool ResourceAccessWriteState::IsOrderedWriteHazard(VkPipelineStageFlags2KHR src_exec_scope,
@@ -9010,7 +8957,7 @@ bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipeline
                                                     const SyncStageAccessFlags &src_access_scope) const {
     // Special rules for sequential ILT's
     if (IsIndex(SYNC_IMAGE_LAYOUT_TRANSITION)) {
-        if (queue_id == write_queue) {
+        if (queue_id == queue_) {
             // In queue, they are implicitly ordered
             return false;
         } else {
@@ -9022,19 +8969,86 @@ bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipeline
     return IsOrderedWriteHazard(src_exec_scope, src_access_scope);
 }
 
-void ResourceAccessWriteState::Set(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_) {
-    last_write = &usage_info_;
-    write_barriers.reset();
-    write_dependency_chain = VK_PIPELINE_STAGE_2_NONE;
-    write_tag = tag_;
-    write_queue = QueueSyncState::kQueueIdInvalid;
+void ResourceAccessWriteState::Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag) {
+    access_ = &usage_info;
+    barriers_.reset();
+    dependency_chain_ = VK_PIPELINE_STAGE_2_NONE;
+    tag_ = tag;
+    queue_ = QueueSyncState::kQueueIdInvalid;
 }
 
 void ResourceAccessWriteState::MergeBarriers(const ResourceAccessWriteState &other) {
-    write_barriers |= other.write_barriers;
-    write_dependency_chain |= other.write_dependency_chain;
+    barriers_ |= other.barriers_;
+    dependency_chain_ |= other.dependency_chain_;
 
-    pending_write_barriers |= other.pending_write_barriers;
-    pending_write_dep_chain |= other.pending_write_dep_chain;
+    pending_barriers_ |= other.pending_barriers_;
+    pending_dep_chain_ |= other.pending_dep_chain_;
     pending_layout_ordering_ |= other.pending_layout_ordering_;
+}
+
+void ResourceAccessWriteState::UpdatePendingBarriers(const SyncBarrier &barrier) {
+    pending_barriers_ |= barrier.dst_access_scope;
+    pending_dep_chain_ |= barrier.dst_exec_scope.exec_scope;
+}
+
+void ResourceAccessWriteState::ApplyPendingBarriers() {
+    dependency_chain_ |= pending_dep_chain_;
+    barriers_ |= pending_barriers_;
+}
+
+void ResourceAccessWriteState::UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {
+    pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+}
+
+void ResourceAccessWriteState::ClearPending() {
+    pending_dep_chain_ = VK_PIPELINE_STAGE_2_NONE;
+    pending_barriers_.reset();
+    pending_layout_ordering_ = OrderingBarrier();
+}
+
+void ResourceAccessWriteState::SetQueueId(QueueId id) {
+    if (queue_ == QueueSyncState::kQueueIdInvalid) {
+        queue_ = id;
+    }
+}
+
+bool ResourceAccessWriteState::WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const {
+    return 0 != (dependency_chain_ & src_exec_scope);
+}
+
+bool ResourceAccessWriteState::WriteInScope(const SyncStageAccessFlags &src_access_scope) const {
+    assert(access_);
+    return src_access_scope[access_->stage_access_index];
+}
+
+bool ResourceAccessWriteState::WriteBarrierInScope(const SyncStageAccessFlags &src_access_scope) const {
+    return (barriers_ & src_access_scope).any();
+}
+
+bool ResourceAccessWriteState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
+                                                         SyncStageAccessFlags src_access_scope) const {
+    assert(access_);
+    return WriteInChain(src_exec_scope) || WriteInScope(src_access_scope);
+}
+
+bool ResourceAccessWriteState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
+                                                              const SyncStageAccessFlags &src_access_scope) const {
+    assert(access_);
+    return WriteInChain(src_exec_scope) || ((queue == queue_) && WriteInScope(src_access_scope));
+}
+
+bool ResourceAccessWriteState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope,
+                                                 const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
+                                                 ResourceUsageTag scope_tag) const {
+    // The scope logic for events is, if we're asking, the resource usage was flagged as "in the first execution scope" at
+    // the time of the SetEvent, thus all we need check is whether the access is the same one (i.e. before the scope tag
+    // in order to know if it's in the excecution scope
+    assert(access_);
+    return (tag_ < scope_tag) && WriteInQueueSourceScopeOrChain(scope_queue, src_exec_scope, src_access_scope);
+}
+
+bool ResourceAccessWriteState::WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope,
+                                                   const SyncStageAccessFlags &src_access_scope) const {
+    assert(access_);
+    return WriteInChain(src_exec_scope) && WriteBarrierInScope(src_access_scope);
 }
