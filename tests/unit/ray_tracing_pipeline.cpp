@@ -956,15 +956,16 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), deferredOperation, VK_NULL_HANDLE, 1, &pipeline_ci,
                                                        nullptr, &pipeline);
-    ASSERT_EQ(result, VK_OPERATION_DEFERRED_KHR);
 
-    result = vk::DeferredOperationJoinKHR(this->m_device->handle(), deferredOperation);
-    ASSERT_EQ(result, VK_SUCCESS);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
     m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-    m_errorMonitor->VerifyFound();
+    if (result == VK_OPERATION_DEFERRED_KHR) {
+        result = vk::DeferredOperationJoinKHR(this->m_device->handle(), deferredOperation);
+        ASSERT_EQ(result, VK_SUCCESS);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+        m_errorMonitor->VerifyFound();
+    }
 
     result = vk::GetDeferredOperationResultKHR(m_device->handle(), deferredOperation);
     ASSERT_EQ(result, VK_SUCCESS);

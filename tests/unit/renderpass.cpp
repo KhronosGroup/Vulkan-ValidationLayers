@@ -817,6 +817,25 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsF
         VkAttachmentDescription{0, stencil_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                 VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL}};
+
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res;
+    res = vk::GetPhysicalDeviceImageFormatProperties(gpu_, attachments[0].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0u, &imageFormatProperties);
+    if (res != VK_SUCCESS) {
+        GTEST_SKIP() << "Image format not supported";
+    }
+    res = vk::GetPhysicalDeviceImageFormatProperties(gpu_, attachments[1].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0u, &imageFormatProperties);
+    if (res != VK_SUCCESS) {
+        GTEST_SKIP() << "Image format not supported";
+    }
+    res = vk::GetPhysicalDeviceImageFormatProperties(gpu_, attachments[2].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0u, &imageFormatProperties);
+    if (res != VK_SUCCESS) {
+        GTEST_SKIP() << "Image format not supported";
+    }
+
     std::array refs = {
         VkAttachmentReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},          // color
         VkAttachmentReference{1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},  // depth stencil
@@ -1480,6 +1499,13 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
     // Closure to create a render pass with just a depth/stencil image with specified format.
     // The layout is set to have more or less components than what this format has, triggering an error.
     auto test = [this](VkFormat depth_stencil_format, VkImageLayout depth_stencil_attachment_ref_layout, const char *vuid) {
+        VkImageFormatProperties imageFormatProperties;
+        VkResult res;
+        res = vk::GetPhysicalDeviceImageFormatProperties(gpu_, depth_stencil_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0u, &imageFormatProperties);
+        if (res != VK_SUCCESS) {
+            return;
+        }
         // Create an input attachment with a depth stencil format, without VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         VkImageObj depth_stencil_image(m_device);
 
@@ -4581,14 +4607,17 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
                              "VUID-VkSubpassDescription2-attachment-06920");
     }
 
-    if (rp2_supported) {
-        auto depth_stencil_attachment =
+    auto depth_stencil_attachment = LvlInitStruct<VkAttachmentDescription2KHR>(
+        nullptr, static_cast<VkAttachmentDescriptionFlags>(0), VK_FORMAT_S8_UINT, VK_SAMPLE_COUNT_2_BIT,
+        VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-            LvlInitStruct<VkAttachmentDescription2KHR>(
-                nullptr, static_cast<VkAttachmentDescriptionFlags>(0), VK_FORMAT_S8_UINT, VK_SAMPLE_COUNT_2_BIT,
-                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res;
+    res =
+        vk::GetPhysicalDeviceImageFormatProperties(gpu_, depth_stencil_attachment.format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0u, &imageFormatProperties);
+    if (rp2_supported && res == VK_SUCCESS) {
         auto rpci2 = LvlInitStruct<VkRenderPassCreateInfo2KHR>();
         rpci2.attachmentCount = 1;
         rpci2.pAttachments = &depth_stencil_attachment;

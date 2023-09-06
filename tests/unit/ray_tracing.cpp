@@ -2176,8 +2176,8 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         uint32_t align = ray_tracing_properties.shaderGroupHandleSize;
-        invalid_stride.stride =
-            ray_tracing_properties.maxShaderGroupStride + (align - (ray_tracing_properties.maxShaderGroupStride % align));
+        invalid_stride.stride = static_cast<VkDeviceSize>(ray_tracing_properties.maxShaderGroupStride) +
+                                (align - (ray_tracing_properties.maxShaderGroupStride % align));
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysKHR-None-08606");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-04041");
         vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
