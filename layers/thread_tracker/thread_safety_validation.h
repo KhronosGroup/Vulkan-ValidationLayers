@@ -327,10 +327,7 @@ class ThreadSafety : public ValidationObject {
     void StartReadObject(type object, vvl::Func command) { c_##type.StartRead(object, command); }     \
     void FinishReadObject(type object, vvl::Func command) { c_##type.FinishRead(object, command); }   \
     void CreateObject(type object) { c_##type.CreateObject(object); }                                 \
-    void DestroyObject(type object) {                                                                 \
-        c_##type.DestroyObject(object);                                                               \
-        c_##type.DestroyObject(object);                                                               \
-    }
+    void DestroyObject(type object) { c_##type.DestroyObject(object); }
 
 #define WRAPPER_PARENT_INSTANCE(type)                                                                                           \
     void StartWriteObjectParentInstance(type object, vvl::Func command) {                                                       \
