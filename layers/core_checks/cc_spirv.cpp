@@ -2538,10 +2538,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 if (spv_valid == SPV_WARNING) {
-                    skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-01379", "SPIR-V module not valid: %s",
+                    skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-08737", "SPIR-V module not valid: %s",
                                        diag && diag->error ? diag->error : "(no error text)");
                 } else {
-                    skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-01379", device, create_info_loc.dot(Field::pCode),
+                    skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08737", device, create_info_loc.dot(Field::pCode),
                                      "is not valid SPIR-V: %s", diag && diag->error ? diag->error : "(no error text)");
                 }
             }
