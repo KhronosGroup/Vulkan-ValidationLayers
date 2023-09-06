@@ -514,10 +514,27 @@ class ResourceAccessWriteState {
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const;
 
+    void ClearPending();
+
     void SetQueueId(QueueId id);
     void Set(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_);
     void MergeBarriers(const ResourceAccessWriteState &other);
     void OffsetTag(ResourceUsageTag offset) { write_tag += offset; }
+    bool HasPendingState() const { return pending_write_barriers.any() || (0 != pending_write_dep_chain); }
+    void UpdatePendingBarriers(const SyncBarrier &barrier) {
+        pending_write_barriers |= barrier.dst_access_scope;
+        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
+    };
+
+    void ApplyPendingBarriers() {
+        write_dependency_chain |= pending_write_dep_chain;
+        write_barriers |= pending_write_barriers;
+    }
+
+    void UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {
+        pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+    }
+    const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
 
   private:
     const SyncStageAccessInfoType *last_write;
@@ -526,6 +543,11 @@ class ResourceAccessWriteState {
     QueueId write_queue;
     // intially zero, but accumulating the dstStages of barriers if they chain.
     VkPipelineStageFlags2KHR write_dependency_chain;
+
+    // Write specific layout state
+    OrderingBarrier pending_layout_ordering_;
+    VkPipelineStageFlags2KHR pending_write_dep_chain;
+    SyncStageAccessFlags pending_write_barriers;
 
     friend ResourceAccessState;
 };
@@ -652,9 +674,7 @@ class ResourceAccessState : public SyncStageAccess {
     void OffsetTag(ResourceUsageTag offset);
     ResourceAccessState();
 
-    bool HasPendingState() const {
-        return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
-    }
+    bool HasPendingState() const { return (0 != pending_layout_transition) || (last_write && last_write->HasPendingState()); }
     bool HasWriteOp() const { return last_write.has_value(); }
     SyncStageAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
     bool IsLastWriteOp(SyncStageAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
@@ -772,9 +792,6 @@ class ResourceAccessState : public SyncStageAccess {
     // Not part of the write state, logically.  Can exist when !last_write
     // Pending execution state to support independent parallel barriers
     bool pending_layout_transition;
-    OrderingBarrier pending_layout_ordering_;
-    VkPipelineStageFlags2KHR pending_write_dep_chain;
-    SyncStageAccessFlags pending_write_barriers;
 
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2KHR first_read_stages_;

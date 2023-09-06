@@ -3156,9 +3156,7 @@ void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers
 // inter-subpass barriers for lazy-evaluation of parent context memory ranges.  Subpass layout transistions are *not* done
 // lazily, s.t. no previous access reports should need layout transitions.
 void ResourceAccessState::ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers) {
-    assert(!pending_layout_transition);  // This should never be call in the middle of another barrier application
-    assert(pending_write_barriers.none());
-    assert(!pending_write_dep_chain);
+    assert(!HasPendingState());  // This should never be call in the middle of another barrier application
     const UntaggedScopeOps scope;
     for (const auto &barrier : barriers) {
         ApplyBarrier(scope, barrier, false);
@@ -3456,10 +3454,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
     return hazard;
 }
 void ResourceAccessState::MergePending(const ResourceAccessState &other) {
-    pending_write_barriers |= other.pending_write_barriers;
     pending_layout_transition |= other.pending_layout_transition;
-    pending_write_dep_chain |= other.pending_write_dep_chain;
-    pending_layout_ordering_ |= other.pending_layout_ordering_;
 }
 
 void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
@@ -3648,8 +3643,12 @@ void ResourceAccessState::ClearRead() {
 }
 
 void ResourceAccessState::ClearPending() {
-    pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
     pending_layout_transition = false;
+    if (last_write.has_value()) last_write->ClearPending();
+}
+
+void ResourceAccessWriteState::ClearPending() {
+    pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
     pending_write_barriers.reset();
     pending_layout_ordering_ = OrderingBarrier();
 }
@@ -3678,17 +3677,16 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     //       transistion, under the theory of "most recent access".  If the resource acces  *isn't* safe
     //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    auto update_pending_write_barriers = [this, &barrier]() {
-        pending_write_barriers |= barrier.dst_access_scope;
-        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
-    };
     if (layout_transition) {
-        update_pending_write_barriers();
-        pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        if (!last_write.has_value()) {
+            last_write.emplace(UsageInfo(SYNC_ACCESS_INDEX_NONE), 0U);
+        }
+        last_write->UpdatePendingBarriers(barrier);
+        last_write->UpdatePendingLayoutOrdering(barrier);
         pending_layout_transition = true;
     } else {
         if (scope.WriteInScope(barrier, *this)) {
-            update_pending_write_barriers();
+            last_write->UpdatePendingBarriers(barrier);
         }
 
         if (!pending_layout_transition) {
@@ -3724,23 +3722,23 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
         const SyncStageAccessInfoType &layout_usage_info = UsageInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
         SetWrite(layout_usage_info, tag);  // Side effect notes below
         UpdateFirst(tag, layout_usage_info, SyncOrdering::kNonAttachment);
-        TouchupFirstForLayoutTransition(tag, pending_layout_ordering_);
-        pending_layout_ordering_ = OrderingBarrier();
+        TouchupFirstForLayoutTransition(tag, last_write->GetPendingLayoutOrdering());
+
+        last_write->ApplyPendingBarriers();
+        last_write->ClearPending();
         pending_layout_transition = false;
-    }
+    } else {
+        // Apply the accumulate execution barriers (and thus update chaining information)
+        // for layout transition, last_reads is reset by SetWrite, so this will be skipped.
+        for (auto &read_access : last_reads) {
+            read_execution_barriers |= read_access.ApplyPendingBarriers();
+        }
 
-    // Apply the accumulate execution barriers (and thus update chaining information)
-    // for layout transition, last_reads is reset by SetWrite, so this will be skipped.
-    for (auto &read_access : last_reads) {
-        read_execution_barriers |= read_access.ApplyPendingBarriers();
-    }
-
-    // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
-    if (last_write.has_value()) {
-        last_write->write_dependency_chain |= pending_write_dep_chain;
-        last_write->write_barriers |= pending_write_barriers;
-        pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
-        pending_write_barriers.reset();
+        // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
+        if (last_write.has_value()) {
+            last_write->ApplyPendingBarriers();
+            last_write->ClearPending();
+        }
     }
 }
 
@@ -3887,9 +3885,6 @@ ResourceAccessState::ResourceAccessState()
       last_reads(),
       input_attachment_read(false),
       pending_layout_transition(false),
-      pending_layout_ordering_(),
-      pending_write_dep_chain(VK_PIPELINE_STAGE_2_NONE),
-      pending_write_barriers(),
       first_accesses_(),
       first_read_stages_(VK_PIPELINE_STAGE_2_NONE),
       first_write_layout_ordering_() {}
@@ -8991,9 +8986,10 @@ ResourceAccessWriteState::ResourceAccessWriteState(const SyncStageAccessInfoType
       write_barriers(),
       write_tag(tag_),
       write_queue(QueueSyncState::kQueueIdInvalid),
-      write_dependency_chain(VK_PIPELINE_STAGE_2_NONE_KHR)
-
-{}
+      write_dependency_chain(VK_PIPELINE_STAGE_2_NONE_KHR),
+      pending_layout_ordering_(),
+      pending_write_dep_chain(VK_PIPELINE_STAGE_2_NONE),
+      pending_write_barriers() {}
 
 bool ResourceAccessWriteState::IsWriteHazard(const SyncStageAccessInfoType &usage_info) const {
     return !write_barriers[usage_info.stage_access_index];
@@ -9037,4 +9033,8 @@ void ResourceAccessWriteState::Set(const SyncStageAccessInfoType &usage_info_, R
 void ResourceAccessWriteState::MergeBarriers(const ResourceAccessWriteState &other) {
     write_barriers |= other.write_barriers;
     write_dependency_chain |= other.write_dependency_chain;
+
+    pending_write_barriers |= other.pending_write_barriers;
+    pending_write_dep_chain |= other.pending_write_dep_chain;
+    pending_layout_ordering_ |= other.pending_layout_ordering_;
 }
