@@ -2903,6 +2903,40 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09113" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09113";
     skip |= UsageHostTransferCheck(device, *image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, loc);
 
+    const auto &memory_states = image_state->GetBoundMemoryStates();
+    for (const auto &state : memory_states) {
+        // Image and host memory can't overlap unless the image memory is mapped
+        if (state->mapped_range.size != 0) {
+            const uint64_t mapped_size = (state->mapped_range.size == VK_WHOLE_SIZE)
+                                             ? state->alloc_info.allocationSize
+                                             : (state->mapped_range.offset + state->mapped_range.size);
+            const void *mapped_end = static_cast<char *>(state->p_driver_data) + mapped_size;
+            for (uint32_t i = 0; i < regionCount; i++) {
+                const auto region = info_ptr->pRegions[i];
+                auto element_size = vkuFormatElementSize(image_state->createInfo.format);
+                uint64_t copy_size;
+                if (region.memoryRowLength != 0 && region.memoryImageHeight != 0) {
+                    copy_size = ((region.memoryRowLength * region.memoryImageHeight) * element_size);
+                } else {
+                    copy_size = ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * element_size);
+                }
+                const void *copy_end = static_cast<const char *>(region.pHostPointer) + copy_size;
+
+                if ((region.pHostPointer >= state->p_driver_data && region.pHostPointer < mapped_end) ||
+                    (copy_end >= state->p_driver_data && copy_end < mapped_end) ||
+                    (region.pHostPointer <= state->p_driver_data && copy_end > mapped_end)) {
+                    const char *vuid =
+                        from_image ? "VUID-VkImageToMemoryCopyEXT-pRegions-09067" : "VUID-VkMemoryToImageCopyEXT-pRegions-09062";
+                    LogObjectList objlist(device, image_state->image());
+                    skip |= LogError(vuid, objlist, loc.dot(Field::pRegions, i).dot(Field::pHostPointer),
+                                     "points to memory spanning %p through %p, which overlaps with image memory"
+                                     "mapped %p through %p",
+                                     region.pHostPointer, copy_end, state->p_driver_data, mapped_end);
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
