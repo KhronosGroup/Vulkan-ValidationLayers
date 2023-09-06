@@ -2201,7 +2201,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
         }
     }
 
-    if (image_state.IsExternalAHB() && image_state.GetBoundMemoryStates().empty()) {
+    if (image_state.IsExternalBuffer() && image_state.GetBoundMemoryStates().empty()) {
         const char *vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-image-01895" : "VUID-vkGetImageSubresourceLayout-image-01895";
         skip |= LogError(vuid, image_state.image(), subresource_loc,
