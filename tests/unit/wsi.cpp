@@ -1784,6 +1784,9 @@ TEST_F(NegativeWsi, PresentIdWait) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
     auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);

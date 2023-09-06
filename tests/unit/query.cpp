@@ -636,7 +636,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        alloc_info.allocationSize = buf_size;
+        alloc_info.allocationSize = mem_reqs.size;
         VkDeviceMemory mem;
         err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
         ASSERT_VK_SUCCESS(err);
