@@ -3999,7 +3999,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             auto mem_info = Get<DEVICE_MEMORY_STATE>(bindInfo.memory);
             if (mem_info) {
                 VkDeviceSize plane_index = 0u;
-                if (image_state->disjoint && image_state->IsExternalAHB() == false) {
+                if (image_state->disjoint && image_state->IsExternalBuffer() == false) {
                     auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
                     plane_index = GetPlaneIndex(plane_info->planeAspect);
                 }

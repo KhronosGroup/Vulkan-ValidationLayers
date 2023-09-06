@@ -222,8 +222,9 @@ class BINDABLE : public BASE_NODE {
         BASE_NODE::Destroy();
     }
 
-    bool IsExternalAHB() const {
-        return (external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+    bool IsExternalBuffer() const {
+        return ((external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0) ||
+               ((external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX) != 0);
     }
 
     const DEVICE_MEMORY_STATE *MemState() const {
