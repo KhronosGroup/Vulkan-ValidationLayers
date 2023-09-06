@@ -14649,4 +14649,60 @@ void safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::initialize(cons
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    descriptorPoolOverallocation(in_struct->descriptorPoolOverallocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV),
+    pNext(nullptr),
+    descriptorPoolOverallocation()
+{}
+
+safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorPoolOverallocation = copy_src.descriptorPoolOverallocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV& safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::operator=(const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorPoolOverallocation = copy_src.descriptorPoolOverallocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::~safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::initialize(const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    descriptorPoolOverallocation = in_struct->descriptorPoolOverallocation;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::initialize(const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    descriptorPoolOverallocation = copy_src->descriptorPoolOverallocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 // NOLINTEND
