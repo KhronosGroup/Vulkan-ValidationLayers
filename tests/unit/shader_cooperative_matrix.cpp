@@ -464,7 +464,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DISABLED_MatchSizeWithProperties) {
         }
 
         // Allow SPIR-V tests to be accepted as Vertex Shader, while it essentially Compute Shader
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
 
         // There is no way to avoid this message
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");

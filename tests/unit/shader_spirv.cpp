@@ -271,7 +271,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -298,7 +298,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -326,7 +326,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -356,7 +356,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -384,7 +384,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -412,7 +412,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -457,7 +457,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if ((VK_SUCCESS == vs.InitFromGLSLTry()) && (VK_SUCCESS == fs.InitFromGLSLTry())) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -487,7 +487,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -516,7 +516,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -545,7 +545,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -590,7 +590,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08737");
         if ((VK_SUCCESS == vs.InitFromGLSLTry()) && (VK_SUCCESS == fs.InitFromGLSLTry())) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2057,7 +2057,7 @@ TEST_F(NegativeShaderSpirv, NoUniformBufferStandardLayout10) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -2101,7 +2101,7 @@ TEST_F(NegativeShaderSpirv, NoUniformBufferStandardLayout12) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
@@ -2144,7 +2144,7 @@ TEST_F(NegativeShaderSpirv, NoScalarBlockLayout10) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -2187,7 +2187,7 @@ TEST_F(NegativeShaderSpirv, NoScalarBlockLayout12) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
     VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

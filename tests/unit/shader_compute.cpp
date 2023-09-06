@@ -649,7 +649,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01379");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08737");
         VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
         m_errorMonitor->VerifyFound();
     }
