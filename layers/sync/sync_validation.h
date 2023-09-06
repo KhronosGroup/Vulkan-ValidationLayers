@@ -482,8 +482,8 @@ struct OrderingBarrier {
 class ResourceAccessWriteState {
   public:
     bool operator==(const ResourceAccessWriteState &rhs) const {
-        return (last_write == rhs.last_write) && (write_barriers == rhs.write_barriers) && (write_tag == rhs.write_tag) &&
-               (write_queue == rhs.write_queue) && (write_dependency_chain == rhs.write_dependency_chain);
+        return (access_ == rhs.access_) && (barriers_ == rhs.barriers_) && (tag_ == rhs.tag_) && (queue_ == rhs.queue_) &&
+               (dependency_chain_ == rhs.dependency_chain_);
     }
     bool WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const;
     bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
@@ -497,15 +497,15 @@ class ResourceAccessWriteState {
 
     bool WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const;
 
-    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_);
+    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
     ResourceAccessWriteState() = default;
 
-    SyncStageAccessIndex Index() const { return last_write->stage_access_index; }
+    SyncStageAccessIndex Index() const { return access_->stage_access_index; }
     bool IsIndex(SyncStageAccessIndex usage_index) const { return Index() == usage_index; }
-    bool IsQueue(QueueId other_queue) const { return write_queue == other_queue; }
-    const SyncStageAccessInfoType &Access() const { return *last_write; }
-    const SyncStageAccessFlags &Barriers() const { return write_barriers; }
-    ResourceUsageTag Tag() const { return write_tag; }
+    bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
+    const SyncStageAccessInfoType &Access() const { return *access_; }
+    const SyncStageAccessFlags &Barriers() const { return barriers_; }
+    ResourceUsageTag Tag() const { return tag_; }
     bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
 
@@ -514,40 +514,31 @@ class ResourceAccessWriteState {
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const;
 
-    void ClearPending();
 
     void SetQueueId(QueueId id);
-    void Set(const SyncStageAccessInfoType &usage_info_, ResourceUsageTag tag_);
+    void Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTag tag);
     void MergeBarriers(const ResourceAccessWriteState &other);
-    void OffsetTag(ResourceUsageTag offset) { write_tag += offset; }
-    bool HasPendingState() const { return pending_write_barriers.any() || (0 != pending_write_dep_chain); }
-    void UpdatePendingBarriers(const SyncBarrier &barrier) {
-        pending_write_barriers |= barrier.dst_access_scope;
-        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
-    };
+    void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
-    void ApplyPendingBarriers() {
-        write_dependency_chain |= pending_write_dep_chain;
-        write_barriers |= pending_write_barriers;
-    }
-
-    void UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {
-        pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-    }
+    bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
+    void ClearPending();
+    void UpdatePendingBarriers(const SyncBarrier &barrier);
+    void ApplyPendingBarriers();
+    void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
     const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
 
   private:
-    const SyncStageAccessInfoType *last_write;
-    SyncStageAccessFlags write_barriers;  // union of applicable barrier masks since last write
-    ResourceUsageTag write_tag;
-    QueueId write_queue;
+    const SyncStageAccessInfoType *access_;
+    SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
+    ResourceUsageTag tag_;
+    QueueId queue_;
     // intially zero, but accumulating the dstStages of barriers if they chain.
-    VkPipelineStageFlags2KHR write_dependency_chain;
+    VkPipelineStageFlags2KHR dependency_chain_;
 
     // Write specific layout state
     OrderingBarrier pending_layout_ordering_;
-    VkPipelineStageFlags2KHR pending_write_dep_chain;
-    SyncStageAccessFlags pending_write_barriers;
+    VkPipelineStageFlags2KHR pending_dep_chain_;
+    SyncStageAccessFlags pending_barriers_;
 
     friend ResourceAccessState;
 };
