@@ -659,7 +659,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
         VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                            VK_COMPONENT_SWIZZLE_IDENTITY},
         VK_CHROMA_LOCATION_COSITED_EVEN, VK_CHROMA_LOCATION_COSITED_EVEN, VK_FILTER_NEAREST, VK_FALSE);
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, true);
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1451,7 +1451,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
 
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, true);
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
     auto ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion.handle();

@@ -2259,12 +2259,11 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
                                  "is %" PRIu32 ", but multiview feature is not enabled.", subpass.viewMask);
             }
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
-            if (highest_view_bit > 0 &&
-                static_cast<uint32_t>(highest_view_bit) >= phys_dev_ext_props.multiview_props.maxMultiviewViewCount) {
+            if (highest_view_bit > 0 && static_cast<uint32_t>(highest_view_bit) >= phys_dev_props_core11.maxMultiviewViewCount) {
                 skip |= LogError("VUID-VkSubpassDescription2-viewMask-06706", device, subpass_loc,
                                  "highest bit (%" PRIu32
                                  ") is not less than VkPhysicalDeviceMultiviewProperties::maxMultiviewViewCount (%" PRIu32 ").",
-                                 highest_view_bit, phys_dev_ext_props.multiview_props.maxMultiviewViewCount);
+                                 highest_view_bit, phys_dev_props_core11.maxMultiviewViewCount);
             }
         } else {
             view_mask_zero = true;
