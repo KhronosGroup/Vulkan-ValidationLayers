@@ -1123,7 +1123,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArray) {
+TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArray) {
     TEST_DESCRIPTION("Have nested struct inside a block between shaders");
 
     ASSERT_NO_FATAL_FAILURE(Init());

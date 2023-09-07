@@ -895,7 +895,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
     //     layout(location = 4) in VertexIn {
-    //         ivec4 x;
+    //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
     char const *vsSource = R"(
