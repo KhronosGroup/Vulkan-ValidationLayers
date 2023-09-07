@@ -306,25 +306,25 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
                                                                           const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (pDiscardRectangles) {
-        for (uint32_t i = 0; i < discardRectangleCount; ++i) {
-            const Location loc = error_obj.location.dot(Field::pDiscardRectangles, i);
-            const int64_t x_sum =
-                static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
-            if (x_sum > std::numeric_limits<int32_t>::max()) {
-                skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588", commandBuffer, loc,
-                                 "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
-                                 pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum);
-            }
+    if (!pDiscardRectangles) {
+        return skip;
+    }
+    for (uint32_t i = 0; i < discardRectangleCount; ++i) {
+        const Location loc = error_obj.location.dot(Field::pDiscardRectangles, i);
+        const int64_t x_sum =
+            static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
+        if (x_sum > std::numeric_limits<int32_t>::max()) {
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588", commandBuffer, loc,
+                             "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
+                             pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum);
+        }
 
-            const int64_t y_sum =
-                static_cast<int64_t>(pDiscardRectangles[i].offset.y) + static_cast<int64_t>(pDiscardRectangles[i].extent.height);
-            if (y_sum > std::numeric_limits<int32_t>::max()) {
-                skip |=
-                    LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589", commandBuffer, loc,
+        const int64_t y_sum =
+            static_cast<int64_t>(pDiscardRectangles[i].offset.y) + static_cast<int64_t>(pDiscardRectangles[i].extent.height);
+        if (y_sum > std::numeric_limits<int32_t>::max()) {
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589", commandBuffer, loc,
                              "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
                              pDiscardRectangles[i].offset.y, pDiscardRectangles[i].extent.height, y_sum);
-            }
         }
     }
 

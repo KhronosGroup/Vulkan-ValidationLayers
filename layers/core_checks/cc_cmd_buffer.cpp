@@ -453,18 +453,18 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     skip |= ValidateCmd(*cb_state, error_obj.location);
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
-        if (buffer_state) {
-            const LogObjectList objlist(commandBuffer, buffer_state->buffer());
-            skip |=
-                ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
+        if (!buffer_state) {
+            continue;
+        }
+        const LogObjectList objlist(commandBuffer, buffer_state->buffer());
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", error_obj.location.dot(Field::pBuffers, i));
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pBuffers, i),
-                                                  "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
-            if (pOffsets[i] >= buffer_state->createInfo.size) {
-                skip |= LogError("VUID-vkCmdBindVertexBuffers-pOffsets-00626", objlist, error_obj.location.dot(Field::pOffsets, i),
-                                 "(%" PRIu64 ") is larger than the buffer size (%" PRIu64 ").", pOffsets[i],
-                                 buffer_state->createInfo.size);
-            }
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pBuffers, i),
+                                              "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
+        if (pOffsets[i] >= buffer_state->createInfo.size) {
+            skip |=
+                LogError("VUID-vkCmdBindVertexBuffers-pOffsets-00626", objlist, error_obj.location.dot(Field::pOffsets, i),
+                         "(%" PRIu64 ") is larger than the buffer size (%" PRIu64 ").", pOffsets[i], buffer_state->createInfo.size);
         }
     }
     return skip;
@@ -516,23 +516,23 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
     if (!disabled[query_validation]) {
         for (const auto &query_object : cb_state.activeQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
-            if (query_pool_state) {
-                if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-                    sub_cb_state.beginInfo.pInheritanceInfo) {
-                    VkQueryPipelineStatisticFlags cmd_buf_statistics = sub_cb_state.beginInfo.pInheritanceInfo->pipelineStatistics;
-                    if ((cmd_buf_statistics & query_pool_state->createInfo.pipelineStatistics) != cmd_buf_statistics) {
-                        const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
-                        skip |=
-                            LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, cb_loc,
+            if (!query_pool_state) {
+                continue;
+            }
+            if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+                sub_cb_state.beginInfo.pInheritanceInfo) {
+                VkQueryPipelineStatisticFlags cmd_buf_statistics = sub_cb_state.beginInfo.pInheritanceInfo->pipelineStatistics;
+                if ((cmd_buf_statistics & query_pool_state->createInfo.pipelineStatistics) != cmd_buf_statistics) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), sub_cb_state.commandBuffer(), query_object.pool);
+                    skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-00104", objlist, cb_loc,
                                      "was created with pInheritanceInfo::pipelineStatistics %s but the active query pool (%s) was "
                                      "created with %s.",
                                      string_VkQueryPipelineStatisticFlags(cmd_buf_statistics).c_str(),
                                      FormatHandle(query_object.pool).c_str(),
                                      string_VkQueryPipelineStatisticFlags(query_pool_state->createInfo.pipelineStatistics).c_str());
-                    }
                 }
-                active_types.insert(query_pool_state->createInfo.queryType);
             }
+            active_types.insert(query_pool_state->createInfo.queryType);
         }
         for (const auto &query_object : sub_cb_state.startedQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
@@ -1460,24 +1460,25 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         }
     } else {
         for (uint32_t i = 0; i < counterBufferCount; ++i) {
-            if (pCounterBuffers[i] != VK_NULL_HANDLE) {
-                auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
-                assert(buffer_state != nullptr);
+            if (pCounterBuffers[i] == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
+            assert(buffer_state != nullptr);
 
-                if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
-                    const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
-                    skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-02370", objlist,
-                                     error_obj.location.dot(Field::pCounterBuffers, i),
-                                     "is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").", i,
-                                     pCounterBufferOffsets[i]);
-                }
+            if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
+                const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
+                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-02370", objlist,
+                                 error_obj.location.dot(Field::pCounterBuffers, i),
+                                 "is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").", i,
+                                 pCounterBufferOffsets[i]);
+            }
 
-                if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
-                    const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
-                    skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
-                                     error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
-                                     string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
-                }
+            if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
+                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
+                                 error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
+                                 string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
             }
         }
     }
@@ -1512,24 +1513,25 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
         }
     } else {
         for (uint32_t i = 0; i < counterBufferCount; ++i) {
-            if (pCounterBuffers[i] != VK_NULL_HANDLE) {
-                auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
-                assert(buffer_state != nullptr);
+            if (pCounterBuffers[i] == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto buffer_state = Get<BUFFER_STATE>(pCounterBuffers[i]);
+            assert(buffer_state != nullptr);
 
-                if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
-                    const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
-                    skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378", objlist,
-                                     error_obj.location.dot(Field::pCounterBuffers, i),
-                                     "is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").", i,
-                                     pCounterBufferOffsets[i]);
-                }
+            if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
+                const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
+                skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378", objlist,
+                                 error_obj.location.dot(Field::pCounterBuffers, i),
+                                 "is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIx64 ").", i,
+                                 pCounterBufferOffsets[i]);
+            }
 
-                if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
-                    const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
-                    skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380", objlist,
-                                     error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
-                                     string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
-                }
+            if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
+                skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380", objlist,
+                                 error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
+                                 string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
             }
         }
     }
@@ -1631,22 +1633,24 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
     bool skip = false;
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    if (cb_state) {
-        if (!cb_state->conditional_rendering_active) {
-            skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01985", commandBuffer, error_obj.location,
-                             "Conditional rendering is not active.");
-        }
-        if (!cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr) {
-            skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01986", commandBuffer, error_obj.location,
-                             "Conditional rendering was begun outside outside of a render "
-                             "pass instance, but a render pass instance is currently active in the command buffer.");
-        }
-        if (cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr &&
-            cb_state->conditional_rendering_subpass != cb_state->GetActiveSubpass()) {
-            skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01987", commandBuffer, error_obj.location,
-                             "Conditional rendering was begun in subpass %" PRIu32 ", but the current subpass is %" PRIu32 ".",
-                             cb_state->conditional_rendering_subpass, cb_state->GetActiveSubpass());
-        }
+    if (!cb_state) {
+        return skip;
+    }
+
+    if (!cb_state->conditional_rendering_active) {
+        skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01985", commandBuffer, error_obj.location,
+                         "Conditional rendering is not active.");
+    }
+    if (!cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr) {
+        skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01986", commandBuffer, error_obj.location,
+                         "Conditional rendering was begun outside outside of a render "
+                         "pass instance, but a render pass instance is currently active in the command buffer.");
+    }
+    if (cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr &&
+        cb_state->conditional_rendering_subpass != cb_state->GetActiveSubpass()) {
+        skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01987", commandBuffer, error_obj.location,
+                         "Conditional rendering was begun in subpass %" PRIu32 ", but the current subpass is %" PRIu32 ".",
+                         cb_state->conditional_rendering_subpass, cb_state->GetActiveSubpass());
     }
 
     return skip;

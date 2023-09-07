@@ -119,87 +119,87 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                          string_VkQueryResultFlags(flags).c_str(), FormatHandle(queryPool).c_str());
     }
 
-    if (!skip) {
-        uint32_t query_avail_data = (flags & (VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR)) ? 1 : 0;
-        uint32_t query_size_in_bytes = (flags & VK_QUERY_RESULT_64_BIT) ? sizeof(uint64_t) : sizeof(uint32_t);
-        uint32_t query_items = 0;
-        uint32_t query_size = 0;
+    if (skip) {
+        return skip;
+    }
 
-        switch (query_pool_state.createInfo.queryType) {
-            case VK_QUERY_TYPE_OCCLUSION:
-                // Occlusion queries write one integer value - the number of samples passed.
-                query_items = 1;
+    uint32_t query_avail_data = (flags & (VK_QUERY_RESULT_WITH_AVAILABILITY_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR)) ? 1 : 0;
+    uint32_t query_size_in_bytes = (flags & VK_QUERY_RESULT_64_BIT) ? sizeof(uint64_t) : sizeof(uint32_t);
+    uint32_t query_items = 0;
+    uint32_t query_size = 0;
+
+    switch (query_pool_state.createInfo.queryType) {
+        case VK_QUERY_TYPE_OCCLUSION:
+            // Occlusion queries write one integer value - the number of samples passed.
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+            // Pipeline statistics queries write one integer value for each bit that is enabled in the pipelineStatistics
+            // when the pool is created
+            {
+                query_items = GetBitSetCount(query_pool_state.createInfo.pipelineStatistics);
                 query_size = query_size_in_bytes * (query_items + query_avail_data);
-                break;
+            }
+            break;
 
-            case VK_QUERY_TYPE_PIPELINE_STATISTICS:
-                // Pipeline statistics queries write one integer value for each bit that is enabled in the pipelineStatistics
-                // when the pool is created
-                {
-                    query_items = GetBitSetCount(query_pool_state.createInfo.pipelineStatistics);
-                    query_size = query_size_in_bytes * (query_items + query_avail_data);
-                }
-                break;
+        case VK_QUERY_TYPE_TIMESTAMP:
+            // Timestamp queries write one integer
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
 
-            case VK_QUERY_TYPE_TIMESTAMP:
-                // Timestamp queries write one integer
-                query_items = 1;
-                query_size = query_size_in_bytes * (query_items + query_avail_data);
-                break;
+        case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR:
+            // Result status only writes only status
+            query_items = 0;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
 
-            case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR:
-                // Result status only writes only status
-                query_items = 0;
-                query_size = query_size_in_bytes * (query_items + query_avail_data);
-                break;
+        case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+            // Transform feedback queries write two integers
+            query_items = 2;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
 
-            case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
-                // Transform feedback queries write two integers
-                query_items = 2;
-                query_size = query_size_in_bytes * (query_items + query_avail_data);
-                break;
-
-            case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-                // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
-                query_items = query_pool_state.perf_counter_index_count;
-                query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
-                if (query_size > stride) {
-                    skip |=
-                        LogError("VUID-vkGetQueryPoolResults-queryType-04519", queryPool, error_obj.location.dot(Field::queryPool),
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
+            // Performance queries store results in a tightly packed array of VkPerformanceCounterResultsKHR
+            query_items = query_pool_state.perf_counter_index_count;
+            query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
+            if (query_size > stride) {
+                skip |= LogError("VUID-vkGetQueryPoolResults-queryType-04519", queryPool, error_obj.location.dot(Field::queryPool),
                                  "(%s) specified stride %" PRIu64
                                  " which must be at least counterIndexCount (%d) "
                                  "multiplied by sizeof(VkPerformanceCounterResultKHR) (%zu).",
                                  FormatHandle(queryPool).c_str(), stride, query_items, sizeof(VkPerformanceCounterResultKHR));
-                }
+            }
 
-                if ((((uintptr_t)pData) % sizeof(VkPerformanceCounterResultKHR)) != 0 ||
-                    (stride % sizeof(VkPerformanceCounterResultKHR)) != 0) {
-                    skip |=
-                        LogError("VUID-vkGetQueryPoolResults-queryType-03229", queryPool, error_obj.location.dot(Field::queryPool),
+            if ((((uintptr_t)pData) % sizeof(VkPerformanceCounterResultKHR)) != 0 ||
+                (stride % sizeof(VkPerformanceCounterResultKHR)) != 0) {
+                skip |= LogError("VUID-vkGetQueryPoolResults-queryType-03229", queryPool, error_obj.location.dot(Field::queryPool),
                                  "(%s) was created with a queryType of "
                                  "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but pData & stride are not multiple of the "
                                  "size of VkPerformanceCounterResultKHR.",
                                  FormatHandle(queryPool).c_str());
-                }
-                skip |= ValidatePerformanceQueryResults(query_pool_state, firstQuery, queryCount, flags, error_obj.location);
+            }
+            skip |= ValidatePerformanceQueryResults(query_pool_state, firstQuery, queryCount, flags, error_obj.location);
 
-                break;
+            break;
 
-            // These cases intentionally fall through to the default
-            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:  // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV
-            case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
-            case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
-            default:
-                query_size = 0;
-                break;
-        }
+        // These cases intentionally fall through to the default
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:  // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV
+        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
+        default:
+            query_size = 0;
+            break;
+    }
 
-        if (query_size && (((queryCount - 1) * stride + query_size) > dataSize)) {
-            skip |= LogError("VUID-vkGetQueryPoolResults-dataSize-00817", queryPool, error_obj.location.dot(Field::queryPool),
-                             "(%s) specified dataSize %zu which is "
-                             "incompatible with the specified query type and options.",
-                             FormatHandle(queryPool).c_str(), dataSize);
-        }
+    if (query_size && (((queryCount - 1) * stride + query_size) > dataSize)) {
+        skip |= LogError("VUID-vkGetQueryPoolResults-dataSize-00817", queryPool, error_obj.location.dot(Field::queryPool),
+                         "(%s) specified dataSize %zu which is "
+                         "incompatible with the specified query type and options.",
+                         FormatHandle(queryPool).c_str(), dataSize);
     }
 
     return skip;

@@ -1080,78 +1080,79 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
         return;
     }
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
-    if (cb_state.activeRenderPass && (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
-        std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
-        if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
-            for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
-                const auto clear_desc = &pAttachments[attachment_index];
-                auto colorAttachmentCount = cb_state.activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
-                int image_index = -1;
-                if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && (clear_desc->colorAttachment < colorAttachmentCount)) {
-                    image_index = cb_state.GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
-                } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT)) {
-                    image_index = cb_state.GetDynamicDepthAttachmentImageIndex();
-                } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                    image_index = cb_state.GetDynamicStencilAttachmentImageIndex();
-                }
-
-                if (image_index != -1) {
-                    if (!clear_rect_copy) {
-                        // We need a copy of the clear rectangles that will persist until the last lambda executes
-                        // but we want to create it as lazily as possible
-                        clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
-                    }
-                    // if a secondary level command buffer inherits the framebuffer from the primary command buffer
-                    // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                    auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary,
-                                                                     const CMD_BUFFER_STATE *prim_cb, const FRAMEBUFFER_STATE *) {
-                        assert(rectCount == clear_rect_copy->size());
-                        bool skip = false;
-                        skip = ValidateClearAttachmentExtent(
-                            secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
-                            prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
-                            clear_rect_copy->data());
-                        return skip;
-                    };
-                    cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
-                }
+    if (!cb_state.activeRenderPass || (cb_state.createInfo.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+        return;
+    }
+    std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+            const auto clear_desc = &pAttachments[attachment_index];
+            auto colorAttachmentCount = cb_state.activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+            int image_index = -1;
+            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && (clear_desc->colorAttachment < colorAttachmentCount)) {
+                image_index = cb_state.GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
+            } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                image_index = cb_state.GetDynamicDepthAttachmentImageIndex();
+            } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                image_index = cb_state.GetDynamicStencilAttachmentImageIndex();
             }
-        } else if (cb_state.activeRenderPass->use_dynamic_rendering == false) {
-            const VkRenderPassCreateInfo2 *renderpass_create_info = cb_state.activeRenderPass->createInfo.ptr();
-            const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
 
-            for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
-                const auto clear_desc = &pAttachments[attachment_index];
-                uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
-                if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
-                    (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
-                    fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
-                } else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
-                           subpass_desc->pDepthStencilAttachment) {
-                    fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+            if (image_index != -1) {
+                if (!clear_rect_copy) {
+                    // We need a copy of the clear rectangles that will persist until the last lambda executes
+                    // but we want to create it as lazily as possible
+                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
                 }
-                if (fb_attachment != VK_ATTACHMENT_UNUSED) {
-                    if (!clear_rect_copy) {
-                        // We need a copy of the clear rectangles that will persist until the last lambda executes
-                        // but we want to create it as lazily as possible
-                        clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
+                                                                 const FRAMEBUFFER_STATE *) {
+                    assert(rectCount == clear_rect_copy->size());
+                    bool skip = false;
+                    skip = ValidateClearAttachmentExtent(
+                        secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
+                        prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
+                        clear_rect_copy->data());
+                    return skip;
+                };
+                cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
+            }
+        }
+    } else if (cb_state.activeRenderPass->use_dynamic_rendering == false) {
+        const VkRenderPassCreateInfo2 *renderpass_create_info = cb_state.activeRenderPass->createInfo.ptr();
+        const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
+
+        for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+            const auto clear_desc = &pAttachments[attachment_index];
+            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
+                fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+            } else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
+                       subpass_desc->pDepthStencilAttachment) {
+                fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+            }
+            if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                if (!clear_rect_copy) {
+                    // We need a copy of the clear rectangles that will persist until the last lambda executes
+                    // but we want to create it as lazily as possible
+                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
+                }
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *prim_cb,
+                                                                 const FRAMEBUFFER_STATE *fb) {
+                    assert(rectCount == clear_rect_copy->size());
+                    const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
+                    bool skip = false;
+
+                    if (fb) {
+                        skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
+                                                             clear_rect_copy->data());
                     }
-                    // if a secondary level command buffer inherits the framebuffer from the primary command buffer
-                    // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
-                    auto val_fn = [this, rectCount, clear_rect_copy](const CMD_BUFFER_STATE &secondary,
-                                                                     const CMD_BUFFER_STATE *prim_cb, const FRAMEBUFFER_STATE *fb) {
-                        assert(rectCount == clear_rect_copy->size());
-                        const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
-                        bool skip = false;
-
-                        if (fb) {
-                            skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
-                                                                 clear_rect_copy->data());
-                        }
-                        return skip;
-                    };
-                    cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
-                }
+                    return skip;
+                };
+                cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
             }
         }
     }

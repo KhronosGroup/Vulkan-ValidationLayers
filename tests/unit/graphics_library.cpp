@@ -288,6 +288,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
 
         frag_output_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         frag_output_lib.gp_ci_.pDepthStencilState = nullptr;
+        frag_output_lib.gp_ci_.pColorBlendState = nullptr;
 
         // Should be fine even though pDepthStencilState is NULL
         frag_output_lib.CreateGraphicsPipeline();

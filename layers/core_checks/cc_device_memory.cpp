@@ -882,38 +882,39 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t memoryRangeCount, const VkMappe
     for (uint32_t i = 0; i < memoryRangeCount; ++i) {
         const Location memory_range_loc = error_obj.location.dot(Field::pMemoryRanges, i);
         auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryRanges[i].memory);
-        if (mem_info) {
-            // Makes sure the memory is already mapped
-            if (mem_info->mapped_range.size == 0) {
-                skip = LogError("VUID-VkMappedMemoryRange-memory-00684", pMemoryRanges[i].memory, memory_range_loc,
-                                "Attempting to use memory (%s) that is not currently host mapped.",
-                                FormatHandle(pMemoryRanges[i].memory).c_str());
-            }
+        if (!mem_info) {
+            continue;
+        }
+        // Makes sure the memory is already mapped
+        if (mem_info->mapped_range.size == 0) {
+            skip = LogError("VUID-VkMappedMemoryRange-memory-00684", pMemoryRanges[i].memory, memory_range_loc,
+                            "Attempting to use memory (%s) that is not currently host mapped.",
+                            FormatHandle(pMemoryRanges[i].memory).c_str());
+        }
 
-            if (pMemoryRanges[i].size == VK_WHOLE_SIZE) {
-                if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
-                    skip |= LogError(
-                        "VUID-VkMappedMemoryRange-size-00686", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
-                        "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is VK_WHOLE_SIZE).",
-                        pMemoryRanges[i].offset, mem_info->mapped_range.offset);
-                }
-            } else {
-                if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
-                    skip |= LogError(
-                        "VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
-                        "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is not VK_WHOLE_SIZE).",
-                        pMemoryRanges[i].offset, mem_info->mapped_range.offset);
-                }
-                const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
-                                              ? mem_info->alloc_info.allocationSize
-                                              : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
-                if ((data_end < (pMemoryRanges[i].offset + pMemoryRanges[i].size))) {
-                    skip |= LogError("VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc,
-                                     "size (%" PRIu64 ") plus offset (%" PRIu64
-                                     ") "
-                                     "exceed the Memory Object's upper-bound (%" PRIu64 ").",
-                                     pMemoryRanges[i].size, pMemoryRanges[i].offset, data_end);
-                }
+        if (pMemoryRanges[i].size == VK_WHOLE_SIZE) {
+            if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
+                skip |=
+                    LogError("VUID-VkMappedMemoryRange-size-00686", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
+                             "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is VK_WHOLE_SIZE).",
+                             pMemoryRanges[i].offset, mem_info->mapped_range.offset);
+            }
+        } else {
+            if (mem_info->mapped_range.offset > pMemoryRanges[i].offset) {
+                skip |=
+                    LogError("VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc.dot(Field::offset),
+                             "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is not VK_WHOLE_SIZE).",
+                             pMemoryRanges[i].offset, mem_info->mapped_range.offset);
+            }
+            const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
+                                          ? mem_info->alloc_info.allocationSize
+                                          : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
+            if ((data_end < (pMemoryRanges[i].offset + pMemoryRanges[i].size))) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-00685", pMemoryRanges[i].memory, memory_range_loc,
+                                 "size (%" PRIu64 ") plus offset (%" PRIu64
+                                 ") "
+                                 "exceed the Memory Object's upper-bound (%" PRIu64 ").",
+                                 pMemoryRanges[i].size, pMemoryRanges[i].offset, data_end);
             }
         }
     }
@@ -936,30 +937,30 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
                              offset, atom_size);
         }
         auto mem_info = Get<DEVICE_MEMORY_STATE>(mem_ranges[i].memory);
-        if (mem_info) {
-            const auto allocation_size = mem_info->alloc_info.allocationSize;
-            if (size == VK_WHOLE_SIZE) {
-                const auto mapping_offset = mem_info->mapped_range.offset;
-                const auto mapping_size = mem_info->mapped_range.size;
-                const auto mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
-                if (SafeModulo(mapping_end, atom_size) != 0 && mapping_end != allocation_size) {
-                    skip |=
-                        LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges->memory, memory_range_loc.dot(Field::size),
+        if (!mem_info) {
+            continue;
+        }
+        const auto allocation_size = mem_info->alloc_info.allocationSize;
+        if (size == VK_WHOLE_SIZE) {
+            const auto mapping_offset = mem_info->mapped_range.offset;
+            const auto mapping_size = mem_info->mapped_range.size;
+            const auto mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
+            if (SafeModulo(mapping_end, atom_size) != 0 && mapping_end != allocation_size) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges->memory, memory_range_loc.dot(Field::size),
                                  "is VK_WHOLE_SIZE and the mapping end (0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64
                                  ") not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
                                  ") and not equal to the end of the memory object (0x%" PRIxLEAST64 ").",
                                  mapping_end, mapping_offset, mapping_size, atom_size, allocation_size);
-                }
-            } else {
-                const auto range_end = size + offset;
-                if (range_end != allocation_size && SafeModulo(size, atom_size) != 0) {
-                    skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges->memory, memory_range_loc.dot(Field::size),
-                                     "(0x%" PRIxLEAST64
-                                     ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
-                                     ") and offset + size (0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64
-                                     ") not equal to the memory size (0x%" PRIxLEAST64 ").",
-                                     size, atom_size, offset, size, range_end, allocation_size);
-                }
+            }
+        } else {
+            const auto range_end = size + offset;
+            if (range_end != allocation_size && SafeModulo(size, atom_size) != 0) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges->memory, memory_range_loc.dot(Field::size),
+                                 "(0x%" PRIxLEAST64
+                                 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64
+                                 ") and offset + size (0x%" PRIxLEAST64 " + 0x%" PRIxLEAST64 " = 0x%" PRIxLEAST64
+                                 ") not equal to the memory size (0x%" PRIxLEAST64 ").",
+                                 size, atom_size, offset, size, range_end, allocation_size);
             }
         }
     }
@@ -1662,56 +1663,58 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
         }
     }
 
-    if (image_state) {
-        skip |= ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, bind_loc,
-                                                              memory_loc.dot(Field::subresource));
+    if (!image_state) {
+        return skip;
+    }
 
-        for (auto const &requirements : image_state->sparse_requirements) {
-            VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
-            if (SafeModulo(bind.offset.x, granularity.width) != 0) {
-                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
-                                 bind_loc.dot(Field::offset).dot(Field::x),
-                                 "(%" PRId32
-                                 ") must be a multiple of the sparse image block width "
-                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image.",
-                                 bind.offset.x, granularity.width);
-            }
+    skip |=
+        ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, bind_loc, memory_loc.dot(Field::subresource));
 
-            if (SafeModulo(bind.offset.y, granularity.height) != 0) {
-                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01109", image_state->Handle(),
-                                 bind_loc.dot(Field::offset).dot(Field::y),
-                                 "(%" PRId32
-                                 ") must be a multiple of the sparse image block height "
-                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image.",
-                                 bind.offset.y, granularity.height);
-            }
+    for (auto const &requirements : image_state->sparse_requirements) {
+        VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
+        if (SafeModulo(bind.offset.x, granularity.width) != 0) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
+                             bind_loc.dot(Field::offset).dot(Field::x),
+                             "(%" PRId32
+                             ") must be a multiple of the sparse image block width "
+                             "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image.",
+                             bind.offset.x, granularity.width);
+        }
 
-            if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
-                skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01111", image_state->Handle(),
-                                 bind_loc.dot(Field::offset).dot(Field::z),
-                                 "(%" PRId32
-                                 ") must be a multiple of the sparse image block depth "
-                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image.",
-                                 bind.offset.z, granularity.depth);
-            }
+        if (SafeModulo(bind.offset.y, granularity.height) != 0) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01109", image_state->Handle(),
+                             bind_loc.dot(Field::offset).dot(Field::y),
+                             "(%" PRId32
+                             ") must be a multiple of the sparse image block height "
+                             "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image.",
+                             bind.offset.y, granularity.height);
+        }
 
-            VkExtent3D const subresource_extent = image_state->GetEffectiveSubresourceExtent(bind.subresource);
-            if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
-                ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
-                skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01108", image_state->Handle(),
-                                 bind_loc.dot(Field::extent).dot(Field::width),
-                                 "(%" PRIu32
-                                 ") must either be a multiple of the sparse image block width "
-                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32
-                                 ")) of the image, or else (extent.width + offset.x) (%" PRIu32
-                                 ") must equal the width of the image subresource (%" PRIu32 ").",
-                                 bind.extent.width, granularity.width, bind.extent.width + bind.offset.x, subresource_extent.width);
-            }
+        if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01111", image_state->Handle(),
+                             bind_loc.dot(Field::offset).dot(Field::z),
+                             "(%" PRId32
+                             ") must be a multiple of the sparse image block depth "
+                             "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image.",
+                             bind.offset.z, granularity.depth);
+        }
 
-            if ((SafeModulo(bind.extent.height, granularity.height) != 0) &&
-                ((bind.extent.height + bind.offset.y) != subresource_extent.height)) {
-                skip |=
-                    LogError("VUID-VkSparseImageMemoryBind-extent-01110", image_state->Handle(),
+        VkExtent3D const subresource_extent = image_state->GetEffectiveSubresourceExtent(bind.subresource);
+        if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
+            ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01108", image_state->Handle(),
+                             bind_loc.dot(Field::extent).dot(Field::width),
+                             "(%" PRIu32
+                             ") must either be a multiple of the sparse image block width "
+                             "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32
+                             ")) of the image, or else (extent.width + offset.x) (%" PRIu32
+                             ") must equal the width of the image subresource (%" PRIu32 ").",
+                             bind.extent.width, granularity.width, bind.extent.width + bind.offset.x, subresource_extent.width);
+        }
+
+        if ((SafeModulo(bind.extent.height, granularity.height) != 0) &&
+            ((bind.extent.height + bind.offset.y) != subresource_extent.height)) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01110", image_state->Handle(),
                              bind_loc.dot(Field::extent).dot(Field::height),
                              "(%" PRIu32
                              ") must either be a multiple of the sparse image block height "
@@ -1719,19 +1722,18 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                              ")) of the image, or else (extent.height + offset.y) (%" PRIu32
                              ") must equal the height of the image subresource (%" PRIu32 ").",
                              bind.extent.height, granularity.height, bind.extent.height + bind.offset.y, subresource_extent.height);
-            }
+        }
 
-            if ((SafeModulo(bind.extent.depth, granularity.depth) != 0) &&
-                ((bind.extent.depth + bind.offset.z) != subresource_extent.depth)) {
-                skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01112", image_state->Handle(),
-                                 bind_loc.dot(Field::extent).dot(Field::depth),
-                                 "(%" PRIu32
-                                 ") must either be a multiple of the sparse image block depth "
-                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32
-                                 ")) of the image, or else (extent.depth + offset.z) (%" PRIu32
-                                 ") must equal the depth of the image subresource (%" PRIu32 ").",
-                                 bind.extent.depth, granularity.depth, bind.extent.depth + bind.offset.z, subresource_extent.depth);
-            }
+        if ((SafeModulo(bind.extent.depth, granularity.depth) != 0) &&
+            ((bind.extent.depth + bind.offset.z) != subresource_extent.depth)) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01112", image_state->Handle(),
+                             bind_loc.dot(Field::extent).dot(Field::depth),
+                             "(%" PRIu32
+                             ") must either be a multiple of the sparse image block depth "
+                             "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32
+                             ")) of the image, or else (extent.depth + offset.z) (%" PRIu32
+                             ") must equal the depth of the image subresource (%" PRIu32 ").",
+                             bind.extent.depth, granularity.depth, bind.extent.depth + bind.offset.z, subresource_extent.depth);
         }
     }
 

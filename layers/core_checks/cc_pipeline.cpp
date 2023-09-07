@@ -487,28 +487,30 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const StageCreateInfo &stage_
 bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, const StageCreateInfo &create_info,
                                          const Location &loc) const {
     bool skip = false;
-    if (spec) {
-        for (auto i = 0u; i < spec->mapEntryCount; i++) {
-            const Location map_loc = loc.dot(Field::pMapEntries, i);
-            if (spec->pMapEntries[i].offset >= spec->dataSize) {
-                skip |= LogError("VUID-VkSpecializationInfo-offset-00773", device, map_loc.dot(Field::offset),
-                                 "is %" PRIu32 " but dataSize is %zu (for constantID  %" PRIu32 ").", spec->pMapEntries[i].offset,
-                                 spec->dataSize, spec->pMapEntries[i].constantID);
+    if (!spec) {
+        return skip;
+    }
 
-                continue;
-            }
-            if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
-                skip |= LogError("VUID-VkSpecializationInfo-pMapEntries-00774", device, map_loc.dot(Field::size),
-                                 "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
-                                 spec->pMapEntries[i].size, spec->pMapEntries[i].offset, spec->dataSize,
+    for (auto i = 0u; i < spec->mapEntryCount; i++) {
+        const Location map_loc = loc.dot(Field::pMapEntries, i);
+        if (spec->pMapEntries[i].offset >= spec->dataSize) {
+            skip |= LogError("VUID-VkSpecializationInfo-offset-00773", device, map_loc.dot(Field::offset),
+                             "is %" PRIu32 " but dataSize is %zu (for constantID  %" PRIu32 ").", spec->pMapEntries[i].offset,
+                             spec->dataSize, spec->pMapEntries[i].constantID);
+
+            continue;
+        }
+        if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
+            skip |=
+                LogError("VUID-VkSpecializationInfo-pMapEntries-00774", device, map_loc.dot(Field::size),
+                         "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
+                         spec->pMapEntries[i].size, spec->pMapEntries[i].offset, spec->dataSize, spec->pMapEntries[i].constantID);
+        }
+        for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {
+            if (spec->pMapEntries[i].constantID == spec->pMapEntries[j].constantID) {
+                skip |= LogError("VUID-VkSpecializationInfo-constantID-04911", device, map_loc,
+                                 "and pMapEntries[%" PRIu32 "] both have constantID (%" PRIu32 ").", j,
                                  spec->pMapEntries[i].constantID);
-            }
-            for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {
-                if (spec->pMapEntries[i].constantID == spec->pMapEntries[j].constantID) {
-                    skip |= LogError("VUID-VkSpecializationInfo-constantID-04911", device, map_loc,
-                                     "and pMapEntries[%" PRIu32 "] both have constantID (%" PRIu32 ").", j,
-                                     spec->pMapEntries[i].constantID);
-                }
             }
         }
     }
