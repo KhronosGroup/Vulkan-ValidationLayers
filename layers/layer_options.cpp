@@ -291,120 +291,25 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
     }
 }
 
-void SetCustomStypeInfo(std::string raw_id_list, const std::string &delimiter) {
-    size_t pos = 0;
-    std::string token;
-    // List format is a list of integer pairs
-    while (raw_id_list.length() != 0) {
-        token = GetNextToken(&raw_id_list, delimiter, &pos);
-        uint32_t stype_id = TokenToUint(token);
-        token = GetNextToken(&raw_id_list, delimiter, &pos);
-        uint32_t struct_size_in_bytes = TokenToUint(token);
-        if ((stype_id != 0) && (struct_size_in_bytes != 0)) {
-            bool found = false;
-            // Prevent duplicate entries
-            for (const auto &item : custom_stype_info) {
-                if (item.first == stype_id) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size_in_bytes));
-        }
+static void SetValidationSetting(VlLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
+                                 const DisableFlags feature_disable, const char *setting) {
+    if (vlHasLayerSetting(layer_setting_set, setting)) {
+        bool enabled = true;
+        vlGetLayerSettingValue(layer_setting_set, setting, enabled);
+        disable_data[feature_disable] = !enabled;
     }
 }
 
-uint32_t SetMessageDuplicateLimit(const std::string &config_message_limit, const std::string &env_message_limit) {
-    uint32_t limit = 0;
-    auto get_num = [](const std::string &source_string) {
-        uint32_t limit = 0;
-        int radix = ((source_string.find("0x") == 0) ? 16 : 10);
-        limit = static_cast<uint32_t>(std::strtoul(source_string.c_str(), nullptr, radix));
-        return limit;
-    };
-    // ENV var takes precedence over settings file
-    limit = get_num(env_message_limit);
-    if (limit == 0) {
-        limit = get_num(config_message_limit);
-    }
-    return limit;
-}
-
-static bool SetBool(const std::string &config_string, const std::string &env_string, bool default_val) {
-    bool result = default_val;
-
-    std::string setting;
-    if (!env_string.empty()) {
-        setting = env_string;
-    } else if (!config_string.empty()) {
-        setting = config_string;
-    }
-    if (!setting.empty()) {
-        vvl::ToLower(setting);
-        if (setting == "true") {
-            result = true;
-        } else {
-            result = std::atoi(setting.c_str()) != 0;
-        }
-    }
-    return result;
-}
-
-static std::string GetSettingKey(const char *setting) {
-    const std::string prefix("khronos_validation.");
-    return prefix + setting;
-}
-
-static std::string GetConfigValue(const char *setting) {
-    const std::string key(GetSettingKey(setting));
-    return getLayerOption(key.c_str());
-}
-
-static std::string GetEnvVarValue(const char *setting) {
-    std::string env_var = setting;
-    vvl::ToUpper(env_var);
-    return GetEnvironment((std::string("VK_LAYER_") + env_var).c_str());
-}
-
-static std::optional<std::string> GetSettingValue(const char *setting) {
-    const std::string env_value = GetEnvVarValue(setting);
-    if (!env_value.empty()) {
-        return env_value;
-    }
-
-    const std::string cfg_value = GetConfigValue(setting);
-    if (!cfg_value.empty()) {
-        return cfg_value;
-    }
-    return {};
-}
-
-static void SetValidationSetting(CHECK_DISABLED &disable_data, const DisableFlags feature_disable, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
-
-    if (setting_value) {
-        disable_data[feature_disable] = setting_value != "true";
+static void SetValidationSetting(VlLayerSettingSet layer_setting_set, CHECK_ENABLED &enable_data, const EnableFlags feature_enable,
+                                 const char *setting) {
+    if (vlHasLayerSetting(layer_setting_set, setting)) {
+        bool enabled = true;
+        vlGetLayerSettingValue(layer_setting_set, setting, enabled);
+        enable_data[feature_enable] = enabled;
     }
 }
 
-static void SetValidationSetting(CHECK_ENABLED &enable_data, const EnableFlags feature_enable, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
-
-    if (setting_value) {
-        enable_data[feature_enable] = setting_value == "true";
-    }
-}
-
-static void SetValidationGPUBasedSetting(CHECK_ENABLED &enable_data, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
-
-    if (setting_value) {
-        enable_data[gpu_validation] = setting_value->find("GPU_BASED_GPU_ASSISTED") != std::string::npos;
-        enable_data[debug_printf] = setting_value->find("GPU_BASED_DEBUG_PRINTF") != std::string::npos;
-    }
-}
-
-static std::string Merge(const std::vector<std::string>& strings) {
+static std::string Merge(const std::vector<std::string> &strings) {
     std::string result;
 
     for (std::size_t i = 0, n = strings.size(); i < n; ++i) {
@@ -422,41 +327,52 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // If not cleared, garbage has been seen in some Android run effecting the error message
     custom_stype_info.clear();
 
-    VlLayerSettingSet layerSettingSet = VK_NULL_HANDLE;
+    VlLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
     vlCreateLayerSettingSet(OBJECT_LAYER_NAME, vlFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
-                            &layerSettingSet);
-   
+                            &layer_setting_set);
+
+    // Read legacy "enables" flags for backward compatibility
     std::vector<std::string> enables;
-    if (vlHasLayerSetting(layerSettingSet, SETTING_ENABLES)) {
-        vlGetLayerSettingValues(layerSettingSet, SETTING_ENABLES, enables);
+    if (vlHasLayerSetting(layer_setting_set, SETTING_ENABLES)) {
+        vlGetLayerSettingValues(layer_setting_set, SETTING_ENABLES, enables);
     }
-    const std::string& string_enables = Merge(enables);
+    const std::string &string_enables = Merge(enables);
     SetLocalEnableSetting(string_enables, ",", settings_data->enables);
 
+    // Read legacy "disables" flags for backward compatibility
     std::vector<std::string> disables;
-    if (vlHasLayerSetting(layerSettingSet, SETTING_DISABLES)) {
-        vlGetLayerSettingValues(layerSettingSet, SETTING_DISABLES, disables);
+    if (vlHasLayerSetting(layer_setting_set, SETTING_DISABLES)) {
+        vlGetLayerSettingValues(layer_setting_set, SETTING_DISABLES, disables);
     }
-    const std::string& string_disables = Merge(disables);
+    const std::string &string_disables = Merge(disables);
     SetLocalDisableSetting(string_disables, ",", settings_data->disables);
 
-    std::vector<std::string> message_id_filter;
-    if (vlHasLayerSetting(layerSettingSet, SETTING_MESSAGE_ID_FILTER)) {
-        vlGetLayerSettingValues(layerSettingSet, SETTING_MESSAGE_ID_FILTER, message_id_filter);
+    // Fine Grained Locking
+    *settings_data->fine_grained_locking = true;
+    if (vlHasLayerSetting(layer_setting_set, SETTING_FINE_GRAINED_LOCKING)) {
+        vlGetLayerSettingValue(layer_setting_set, SETTING_FINE_GRAINED_LOCKING, *settings_data->fine_grained_locking);
     }
-    const std::string& string_message_id_filter = Merge(message_id_filter);
+
+    // Message ID Filtering
+    std::vector<std::string> message_id_filter;
+    if (vlHasLayerSetting(layer_setting_set, SETTING_MESSAGE_ID_FILTER)) {
+        vlGetLayerSettingValues(layer_setting_set, SETTING_MESSAGE_ID_FILTER, message_id_filter);
+    }
+    const std::string &string_message_id_filter = Merge(message_id_filter);
     CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->message_filter_list);
 
-    if (vlHasLayerSetting(layerSettingSet, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
-        vlGetLayerSettingValue(layerSettingSet, SETTING_DUPLICATE_MESSAGE_LIMIT, *settings_data->duplicate_message_limit);
+    // Duplicate message limit
+    if (vlHasLayerSetting(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT)) {
+        uint32_t config_limit_setting = 0;
+        vlGetLayerSettingValue(layer_setting_set, SETTING_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
+        if (config_limit_setting != 0) {
+            *settings_data->duplicate_message_limit = config_limit_setting;
+        }
     }
 
-    std::vector<std::string> vector_custom_stype_info;
-    if (vlHasLayerSetting(layerSettingSet, SETTING_CUSTOM_STYPE_LIST)) {
-        vlGetLayerSettingValues(layerSettingSet, SETTING_CUSTOM_STYPE_LIST, vector_custom_stype_info);
+    if (vlHasLayerSetting(layer_setting_set, SETTING_CUSTOM_STYPE_LIST)) {
+        vlGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
     }
-    const std::string &string_custom_stype_info = Merge(vector_custom_stype_info);
-    SetCustomStypeInfo(string_custom_stype_info, ",");
 
     const auto *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(settings_data->create_info);
     if (validation_features_ext) {
@@ -467,77 +383,47 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
 
-#if defined(_WIN32)
-    std::string env_delimiter = ";";
-#else
-    std::string env_delimiter = ":";
-#endif
-
-    // Read legacy enables and disables settings
-    const std::string &config_value_disables = GetConfigValue(SETTING_DISABLES);
-    const std::string &envvar_value_disables = GetEnvVarValue(SETTING_DISABLES);
-    const bool use_disables_fine_gain_settings = config_value_disables.empty() && envvar_value_disables.empty();
-    const std::string &config_value_enables = GetConfigValue(SETTING_ENABLES);
-    const std::string &envvar_value_enables = GetEnvVarValue(SETTING_ENABLES);
-    const bool use_enables_fine_gain_settings = config_value_enables.empty() && envvar_value_enables.empty();
-    const bool use_fine_gain_settings = use_disables_fine_gain_settings && use_enables_fine_gain_settings;
-
-    // Process layer enable settings
-    SetLocalEnableSetting(config_value_enables, ",", settings_data->enables);
-    SetLocalEnableSetting(envvar_value_enables, env_delimiter, settings_data->enables);
+    const bool use_fine_grained_settings = disables.empty() && enables.empty();
 
     // Only read the legacy enables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
-    if (use_fine_gain_settings) {
-        SetValidationSetting(settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
-        SetValidationSetting(settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
-        SetValidationSetting(settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
-        SetValidationSetting(settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
-        SetValidationSetting(settings_data->enables, vendor_specific_nvidia, SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
-        SetValidationSetting(settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
-        SetValidationSetting(settings_data->enables, sync_validation_queue_submit, SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
-        SetValidationGPUBasedSetting(settings_data->enables, SETTING_VALIDATE_GPU_BASED);
-        SetValidationSetting(settings_data->enables, gpu_validation_reserve_binding_slot, SETTING_RESERVE_BINDING_SLOT);
-    }
+    if (use_fine_grained_settings) {
+        SetValidationSetting(layer_setting_set, settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
+        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
+                             SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
+        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
+        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation_queue_submit,
+                             SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
 
-    // Process layer disable settings
-    SetLocalDisableSetting(config_value_disables, ",", settings_data->disables);
-    SetLocalDisableSetting(envvar_value_disables, env_delimiter, settings_data->disables);
+        if (vlHasLayerSetting(layer_setting_set, SETTING_VALIDATE_GPU_BASED)) {
+            std::string setting_value;
+            vlGetLayerSettingValue(layer_setting_set, SETTING_VALIDATE_GPU_BASED, setting_value);
+            settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
+            settings_data->enables[debug_printf] = setting_value == "GPU_BASED_DEBUG_PRINTF";
+        }
+
+        SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
+                             SETTING_RESERVE_BINDING_SLOT);
+    }
 
     // Only read the legacy disables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
-    if (use_fine_gain_settings) {
-        SetValidationSetting(settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
-        SetValidationSetting(settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
-        SetValidationSetting(settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
-        SetValidationSetting(settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
-        SetValidationSetting(settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
-        SetValidationSetting(settings_data->disables, query_validation, SETTING_CHECK_QUERY);
-        SetValidationSetting(settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
-        SetValidationSetting(settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
-        SetValidationSetting(settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
-        SetValidationSetting(settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
-        SetValidationSetting(settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+    if (use_fine_grained_settings) {
+        SetValidationSetting(layer_setting_set, settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
+        SetValidationSetting(layer_setting_set, settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
+        SetValidationSetting(layer_setting_set, settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
+        SetValidationSetting(layer_setting_set, settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
+        SetValidationSetting(layer_setting_set, settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
+        SetValidationSetting(layer_setting_set, settings_data->disables, query_validation, SETTING_CHECK_QUERY);
+        SetValidationSetting(layer_setting_set, settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
+        SetValidationSetting(layer_setting_set, settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
+        SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
+        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
+        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
     }
 
-    // Process message filter ID list
-    CreateFilterMessageIdList(GetConfigValue(SETTING_MESSAGE_ID_FILTER), ",", settings_data->message_filter_list);
-    CreateFilterMessageIdList(GetEnvVarValue(SETTING_MESSAGE_ID_FILTER), env_delimiter, settings_data->message_filter_list);
-
-    // Process custom stype struct list
-    SetCustomStypeInfo(GetConfigValue(SETTING_CUSTOM_STYPE_LIST), ",");
-    SetCustomStypeInfo(GetEnvVarValue(SETTING_CUSTOM_STYPE_LIST), env_delimiter);
-
-    // Process message limit
-    const uint32_t config_limit_setting =
-        SetMessageDuplicateLimit(GetConfigValue(SETTING_DUPLICATE_MESSAGE_LIMIT), GetEnvVarValue(SETTING_DUPLICATE_MESSAGE_LIMIT));
-    if (config_limit_setting != 0) {
-        *settings_data->duplicate_message_limit = config_limit_setting;
-    }
-
-    // Fine Grained Locking
-    *settings_data->fine_grained_locking =
-        SetBool(GetConfigValue(SETTING_FINE_GRAINED_LOCKING), GetConfigValue(SETTING_FINE_GRAINED_LOCKING), true);
-
-    vlDestroyLayerSettingSet(layerSettingSet, nullptr);
+    vlDestroyLayerSettingSet(layer_setting_set, nullptr);
 }
