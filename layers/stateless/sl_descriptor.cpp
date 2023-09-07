@@ -124,286 +124,285 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (pCreateInfo != nullptr) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        const auto &features = physical_device_features;
-        const auto &limits = device_limits;
+    if (pCreateInfo == nullptr) {
+        return skip;
+    }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    const auto &features = physical_device_features;
+    const auto &limits = device_limits;
 
-        if (pCreateInfo->anisotropyEnable == VK_TRUE) {
-            if (!IsBetweenInclusive(pCreateInfo->maxAnisotropy, 1.0F, limits.maxSamplerAnisotropy)) {
-                skip |=
-                    LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01071", device, create_info_loc.dot(Field::maxAnisotropy),
+    if (pCreateInfo->anisotropyEnable == VK_TRUE) {
+        if (!IsBetweenInclusive(pCreateInfo->maxAnisotropy, 1.0F, limits.maxSamplerAnisotropy)) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01071", device, create_info_loc.dot(Field::maxAnisotropy),
                              "is %f but must be in the range of [1.0, %f] (maxSamplerAnistropy).", pCreateInfo->maxAnisotropy,
                              limits.maxSamplerAnisotropy);
-            }
-
-            // Anistropy cannot be enabled in sampler unless enabled as a feature
-            if (features.samplerAnisotropy == VK_FALSE) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01070", device,
-                                 create_info_loc.dot(Field::anisotropyEnable),
-                                 "is VK_TRUE but the samplerAnisotropy feature was not enabled.");
-            }
         }
 
-        if (pCreateInfo->unnormalizedCoordinates == VK_TRUE) {
-            if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072", device,
-                                 create_info_loc.dot(Field::unnormalizedCoordinates),
-                                 "is VK_TRUE, but minFilter (%s) is different then magFilter (%s).",
-                                 string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
-            }
-            if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073", device,
-                                 create_info_loc.dot(Field::unnormalizedCoordinates),
-                                 "is VK_TRUE, but mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
-                                 string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
-            }
-            if (pCreateInfo->minLod != 0.0f || pCreateInfo->maxLod != 0.0f) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074", device,
-                                 create_info_loc.dot(Field::unnormalizedCoordinates),
-                                 "is VK_TRUE, but minLod (%f) and maxLod (%f) must both be zero.", pCreateInfo->minLod,
-                                 pCreateInfo->maxLod);
-            }
-            if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
-                 pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
-                (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
-                 pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075", device,
-                                 create_info_loc.dot(Field::unnormalizedCoordinates),
-                                 "is VK_TRUE, but addressModeU (%s) and addressModeV (%s) must both be "
-                                 "CLAMP_TO_EDGE or CLAMP_TO_BORDER.",
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeU),
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeV));
-            }
-            if (pCreateInfo->anisotropyEnable == VK_TRUE) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076", device, create_info_loc,
-                                 "anisotropyEnable and unnormalizedCoordinates are both VK_TRUE.");
-            }
-            if (pCreateInfo->compareEnable == VK_TRUE) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077", device, create_info_loc,
-                                 "compareEnable and unnormalizedCoordinates are both VK_TRUE.");
-            }
+        // Anistropy cannot be enabled in sampler unless enabled as a feature
+        if (features.samplerAnisotropy == VK_FALSE) {
+            skip |=
+                LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01070", device, create_info_loc.dot(Field::anisotropyEnable),
+                         "is VK_TRUE but the samplerAnisotropy feature was not enabled.");
         }
+    }
 
-        // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
-        const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+    if (pCreateInfo->unnormalizedCoordinates == VK_TRUE) {
+        if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072", device,
+                             create_info_loc.dot(Field::unnormalizedCoordinates),
+                             "is VK_TRUE, but minFilter (%s) is different then magFilter (%s).",
+                             string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+        }
+        if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073", device,
+                             create_info_loc.dot(Field::unnormalizedCoordinates),
+                             "is VK_TRUE, but mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                             string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+        }
+        if (pCreateInfo->minLod != 0.0f || pCreateInfo->maxLod != 0.0f) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074", device,
+                             create_info_loc.dot(Field::unnormalizedCoordinates),
+                             "is VK_TRUE, but minLod (%f) and maxLod (%f) must both be zero.", pCreateInfo->minLod,
+                             pCreateInfo->maxLod);
+        }
+        if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
+             pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+            (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
+             pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075", device,
+                             create_info_loc.dot(Field::unnormalizedCoordinates),
+                             "is VK_TRUE, but addressModeU (%s) and addressModeV (%s) must both be "
+                             "CLAMP_TO_EDGE or CLAMP_TO_BORDER.",
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+        }
+        if (pCreateInfo->anisotropyEnable == VK_TRUE) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076", device, create_info_loc,
+                             "anisotropyEnable and unnormalizedCoordinates are both VK_TRUE.");
+        }
         if (pCreateInfo->compareEnable == VK_TRUE) {
-            skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->compareOp", "VkCompareOp", pCreateInfo->compareOp,
-                                       "VUID-VkSamplerCreateInfo-compareEnable-01080");
-            if (sampler_reduction != nullptr) {
-                if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-                    skip |= LogError("VUID-VkSamplerCreateInfo-compareEnable-01423", device,
-                                     create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
-                                     "is %s but compareEnable is VK_TRUE.",
-                                     string_VkSamplerReductionMode(sampler_reduction->reductionMode));
-                }
-            }
+            skip |= LogError("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077", device, create_info_loc,
+                             "compareEnable and unnormalizedCoordinates are both VK_TRUE.");
         }
-        if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-            if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
-                if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
-                    skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-07911", device,
-                                     create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
-                                     "is %s, magFilter is %s and minFilter is %s, but "
-                                     "extension %s is not enabled.",
-                                     string_VkSamplerReductionMode(sampler_reduction->reductionMode),
-                                     string_VkFilter(pCreateInfo->magFilter), string_VkFilter(pCreateInfo->minFilter),
-                                     VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
-                }
-            }
-        }
+    }
 
-        // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, borderColor must be a
-        // valid VkBorderColor value
-        if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
-            (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
-            (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
-            skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->borderColor", "VkBorderColor", pCreateInfo->borderColor,
-                                       "VUID-VkSamplerCreateInfo-addressModeU-01078");
-        }
-
-        // Checks for the IMG cubic filtering extension
-        if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
-            if ((pCreateInfo->anisotropyEnable == VK_TRUE) &&
-                ((pCreateInfo->minFilter == VK_FILTER_CUBIC_IMG) || (pCreateInfo->magFilter == VK_FILTER_CUBIC_IMG))) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-01081", device, create_info_loc,
-                                 "anisotropyEnable is VK_TRUE, but minFilter = %s and magFilter = %s",
-                                 string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+    // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
+    const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+    if (pCreateInfo->compareEnable == VK_TRUE) {
+        skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->compareOp", "VkCompareOp", pCreateInfo->compareOp,
+                                   "VUID-VkSamplerCreateInfo-compareEnable-01080");
+        if (sampler_reduction != nullptr) {
+            if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+                skip |= LogError("VUID-VkSamplerCreateInfo-compareEnable-01423", device,
+                                 create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
+                                 "is %s but compareEnable is VK_TRUE.",
+                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode));
             }
         }
-
-        // Check for valid Lod range
-        if (pCreateInfo->minLod > pCreateInfo->maxLod) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-maxLod-01973", device, create_info_loc,
-                             "minLod (%f) is greater than maxLod (%f)", pCreateInfo->minLod, pCreateInfo->maxLod);
-        }
-
-        // Check mipLodBias to device limit
-        if (pCreateInfo->mipLodBias > limits.maxSamplerLodBias) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-mipLodBias-01069", device, create_info_loc.dot(Field::mipLodBias),
-                             "(%f) is greater than maxSamplerLodBias (%f)", pCreateInfo->mipLodBias, limits.maxSamplerLodBias);
-        }
-
-        const auto *sampler_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
-        if (sampler_conversion != nullptr) {
-            if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
-                (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
-                (pCreateInfo->addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
-                (pCreateInfo->anisotropyEnable != VK_FALSE) || (pCreateInfo->unnormalizedCoordinates != VK_FALSE)) {
-                skip |= LogError(
-                    "VUID-VkSamplerCreateInfo-addressModeU-01646", device, create_info_loc,
-                    "vkCreateSampler():  SamplerYCbCrConversion is enabled: "
-                    "addressModeU (%s), addressModeV (%s), addressModeW (%s) must be CLAMP_TO_EDGE, and anisotropyEnable (%s) "
-                    "and unnormalizedCoordinates (%s) must be VK_FALSE.",
-                    string_VkSamplerAddressMode(pCreateInfo->addressModeU), string_VkSamplerAddressMode(pCreateInfo->addressModeV),
-                    string_VkSamplerAddressMode(pCreateInfo->addressModeW), pCreateInfo->anisotropyEnable ? "VK_TRUE" : "VK_FALSE",
-                    pCreateInfo->unnormalizedCoordinates ? "VK_TRUE" : "VK_FALSE");
+    }
+    if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+        if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+            if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
+                skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-07911", device,
+                                 create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
+                                 "is %s, magFilter is %s and minFilter is %s, but "
+                                 "extension %s is not enabled.",
+                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode),
+                                 string_VkFilter(pCreateInfo->magFilter), string_VkFilter(pCreateInfo->minFilter),
+                                 VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
             }
         }
+    }
 
-        if (pCreateInfo->flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT) {
-            if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02574", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
-                                 "minFilter (%s) and magFilter (%s) must be equal.",
-                                 string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
-            }
-            if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02575", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
-                                 "mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
-                                 string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
-            }
-            if (pCreateInfo->minLod != 0.0 || pCreateInfo->maxLod != 0.0) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02576", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
-                                 "minLod (%f) and maxLod (%f) must be zero.",
-                                 pCreateInfo->minLod, pCreateInfo->maxLod);
-            }
-            if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
-                 (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
-                ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
-                 (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02577", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
-                                 "addressModeU (%s) and addressModeV (%s) must be "
-                                 "CLAMP_TO_EDGE or CLAMP_TO_BORDER",
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeU),
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeV));
-            }
-            if (pCreateInfo->anisotropyEnable) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02578", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
-                                 "but anisotropyEnable is VK_TRUE.");
-            }
-            if (pCreateInfo->compareEnable) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02579", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
-                                 "but compareEnable is VK_TRUE.");
-            }
-            if (pCreateInfo->unnormalizedCoordinates) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-02580", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
-                                 "but unnormalizedCoordinates is VK_TRUE.");
-            }
+    // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, borderColor must be a
+    // valid VkBorderColor value
+    if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+        (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+        (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
+        skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->borderColor", "VkBorderColor", pCreateInfo->borderColor,
+                                   "VUID-VkSamplerCreateInfo-addressModeU-01078");
+    }
+
+    // Checks for the IMG cubic filtering extension
+    if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
+        if ((pCreateInfo->anisotropyEnable == VK_TRUE) &&
+            ((pCreateInfo->minFilter == VK_FILTER_CUBIC_IMG) || (pCreateInfo->magFilter == VK_FILTER_CUBIC_IMG))) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-01081", device, create_info_loc,
+                             "anisotropyEnable is VK_TRUE, but minFilter = %s and magFilter = %s",
+                             string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
         }
+    }
 
-        if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-            pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-            if (!IsExtEnabled(device_extensions.vk_ext_custom_border_color)) {
-                skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc.dot(Field::borderColor),
-                                 "is %s but %s is not enabled.", string_VkBorderColor(pCreateInfo->borderColor),
-                                 VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-            }
-            auto custom_create_info = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
-            if (!custom_create_info) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-borderColor-04011", device, create_info_loc.dot(Field::borderColor),
-                                 "is %s but there is no VkSamplerCustomBorderColorCreateInfoEXT "
-                                 "struct in pNext chain.",
-                                 string_VkBorderColor(pCreateInfo->borderColor));
-            } else {
-                if ((custom_create_info->format != VK_FORMAT_UNDEFINED) && !FormatIsDepthAndStencil(custom_create_info->format) &&
-                    ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT &&
-                      !FormatIsSampledInt(custom_create_info->format)) ||
-                     (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
-                      !FormatIsSampledFloat(custom_create_info->format)))) {
-                    skip |= LogError("VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605", device,
-                                     create_info_loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT, Field::format),
-                                     "%s does not match borderColor (%s).", string_VkFormat(custom_create_info->format),
-                                     string_VkBorderColor(pCreateInfo->borderColor));
-                }
-            }
+    // Check for valid Lod range
+    if (pCreateInfo->minLod > pCreateInfo->maxLod) {
+        skip |= LogError("VUID-VkSamplerCreateInfo-maxLod-01973", device, create_info_loc,
+                         "minLod (%f) is greater than maxLod (%f)", pCreateInfo->minLod, pCreateInfo->maxLod);
+    }
+
+    // Check mipLodBias to device limit
+    if (pCreateInfo->mipLodBias > limits.maxSamplerLodBias) {
+        skip |= LogError("VUID-VkSamplerCreateInfo-mipLodBias-01069", device, create_info_loc.dot(Field::mipLodBias),
+                         "(%f) is greater than maxSamplerLodBias (%f)", pCreateInfo->mipLodBias, limits.maxSamplerLodBias);
+    }
+
+    const auto *sampler_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    if (sampler_conversion != nullptr) {
+        if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
+            (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
+            (pCreateInfo->addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) || (pCreateInfo->anisotropyEnable != VK_FALSE) ||
+            (pCreateInfo->unnormalizedCoordinates != VK_FALSE)) {
+            skip |= LogError(
+                "VUID-VkSamplerCreateInfo-addressModeU-01646", device, create_info_loc,
+                "vkCreateSampler():  SamplerYCbCrConversion is enabled: "
+                "addressModeU (%s), addressModeV (%s), addressModeW (%s) must be CLAMP_TO_EDGE, and anisotropyEnable (%s) "
+                "and unnormalizedCoordinates (%s) must be VK_FALSE.",
+                string_VkSamplerAddressMode(pCreateInfo->addressModeU), string_VkSamplerAddressMode(pCreateInfo->addressModeV),
+                string_VkSamplerAddressMode(pCreateInfo->addressModeW), pCreateInfo->anisotropyEnable ? "VK_TRUE" : "VK_FALSE",
+                pCreateInfo->unnormalizedCoordinates ? "VK_TRUE" : "VK_FALSE");
         }
+    }
 
-        const auto *border_color_component_mapping =
-            LvlFindInChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(pCreateInfo->pNext);
-        if (border_color_component_mapping) {
-            const auto *border_color_swizzle_features =
-                LvlFindInChain<VkPhysicalDeviceBorderColorSwizzleFeaturesEXT>(device_createinfo_pnext);
-            bool border_color_swizzle_features_enabled =
-                border_color_swizzle_features && border_color_swizzle_features->borderColorSwizzle;
-            if (!border_color_swizzle_features_enabled) {
-                skip |= LogError("VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437", device,
-                                 create_info_loc,
-                                 "The borderColorSwizzle feature must be enabled to use "
-                                 "VkPhysicalDeviceBorderColorSwizzleFeaturesEXT");
-            }
+    if (pCreateInfo->flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT) {
+        if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02574", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
+                             "minFilter (%s) and magFilter (%s) must be equal.",
+                             string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
         }
+        if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02575", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
+                             "mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                             string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+        }
+        if (pCreateInfo->minLod != 0.0 || pCreateInfo->maxLod != 0.0) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02576", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, but "
+                             "minLod (%f) and maxLod (%f) must be zero.",
+                             pCreateInfo->minLod, pCreateInfo->maxLod);
+        }
+        if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
+            ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02577", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                             "addressModeU (%s) and addressModeV (%s) must be "
+                             "CLAMP_TO_EDGE or CLAMP_TO_BORDER",
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+        }
+        if (pCreateInfo->anisotropyEnable) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02578", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                             "but anisotropyEnable is VK_TRUE.");
+        }
+        if (pCreateInfo->compareEnable) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02579", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                             "but compareEnable is VK_TRUE.");
+        }
+        if (pCreateInfo->unnormalizedCoordinates) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-02580", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                             "but unnormalizedCoordinates is VK_TRUE.");
+        }
+    }
 
-        // VK_QCOM_image_processing
-        if ((pCreateInfo->flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) != 0) {
-            if ((pCreateInfo->minFilter != VK_FILTER_NEAREST) || (pCreateInfo->magFilter != VK_FILTER_NEAREST)) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06964", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "minFilter (%s) must be VK_FILTER_NEAREST and "
-                                 "magFilter (%s) must be VK_FILTER_NEAREST.",
-                                 string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
-            }
-            if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06965", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
-                                 string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
-            }
-            if ((pCreateInfo->minLod != 0) || (pCreateInfo->maxLod != 0)) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06966", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "minLod (%f) and maxLod (%f) must be 0.",
-                                 pCreateInfo->minLod, pCreateInfo->maxLod);
-            }
-            if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
-                 (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
-                ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
-                 (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06967", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "addressModeU (%s) and addressModeV (%s) must be either "
-                                 "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER.",
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeU),
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeV));
-            }
-            if (((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
-                 (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) &&
-                (pCreateInfo->borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06968", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "and if addressModeU (%s) or addressModeV (%s) are "
-                                 "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, then"
-                                 "borderColor (%s) must be VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK.",
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeU),
-                                 string_VkSamplerAddressMode(pCreateInfo->addressModeV),
+    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+        pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+        if (!IsExtEnabled(device_extensions.vk_ext_custom_border_color)) {
+            skip |= LogError(kVUID_PVError_ExtensionNotEnabled, device, create_info_loc.dot(Field::borderColor),
+                             "is %s but %s is not enabled.", string_VkBorderColor(pCreateInfo->borderColor),
+                             VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+        }
+        auto custom_create_info = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
+        if (!custom_create_info) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-borderColor-04011", device, create_info_loc.dot(Field::borderColor),
+                             "is %s but there is no VkSamplerCustomBorderColorCreateInfoEXT "
+                             "struct in pNext chain.",
+                             string_VkBorderColor(pCreateInfo->borderColor));
+        } else {
+            if ((custom_create_info->format != VK_FORMAT_UNDEFINED) && !FormatIsDepthAndStencil(custom_create_info->format) &&
+                ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT && !FormatIsSampledInt(custom_create_info->format)) ||
+                 (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
+                  !FormatIsSampledFloat(custom_create_info->format)))) {
+                skip |= LogError("VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605", device,
+                                 create_info_loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT, Field::format),
+                                 "%s does not match borderColor (%s).", string_VkFormat(custom_create_info->format),
                                  string_VkBorderColor(pCreateInfo->borderColor));
             }
-            if (pCreateInfo->anisotropyEnable) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06969", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "but anisotropyEnable is VK_TRUE.");
-            }
-            if (pCreateInfo->compareEnable) {
-                skip |= LogError("VUID-VkSamplerCreateInfo-flags-06970", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "but compareEnable is VK_TRUE.");
-            }
+        }
+    }
+
+    const auto *border_color_component_mapping =
+        LvlFindInChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(pCreateInfo->pNext);
+    if (border_color_component_mapping) {
+        const auto *border_color_swizzle_features =
+            LvlFindInChain<VkPhysicalDeviceBorderColorSwizzleFeaturesEXT>(device_createinfo_pnext);
+        bool border_color_swizzle_features_enabled =
+            border_color_swizzle_features && border_color_swizzle_features->borderColorSwizzle;
+        if (!border_color_swizzle_features_enabled) {
+            skip |=
+                LogError("VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437", device, create_info_loc,
+                         "The borderColorSwizzle feature must be enabled to use "
+                         "VkPhysicalDeviceBorderColorSwizzleFeaturesEXT");
+        }
+    }
+
+    // VK_QCOM_image_processing
+    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) != 0) {
+        if ((pCreateInfo->minFilter != VK_FILTER_NEAREST) || (pCreateInfo->magFilter != VK_FILTER_NEAREST)) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06964", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "minFilter (%s) must be VK_FILTER_NEAREST and "
+                             "magFilter (%s) must be VK_FILTER_NEAREST.",
+                             string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+        }
+        if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06965", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                             string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+        }
+        if ((pCreateInfo->minLod != 0) || (pCreateInfo->maxLod != 0)) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06966", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "minLod (%f) and maxLod (%f) must be 0.",
+                             pCreateInfo->minLod, pCreateInfo->maxLod);
+        }
+        if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
+            ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06967", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "addressModeU (%s) and addressModeV (%s) must be either "
+                             "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER.",
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+        }
+        if (((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+             (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) &&
+            (pCreateInfo->borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)) {
+            skip |=
+                LogError("VUID-VkSamplerCreateInfo-flags-06968", device, create_info_loc.dot(Field::flags),
+                         "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                         "and if addressModeU (%s) or addressModeV (%s) are "
+                         "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, then"
+                         "borderColor (%s) must be VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK.",
+                         string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                         string_VkSamplerAddressMode(pCreateInfo->addressModeV), string_VkBorderColor(pCreateInfo->borderColor));
+        }
+        if (pCreateInfo->anisotropyEnable) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06969", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "but anisotropyEnable is VK_TRUE.");
+        }
+        if (pCreateInfo->compareEnable) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-flags-06970", device, create_info_loc.dot(Field::flags),
+                             "includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "but compareEnable is VK_TRUE.");
         }
     }
 
@@ -639,214 +638,209 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                      const bool isPushDescriptor) const {
     bool skip = false;
+    if (!pDescriptorWrites) {
+        return skip;
+    }
     const char *vkCallingFunction = loc.StringFunc();
-    if (pDescriptorWrites != NULL) {
-        for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
-            // descriptorCount must be greater than 0
-            if (pDescriptorWrites[i].descriptorCount == 0) {
-                skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorCount-arraylength",
-                                 "%s(): parameter pDescriptorWrites[%" PRIu32 "].descriptorCount must be greater than 0.",
-                                 vkCallingFunction, i);
-            }
+    for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
+        // descriptorCount must be greater than 0
+        if (pDescriptorWrites[i].descriptorCount == 0) {
+            skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorCount-arraylength",
+                             "%s(): parameter pDescriptorWrites[%" PRIu32 "].descriptorCount must be greater than 0.",
+                             vkCallingFunction, i);
+        }
 
-            // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
-            if (!isPushDescriptor) {
-                // dstSet must be a valid VkDescriptorSet handle
-                skip |= ValidateRequiredHandle(loc, ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
-                                               pDescriptorWrites[i].dstSet);
-            }
+        // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
+        if (!isPushDescriptor) {
+            // dstSet must be a valid VkDescriptorSet handle
+            skip |= ValidateRequiredHandle(loc, ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
+                                           pDescriptorWrites[i].dstSet);
+        }
 
-            if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
-                (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
-                (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
-                (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
-                (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-                if (pDescriptorWrites[i].pImageInfo == nullptr) {
-                    if (!isPushDescriptor) {
-                        // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or
-                        // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pImageInfo must be a pointer to an array of descriptorCount valid
-                        // VkDescriptorImageInfo structures. Valid imageView handles are checked in
-                        // ObjectLifetimes::ValidateDescriptorWrite.
-                        skip |= LogError(
-                            device, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493",
-                            "%s(): if pDescriptorWrites[%" PRIu32
-                            "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, "
-                            "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or "
-                            "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32 "].pImageInfo must not be NULL.",
-                            vkCallingFunction, i, i);
-                    } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
-                               (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
-                               (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-                        // If called from vkCmdPushDescriptorSetKHR, pImageInfo is only requred for descriptor types
-                        // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, and
-                        // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
-                        skip |= LogError(device, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494",
-                                         "%s(): if pDescriptorWrites[%" PRIu32
-                                         "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE "
-                                         "or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32
-                                         "].pImageInfo must not be NULL.",
-                                         vkCallingFunction, i, i);
-                    }
-                } else if (pDescriptorWrites[i].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
-                    // If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                    // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageLayout
-                    // member of any given element of pImageInfo must be a valid VkImageLayout
+        if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
+            (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
+            (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
+            (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+            (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+            if (pDescriptorWrites[i].pImageInfo == nullptr) {
+                if (!isPushDescriptor) {
+                    // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or
+                    // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pImageInfo must be a pointer to an array of descriptorCount valid
+                    // VkDescriptorImageInfo structures. Valid imageView handles are checked in
+                    // ObjectLifetimes::ValidateDescriptorWrite.
+                    skip |=
+                        LogError(device, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493",
+                                 "%s(): if pDescriptorWrites[%" PRIu32
+                                 "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, "
+                                 "VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or "
+                                 "VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32 "].pImageInfo must not be NULL.",
+                                 vkCallingFunction, i, i);
+                } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
+                           (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+                           (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+                    // If called from vkCmdPushDescriptorSetKHR, pImageInfo is only requred for descriptor types
+                    // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, and
+                    // VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+                    skip |= LogError(device, "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494",
+                                     "%s(): if pDescriptorWrites[%" PRIu32
+                                     "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE "
+                                     "or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, pDescriptorWrites[%" PRIu32
+                                     "].pImageInfo must not be NULL.",
+                                     vkCallingFunction, i, i);
+                }
+            } else if (pDescriptorWrites[i].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
+                // If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageLayout
+                // member of any given element of pImageInfo must be a valid VkImageLayout
+                for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount; ++descriptor_index) {
+                    skip |= ValidateRangedEnum(loc,
+                                               ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
+                                                             ParameterName::IndexVector{i, descriptor_index}),
+                                               "VkImageLayout", pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout,
+                                               kVUIDUndefined);
+                }
+            }
+        } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
+                   (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+                   (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+                   (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+            // If descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, pBufferInfo must be a
+            // pointer to an array of descriptorCount valid VkDescriptorBufferInfo structures
+            // Valid buffer handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
+            if (pDescriptorWrites[i].pBufferInfo == nullptr) {
+                skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00324",
+                                 "%s(): if pDescriptorWrites[%" PRIu32
+                                 "].descriptorType is "
+                                 "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, "
+                                 "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, "
+                                 "pDescriptorWrites[%" PRIu32 "].pBufferInfo must not be NULL.",
+                                 vkCallingFunction, i, i);
+            } else {
+                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                if (robustness2_features && robustness2_features->nullDescriptor) {
                     for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
                          ++descriptor_index) {
-                        skip |= ValidateRangedEnum(loc,
-                                                   ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
-                                                                 ParameterName::IndexVector{i, descriptor_index}),
-                                                   "VkImageLayout", pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout,
-                                                   kVUIDUndefined);
-                    }
-                }
-            } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
-                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
-                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-                // If descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, pBufferInfo must be a
-                // pointer to an array of descriptorCount valid VkDescriptorBufferInfo structures
-                // Valid buffer handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
-                if (pDescriptorWrites[i].pBufferInfo == nullptr) {
-                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00324",
-                                     "%s(): if pDescriptorWrites[%" PRIu32
-                                     "].descriptorType is "
-                                     "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, "
-                                     "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, "
-                                     "pDescriptorWrites[%" PRIu32 "].pBufferInfo must not be NULL.",
-                                     vkCallingFunction, i, i);
-                } else {
-                    const auto *robustness2_features =
-                        LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                    if (robustness2_features && robustness2_features->nullDescriptor) {
-                        for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
-                             ++descriptor_index) {
-                            if (pDescriptorWrites[i].pBufferInfo[descriptor_index].buffer == VK_NULL_HANDLE &&
-                                (pDescriptorWrites[i].pBufferInfo[descriptor_index].offset != 0 ||
-                                 pDescriptorWrites[i].pBufferInfo[descriptor_index].range != VK_WHOLE_SIZE)) {
-                                skip |= LogError(device, "VUID-VkDescriptorBufferInfo-buffer-02999",
-                                                 "%s(): if pDescriptorWrites[%" PRIu32
-                                                 "].buffer is VK_NULL_HANDLE, "
-                                                 "offset (%" PRIu64 ") must be zero and range (%" PRIu64 ") must be VK_WHOLE_SIZE.",
-                                                 vkCallingFunction, i, pDescriptorWrites[i].pBufferInfo[descriptor_index].offset,
-                                                 pDescriptorWrites[i].pBufferInfo[descriptor_index].range);
-                            }
+                        if (pDescriptorWrites[i].pBufferInfo[descriptor_index].buffer == VK_NULL_HANDLE &&
+                            (pDescriptorWrites[i].pBufferInfo[descriptor_index].offset != 0 ||
+                             pDescriptorWrites[i].pBufferInfo[descriptor_index].range != VK_WHOLE_SIZE)) {
+                            skip |= LogError(device, "VUID-VkDescriptorBufferInfo-buffer-02999",
+                                             "%s(): if pDescriptorWrites[%" PRIu32
+                                             "].buffer is VK_NULL_HANDLE, "
+                                             "offset (%" PRIu64 ") must be zero and range (%" PRIu64 ") must be VK_WHOLE_SIZE.",
+                                             vkCallingFunction, i, pDescriptorWrites[i].pBufferInfo[descriptor_index].offset,
+                                             pDescriptorWrites[i].pBufferInfo[descriptor_index].range);
                         }
                     }
                 }
-            } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
-                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
-                // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
             }
+        } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
+                   (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
+            // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
+        }
 
-            if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
-                (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)) {
-                VkDeviceSize uniform_alignment = device_limits.minUniformBufferOffsetAlignment;
-                for (uint32_t j = 0; j < pDescriptorWrites[i].descriptorCount; j++) {
-                    if (pDescriptorWrites[i].pBufferInfo != NULL) {
-                        if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, uniform_alignment) != 0) {
-                            skip |=
-                                LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00327",
+        if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
+            (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)) {
+            VkDeviceSize uniform_alignment = device_limits.minUniformBufferOffsetAlignment;
+            for (uint32_t j = 0; j < pDescriptorWrites[i].descriptorCount; j++) {
+                if (pDescriptorWrites[i].pBufferInfo != NULL) {
+                    if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, uniform_alignment) != 0) {
+                        skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00327",
                                          "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (0x%" PRIxLEAST64
                                          ") must be a multiple of device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
                                          vkCallingFunction, i, j, pDescriptorWrites[i].pBufferInfo[j].offset, uniform_alignment);
-                        }
                     }
                 }
-            } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
-                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
-                VkDeviceSize storage_alignment = device_limits.minStorageBufferOffsetAlignment;
-                for (uint32_t j = 0; j < pDescriptorWrites[i].descriptorCount; j++) {
-                    if (pDescriptorWrites[i].pBufferInfo != NULL) {
-                        if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, storage_alignment) != 0) {
-                            skip |=
-                                LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00328",
+            }
+        } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+                   (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+            VkDeviceSize storage_alignment = device_limits.minStorageBufferOffsetAlignment;
+            for (uint32_t j = 0; j < pDescriptorWrites[i].descriptorCount; j++) {
+                if (pDescriptorWrites[i].pBufferInfo != NULL) {
+                    if (SafeModulo(pDescriptorWrites[i].pBufferInfo[j].offset, storage_alignment) != 0) {
+                        skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00328",
                                          "%s(): pDescriptorWrites[%" PRIu32 "].pBufferInfo[%" PRIu32 "].offset (0x%" PRIxLEAST64
                                          ") must be a multiple of device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
                                          vkCallingFunction, i, j, pDescriptorWrites[i].pBufferInfo[j].offset, storage_alignment);
+                    }
+                }
+            }
+        }
+        // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
+        // or VkWriteDescriptorSetInlineUniformBlockEX
+        if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+            const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
+            if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
+                                 "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
+                                 "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
+                                 "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
+                                 vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
+                                 pDescriptorWrites[i].descriptorCount);
+            }
+            // further checks only if we have right structtype
+            if (pnext_struct) {
+                if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                    skip |=
+                        LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
+                                 "%s(): accelerationStructureCount %" PRIu32 " must be equal to descriptorCount %" PRIu32
+                                 " in the extended structure "
+                                 ".",
+                                 vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
+                }
+                if (pnext_struct->accelerationStructureCount == 0) {
+                    skip |=
+                        LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
+                                 "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
+                }
+                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                        if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                            skip |=
+                                LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580",
+                                         "%s(): If the nullDescriptor feature is not enabled, each member of "
+                                         "pAccelerationStructures must not be VK_NULL_HANDLE.",
+                                         vkCallingFunction);
                         }
                     }
                 }
             }
-            // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
-            // or VkWriteDescriptorSetInlineUniformBlockEX
-            if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-                const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
-                if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
-                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
-                                     "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
-                                     "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
-                                     "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
-                                     vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
-                                     pDescriptorWrites[i].descriptorCount);
+        } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+            const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
+            if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
+                                 "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
+                                 "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
+                                 "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
+                                 vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
+                                 pDescriptorWrites[i].descriptorCount);
+            }
+            // further checks only if we have right structtype
+            if (pnext_struct) {
+                if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                    skip |=
+                        LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-03747",
+                                 "%s(): accelerationStructureCount %" PRIu32 " must be equal to descriptorCount %" PRIu32
+                                 " in the extended structure "
+                                 ".",
+                                 vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
                 }
-                // further checks only if we have right structtype
-                if (pnext_struct) {
-                    if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
-                        skip |= LogError(
-                            device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
-                            "%s(): accelerationStructureCount %" PRIu32 " must be equal to descriptorCount %" PRIu32
-                            " in the extended structure "
-                            ".",
-                            vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
-                    }
-                    if (pnext_struct->accelerationStructureCount == 0) {
-                        skip |= LogError(device,
-                                         "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
-                                         "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
-                    }
-                    const auto *robustness2_features =
-                        LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                    if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
-                        for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-                            if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
-                                skip |= LogError(device,
-                                                 "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580",
-                                                 "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.",
-                                                 vkCallingFunction);
-                            }
-                        }
-                    }
+                if (pnext_struct->accelerationStructureCount == 0) {
+                    skip |=
+                        LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
+                                 "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
                 }
-            } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-                const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
-                if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
-                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
-                                     "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
-                                     "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
-                                     "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
-                                     vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
-                                     pDescriptorWrites[i].descriptorCount);
-                }
-                // further checks only if we have right structtype
-                if (pnext_struct) {
-                    if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
-                        skip |= LogError(
-                            device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-03747",
-                            "%s(): accelerationStructureCount %" PRIu32 " must be equal to descriptorCount %" PRIu32
-                            " in the extended structure "
-                            ".",
-                            vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
-                    }
-                    if (pnext_struct->accelerationStructureCount == 0) {
-                        skip |= LogError(device,
-                                         "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
-                                         "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
-                    }
-                    const auto *robustness2_features =
-                        LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
-                    if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
-                        for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-                            if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
-                                skip |= LogError(device,
-                                                 "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
-                                                 "%s(): If the nullDescriptor feature is not enabled, each member of "
-                                                 "pAccelerationStructures must not be VK_NULL_HANDLE.",
-                                                 vkCallingFunction);
-                            }
+                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
+                    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                        if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                            skip |=
+                                LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
+                                         "%s(): If the nullDescriptor feature is not enabled, each member of "
+                                         "pAccelerationStructures must not be VK_NULL_HANDLE.",
+                                         vkCallingFunction);
                         }
                     }
                 }
@@ -935,66 +929,63 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (pCreateInfo) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        if (pCreateInfo->maxSets <= 0) {
-            skip |=
-                LogError("VUID-VkDescriptorPoolCreateInfo-maxSets-00301", device, create_info_loc.dot(Field::maxSets), "is zero.");
-        }
+    if (!pCreateInfo) {
+        return skip;
+    }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    if (pCreateInfo->maxSets <= 0) {
+        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-maxSets-00301", device, create_info_loc.dot(Field::maxSets), "is zero.");
+    }
 
-        const auto *mutable_descriptor_type_features =
-            LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
-        bool mutable_descriptor_type_enabled =
-            mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
+    const auto *mutable_descriptor_type_features =
+        LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
+    bool mutable_descriptor_type_enabled =
+        mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
 
-        if (pCreateInfo->pPoolSizes) {
-            for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
-                const Location pool_loc = create_info_loc.dot(Field::pPoolSizes, i);
-                if (pCreateInfo->pPoolSizes[i].descriptorCount <= 0) {
-                    skip |= LogError("VUID-VkDescriptorPoolSize-descriptorCount-00302", device,
-                                     pool_loc.dot(Field::descriptorCount), "is zero.");
-                }
-                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
-                    (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
-                    skip |=
-                        LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
+    if (pCreateInfo->pPoolSizes) {
+        for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
+            const Location pool_loc = create_info_loc.dot(Field::pPoolSizes, i);
+            if (pCreateInfo->pPoolSizes[i].descriptorCount <= 0) {
+                skip |= LogError("VUID-VkDescriptorPoolSize-descriptorCount-00302", device, pool_loc.dot(Field::descriptorCount),
+                                 "is zero.");
+            }
+            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
+                (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
+                skip |= LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
                                  "is %" PRIu32 " (not a multiple of 4), but type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
                                  pCreateInfo->pPoolSizes[i].descriptorCount);
-                }
-                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !mutable_descriptor_type_enabled) {
-                    skip |=
-                        LogError("VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608", device, pool_loc.dot(Field::type),
+            }
+            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && !mutable_descriptor_type_enabled) {
+                skip |= LogError("VUID-VkDescriptorPoolCreateInfo-mutableDescriptorType-04608", device, pool_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT "
                                  ", but mutableDescriptorType feature was not enabled.");
-                }
-                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-                    for (uint32_t j = i + 1; j < pCreateInfo->poolSizeCount; ++j) {
-                        if (pCreateInfo->pPoolSizes[j].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-                            if (MutableDescriptorTypePartialOverlap(pCreateInfo, i, j)) {
-                                skip |=
-                                    LogError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787", device, pool_loc.dot(Field::type),
+            }
+            if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+                for (uint32_t j = i + 1; j < pCreateInfo->poolSizeCount; ++j) {
+                    if (pCreateInfo->pPoolSizes[j].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+                        if (MutableDescriptorTypePartialOverlap(pCreateInfo, i, j)) {
+                            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787", device, pool_loc.dot(Field::type),
                                              "and pCreateInfo->pPoolSizes[%" PRIu32
                                              "].type are both VK_DESCRIPTOR_TYPE_MUTABLE_EXT "
                                              " and have sets which partially overlap.",
                                              j);
-                            }
                         }
                     }
                 }
             }
         }
+    }
 
-        if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT && (!mutable_descriptor_type_enabled)) {
-            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-flags-04609", device, create_info_loc.dot(Field::flags),
-                             "includes VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT, "
-                             "but mutableDescriptorType feature was not enabled.");
-        }
-        if ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) &&
-            (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
-            skip |= LogError("VUID-VkDescriptorPoolCreateInfo-flags-04607", device, create_info_loc.dot(Field::flags),
-                             "includes both "
-                             "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT and VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT");
-        }
+    if (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT && (!mutable_descriptor_type_enabled)) {
+        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-flags-04609", device, create_info_loc.dot(Field::flags),
+                         "includes VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT, "
+                         "but mutableDescriptorType feature was not enabled.");
+    }
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) &&
+        (pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
+        skip |= LogError("VUID-VkDescriptorPoolCreateInfo-flags-04607", device, create_info_loc.dot(Field::flags),
+                         "includes both "
+                         "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT and VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT");
     }
 
     return skip;
@@ -1006,21 +997,21 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-    if (pCreateInfo != nullptr) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        // If queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, pipelineStatistics must be a valid combination of
-        // VkQueryPipelineStatisticFlagBits values
-        if ((pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) && (pCreateInfo->pipelineStatistics != 0) &&
-            ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0)) {
-            skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
-                             "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
-                             "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
-                             "values.");
-        }
-        if (pCreateInfo->queryCount == 0) {
-            skip |=
-                LogError("VUID-VkQueryPoolCreateInfo-queryCount-02763", device, create_info_loc.dot(Field::queryCount), "is zero.");
-        }
+    if (!pCreateInfo) {
+        return skip;
+    }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    // If queryType is VK_QUERY_TYPE_PIPELINE_STATISTICS, pipelineStatistics must be a valid combination of
+    // VkQueryPipelineStatisticFlagBits values
+    if ((pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) && (pCreateInfo->pipelineStatistics != 0) &&
+        ((pCreateInfo->pipelineStatistics & (~AllVkQueryPipelineStatisticFlagBits)) != 0)) {
+        skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-00792", device, create_info_loc.dot(Field::queryType),
+                         "is VK_QUERY_TYPE_PIPELINE_STATISTICS, but "
+                         "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
+                         "values.");
+    }
+    if (pCreateInfo->queryCount == 0) {
+        skip |= LogError("VUID-VkQueryPoolCreateInfo-queryCount-02763", device, create_info_loc.dot(Field::queryCount), "is zero.");
     }
     return skip;
 }

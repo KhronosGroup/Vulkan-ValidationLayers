@@ -554,55 +554,56 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
-        if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
-            const Location attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, j);
-            const VkImageLayout image_layout = pRenderingInfo->pColorAttachments[j].imageLayout;
-            const VkResolveModeFlagBits resolve_mode = pRenderingInfo->pColorAttachments[j].resolveMode;
-            const VkImageLayout resolve_image_layout = pRenderingInfo->pColorAttachments[j].resolveImageLayout;
-            if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06090", commandBuffer,
+        if (pRenderingInfo->pColorAttachments[j].imageView == VK_NULL_HANDLE) {
+            continue;
+        }
+        const Location attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, j);
+        const VkImageLayout image_layout = pRenderingInfo->pColorAttachments[j].imageLayout;
+        const VkResolveModeFlagBits resolve_mode = pRenderingInfo->pColorAttachments[j].resolveMode;
+        const VkImageLayout resolve_image_layout = pRenderingInfo->pColorAttachments[j].resolveImageLayout;
+        if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+            image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
+            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06090", commandBuffer,
+                             attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
+        }
+
+        if (resolve_mode != VK_RESOLVE_MODE_NONE) {
+            if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06091", commandBuffer,
+                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolve_mode is %s.",
+                                 string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
+            }
+        }
+
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
+            if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", commandBuffer,
                                  attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
             }
 
             if (resolve_mode != VK_RESOLVE_MODE_NONE) {
-                if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                    resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06091", commandBuffer,
+                if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                    resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06097", commandBuffer,
                                      attachment_loc.dot(Field::resolveImageLayout), "is %s and resolve_mode is %s.",
                                      string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
                 }
             }
+        }
 
-            if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
-                if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-                    image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", commandBuffer,
-                                     attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
-                }
+        if (IsImageLayoutDepthOnly(image_layout) || IsImageLayoutStencilOnly(image_layout)) {
+            skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06100", commandBuffer,
+                             attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
+        }
 
-                if (resolve_mode != VK_RESOLVE_MODE_NONE) {
-                    if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-                        resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-                        skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06097", commandBuffer,
-                                         attachment_loc.dot(Field::resolveImageLayout), "is %s and resolve_mode is %s.",
-                                         string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
-                    }
-                }
-            }
-
-            if (IsImageLayoutDepthOnly(image_layout) || IsImageLayoutStencilOnly(image_layout)) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06100", commandBuffer,
-                                 attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
-            }
-
-            if (resolve_mode != VK_RESOLVE_MODE_NONE) {
-                if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                    resolve_image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) {
-                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06101", commandBuffer,
-                                     attachment_loc.dot(Field::resolveImageLayout), "is %s and resolve_mode is %s.",
-                                     string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
-                }
+        if (resolve_mode != VK_RESOLVE_MODE_NONE) {
+            if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                resolve_image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) {
+                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06101", commandBuffer,
+                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolve_mode is %s.",
+                                 string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
             }
         }
     }
@@ -993,80 +994,79 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         cb_is_secondary = (secondary_cb_map.find(commandBuffer) != secondary_cb_map.end());
     }
 
-    if (cb_is_secondary) {
-        // Implicit VUs
-        // validate only sType here; pointer has to be validated in core_validation
-        const bool k_not_required = false;
-        const char *k_no_vuid = nullptr;
-        const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
-        skip |= ValidateStructType(error_obj.location, "pBeginInfo->pInheritanceInfo",
-                                   "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO", info,
-                                   VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
-                                   "VUID-VkCommandBufferInheritanceInfo-sType-sType");
+    if (!cb_is_secondary) {
+        return skip;
+    }
+    // Implicit VUs
+    // validate only sType here; pointer has to be validated in core_validation
+    const bool k_not_required = false;
+    const char *k_no_vuid = nullptr;
+    const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
+    skip |=
+        ValidateStructType(error_obj.location, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
+                           info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
+                           "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
-        if (info) {
-            constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
-                                                    VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
-                                                    VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
-                                                    VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
-            skip |= ValidateStructPnext(
-                error_obj.location, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT",
-                info->pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
-                "VUID-VkCommandBufferInheritanceInfo-pNext-pNext", "VUID-VkCommandBufferInheritanceInfo-sType-unique");
+    if (info) {
+        constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
+                                                VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
+                                                VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
+                                                VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
+        skip |= ValidateStructPnext(
+            error_obj.location, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT",
+            info->pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkCommandBufferInheritanceInfo-pNext-pNext", "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
-            skip |= ValidateBool32(error_obj.location, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable",
-                                   info->occlusionQueryEnable);
+        skip |=
+            ValidateBool32(error_obj.location, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
 
-            // Explicit VUs
-            if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
-                skip |= LogError(
-                    "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056", commandBuffer, error_obj.location,
-                    "Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.");
-            }
+        // Explicit VUs
+        if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
+            skip |= LogError(
+                "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056", commandBuffer, error_obj.location,
+                "Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.");
+        }
 
-            if (physical_device_features.inheritedQueries) {
-                skip |= ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
-                                      AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
-                                      "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
-            } else {  // !inheritedQueries
-                skip |= ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
-                                              "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
-            }
+        if (physical_device_features.inheritedQueries) {
+            skip |= ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
+                                  AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
+                                  "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+        } else {  // !inheritedQueries
+            skip |= ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
+                                          "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
+        }
 
-            if (physical_device_features.pipelineStatisticsQuery) {
-                skip |=
-                    ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
+        if (physical_device_features.pipelineStatisticsQuery) {
+            skip |= ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
                                   "VkQueryPipelineStatisticFlagBits", AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics,
                                   kOptionalFlags, "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
-            } else {  // !pipelineStatisticsQuery
-                skip |=
-                    ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
+        } else {  // !pipelineStatisticsQuery
+            skip |= ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
                                           info->pipelineStatistics, "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
-            }
+        }
 
-            const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
-            if (conditional_rendering) {
-                const auto *cr_features = LvlFindInChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
-                const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
-                if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
-                    skip |= LogError(
-                        "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977",
-                        commandBuffer, error_obj.location,
-                        "Inherited conditional rendering is disabled, but "
-                        "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
-                }
+        const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
+        if (conditional_rendering) {
+            const auto *cr_features = LvlFindInChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
+            const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
+            if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
+                skip |= LogError(
+                    "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977", commandBuffer,
+                    error_obj.location,
+                    "Inherited conditional rendering is disabled, but "
+                    "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
             }
+        }
 
-            auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
-            if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
-                p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
-                p_inherited_viewport_scissor_info->viewportDepthCount != 1) {
-                skip |= LogError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783", commandBuffer,
-                                 error_obj.location,
-                                 "multiViewport feature was not enabled, but "
-                                 "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D in "
-                                 "pBeginInfo->pInheritanceInfo->pNext is VK_TRUE and viewportDepthCount is not 1.");
-            }
+        auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+        if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
+            p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
+            p_inherited_viewport_scissor_info->viewportDepthCount != 1) {
+            skip |= LogError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783", commandBuffer,
+                             error_obj.location,
+                             "multiViewport feature was not enabled, but "
+                             "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D in "
+                             "pBeginInfo->pInheritanceInfo->pNext is VK_TRUE and viewportDepthCount is not 1.");
         }
     }
     return skip;

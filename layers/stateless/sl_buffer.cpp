@@ -24,68 +24,67 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (pCreateInfo != nullptr) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        skip |= ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
+    if (!pCreateInfo) {
+        return skip;
+    }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    skip |= ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
 
-        // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-        if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
-            // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
-            if (pCreateInfo->queueFamilyIndexCount <= 1) {
-                skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00914", device, create_info_loc.dot(Field::sharingMode),
-                                 "VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
-                                 pCreateInfo->queueFamilyIndexCount);
-            }
-
-            // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-            // queueFamilyIndexCount uint32_t values
-            if (pCreateInfo->pQueueFamilyIndices == nullptr) {
-                skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00913", device, create_info_loc.dot(Field::sharingMode),
-                                 "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
-            }
+    // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
+    if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
+        if (pCreateInfo->queueFamilyIndexCount <= 1) {
+            skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00914", device, create_info_loc.dot(Field::sharingMode),
+                             "VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
+                             pCreateInfo->queueFamilyIndexCount);
         }
 
-        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
-            skip |= LogError("VUID-VkBufferCreateInfo-flags-00915", device, create_info_loc.dot(Field::flags),
-                             "includes VK_BUFFER_CREATE_SPARSE_BINDING_BIT, but the sparseBinding feature is not enabled.");
+        // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
+        // queueFamilyIndexCount uint32_t values
+        if (pCreateInfo->pQueueFamilyIndices == nullptr) {
+            skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00913", device, create_info_loc.dot(Field::sharingMode),
+                             "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
         }
+    }
 
-        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!physical_device_features.sparseResidencyBuffer)) {
-            skip |=
-                LogError("VUID-VkBufferCreateInfo-flags-00916", device, create_info_loc.dot(Field::flags),
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!physical_device_features.sparseBinding)) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-00915", device, create_info_loc.dot(Field::flags),
+                         "includes VK_BUFFER_CREATE_SPARSE_BINDING_BIT, but the sparseBinding feature is not enabled.");
+    }
+
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!physical_device_features.sparseResidencyBuffer)) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-00916", device, create_info_loc.dot(Field::flags),
                          "includes VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT, but the sparseResidencyBuffer feature is not enabled.");
-        }
+    }
 
-        if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
-            skip |=
-                LogError("VUID-VkBufferCreateInfo-flags-00917", device, create_info_loc.dot(Field::flags),
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!physical_device_features.sparseResidencyAliased)) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-00917", device, create_info_loc.dot(Field::flags),
                          "includes VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, but the sparseResidencyAliased feature is not enabled.");
-        };
+    };
 
-        // If flags contains VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT or VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, it must also contain
-        // VK_BUFFER_CREATE_SPARSE_BINDING_BIT
-        if (((pCreateInfo->flags & (VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
-            ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
-            skip |= LogError("VUID-VkBufferCreateInfo-flags-00918", device, create_info_loc.dot(Field::flags), "is %s.",
-                             string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
-        }
+    // If flags contains VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT or VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, it must also contain
+    // VK_BUFFER_CREATE_SPARSE_BINDING_BIT
+    if (((pCreateInfo->flags & (VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
+        ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-00918", device, create_info_loc.dot(Field::flags), "is %s.",
+                         string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
+    }
 
-        const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(device_createinfo_pnext);
-        if (maintenance4_features && maintenance4_features->maintenance4) {
-            if (pCreateInfo->size > phys_dev_ext_props.maintenance4_props.maxBufferSize) {
-                skip |= LogError("VUID-VkBufferCreateInfo-size-06409", device, create_info_loc.dot(Field::size),
-                                 "(%" PRIu64
-                                 ") is larger than the maximum allowed buffer size "
-                                 "VkPhysicalDeviceMaintenance4Properties.maxBufferSize (%" PRIu64 ").",
-                                 pCreateInfo->size, phys_dev_ext_props.maintenance4_props.maxBufferSize);
-            }
+    const auto *maintenance4_features = LvlFindInChain<VkPhysicalDeviceMaintenance4FeaturesKHR>(device_createinfo_pnext);
+    if (maintenance4_features && maintenance4_features->maintenance4) {
+        if (pCreateInfo->size > phys_dev_ext_props.maintenance4_props.maxBufferSize) {
+            skip |= LogError("VUID-VkBufferCreateInfo-size-06409", device, create_info_loc.dot(Field::size),
+                             "(%" PRIu64
+                             ") is larger than the maximum allowed buffer size "
+                             "VkPhysicalDeviceMaintenance4Properties.maxBufferSize (%" PRIu64 ").",
+                             pCreateInfo->size, phys_dev_ext_props.maintenance4_props.maxBufferSize);
         }
+    }
 
-        if (!LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
-            skip |= ValidateFlags(error_obj.location, "pCreateInfo->usage", "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits,
-                                  pCreateInfo->usage, kRequiredFlags, "VUID-VkBufferCreateInfo-None-09205",
-                                  "VUID-VkBufferCreateInfo-None-09206");
-        }
+    if (!LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+        skip |= ValidateFlags(error_obj.location, "pCreateInfo->usage", "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits,
+                              pCreateInfo->usage, kRequiredFlags, "VUID-VkBufferCreateInfo-None-09205",
+                              "VUID-VkBufferCreateInfo-None-09206");
     }
 
     return skip;
