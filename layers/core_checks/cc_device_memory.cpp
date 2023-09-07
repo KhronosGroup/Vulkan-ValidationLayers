@@ -266,7 +266,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
-    //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
+    //  "memory is not an imported QNX Screen Buffer" refers to VkImportScreenBufferInfoQNX with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
     if (auto imported_buffer_info = LvlFindInChain<VkImportScreenBufferInfoQNX>(pAllocateInfo->pNext);
         imported_buffer_info != nullptr) {
