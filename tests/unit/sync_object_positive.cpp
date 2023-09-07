@@ -1649,28 +1649,6 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(PositiveSyncObject, ThreadNullFenceCollision) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    ThreadTestData data;
-    data.device = m_device->device();
-    std::atomic<bool> bailout{false};
-    data.bailout = &bailout;
-    m_errorMonitor->SetBailout(data.bailout);
-
-    // Call vk::DestroyFence of VK_NULL_HANDLE repeatedly using multiple threads.
-    // There should be no validation error from collision of that non-object.
-    std::thread thread(ReleaseNullFence, &data);
-    for (int i = 0; i < 40000; i++) {
-        vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
-    }
-    thread.join();
-
-    m_errorMonitor->SetBailout(NULL);
-}
-
 TEST_F(PositiveSyncObject, WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 

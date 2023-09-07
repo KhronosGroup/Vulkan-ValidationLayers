@@ -1360,7 +1360,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputNoAlpha) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
 
-TEST_F(PositiveShaderInterface, AlphaToCoverageArrayIndex) {
+TEST_F(NegativeShaderInterface, AlphaToCoverageArrayIndex) {
     TEST_DESCRIPTION("Have array out outputs, but start at index 1");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1386,7 +1386,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArrayIndex) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891");
 }
 
-TEST_F(PositiveShaderInterface, AlphaToCoverageArrayVec3) {
+TEST_F(NegativeShaderInterface, AlphaToCoverageArrayVec3) {
     TEST_DESCRIPTION("Have array out outputs, but not contain the alpha component");
 
     ASSERT_NO_FATAL_FAILURE(Init());

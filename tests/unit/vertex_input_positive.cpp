@@ -264,13 +264,13 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attribs[2] = {
-        {4, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
+        {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
         {5, 0, VK_FORMAT_R32G32B32A32_UINT, 0},
     };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
     //     layout(location = 4) in VertexIn {
-    //         ivec4 x;
+    //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
     char const *vsSource = R"(
@@ -304,9 +304,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(PositiveVertexInput, AttributeComponents) {
