@@ -103,7 +103,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
     // image dimensions (09115). Pick the one with MEMCPY flag set and test for both here.
     region_to_image.imageExtent.width = width - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09114");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-09115");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09115");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -111,7 +111,7 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
     region_from_image.imageOffset.x = 1;
     region_from_image.imageExtent.width = width - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09114");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-09115");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09115");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
@@ -367,16 +367,16 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
             region_to_image.imageExtent = {1, 1, 1};
             region_to_image.imageSubresource.mipLevel = 4;
             copy_to_image.dstImage = image_compressed;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-pRegions-07274");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-pRegions-07275");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07274");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07275");
             vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
             m_errorMonitor->VerifyFound();
             region_from_image.imageOffset = {1, 1, 0};
             region_from_image.imageExtent = {1, 1, 1};
             region_from_image.imageSubresource.mipLevel = 4;
             copy_from_image.srcImage = image_compressed;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-pRegions-07274");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-pRegions-07275");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07274");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07275");
             vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
             m_errorMonitor->VerifyFound();
             region_to_image.imageOffset = {0, 0, 0};
@@ -384,21 +384,21 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
 
             // width not a multiple of compressed block width
             region_to_image.imageExtent = {1, 2, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-00207");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00207");
             vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
             m_errorMonitor->VerifyFound();
             region_from_image.imageExtent = {1, 2, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-00207");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00207");
             vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
             m_errorMonitor->VerifyFound();
 
             // Copy height < compressed block size but not the full mip height
             region_to_image.imageExtent = {2, 1, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-imageExtent-00208");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00208");
             vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
             m_errorMonitor->VerifyFound();
             region_from_image.imageExtent = {2, 1, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-imageExtent-00208");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00208");
             vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
             m_errorMonitor->VerifyFound();
 
@@ -808,8 +808,8 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
     image_copy_2.extent.width = width - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstOffset-09114");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcOffset-09114");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-extent-09115");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-extent-09115");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-09115");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-09115");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -1030,10 +1030,10 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
             image_copy_2.dstSubresource.mipLevel = 4;
             copy_image_to_image.dstImage = image_compressed1;
             copy_image_to_image.srcImage = image_compressed2;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-pRegions-07274");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-pRegions-07274");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-pRegions-07275");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-pRegions-07275");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07274");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07274");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07275");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07275");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
             image_copy_2.dstOffset = {0, 0, 0};
@@ -1041,15 +1041,15 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
 
             // width not a multiple of compressed block width
             image_copy_2.extent = {1, 2, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-imageExtent-00207");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-imageExtent-00207");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-00207");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-00207");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
 
             // Copy height < compressed block size but not the full mip height
             image_copy_2.extent = {2, 1, 1};
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-imageExtent-00208");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-imageExtent-00208");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-00208");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-00208");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
             image_copy_2.extent = {width, height, 1};
