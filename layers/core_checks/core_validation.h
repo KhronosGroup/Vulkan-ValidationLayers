@@ -914,7 +914,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
                                                   const Location& loc) const;
     bool ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE& pipeline, const Location& loc) const;
-    bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline, const Location& loc) const;
     bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline, const Location& loc) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline, const Location& create_info_loc) const;

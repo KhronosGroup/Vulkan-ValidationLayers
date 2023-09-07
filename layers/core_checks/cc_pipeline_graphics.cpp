@@ -90,7 +90,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDepthStencilState(pipeline, create_info_loc);
-    skip |= ValidateGraphicsPipelineDynamicState(pipeline);
+    skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
@@ -1624,35 +1624,49 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
+    auto get_state_index = [&pipeline](const VkDynamicState state) {
+        const auto dynamic_info = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pDynamicState;
+        for (uint32_t i = 0; i < dynamic_info->dynamicStateCount; i++) {
+            if (dynamic_info->pDynamicStates[i] == state) {
+                return i;
+            }
+        }
+        assert(false);
+        return dynamic_info->dynamicStateCount;
+    };
+
     bool skip = false;
     if (pipeline.create_info_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) {
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] pDynamicState must not contain "
-                             "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY or VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE because "
-                             "the pipeline contains a mesh shader.",
-                             pipeline.create_index);
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)),
+                             "is VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, but the pipeline contains a mesh shader.");
+        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)),
+                             "is VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, but the pipeline contains a mesh shader.");
         }
 
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ||
-            pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] pDynamicState must not contain "
-                             "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE or VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT because "
-                             "the pipeline contains a mesh shader.",
-                             pipeline.create_index);
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)),
+                             "is VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, but the pipeline contains a mesh shader.");
+        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)),
+                             "is VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, but the pipeline contains a mesh shader.");
         }
 
         if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-            skip |= LogError(
-                device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067",
-                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                "] pDynamicState must not contain VK_DYNAMIC_STATE_VERTEX_INPUT_EXT because the pipeline contains a mesh shader.",
-                pipeline.create_index);
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)),
+                             "is VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, but the pipeline contains a mesh shader.");
         }
     }
 
@@ -1664,367 +1678,339 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipe
          pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ||
          pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) || pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) ||
          pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP))) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the extendedDynamicState "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378", device, create_info_loc.dot(Field::pDynamicState),
+            "contains dynamic states from VK_EXT_extended_dynamic_state, but the extendedDynamicState feature was not enabled.");
     }
 
-    if (api_version < VK_API_VERSION_1_3 && !enabled_features.extended_dynamic_state2_features.extendedDynamicState2 &&
-        (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) || pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) ||
-         pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE))) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the extendedDynamicState2 "
-                         "feature is not enabled",
-                         pipeline.create_index);
+    if (api_version < VK_API_VERSION_1_3 && !enabled_features.extended_dynamic_state2_features.extendedDynamicState2) {
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+            skip |=
+                LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)),
+                         "is VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, but the extendedDynamicState2 feature was not enabled.");
+        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
+                             create_info_loc.dot(Field::pDynamicState)
+                                 .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)),
+                             "is VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, but the extendedDynamicState2 feature was not enabled.");
+        } else if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+            skip |=
+                LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)),
+                         "is VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, but the extendedDynamicState2 feature was not enabled.");
+        }
     }
 
     if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2LogicOp &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState2LogicOp feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869", device,
+            create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LOGIC_OP_EXT)),
+            "is VK_DYNAMIC_STATE_LOGIC_OP_EXT, but the extendedDynamicState2LogicOp feature was not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState2PatchControlPoints "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)),
+                         "is VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, but the extendedDynamicState2PatchControlPoints feature "
+                         "was not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3TessellationDomainOrigin-07370",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3TessellationDomainOrigin "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3TessellationDomainOrigin-07370", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)),
+                         "is VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, but the "
+                         "extendedDynamicState3TessellationDomainOrigin feature was not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClampEnable-07371",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3DepthClampEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClampEnable-07371", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)),
+            "is VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, but the extendedDynamicState3DepthClampEnable feature was not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3PolygonMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3PolygonMode-07372",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3PolygonMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3PolygonMode-07372", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)),
+                         "is VK_DYNAMIC_STATE_POLYGON_MODE_EXT, but the extendedDynamicState3PolygonMode feature was not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationSamples-07373",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3RasterizationSamples "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationSamples-07373", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)),
+                         "is VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT but the extendedDynamicState3RasterizationSamples feature "
+                         "is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3SampleMask &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleMask-07374",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3SampleMask "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleMask-07374", device,
+            create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)),
+            "is VK_DYNAMIC_STATE_SAMPLE_MASK_EXT but the extendedDynamicState3SampleMask feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToCoverageEnable-07375",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3AlphaToCoverageEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToCoverageEnable-07375", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)),
+                         "is VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT but the extendedDynamicState3AlphaToCoverageEnable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToOneEnable-07376",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3AlphaToOneEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToOneEnable-07376", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)),
+            "is VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT but the extendedDynamicState3AlphaToOneEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LogicOpEnable-07377",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3LogicOpEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |=
+            LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LogicOpEnable-07377", device,
+                     create_info_loc.dot(Field::pDynamicState)
+                         .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)),
+                     "is VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT but the extendedDynamicState3LogicOpEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEnable-07378",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ColorBlendEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEnable-07378", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)),
+            "is VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT but the extendedDynamicState3ColorBlendEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEquation-07379",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ColorBlendEquation "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEquation-07379", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)),
+            "is VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT but the extendedDynamicState3ColorBlendEquation feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorWriteMask-07380",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ColorWriteMask "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorWriteMask-07380", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)),
+            "is VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT but the extendedDynamicState3ColorWriteMask feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RasterizationStream &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3RasterizationStream "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)),
+                         "is VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT but the extendedDynamicState3RasterizationStream feature is "
+                         "not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ConservativeRasterizationMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ConservativeRasterizationMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)),
+                         "is VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT but the "
+                         "extendedDynamicState3ConservativeRasterizationMode feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ExtraPrimitiveOverestimationSize &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ExtraPrimitiveOverestimationSize-07383",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ExtraPrimitiveOverestimationSize "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ExtraPrimitiveOverestimationSize-07383", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)),
+                         "is VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT but the "
+                         "extendedDynamicState3ExtraPrimitiveOverestimationSize feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClipEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipEnable-07384",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3DepthClipEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipEnable-07384", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT)),
+            "is VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT but the extendedDynamicState3DepthClipEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3SampleLocationsEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleLocationsEnable-07385",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3SampleLocationsEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleLocationsEnable-07385", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)),
+                         "is VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT but the extendedDynamicState3SampleLocationsEnable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendAdvanced-07386",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ColorBlendAdvanced "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendAdvanced-07386", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)),
+            "is VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT but the extendedDynamicState3ColorBlendAdvanced feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ProvokingVertexMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ProvokingVertexMode-07387",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ProvokingVertexMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ProvokingVertexMode-07387", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)),
+                         "is VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT but the extendedDynamicState3ProvokingVertexMode feature "
+                         "is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LineRasterizationMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineRasterizationMode-07388",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3LineRasterizationMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineRasterizationMode-07388", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)),
+                         "is VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT but the extendedDynamicState3LineRasterizationMode "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LineStippleEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineStippleEnable-07389",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3LineStippleEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineStippleEnable-07389", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)),
+            "is VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT but the extendedDynamicState3LineStippleEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClipNegativeOneToOne &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipNegativeOneToOne-07390",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3DepthClipNegativeOneToOne "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipNegativeOneToOne-07390", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)),
+                         "is VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT but the "
+                         "extendedDynamicState3DepthClipNegativeOneToOne feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ViewportWScalingEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportWScalingEnable-07391",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ViewportWScalingEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportWScalingEnable-07391", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)),
+                         "is VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV but the extendedDynamicState3ViewportWScalingEnable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ViewportSwizzle &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportSwizzle-07392",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ViewportSwizzle "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError(
+            "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportSwizzle-07392", device,
+            create_info_loc.dot(Field::pDynamicState)
+                .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)),
+            "is VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV but the extendedDynamicState3ViewportSwizzle feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageToColorEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorEnable-07393",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageToColorEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorEnable-07393", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV but the extendedDynamicState3CoverageToColorEnable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageToColorLocation &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorLocation-07394",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageToColorLocation "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorLocation-07394", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV but the extendedDynamicState3CoverageToColorLocation "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationMode-07395",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageModulationMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationMode-07395", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV but the extendedDynamicState3CoverageModulationMode "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationTableEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTableEnable-07396",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageModulationTableEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTableEnable-07396", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV but the "
+                         "extendedDynamicState3CoverageModulationTableEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationTable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTable-07397",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageModulationTable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTable-07397", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV but the extendedDynamicState3CoverageModulationTable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageReductionMode &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageReductionMode-07398",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3CoverageReductionMode "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageReductionMode-07398", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)),
+                         "is VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV but the extendedDynamicState3CoverageReductionMode "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RepresentativeFragmentTestEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RepresentativeFragmentTestEnable-07399",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3RepresentativeFragmentTestEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RepresentativeFragmentTestEnable-07399", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)),
+                         "is VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV but the "
+                         "extendedDynamicState3RepresentativeFragmentTestEnable feature is not enabled.");
     }
 
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ShadingRateImageEnable &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ShadingRateImageEnable-07400",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: Extended dynamic state used by the "
-                         "extendedDynamicState3ShadingRateImageEnable "
-                         "feature is not enabled",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ShadingRateImageEnable-07400", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)),
+                         "is VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV but the extendedDynamicState3ShadingRateImageEnable "
+                         "feature is not enabled.");
     }
 
     if (!enabled_features.vertex_input_dynamic_state_features.vertexInputDynamicState &&
         pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: The vertexInputDynamicState feature must be enabled to use "
-                         "the VK_DYNAMIC_STATE_VERTEX_INPUT_EXT dynamic state",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)),
+                         "is VK_DYNAMIC_STATE_VERTEX_INPUT_EXT but the vertexInputDynamicState feature is not enabled.");
     }
 
     if (!enabled_features.color_write_features.colorWriteEnable && pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                         "]: The colorWriteEnable feature must be enabled to use the "
-                         "VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT dynamic state",
-                         pipeline.create_index);
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800", device,
+                         create_info_loc.dot(Field::pDynamicState)
+                             .dot(Field::pDynamicStates, get_state_index(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)),
+                         "is VK_DYNAMIC_STATE_VERTEX_INPUT_EXT but the colorWriteEnable feature is not enabled.");
     }
 
     return skip;
