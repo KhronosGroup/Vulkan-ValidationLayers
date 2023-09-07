@@ -27,5 +27,19 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
         skip |= ValidateArray(error_obj.location, "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
                               &pCreateInfo->pAttachments, false, true, kVUIDUndefined, "VUID-VkFramebufferCreateInfo-flags-02778");
     }
+
+    // Verify FB dimensions are greater than zero
+    if (pCreateInfo->width == 0) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-width-00885", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::width), "is zero.");
+    }
+    if (pCreateInfo->height == 0) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-height-00887", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::height), "is zero.");
+    }
+    if (pCreateInfo->layers == 0) {
+        skip |= LogError("VUID-VkFramebufferCreateInfo-layers-00889", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::layers), "is zero.");
+    }
     return skip;
 }
