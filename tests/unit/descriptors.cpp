@@ -391,7 +391,6 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         "to be used in descriptor set and verifying that error is flagged.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -447,11 +446,6 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
         pipe.InitState();
         pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
         pipe.CreateGraphicsPipeline();
@@ -463,10 +457,6 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
 
-        VkViewport viewport = {0, 0, 16, 16, 0, 1};
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        VkRect2D scissor = {{0, 0}, {16, 16}};
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
@@ -486,7 +476,6 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor set with a buffer dependency being "
         "destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -512,11 +501,6 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
@@ -529,9 +513,6 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, NULL);
-
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
 
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_commandBuffer->EndRenderPass();
@@ -554,7 +535,6 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
 TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to bind a descriptor set that is invalid at Draw time due to its buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -580,11 +560,6 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
@@ -600,8 +575,6 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
 
     // Invalid VkBuffer - The check is made at Draw time.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is invalid or has been destroyed");

@@ -56,13 +56,8 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -99,14 +94,8 @@ TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {
-        VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
-    };
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
     pipe.InitState();
@@ -145,11 +134,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     vi_ci.vertexAttributeDescriptionCount = 1;
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.InitState();
     pipe.gp_ci_.pVertexInputState = &vi_ci;  // ignored
     pipe.CreateGraphicsPipeline();
@@ -208,11 +193,8 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
     pipe.InitState();
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.CreateGraphicsPipeline();
@@ -356,11 +338,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     pipe.gp_ci_.renderPass = rp.handle();
     // pColorBlendState is not required since there are no color attachments
     pipe.gp_ci_.pColorBlendState = nullptr;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
-    auto dynamic_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_state.dynamicStateCount = 1;
-    dynamic_state.pDynamicStates = &dyn_state;
-    pipe.gp_ci_.pDynamicState = &dynamic_state;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     pipe.ds_ci_ = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipe.ds_ci_.depthTestEnable = VK_TRUE;
     pipe.ds_ci_.stencilTestEnable = VK_TRUE;
@@ -393,15 +371,11 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT};
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
     pipe.ds_ci_ = ds_state;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -431,13 +405,10 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT};
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT);
     pipe.ds_ci_ = ds_state;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -475,13 +446,8 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state2_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
-
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -506,19 +472,13 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LINE_WIDTH, VK_DYNAMIC_STATE_BLEND_CONSTANTS};
-
     CreatePipelineHelper pipe_line(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = &dyn_states[0];
-    pipe_line.dyn_state_ci_ = dyn_state_ci;
+    pipe_line.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe_line.InitState();
     pipe_line.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_blend(*this);
-    dyn_state_ci.pDynamicStates = &dyn_states[1];
-    pipe_blend.dyn_state_ci_ = dyn_state_ci;
+    pipe_blend.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
     pipe_blend.InitState();
     pipe_blend.CreateGraphicsPipeline();
 
@@ -553,11 +513,7 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -820,14 +776,9 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;  // should be ignored
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.pipe_ms_state_ci_ = ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -852,13 +803,8 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 

@@ -430,11 +430,6 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
 
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_LINE_WIDTH;
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
@@ -442,7 +437,7 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     pipe.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
     pipe.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     pipe.InitState();
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.CreateGraphicsPipeline();
 
     VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
@@ -489,16 +484,9 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[1] = {
-        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,
-    };
-
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     VkVertexInputBindingDescription inputBinding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
     pipe.vi_ci_.pVertexBindingDescriptions = &inputBinding;

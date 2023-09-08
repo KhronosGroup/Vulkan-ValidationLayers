@@ -322,12 +322,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     {
         // Pipeline for subpass 0
         CreatePipelineHelper pipe(*this);
-
-        VkDynamicState dyn_states = VK_DYNAMIC_STATE_LINE_WIDTH;
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        pipe.dyn_state_ci_.dynamicStateCount = 1;
-        pipe.dyn_state_ci_.pDynamicStates = &dyn_states;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 

@@ -419,10 +419,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
             {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
         };
         pipe.InitState();
-        VkDynamicState dyn_state = VK_DYNAMIC_STATE_SCISSOR;
-        pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        pipe.dyn_state_ci_.dynamicStateCount = 1;
-        pipe.dyn_state_ci_.pDynamicStates = &dyn_state;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
         ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
 
         pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);

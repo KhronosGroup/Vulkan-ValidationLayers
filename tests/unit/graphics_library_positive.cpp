@@ -370,17 +370,14 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 4;
-
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentOutputLibInfo();
     pipe.InitState();
     pipe.cb_ci_.pAttachments = nullptr;
-    pipe.gp_ci_.pDynamicState = &dynamic_create_info;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
     pipe.CreateGraphicsPipeline(false);
 }
 
@@ -569,11 +566,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 1;
-
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -586,7 +578,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
-    vertex_input_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+    vertex_input_lib.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     vertex_input_lib.gp_ci_.pInputAssemblyState = &ia_state;
     vertex_input_lib.CreateGraphicsPipeline(false);
 
@@ -663,11 +655,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
     }
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 1;
-
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -706,7 +693,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.gp_ci_.renderPass = render_pass;
     frag_out_lib.gp_ci_.subpass = subpass;
-    frag_out_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+    frag_out_lib.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
     frag_out_lib.CreateGraphicsPipeline(false);
 
     VkPipeline libraries[4] = {
@@ -749,11 +736,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
     }
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 1;
-
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -785,7 +767,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
-        frag_shader_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+        frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
@@ -1213,11 +1195,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
         pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pr_lib.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;  // This should get ignored due to its state being set as dynamic
         pr_lib.InitState();
-        VkDynamicState dynamic_state = VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT;
-        VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dynamic_create_info.pDynamicStates = &dynamic_state;
-        dynamic_create_info.dynamicStateCount = 1;
-        pr_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+        pr_lib.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
         pr_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
         pr_lib.CreateGraphicsPipeline(false);
     }

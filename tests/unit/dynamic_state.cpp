@@ -359,14 +359,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorPipeline) {
     // Verify viewportCount and scissorCount are specified as zero.
     {
         CreatePipelineHelper pipe(*this);
-        const VkDynamicState dyn_states[] = {
-            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
-        };
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
         pipe.InitState();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03379");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
@@ -377,23 +371,21 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorPipeline) {
     // Verify non-count and count dynamic states aren't used together
     {
         CreatePipelineHelper pipe(*this);
-        const VkDynamicState dyn_states[] = {
-            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_VIEWPORT,  // viewports
-            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR     // scissors
-        };
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
         pipe.InitState();
-
-        pipe.dyn_state_ci_.pDynamicStates = &dyn_states[0];  // viewports
         pipe.vp_state_ci_.viewportCount = 0;
         pipe.vp_state_ci_.scissorCount = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
+    }
 
-        pipe.dyn_state_ci_.pDynamicStates = &dyn_states[2];  // scissors
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+        pipe.InitState();
         pipe.vp_state_ci_.viewportCount = 1;
         pipe.vp_state_ci_.scissorCount = 0;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133");
@@ -432,11 +424,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDuplicate) {
     // Verify dupes of every state.
     for (size_t i = 0; i < size(dyn_states); ++i) {
         CreatePipelineHelper pipe(*this);
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
-        dyn_state_ci.pDynamicStates = dyn_state_dupes;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(dyn_states[i]);
+        pipe.AddDynamicState(dyn_states[i]);
         if (dyn_states[i] == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) {
             pipe.vp_state_ci_.viewportCount = 0;
         }
@@ -464,15 +453,11 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-                                         VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
-
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -577,11 +562,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 1;
-        VkDynamicState dynamic_state = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT;
-        dyn_state_ci.pDynamicStates = &dynamic_state;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         pipe.vp_state_ci_.viewportCount = 0;
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
@@ -598,11 +579,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 1;
-        VkDynamicState dynamic_state = VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT;
-        dyn_state_ci.pDynamicStates = &dynamic_state;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
         pipe.vp_state_ci_.scissorCount = 0;
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
@@ -619,11 +596,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        VkDynamicState dynamic_state[] = {VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
-        dyn_state_ci.pDynamicStates = dynamic_state;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         pipe.vp_state_ci_.viewportCount = 0;
         pipe.vp_state_ci_.scissorCount = 0;
         pipe.InitState();
@@ -664,12 +638,10 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    VkDynamicState dynamic_state[] = {VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
-                                      VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
-    dyn_state_ci.dynamicStateCount = size(dynamic_state);
-    dyn_state_ci.pDynamicStates = dynamic_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -823,12 +795,9 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT,
-                                         VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04868");
     pipe.CreateGraphicsPipeline();
@@ -877,11 +846,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04870");
     pipe.CreateGraphicsPipeline();
@@ -922,11 +887,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LOGIC_OP_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04869");
     pipe.CreateGraphicsPipeline();
@@ -970,11 +931,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
         // Verify duplicates of every dynamic state.
         {
             CreatePipelineHelper pipe(*this);
-            auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-            dyn_state_ci.dynamicStateCount = 2;
-            VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
-            dyn_state_ci.pDynamicStates = dyn_state_dupes;
-            pipe.dyn_state_ci_ = dyn_state_ci;
+            pipe.AddDynamicState(dyn_states[i]);
+            pipe.AddDynamicState(dyn_states[i]);
             pipe.InitState();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
             pipe.CreateGraphicsPipeline();
@@ -983,19 +941,16 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
 
         // Calling draw without setting the dynamic state is an error
         {
-            CreatePipelineHelper pipe2(*this);
-            auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-            dyn_state_ci.dynamicStateCount = 1;
-            dyn_state_ci.pDynamicStates = &dyn_states[i];
-            pipe2.dyn_state_ci_ = dyn_state_ci;
-            pipe2.InitState();
-            pipe2.CreateGraphicsPipeline();
+            CreatePipelineHelper pipe(*this);
+            pipe.AddDynamicState(dyn_states[i]);
+            pipe.InitState();
+            pipe.CreateGraphicsPipeline();
 
             VkCommandBufferObj command_buffer(m_device, m_commandPool);
             command_buffer.begin();
             command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-            vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
+            vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
             if (dyn_states[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04876");
@@ -1033,16 +988,11 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT};
-
     // Verify dupes of the dynamic state.
-    for (size_t i = 0; i < size(dyn_states); ++i) {
+    {
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
-        dyn_state_ci.pDynamicStates = dyn_state_dupes;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
         pipe.InitState();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
         pipe.CreateGraphicsPipeline();
@@ -1051,10 +1001,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
 
     {
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
@@ -1101,16 +1048,11 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LOGIC_OP_EXT};
-
     // Verify dupes of the dynamic state.
-    for (size_t i = 0; i < size(dyn_states); ++i) {
+    {
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
-        dyn_state_ci.pDynamicStates = dyn_state_dupes;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
         pipe.InitState();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
         pipe.CreateGraphicsPipeline();
@@ -1119,10 +1061,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
 
     {
         CreatePipelineHelper pipe(*this);
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
 
@@ -1151,14 +1090,12 @@ void NegativeDynamicState::ExtendedDynamicState3PipelineFeatureDisabled(VkDynami
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {dynamic_state};
-    const auto setup_info = [&](CreatePipelineHelper &helper) {
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        helper.dyn_state_ci_ = dyn_state_ci;
-    };
-    CreatePipelineHelper::OneshotTest(*this, setup_info, kErrorBit, vuid);
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(dynamic_state);
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, PipelineFeatureDisabledTessellationDomainOrigin) {
@@ -1609,11 +1546,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState3DuplicateStatePipeline) {
     // Verify dupes of every state.
     for (size_t i = 0; i < size(dyn_states); ++i) {
         CreatePipelineHelper pipe(*this);
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
-        dyn_state_ci.pDynamicStates = dyn_state_dupes;
-        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.AddDynamicState(dyn_states[i]);
+        pipe.AddDynamicState(dyn_states[i]);
         pipe.InitState();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
         pipe.CreateGraphicsPipeline();
@@ -1640,11 +1574,7 @@ TEST_F(NegativeDynamicState, DrawNotSetTessellationDomainOrigin) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT);
     auto tess_domain_ci = LvlInitStruct<VkPipelineTessellationDomainOriginStateCreateInfo>();
     tess_domain_ci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
     auto tess_ci = LvlInitStruct<VkPipelineTessellationStateCreateInfo>(&tess_domain_ci);
@@ -1684,11 +1614,7 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthClampEnable) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1725,11 +1651,7 @@ TEST_F(NegativeDynamicState, DrawNotSetPolygonMode) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_POLYGON_MODE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1774,11 +1696,7 @@ TEST_F(NegativeDynamicState, DrawNotSetAlphaToOneEnable) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1814,11 +1732,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLogicOpEnable) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1856,11 +1770,7 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1909,11 +1819,7 @@ TEST_F(NegativeDynamicState, DrawNotSetRasterizationStream) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1954,11 +1860,7 @@ TEST_F(NegativeDynamicState, DrawNotSetExtraPrimitiveOverestimationSize) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -1999,11 +1901,7 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -2049,11 +1947,7 @@ TEST_F(NegativeDynamicState, DrawNotSetProvokingVertexMode) {
     m_commandBuffer->begin();
 
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -2089,11 +1983,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineRasterizationMode) {
 
     m_commandBuffer->begin();
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -2140,11 +2030,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnable) {
 
     m_commandBuffer->begin();
     CreatePipelineHelper pipe(*this);
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    VkDynamicState dyn_state = VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -2198,11 +2084,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateDisabled) {
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807");
     pipe.CreateGraphicsPipeline();
@@ -2242,11 +2124,8 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
 
     // VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
     pipe.CreateGraphicsPipeline();
@@ -2499,11 +2378,7 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;  // is ignored since dynamic
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe.pipe_ms_state_ci_ = ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -2561,14 +2436,9 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     fsSource << "}";
     VkShaderObj fs(this, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 1;
-
     CreatePipelineHelper pipe(*this, color_attachments);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dynamic_create_info;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -2626,11 +2496,8 @@ TEST_F(NegativeDynamicState, RasterizationLineModeDefault) {
 
     // set both from dynamic state, don't need a VkPipelineRasterizationLineStateCreateInfoEXT in pNext
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
     pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;  // ignored
     pipe.line_state_ci_.stippledLineEnable = VK_TRUE;                                        // ignored
     pipe.line_state_ci_.lineStippleFactor = 1;
@@ -2661,11 +2528,7 @@ TEST_F(NegativeDynamicState, RasterizationLineModeRectangular) {
     if (::testing::Test::IsSkipped()) return;
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
     pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
     pipe.line_state_ci_.stippledLineEnable = VK_TRUE;  // ignored
     pipe.line_state_ci_.lineStippleFactor = 1;
@@ -2691,11 +2554,7 @@ TEST_F(NegativeDynamicState, RasterizationLineModeBresenham) {
     if (::testing::Test::IsSkipped()) return;
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
     pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
     pipe.line_state_ci_.lineStippleFactor = 1;
     pipe.InitState();
@@ -2720,11 +2579,7 @@ TEST_F(NegativeDynamicState, RasterizationLineModeSmooth) {
     if (::testing::Test::IsSkipped()) return;
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
     pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
     pipe.line_state_ci_.lineStippleFactor = 1;
     pipe.InitState();
@@ -2818,16 +2673,13 @@ TEST_F(NegativeDynamicState, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendE
     cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
 
-    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 4;
-
     CreatePipelineHelper pipe(*this, count);
     pipe.cb_attachments_[0] = cb_attachments;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dynamic_create_info;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -2873,11 +2725,7 @@ TEST_F(NegativeDynamicState, ColorWriteDisabled) {
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04800");
     pipe.CreateGraphicsPipeline();
@@ -2922,11 +2770,7 @@ TEST_F(NegativeDynamicState, ColorWriteNotSet) {
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blend;
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -3045,11 +2889,7 @@ TEST_F(NegativeDynamicState, DiscardRectanglesNotSet) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pNext = &discard_rect_ci;
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -3091,11 +2931,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pNext = &discard_rect_ci;
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -3160,13 +2996,7 @@ TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferReset) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
-
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     pipe.CreateGraphicsPipeline();
 
     VkSampleLocationEXT sample_location = {0.5f, 0.5f};
@@ -3376,14 +3206,9 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     }
 
     // Creates valid pipelines with dynamic state
-    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT;
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = &dyn_state;
-
     CreatePipelineHelper dynamic_pipe(*this);
     dynamic_pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
-    dynamic_pipe.dyn_state_ci_ = dyn_state_ci;
+    dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     dynamic_pipe.InitState();
     dynamic_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     dynamic_pipe.CreateGraphicsPipeline();
@@ -3777,15 +3602,12 @@ TEST_F(NegativeDynamicState, DISABLED_ExtensionDynamicStatesSetWOExtensionEnable
     };
 
     for (const auto &test_case : dyn_test_cases) {
-        VkDynamicState state[1];
-        state[0] = test_case.dynamic_state;
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-            dyn_state_ci.dynamicStateCount = test_case.dynamic_state_count;
-            dyn_state_ci.pDynamicStates = state;
-            helper.dyn_state_ci_ = dyn_state_ci;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.errmsg);
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(test_case.dynamic_state);
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.errmsg);
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -3887,16 +3709,9 @@ TEST_F(NegativeDynamicState, NonGraphics) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_MAX_ENUM;
-
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-    pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    pipe.dyn_state_ci_.flags = 0;
-    pipe.dyn_state_ci_.dynamicStateCount = 1;
-    pipe.dyn_state_ci_.pDynamicStates = &dynamic_state;
-
-    dynamic_state = VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -3971,17 +3786,14 @@ TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayDynamic) {
 
     // invalid if using only some dynamic state
     {
-        VkDynamicState dynamic_states[2] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT};
-        VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dynamic_create_info.pDynamicStates = dynamic_states;
-        dynamic_create_info.dynamicStateCount = 2;
-        const auto set_info = [dynamic_create_info](CreatePipelineHelper &helper) {
-            helper.cb_ci_.pAttachments = nullptr;
-            helper.dyn_state_ci_ = dynamic_create_info;
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+        pipe.InitState();
+        pipe.cb_ci_.pAttachments = nullptr;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -3991,13 +3803,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-
-    std::vector<VkDynamicState> dyn_states = {VK_DYNAMIC_STATE_VIEWPORT};
-
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = static_cast<uint32_t>(dyn_states.size());
-    dyn_state_ci.pDynamicStates = dyn_states.data();
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4034,13 +3840,8 @@ void NegativeDynamicState::ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {dynamic_state};
-
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(dynamic_state);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4134,11 +3935,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     // Add dynamic depth stencil state instead
     pipe.ds_ci_.minDepthBounds = 0.0f;
     pipe.ds_ci_.maxDepthBounds = 0.0f;
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_BOUNDS};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4511,38 +4308,28 @@ TEST_F(NegativeDynamicState, ScissorWithCount) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     {
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 1;
-        dyn_state_ci.pDynamicStates = dyn_states;
-
-        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.dyn_state_ci_ = dyn_state_ci;
-            helper.vp_state_ci_.scissorCount = 0;
-            helper.vp_state_ci_.viewportCount = 0;
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
-                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        pipe.InitState();
+        pipe.vp_state_ci_.scissorCount = 0;
+        pipe.vp_state_ci_.viewportCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
     }
 
     {
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        dyn_state_ci.pDynamicStates = dyn_states;
-
+        CreatePipelineHelper pipe(*this);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        pipe.InitState();
         VkRect2D scissors = {};
-
-        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.dyn_state_ci_ = dyn_state_ci;
-            helper.vp_state_ci_.scissorCount = 1;
-            helper.vp_state_ci_.pScissors = &scissors;
-            helper.vp_state_ci_.viewportCount = 0;
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
+        pipe.vp_state_ci_.scissorCount = 1;
+        pipe.vp_state_ci_.pScissors = &scissors;
+        pipe.vp_state_ci_.viewportCount = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -4571,13 +4358,7 @@ TEST_F(NegativeDynamicState, DrawNotSetSampleLocations) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
-
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -4635,13 +4416,8 @@ TEST_F(NegativeDynamicState, SetAfterStaticPipeline) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LINE_WIDTH};
-
     CreatePipelineHelper pipe_line(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = &dyn_states[0];
-    pipe_line.dyn_state_ci_ = dyn_state_ci;
+    pipe_line.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe_line.InitState();
     pipe_line.CreateGraphicsPipeline();
 
@@ -4681,11 +4457,7 @@ TEST_F(NegativeDynamicState, DrawNotSetAttachmentFeedbackLoopEnable) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4713,11 +4485,7 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4749,11 +4517,7 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4911,14 +4675,9 @@ TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_FALSE;  // should be ignored
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.pipe_ms_state_ci_ = ms_state_ci;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
@@ -4946,14 +4705,9 @@ TEST_F(NegativeDynamicState, ShadingRateImageEnableNotSet) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -4979,14 +4733,9 @@ TEST_F(NegativeDynamicState, CoverageReductionModeNotSet) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5034,19 +4783,13 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
 
     CreatePipelineHelper pipe1(*this);
     pipe1.InitState();
+    pipe1.AddDynamicState(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV);
+    pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
     pipe2.InitState();
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe1.dyn_state_ci_ = dyn_state_ci;
-    dyn_state_ci.dynamicStateCount = 2;
-    pipe2.dyn_state_ci_ = dyn_state_ci;
-
-    pipe1.CreateGraphicsPipeline();
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV);
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
     pipe2.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();

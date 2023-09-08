@@ -127,6 +127,16 @@ void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const
     shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
 }
 
+// Designed for majority of cases that just need to simply add dynamic state
+void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
+    dynamic_states_.push_back(dynamic_state);
+    dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci_.pDynamicStates = dynamic_states_.data();
+    dyn_state_ci_.dynamicStateCount = dynamic_states_.size();
+    // Set here and don't have have to worry about late bind setting it
+    gp_ci_.pDynamicState = &dyn_state_ci_;
+}
+
 void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
     gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
