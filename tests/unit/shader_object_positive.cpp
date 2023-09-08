@@ -1742,3 +1742,87 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
+    TEST_DESCRIPTION("Create and draw with some linked and some unlinked shaders.");
+
+    InitBasicShaderObject(nullptr, VK_API_VERSION_1_3);
+    if (::testing::Test::IsSkipped()) return;
+
+    InitDynamicRenderTarget();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+
+    const auto vertSpirv = GLSLToSPV(stages[0], kVertexMinimalGlsl);
+    const auto tescSpirv = GLSLToSPV(stages[1], kTessellationControlMinimalGlsl);
+    const auto teseSpirv = GLSLToSPV(stages[2], kTessellationEvalMinimalGlsl);
+    const auto geomSpirv = GLSLToSPV(stages[3], kGeometryMinimalGlsl);
+    const auto fragSpirv = GLSLToSPV(stages[4], kFragmentMinimalGlsl);
+
+    VkShaderCreateInfoEXT createInfos[5];
+
+    createInfos[0] = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfos[0].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+    createInfos[0].stage = stages[0];
+    createInfos[0].nextStage = stages[1];
+    createInfos[0].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfos[0].codeSize = vertSpirv.size() * sizeof(vertSpirv[0]);
+    createInfos[0].pCode = vertSpirv.data();
+    createInfos[0].pName = "main";
+
+    createInfos[1] = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfos[1].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+    createInfos[1].stage = stages[1];
+    createInfos[1].nextStage = stages[2];
+    createInfos[1].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfos[1].codeSize = tescSpirv.size() * sizeof(tescSpirv[0]);
+    createInfos[1].pCode = tescSpirv.data();
+    createInfos[1].pName = "main";
+
+    createInfos[2] = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfos[2].flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+    createInfos[2].stage = stages[2];
+    createInfos[2].nextStage = stages[3] | stages[4];
+    createInfos[2].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfos[2].codeSize = teseSpirv.size() * sizeof(teseSpirv[0]);
+    createInfos[2].pCode = teseSpirv.data();
+    createInfos[2].pName = "main";
+
+    createInfos[3] = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfos[3].stage = stages[3];
+    createInfos[3].nextStage = stages[4];
+    createInfos[3].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfos[3].codeSize = geomSpirv.size() * sizeof(geomSpirv[0]);
+    createInfos[3].pCode = geomSpirv.data();
+    createInfos[3].pName = "main";
+
+    createInfos[4] = LvlInitStruct<VkShaderCreateInfoEXT>();
+    createInfos[4].stage = stages[4];
+    createInfos[4].nextStage = 0u;
+    createInfos[4].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfos[4].codeSize = fragSpirv.size() * sizeof(fragSpirv[0]);
+    createInfos[4].pCode = fragSpirv.data();
+    createInfos[4].pName = "main";
+
+    VkShaderEXT shaders[5];
+    vk::CreateShadersEXT(*m_device, 3u, createInfos, nullptr, shaders);
+    for (uint32_t i = 3u; i < 5u; ++i) {
+        vk::CreateShadersEXT(*m_device, 1u, &createInfos[i], nullptr, &shaders[i]);
+    }
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    SetDefaultDynamicStates();
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    for (uint32_t i = 0; i < 5u; ++i) {
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
+    }
+}
