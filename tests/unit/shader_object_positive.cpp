@@ -1718,3 +1718,27 @@ TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
+    TEST_DESCRIPTION("Draw without setting depth bounds.");
+
+    InitBasicShaderObject();
+    if (::testing::Test::IsSkipped()) return;
+
+    InitDynamicRenderTarget();
+
+    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+
+    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    SetDefaultDynamicStates({VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_BOUNDS});
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
