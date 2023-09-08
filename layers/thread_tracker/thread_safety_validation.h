@@ -131,13 +131,12 @@ class counter {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        bool skip = false;
-        std::thread::id tid = std::this_thread::get_id();
-
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
         }
+
+        const std::thread::id tid = std::this_thread::get_id();
         const ObjectUseData::WriteReadCount prevCount = use_data->AddWriter();
 
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
@@ -148,17 +147,7 @@ class counter {
                 assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
-                    const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
-                    if (skip) {
-                        // Wait for thread-safe access to object instead of skipping call.
-                        use_data->WaitForObjectIdle(true);
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    } else {
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    }
+                    HandleErrorOnWrite(use_data, object, command);
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
@@ -166,17 +155,7 @@ class counter {
             } else {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
-                    const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
-                    if (skip) {
-                        // Wait for thread-safe access to object instead of skipping call.
-                        use_data->WaitForObjectIdle(true);
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    } else {
-                        // Continue with an unsafe use of the object.
-                        use_data->thread = tid;
-                    }
+                    HandleErrorOnWrite(use_data, object, command);
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
@@ -201,27 +180,19 @@ class counter {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        bool skip = false;
-        std::thread::id tid = std::this_thread::get_id();
-
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
         }
+
+        const std::thread::id tid = std::this_thread::get_id();
         const ObjectUseData::WriteReadCount prevCount = use_data->AddReader();
 
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.
             use_data->thread = tid;
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
-            // There is a writer of the object.
-            const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
-            skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
-            if (skip) {
-                // Wait for thread-safe access to object instead of skipping call.
-                use_data->WaitForObjectIdle(false);
-                use_data->thread = tid;
-            }
+            HandleErrorOnRead(use_data, object, command);
         } else {
             // There are other readers of the object.
         }
@@ -248,6 +219,33 @@ class counter {
         err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
                 << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
         return err_str.str();
+    }
+
+    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData> &use_data, T object, vvl::Func command) {
+        const std::thread::id tid = std::this_thread::get_id();
+        const std::string error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
+        const bool skip = object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
+        if (skip) {
+            // Wait for thread-safe access to object instead of skipping call.
+            use_data->WaitForObjectIdle(true);
+            // There is now no current use of the object. Record writer thread.
+            use_data->thread = tid;
+        } else {
+            // There is now no current use of the object. Record writer thread.
+            use_data->thread = tid;
+        }
+    }
+
+    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData> &use_data, T object, vvl::Func command) {
+        const std::thread::id tid = std::this_thread::get_id();
+        // There is a writer of the object.
+        const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
+        const bool skip = object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
+        if (skip) {
+            // Wait for thread-safe access to object instead of skipping call.
+            use_data->WaitForObjectIdle(false);
+            use_data->thread = tid;
+        }
     }
 };
 
