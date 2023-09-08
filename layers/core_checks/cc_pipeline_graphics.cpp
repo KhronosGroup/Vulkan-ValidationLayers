@@ -2342,7 +2342,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const char *caller = loc.StringFunc();
 
     if (cb_state.activeRenderPass->UsesDynamicRendering()) {
         if (pipeline) {
@@ -2352,8 +2351,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
         if (pipeline) {
             ValidatePipelineRenderpassDraw(last_bound_state, loc);
         } else if (last_bound_state.HasShaderObjects()) {
-            skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDraw-None-08876",
-                             "%s: Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.", caller,
+            skip |= LogError(vuid.render_pass_began_08876, cb_state.commandBuffer(), loc,
+                             "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
                              FormatHandle(cb_state.activeRenderPass->renderPass()).c_str());
         }
     }
@@ -2383,11 +2382,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                 if (pipeline) {
                     objlist.add(pipeline->pipeline());
                 }
-                skip |= LogError(objlist, vuid.primitives_generated_06708,
-                                 "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                skip |= LogError(vuid.primitives_generated_06708, objlist, loc,
+                                 "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
                                  "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but  "
-                                 "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.",
-                                 caller);
+                                 "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.");
             }
             if (!primitives_generated_query_with_non_zero_streams && pipeline) {
                 const auto rasterization_state_stream_ci =
@@ -2397,12 +2395,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                     if (pipeline) {
                         objlist.add(pipeline->pipeline());
                     }
-                    skip |= LogError(objlist, vuid.primitives_generated_streams_06709,
-                                     "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
+                    skip |= LogError(vuid.primitives_generated_streams_06709, objlist, loc,
+                                     "a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
                                      "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
                                      ", but  "
                                      "primitivesGeneratedQueryWithNonZeroStreams feature is not enabled.",
-                                     caller, rasterization_state_stream_ci->rasterizationStream);
+                                     rasterization_state_stream_ci->rasterizationStream);
                 }
             }
         }
@@ -2430,18 +2428,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
             const auto vertex_binding = pipeline->vertex_input_state->binding_descriptions[i].binding;
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
-                skip |= LogError(objlist, vuid.vertex_binding_04007,
-                                 "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
+                skip |= LogError(vuid.vertex_binding_04007, objlist, loc,
+                                 "%s expects that this Command Buffer's vertex binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                                 caller, FormatHandle(*pipeline).c_str(), vertex_binding, i, vertex_binding);
+                                 FormatHandle(*pipeline).c_str(), vertex_binding, i, vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
-                skip |= LogError(objlist, vuid.vertex_binding_null_04008,
-                                 "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
+                skip |= LogError(vuid.vertex_binding_null_04008, objlist, loc,
+                                 "Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                                 caller, vertex_binding, FormatHandle(*pipeline).c_str(), vertex_binding, i, vertex_binding);
+                                 vertex_binding, FormatHandle(*pipeline).c_str(), vertex_binding, i, vertex_binding);
             }
         }
 
@@ -2468,7 +2466,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                                          "The pStrides[%" PRIu32 "] (%" PRIu32
                                          ") parameter in the last call to %s is not 0 "
                                          "and less than the extent of the binding for attribute  %" PRIu32 " (%" PRIu32 ").",
-                                         vertex_binding, vertex_buffer_stride, caller, i, attribute_binding_extent);
+                                         vertex_binding, vertex_buffer_stride, loc.StringFunc(), i, attribute_binding_extent);
                     }
                 }
                 const VkDeviceSize vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
@@ -2481,21 +2479,20 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     const LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer(),
                                                 pipeline->pipeline());
-                    skip |=
-                        LogError(objlist, vuid.vertex_binding_attribute_02721,
-                                 "%s: Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
-                                 ") is not aligned in pVertexAttributeDescriptions[%" PRIu32
-                                 "]"
-                                 "(binding=%" PRIu32 " location=%" PRIu32 ") where attribAddress = vertex buffer offset (%" PRIu64
-                                 ") + binding stride (%" PRIu32 ") + attribute offset (%" PRIu64 ").",
-                                 caller, string_VkFormat(attribute_description.format), vtx_attrib_req_alignment, attrib_address, i,
-                                 vertex_binding, attribute_description.location, vertex_buffer_offset, vertex_buffer_stride,
-                                 attribute_offset);
+                    skip |= LogError(
+                        vuid.vertex_binding_attribute_02721, objlist, loc,
+                        "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
+                        ") is not aligned in pVertexAttributeDescriptions[%" PRIu32
+                        "]"
+                        "(binding=%" PRIu32 " location=%" PRIu32 ") where attribAddress = vertex buffer offset (%" PRIu64
+                        ") + binding stride (%" PRIu32 ") + attribute offset (%" PRIu64 ").",
+                        string_VkFormat(attribute_description.format), vtx_attrib_req_alignment, attrib_address, i, vertex_binding,
+                        attribute_description.location, vertex_buffer_offset, vertex_buffer_stride, attribute_offset);
                 }
             } else {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
-                skip |= LogError(objlist, vuid.vertex_binding_attribute_02721,
-                                 "%s: pVertexAttributeDescriptions[%" PRIu32 "].binding (%" PRIu32 ") is an invalid value.", caller,
+                skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, loc,
+                                 "pVertexAttributeDescriptions[%" PRIu32 "].binding (%" PRIu32 ") is an invalid value.",
                                  vertex_binding, i);
             }
         }
@@ -2529,11 +2526,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                             cb_state.activeRenderPass->renderPass());
                                 skip |=
-                                    LogError(objlist, vuid.blend_enable_04727,
-                                             "%s: Image view's format features of the color attachment (%" PRIu32
+                                    LogError(vuid.blend_enable_04727, objlist, loc,
+                                             "Image view's format features of the color attachment (%" PRIu32
                                              ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
                                              "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
-                                             caller, attachment, attachment);
+                                             attachment, attachment);
                             }
                         }
                     }
@@ -2552,9 +2549,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                     ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.msrtss_rasterization_samples_07284,
-                                     "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
-                                     caller, FormatHandle(*pipeline).c_str(), string_VkSampleCountFlagBits(rasterization_samples),
+                    skip |= LogError(vuid.msrtss_rasterization_samples_07284, objlist, loc,
+                                     "In %s the sample count is %s while the current %s has %s and they need to be the same.",
+                                     FormatHandle(*pipeline).c_str(), string_VkSampleCountFlagBits(rasterization_samples),
                                      FormatHandle(*cb_state.activeRenderPass).c_str(),
                                      string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
                 }
@@ -2577,33 +2574,32 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                             (!enabled_features.line_rasterization_features.stippledRectangularLines)) {
                             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                         cb_state.activeRenderPass->renderPass());
-                            skip |=
-                                LogError(objlist, vuid.stippled_rectangular_lines_07495,
-                                         "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
-                                         "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
-                                         caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                            skip |= LogError(vuid.stippled_rectangular_lines_07495, objlist, loc,
+                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
+                                             "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
+                                             dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                             dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
                             (!enabled_features.line_rasterization_features.stippledBresenhamLines)) {
                             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                         cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(objlist, vuid.stippled_bresenham_lines_07496,
-                                             "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
+                            skip |= LogError(vuid.stippled_bresenham_lines_07496, objlist, loc,
+                                             "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
                                              "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
-                                             caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                             dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                              dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
                             (!enabled_features.line_rasterization_features.stippledSmoothLines)) {
                             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                         cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(
-                                objlist, vuid.stippled_smooth_lines_07497,
-                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
-                                "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
-                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                            skip |=
+                                LogError(vuid.stippled_smooth_lines_07497, objlist, loc,
+                                         "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
+                                         "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
+                                         dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                         }
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
                             (!enabled_features.line_rasterization_features.stippledRectangularLines ||
@@ -2611,10 +2607,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                         cb_state.activeRenderPass->renderPass());
                             skip |= LogError(
-                                objlist, vuid.stippled_default_strict_07498,
-                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
+                                vuid.stippled_default_strict_07498, objlist, loc,
+                                "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
                                 "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
-                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                 dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
                                 enabled_features.line_rasterization_features.stippledRectangularLines ? "enabled" : "not enabled",
                                 phys_dev_props.limits.strictLines ? "VK_TRUE" : "VK_FALSE");
@@ -2641,10 +2637,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
             // Currently lack support to test each index.
             if (entrypoint && !entrypoint->has_alpha_to_coverage_variable && !pipeline->DualSourceBlending()) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
-                skip |= LogError(objlist, vuid.dynamic_alpha_to_coverage_component_08919,
-                                 "%s(): vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
-                                 "fragment shader doesn't declare a variable that covers Location 0, Component 3.",
-                                 caller);
+                skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, loc,
+                                 "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
+                                 "fragment shader doesn't declare a variable that covers Location 0, Component 3.");
             }
         }
     }
@@ -2657,53 +2652,45 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.commandBuffer());
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const char *caller = loc.StringFunc();
 
     if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
-        skip |= LogError(objlist, vuid.vertex_shader_08684,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_VERTEX_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_VERTEX_BIT shader.",
-                         caller);
+        skip |= LogError(vuid.vertex_shader_08684, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_VERTEX_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_VERTEX_BIT shader.");
     }
     if (enabled_features.core.tessellationShader &&
         !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
-        skip |= LogError(objlist, vuid.tessellation_control_shader_08685,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+        skip |= LogError(vuid.tessellation_control_shader_08685, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT and either VK_NULL_HANDLE or a valid "
-                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT shader.",
-                         caller);
+                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT shader.");
     }
     if (enabled_features.core.tessellationShader &&
         !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
-        skip |= LogError(objlist, vuid.tessellation_evaluation_shader_08686,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+        skip |= LogError(vuid.tessellation_evaluation_shader_08686, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT and either VK_NULL_HANDLE or a valid "
-                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT shader.",
-                         caller);
+                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT shader.");
     }
     if (enabled_features.core.geometryShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) {
-        skip |= LogError(objlist, vuid.geometry_shader_08687,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_GEOMETRY_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_GEOMETRY_BIT shader.",
-                         caller);
+        skip |= LogError(vuid.geometry_shader_08687, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_GEOMETRY_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_GEOMETRY_BIT shader.");
     }
     if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) {
-        skip |= LogError(objlist, vuid.fragment_shader_08688,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_FRAGMENT_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_FRAGMENT_BIT shader.",
-                         caller);
+        skip |= LogError(vuid.fragment_shader_08688, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_FRAGMENT_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_FRAGMENT_BIT shader.");
     }
     if (enabled_features.mesh_shader_features.taskShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TASK)) {
-        skip |= LogError(objlist, vuid.task_shader_08689,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_TASK_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_TASK_BIT shader.",
-                         caller);
+        skip |= LogError(vuid.task_shader_08689, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_TASK_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_TASK_BIT shader.");
     }
     if (enabled_features.mesh_shader_features.meshShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH)) {
-        skip |= LogError(objlist, vuid.mesh_shader_08690,
-                         "%s(): There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_MESH_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_MESH_BIT shader.",
-                         caller);
+        skip |= LogError(vuid.mesh_shader_08690, objlist, loc,
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_MESH_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_MESH_BIT shader.");
     }
 
     bool validVertShader = last_bound_state.GetShader(ShaderObjectStage::VERTEX);
@@ -2714,7 +2701,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
         if ((validVertShader && validMeshShader) || (!validVertShader && !validMeshShader)) {
             const std::string msg = validVertShader ? "Both vertex shader and mesh shader are bound"
                                                     : "Neither vertex shader nor mesh shader are bound";
-            skip |= LogError(objlist, vuid.vert_mesh_shader_08693, "%s(): %s.", caller, msg.c_str());
+            skip |= LogError(vuid.vert_mesh_shader_08693, objlist, loc, "%s.", msg.c_str());
         }
     }
     if (enabled_features.mesh_shader_features.taskShader && enabled_features.mesh_shader_features.meshShader) {
@@ -2722,18 +2709,17 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
             (last_bound_state.GetShaderState(ShaderObjectStage::MESH)->create_info.flags &
              VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) == 0 &&
             !validTaskShader) {
-            skip |= LogError(
-                objlist, vuid.task_mesh_shader_08694,
-                "%s(): Mesh shader %s was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.",
-                caller, report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+            skip |=
+                LogError(vuid.task_mesh_shader_08694, objlist, loc,
+                         "Mesh shader %s was created without VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but no task shader is bound.",
+                         report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
         } else if (validMeshShader &&
                    (last_bound_state.GetShaderState(ShaderObjectStage::MESH)->create_info.flags &
                     VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0 &&
                    validTaskShader) {
-            skip |= LogError(
-                objlist, vuid.task_mesh_shader_08695,
-                "%s(): Mesh shader %s was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader is bound.",
-                caller, report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
+            skip |= LogError(vuid.task_mesh_shader_08695, objlist, loc,
+                             "Mesh shader %s was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader is bound.",
+                             report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str());
         }
     }
     if (validVertShader && (validTaskShader || validMeshShader)) {
@@ -2749,7 +2735,7 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
             msg << "mesh shader " << report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH))
                 << " is bound as well";
         }
-        skip |= LogError(objlist, vuid.vert_task_mesh_shader_08696, "%s(): Vertex shader %s is bound, but %s.", caller,
+        skip |= LogError(vuid.vert_task_mesh_shader_08696, objlist, loc, "Vertex shader %s is bound, but %s.",
                          report_data->FormatHandle(last_bound_state.GetShader(ShaderObjectStage::MESH)).c_str(), msg.str().c_str());
     }
     for (uint32_t i = 0; i < SHADER_OBJECT_STAGE_COUNT; ++i) {
@@ -2764,14 +2750,14 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
                 }
                 if (!found) {
                     const auto missingShader = Get<SHADER_OBJECT_STATE>(linkedShader);
-                    skip |= LogError(
-                        objlist, vuid.linked_shaders_08698,
-                        "%s(): Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
-                        "shader (%s) is not bound.",
-                        caller, report_data->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
-                        string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
-                        report_data->FormatHandle(linkedShader).c_str(),
-                        string_VkShaderStageFlagBits(missingShader->create_info.stage));
+                    skip |=
+                        LogError(vuid.linked_shaders_08698, objlist, loc,
+                                 "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
+                                 "shader (%s) is not bound.",
+                                 report_data->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
+                                 string_VkShaderStageFlagBits(last_bound_state.shader_object_states[i]->create_info.stage),
+                                 report_data->FormatHandle(linkedShader).c_str(),
+                                 string_VkShaderStageFlagBits(missingShader->create_info.stage));
                     break;
                 }
             }
@@ -2785,10 +2771,10 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
     for (const auto stage : graphics_stages) {
         const auto state = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
         if (state && next_stage != VK_SHADER_STAGE_ALL && state->create_info.stage != next_stage) {
-            skip |= LogError(objlist, vuid.linked_shaders_08699,
-                             "%s(): Shaders %s and %s were created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT without intermediate "
+            skip |= LogError(vuid.linked_shaders_08699, objlist, loc,
+                             "Shaders %s and %s were created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT without intermediate "
                              "stage %s linked, but %s shader is bound.",
-                             caller, string_VkShaderStageFlagBits(prev_stage), string_VkShaderStageFlagBits(next_stage),
+                             string_VkShaderStageFlagBits(prev_stage), string_VkShaderStageFlagBits(next_stage),
                              string_VkShaderStageFlagBits(stage), string_VkShaderStageFlagBits(stage));
             break;
         }
@@ -2826,8 +2812,8 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
                     }
                 }
                 if (pushConstsDifferent) {
-                    skip |= LogError(objlist, vuid.shaders_push_constants_08878,
-                                     "%s(): Shaders %s and %s have different push constant ranges.", caller,
+                    skip |= LogError(vuid.shaders_push_constants_08878, objlist, loc,
+                                     "Shaders %s and %s have different push constant ranges.",
                                      string_VkShaderStageFlagBits(first->create_info.stage),
                                      string_VkShaderStageFlagBits(shader_state->create_info.stage));
                 }
@@ -2848,8 +2834,8 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
                     }
                 }
                 if (descriptorLayoutsDifferent) {
-                    skip |= LogError(objlist, vuid.shaders_descriptor_layouts_08879,
-                                     "%s(): Shaders %s and %s have different descriptor set layouts.", caller,
+                    skip |= LogError(vuid.shaders_descriptor_layouts_08879, objlist, loc,
+                                     "Shaders %s and %s have different descriptor set layouts.",
                                      string_VkShaderStageFlagBits(first->create_info.stage),
                                      string_VkShaderStageFlagBits(shader_state->create_info.stage));
                 }
@@ -2896,7 +2882,6 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const char *caller = loc.StringFunc();
 
     const auto &rp_state = pipeline.RenderPassState();
     // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
@@ -2926,11 +2911,11 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
                         if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
                             const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                         cb_state.activeRenderPass->renderPass());
-                            skip |= LogError(objlist, vuid.sample_location_02689,
-                                             "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
+                            skip |= LogError(vuid.sample_location_02689, objlist, loc,
+                                             "sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
                                              "stencil attachment's VkImage was not created with "
                                              "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
-                                             caller, cb_state.GetActiveSubpass());
+                                             cb_state.GetActiveSubpass());
                         }
                     }
                 }
@@ -2940,10 +2925,10 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
         if (ds_state) {
             if (IsImageLayoutDepthReadOnly(ds_attachment->layout) && last_bound_state.IsDepthWriteEnable()) {
                 const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(), cb_state.commandBuffer());
-                skip |= LogError(objlist, vuid.depth_read_only_06886,
-                                 "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
+                skip |= LogError(vuid.depth_read_only_06886, objlist, loc,
+                                 "depthWriteEnable is VK_TRUE, while the layout (%s) of "
                                  "the depth aspect of the depth/stencil attachment in the render pass is read only.",
-                                 caller, string_VkImageLayout(ds_attachment->layout));
+                                 string_VkImageLayout(ds_attachment->layout));
             }
 
             VkStencilOpState front = last_bound_state.GetStencilOpStateFront();
@@ -2968,12 +2953,12 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
                 if (is_stencil_layout_read_only) {
                     const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
                                                 cb_state.commandBuffer());
-                    skip |= LogError(objlist, vuid.stencil_read_only_06887,
-                                     "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
+                    skip |= LogError(vuid.stencil_read_only_06887, objlist, loc,
+                                     "The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
                                      "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
                                      "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
                                      "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
-                                     caller, string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(front.failOp),
+                                     string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(front.failOp),
                                      string_VkStencilOp(front.passOp), string_VkStencilOp(front.depthFailOp),
                                      string_VkStencilOp(back.failOp), string_VkStencilOp(back.passOp),
                                      string_VkStencilOp(back.depthFailOp));
@@ -2989,37 +2974,36 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
     const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
     const PIPELINE_STATE *pipeline = last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const char *caller = loc.StringFunc();
     const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
     const auto &rp_state = pipeline->RenderPassState();
     if (rp_state) {
         const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
         if (rp_state->renderPass() != VK_NULL_HANDLE) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), rp_state->renderPass());
-            skip |= LogError(objlist, vuid.dynamic_rendering_06198,
-                             "%s: Currently bound pipeline %s must have been created with a "
+            skip |= LogError(vuid.dynamic_rendering_06198, objlist, loc,
+                             "Currently bound pipeline %s must have been created with a "
                              "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
-                             caller, FormatHandle(*pipeline).c_str());
+                             FormatHandle(*pipeline).c_str());
         }
 
         const auto pipeline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
 
         if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
-            skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
-                             "%s: Currently bound pipeline %s viewMask ([%" PRIu32
+            skip |= LogError(vuid.dynamic_rendering_view_mask_06178, objlist, loc,
+                             "Currently bound pipeline %s viewMask ([%" PRIu32
                              ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
-                             caller, FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
+                             FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
 
         const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
         const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
         if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(), cb_state.activeRenderPass->renderPass());
-            skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
-                             "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
+            skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, loc,
+                             "Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
                              ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
-                             caller, FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
+                             FormatHandle(*pipeline).c_str(), pipeline_rendering_ci.colorAttachmentCount,
                              rendering_color_attachment_count);
         }
 
@@ -3033,13 +3017,13 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         (view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i])) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08911,
-                                         "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                        skip |= LogError(vuid.dynamic_rendering_unused_attachments_08911, objlist, loc,
+                                         "VkRenderingInfo::pColorAttachments[%" PRIu32
                                          "].imageView format (%s) must match corresponding format in "
                                          "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
                                          "] (%s) "
                                          "when both are not VK_FORMAT_UNDEFINED",
-                                         caller, i, string_VkFormat(view_state->create_info.format), i,
+                                         i, string_VkFormat(view_state->create_info.format), i,
                                          string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
                     }
                 }
@@ -3049,11 +3033,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED)) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_undefined_color_formats_08912,
-                                         "%s(): VkRenderingInfo::pColorAttachments[%" PRIu32
+                        skip |= LogError(vuid.dynamic_rendering_undefined_color_formats_08912, objlist, loc,
+                                         "VkRenderingInfo::pColorAttachments[%" PRIu32
                                          "].imageView is VK_NULL_HANDLE, but corresponding format in "
                                          "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] is %s.",
-                                         caller, i, i, string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+                                         i, i, string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
                     }
                 } else {
                     auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
@@ -3061,11 +3045,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_08910,
-                                         "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                        skip |= LogError(vuid.dynamic_rendering_color_formats_08910, objlist, loc,
+                                         "VkRenderingInfo::pColorAttachments[%" PRIu32
                                          "].imageView format (%s) must match corresponding format in "
                                          "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                         caller, i, string_VkFormat(view_state->create_info.format), i,
+                                         i, string_VkFormat(view_state->create_info.format), i,
                                          string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
                     }
                 }
@@ -3081,13 +3065,12 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |=
-                            LogError(objlist, vuid.dynamic_rendering_unused_attachments_08915,
-                                     "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
-                                     "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s) "
-                                     "if both are not VK_FORMAT_UNDEFINED",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                        skip |= LogError(vuid.dynamic_rendering_unused_attachments_08915, objlist, loc,
+                                         "VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                                         "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s) "
+                                         "if both are not VK_FORMAT_UNDEFINED",
+                                         string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
                     }
                 }
             } else {
@@ -3095,23 +3078,22 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                     if (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(
-                            objlist, vuid.dynamic_rendering_undefined_depth_format_08916,
-                            "%s(): VkRenderingInfo::pDepthAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
-                            "VkPipelineRenderingCreateInfo::depthAttachmentFormat is %s.",
-                            caller, string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                        skip |=
+                            LogError(vuid.dynamic_rendering_undefined_depth_format_08916, objlist, loc,
+                                     "VkRenderingInfo::pDepthAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
+                                     "VkPipelineRenderingCreateInfo::depthAttachmentFormat is %s.",
+                                     string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
                     }
                 } else {
                     auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                     if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |=
-                            LogError(objlist, vuid.dynamic_rendering_depth_format_08914,
-                                     "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
-                                     "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                        skip |= LogError(vuid.dynamic_rendering_depth_format_08914, objlist, loc,
+                                         "VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                                         "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
+                                         string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
                     }
                 }
             }
@@ -3126,11 +3108,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                         (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat)) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08918,
-                                         "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                        skip |= LogError(vuid.dynamic_rendering_unused_attachments_08918, objlist, loc,
+                                         "VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
                                          "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s) "
                                          "if both are not VK_FORMAT_UNDEFINED",
-                                         caller, string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(view_state->create_info.format),
                                          string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
                     }
                 }
@@ -3139,21 +3121,21 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                     if (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_undefined_stencil_format_08916,
-                                         "%s(): VkRenderingInfo::pStencilAttachment.imageView is VK_NULL_HANDLE, but "
+                        skip |= LogError(vuid.dynamic_rendering_undefined_stencil_format_08916, objlist, loc,
+                                         "VkRenderingInfo::pStencilAttachment.imageView is VK_NULL_HANDLE, but "
                                          "corresponding format in "
                                          "VkPipelineRenderingCreateInfo::stencilAttachmentFormat is %s.",
-                                         caller, string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+                                         string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
                     }
                 } else {
                     auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                     if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                     cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_08917,
-                                         "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                        skip |= LogError(vuid.dynamic_rendering_stencil_format_08917, objlist, loc,
+                                         "VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
                                          "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
-                                         caller, string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(view_state->create_info.format),
                                          string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
                     }
                 }
@@ -3167,10 +3149,10 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (!(pipeline->create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
-                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                skip |= LogError(vuid.dynamic_rendering_fsr_06183, objlist, loc,
+                                 "Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                 caller, FormatHandle(*pipeline).c_str());
+                                 FormatHandle(*pipeline).c_str());
             }
         }
 
@@ -3181,10 +3163,10 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (!(pipeline->create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
-                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                skip |= LogError(vuid.dynamic_rendering_fdm_06184, objlist, loc,
+                                 "Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                 caller, FormatHandle(*pipeline).c_str());
+                                 FormatHandle(*pipeline).c_str());
             }
         }
     }
@@ -3204,11 +3186,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_color_sample_06185,
-                                 "%s: Color attachment (%" PRIu32
+                skip |= LogError(vuid.dynamic_rendering_color_sample_06185, objlist, loc,
+                                 "Color attachment (%" PRIu32
                                  ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
                                  "sample count (%s)",
-                                 caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                 i, string_VkSampleCountFlagBits(color_image_samples),
                                  string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
             }
         }
@@ -3221,11 +3203,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_sample_06186,
-                                     "%s: Depth attachment sample count (%s) must match corresponding "
+                    skip |= LogError(vuid.dynamic_rendering_depth_sample_06186, objlist, loc,
+                                     "Depth attachment sample count (%s) must match corresponding "
                                      "VkAttachmentSampleCountInfoAMD sample "
                                      "count (%s)",
-                                     caller, string_VkSampleCountFlagBits(depth_image_samples),
+                                     string_VkSampleCountFlagBits(depth_image_samples),
                                      string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
                 }
             }
@@ -3239,11 +3221,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                 if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_sample_06187,
-                                     "%s: Stencil attachment sample count (%s) must match corresponding "
+                    skip |= LogError(vuid.dynamic_rendering_stencil_sample_06187, objlist, loc,
+                                     "Stencil attachment sample count (%s) must match corresponding "
                                      "VkAttachmentSampleCountInfoAMD "
                                      "sample count (%s)",
-                                     caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                                     string_VkSampleCountFlagBits(stencil_image_samples),
                                      string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
                 }
             }
@@ -3260,12 +3242,11 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |=
-                    LogError(objlist, vuid.dynamic_rendering_07285,
-                             "%s: Color attachment (%" PRIu32
-                             ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
-                             "sample count (%s)",
-                             caller, i, string_VkSampleCountFlagBits(samples), string_VkSampleCountFlagBits(rasterization_samples));
+                skip |= LogError(vuid.dynamic_rendering_07285, objlist, loc,
+                                 "Color attachment (%" PRIu32
+                                 ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
+                                 "sample count (%s)",
+                                 i, string_VkSampleCountFlagBits(samples), string_VkSampleCountFlagBits(rasterization_samples));
             }
         }
 
@@ -3275,10 +3256,10 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (depth_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_07286,
-                                 "%s: Depth attachment sample count (%s) must match corresponding "
+                skip |= LogError(vuid.dynamic_rendering_07286, objlist, loc,
+                                 "Depth attachment sample count (%s) must match corresponding "
                                  "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                 caller, string_VkSampleCountFlagBits(depth_image_samples),
+                                 string_VkSampleCountFlagBits(depth_image_samples),
                                  string_VkSampleCountFlagBits(rasterization_samples));
             }
         }
@@ -3289,10 +3270,10 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             if (stencil_image_samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline(),
                                             cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_07287,
-                                 "%s: Stencil attachment sample count (%s) must match corresponding "
+                skip |= LogError(vuid.dynamic_rendering_07287, objlist, loc,
+                                 "Stencil attachment sample count (%s) must match corresponding "
                                  "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                 caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                                 string_VkSampleCountFlagBits(stencil_image_samples),
                                  string_VkSampleCountFlagBits(rasterization_samples));
             }
         }

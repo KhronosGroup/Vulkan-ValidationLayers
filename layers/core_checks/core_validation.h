@@ -42,6 +42,7 @@ struct DrawDispatchVuid {
     const char* vertex_binding_null_04008 = kVUIDUndefined;
     const char* compatible_pipeline_08600 = kVUIDUndefined;
     const char* render_pass_compatible_02684 = kVUIDUndefined;
+    const char* render_pass_began_08876 = kVUIDUndefined;
     const char* subpass_index_02685 = kVUIDUndefined;
     const char* sample_location_02689 = kVUIDUndefined;
     const char* linear_filter_sampler_04553 = kVUIDUndefined;
