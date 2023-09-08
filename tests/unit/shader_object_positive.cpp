@@ -1719,6 +1719,69 @@ TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
+    TEST_DESCRIPTION("Draw using binary shaders.");
+
+    InitBasicShaderObject();
+    if (::testing::Test::IsSkipped()) return;
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    InitDynamicRenderTarget();
+
+    VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+
+    std::vector<uint32_t> spv[5];
+    spv[0] = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    spv[1] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
+    spv[2] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
+    spv[3] = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
+    spv[4] = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    VkShaderEXT shaders[5];
+    VkShaderEXT binaryShaders[5];
+    for (uint32_t i = 0; i < 5u; ++i) {
+        auto createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+        createInfo.stage = shaderStages[i];
+        createInfo.nextStage = 0u;
+        if (i < 4) {
+            createInfo.nextStage = shaderStages[i + 1];
+        }
+        createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+        createInfo.codeSize = spv[i].size() * sizeof(spv[i][0]);
+        createInfo.pCode = spv[i].data();
+        createInfo.pName = "main";
+
+        vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shaders[i]);
+        size_t dataSize;
+        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, nullptr);
+        std::vector<uint8_t> data(dataSize);
+        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, data.data());
+
+        createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
+        createInfo.codeSize = dataSize;
+        createInfo.pCode = data.data();
+        vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &binaryShaders[i]);
+    }
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    SetDefaultDynamicStates();
+
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, shaderStages, binaryShaders);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    for (uint32_t i = 0; i < 5; ++i) {
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, binaryShaders[i], nullptr);
+    }
+}
+
 TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     TEST_DESCRIPTION("Draw without setting depth bounds.");
 
