@@ -4183,26 +4183,46 @@ const char* String(Field field) {
 bool IsFieldPointer(Field field) {
     switch (field) {
     case Field::connection:
+    case Field::context:
     case Field::dfb:
+    case Field::displayName:
     case Field::dpy:
+    case Field::hostAddress:
+    case Field::opaqueCaptureDescriptorData:
     case Field::pAccelerationStructure:
     case Field::pAccelerationStructures:
     case Field::pAcquireInfo:
+    case Field::pAcquireKeys:
+    case Field::pAcquireSyncs:
+    case Field::pAcquireTimeoutMilliseconds:
+    case Field::pAcquireTimeouts:
     case Field::pAddress:
+    case Field::pAddressInfos:
     case Field::pAllocateInfo:
     case Field::pAllocator:
     case Field::pApiVersion:
+    case Field::pApplicationInfo:
+    case Field::pApplicationName:
+    case Field::pAspectReferences:
+    case Field::pAttachmentImageInfos:
+    case Field::pAttachmentInitialSampleLocations:
     case Field::pAttachments:
+    case Field::pAttributes:
     case Field::pBeginInfo:
     case Field::pBindInfo:
     case Field::pBindInfos:
     case Field::pBindSessionMemoryInfos:
+    case Field::pBindingFlags:
     case Field::pBindingInfos:
     case Field::pBindingReference:
+    case Field::pBindings:
+    case Field::pBinds:
     case Field::pBlitImageInfo:
     case Field::pBuffer:
+    case Field::pBufferBinds:
     case Field::pBufferConstraintsInfo:
     case Field::pBufferIndices:
+    case Field::pBufferInfo:
     case Field::pBufferMemoryBarriers:
     case Field::pBuffers:
     case Field::pBuildInfo:
@@ -4213,16 +4233,27 @@ bool IsFieldPointer(Field field) {
     case Field::pCheckpointData:
     case Field::pCheckpointDataCount:
     case Field::pCheckpointMarker:
+    case Field::pClearValues:
+    case Field::pCmdBufLabels:
+    case Field::pCode:
     case Field::pCodingControlInfo:
     case Field::pCollection:
     case Field::pColor:
+    case Field::pColorAttachmentFormats:
+    case Field::pColorAttachmentSamples:
+    case Field::pColorAttachments:
     case Field::pColorBlendAdvanced:
     case Field::pColorBlendEnables:
     case Field::pColorBlendEquations:
+    case Field::pColorBlendState:
+    case Field::pColorSpaces:
     case Field::pColorWriteEnables:
     case Field::pColorWriteMasks:
     case Field::pCombinationCount:
     case Field::pCombinations:
+    case Field::pCombinedImageSampler:
+    case Field::pCommandBufferDeviceMasks:
+    case Field::pCommandBufferInfos:
     case Field::pCommandBuffers:
     case Field::pCommandPool:
     case Field::pCommittedMemoryInBytes:
@@ -4231,16 +4262,21 @@ bool IsFieldPointer(Field field) {
     case Field::pConfiguration:
     case Field::pCopyBufferInfo:
     case Field::pCopyBufferToImageInfo:
+    case Field::pCopyDstLayouts:
     case Field::pCopyImageInfo:
     case Field::pCopyImageToBufferInfo:
     case Field::pCopyImageToImageInfo:
     case Field::pCopyImageToMemoryInfo:
     case Field::pCopyMemoryToImageInfo:
+    case Field::pCopySrcLayouts:
+    case Field::pCorrelatedViewMasks:
+    case Field::pCorrelationMasks:
     case Field::pCountInfo:
     case Field::pCounterBufferOffsets:
     case Field::pCounterBuffers:
     case Field::pCounterCount:
     case Field::pCounterDescriptions:
+    case Field::pCounterIndices:
     case Field::pCounterValue:
     case Field::pCounters:
     case Field::pCoverageModulationTable:
@@ -4252,20 +4288,33 @@ bool IsFieldPointer(Field field) {
     case Field::pDecodeInfo:
     case Field::pDecompressMemoryRegions:
     case Field::pDeferredOperation:
+    case Field::pDependencies:
     case Field::pDependencyInfo:
     case Field::pDependencyInfos:
+    case Field::pDepthAttachment:
     case Field::pDepthBiasInfo:
     case Field::pDepthStencil:
+    case Field::pDepthStencilAttachment:
+    case Field::pDepthStencilResolveAttachment:
+    case Field::pDepthStencilState:
     case Field::pDescriptor:
     case Field::pDescriptorCopies:
+    case Field::pDescriptorCounts:
     case Field::pDescriptorInfo:
     case Field::pDescriptorPool:
     case Field::pDescriptorSets:
+    case Field::pDescriptorTypes:
+    case Field::pDescriptorUpdateEntries:
     case Field::pDescriptorUpdateTemplate:
     case Field::pDescriptorWrites:
     case Field::pDevice:
     case Field::pDeviceEventInfo:
     case Field::pDeviceGroupPresentCapabilities:
+    case Field::pDeviceIndices:
+    case Field::pDeviceMasks:
+    case Field::pDeviceRenderAreas:
+    case Field::pDisabledValidationChecks:
+    case Field::pDisabledValidationFeatures:
     case Field::pDiscardRectangles:
     case Field::pDisplay:
     case Field::pDisplayCount:
@@ -4274,9 +4323,17 @@ bool IsFieldPointer(Field field) {
     case Field::pDisplayPowerInfo:
     case Field::pDisplayTimingProperties:
     case Field::pDisplays:
+    case Field::pDrivers:
+    case Field::pDrmFormatModifierProperties:
+    case Field::pDrmFormatModifiers:
     case Field::pDynamicOffsets:
+    case Field::pDynamicState:
+    case Field::pDynamicStates:
+    case Field::pEnabledFeatures:
+    case Field::pEnabledValidationFeatures:
     case Field::pEncodeInfo:
     case Field::pEndCodingInfo:
+    case Field::pEngineName:
     case Field::pEvent:
     case Field::pEvents:
     case Field::pExclusiveScissorEnables:
@@ -4291,6 +4348,7 @@ bool IsFieldPointer(Field field) {
     case Field::pExternalImageFormatProperties:
     case Field::pExternalSemaphoreInfo:
     case Field::pExternalSemaphoreProperties:
+    case Field::pExtras:
     case Field::pFaultCounts:
     case Field::pFaultInfo:
     case Field::pFd:
@@ -4298,54 +4356,80 @@ bool IsFieldPointer(Field field) {
     case Field::pFeedbackInfo:
     case Field::pFence:
     case Field::pFences:
+    case Field::pFixedRateFlags:
+    case Field::pFormatConstraints:
     case Field::pFormatCount:
     case Field::pFormatInfo:
     case Field::pFormatProperties:
+    case Field::pFragmentDensityOffsets:
+    case Field::pFragmentShadingRateAttachment:
     case Field::pFragmentShadingRateCount:
     case Field::pFragmentShadingRates:
     case Field::pFragmentSize:
     case Field::pFramebuffer:
     case Field::pFunction:
     case Field::pGeneratedCommandsInfo:
+    case Field::pGeometries:
     case Field::pGetFdInfo:
     case Field::pGetWin32HandleInfo:
     case Field::pGetZirconHandleInfo:
     case Field::pGranularity:
+    case Field::pGroups:
     case Field::pHandle:
     case Field::pHitShaderBindingTable:
     case Field::pHostMapping:
     case Field::pHostPointer:
     case Field::pIdentifier:
     case Field::pImage:
+    case Field::pImageBinds:
     case Field::pImageConstraintsInfo:
     case Field::pImageFormatInfo:
     case Field::pImageFormatProperties:
     case Field::pImageIndex:
+    case Field::pImageIndices:
+    case Field::pImageInfo:
     case Field::pImageMemoryBarriers:
+    case Field::pImageOpaqueBinds:
     case Field::pImageSubresources:
+    case Field::pImmutableSamplers:
     case Field::pImportFenceFdInfo:
     case Field::pImportFenceWin32HandleInfo:
     case Field::pImportSemaphoreFdInfo:
     case Field::pImportSemaphoreWin32HandleInfo:
     case Field::pImportSemaphoreZirconHandleInfo:
     case Field::pIndexInfo:
+    case Field::pIndexTypeValues:
+    case Field::pIndexTypes:
     case Field::pIndirectCommandsLayout:
     case Field::pIndirectDeviceAddresses:
     case Field::pIndirectStrides:
     case Field::pInfo:
     case Field::pInfoSize:
     case Field::pInfos:
+    case Field::pInheritanceInfo:
+    case Field::pInitialData:
     case Field::pInitializeInfo:
+    case Field::pInputAssemblyState:
+    case Field::pInputAttachmentImage:
+    case Field::pInputAttachments:
     case Field::pInstance:
     case Field::pInternalRepresentationCount:
     case Field::pInternalRepresentations:
     case Field::pLabelInfo:
+    case Field::pLabelName:
     case Field::pLaunchInfo:
+    case Field::pLayer:
     case Field::pLayerName:
     case Field::pLayerPrefix:
+    case Field::pLayers:
     case Field::pLayout:
     case Field::pLayoutSizeInBytes:
+    case Field::pLibraries:
+    case Field::pLibraryInfo:
+    case Field::pLibraryInterface:
+    case Field::pMapEntries:
     case Field::pMarkerInfo:
+    case Field::pMarkerName:
     case Field::pMaxDeviation:
     case Field::pMaxPrimitiveCounts:
     case Field::pMaxWorkgroupSize:
@@ -4363,6 +4447,7 @@ bool IsFieldPointer(Field field) {
     case Field::pMemoryWin32HandleProperties:
     case Field::pMemoryZirconHandleProperties:
     case Field::pMessage:
+    case Field::pMessageIdName:
     case Field::pMessenger:
     case Field::pMetadata:
     case Field::pMetalObjectsInfo:
@@ -4373,76 +4458,141 @@ bool IsFieldPointer(Field field) {
     case Field::pModes:
     case Field::pModule:
     case Field::pMultisampleProperties:
+    case Field::pMultisampleState:
+    case Field::pMutableDescriptorTypeLists:
+    case Field::pNaluSliceEntries:
+    case Field::pNaluSliceSegmentEntries:
     case Field::pName:
     case Field::pNameInfo:
+    case Field::pNext:
     case Field::pNodeIndex:
     case Field::pNodeInfo:
     case Field::pNumPasses:
+    case Field::pObjectName:
+    case Field::pObjects:
     case Field::pOffset:
     case Field::pOffsets:
     case Field::pOpticalFlowImageFormatInfo:
     case Field::pOverrideInfo:
+    case Field::pParametersAddInfo:
+    case Field::pParams:
     case Field::pPeerMemoryFeatures:
+    case Field::pPerViewRenderAreas:
     case Field::pPerformanceQueryCreateInfo:
     case Field::pPhysicalDeviceCount:
     case Field::pPhysicalDeviceGroupCount:
     case Field::pPhysicalDeviceGroupProperties:
     case Field::pPhysicalDevices:
+    case Field::pPictureResource:
     case Field::pPipelineCache:
+    case Field::pPipelineCreationFeedback:
     case Field::pPipelineInfo:
     case Field::pPipelineLayout:
     case Field::pPipelineProperties:
+    case Field::pPipelineStageCreationFeedbacks:
     case Field::pPipelines:
+    case Field::pPlaneLayouts:
+    case Field::pPoolSizes:
+    case Field::pPostSubpassSampleLocations:
+    case Field::pPresentIds:
     case Field::pPresentInfo:
     case Field::pPresentModeCount:
     case Field::pPresentModes:
     case Field::pPresentationTimingCount:
     case Field::pPresentationTimings:
+    case Field::pPreserveAttachments:
+    case Field::pPrivateData:
     case Field::pPrivateDataSlot:
+    case Field::pProfiles:
     case Field::pProperties:
     case Field::pPropertiesCount:
     case Field::pPropertyCount:
+    case Field::pPushConstantRanges:
     case Field::pQualityLevelInfo:
     case Field::pQualityLevelProperties:
+    case Field::pQueriedLowLatencyData:
     case Field::pQueryPool:
     case Field::pQueue:
+    case Field::pQueueCreateInfos:
+    case Field::pQueueFamilyIndices:
     case Field::pQueueFamilyProperties:
     case Field::pQueueFamilyPropertyCount:
     case Field::pQueueInfo:
+    case Field::pQueueLabels:
+    case Field::pQueuePriorities:
     case Field::pRanges:
+    case Field::pRasterizationState:
     case Field::pRaygenShaderBindingTable:
     case Field::pRectCount:
+    case Field::pRectangles:
     case Field::pRects:
+    case Field::pReferenceSlots:
     case Field::pRegions:
     case Field::pReleaseInfo:
+    case Field::pReleaseKeys:
+    case Field::pReleaseSyncs:
     case Field::pRenderPass:
     case Field::pRenderPassBegin:
+    case Field::pRenderPassFeedback:
     case Field::pRenderingAreaInfo:
     case Field::pRenderingInfo:
+    case Field::pResolveAttachments:
     case Field::pResolveImageInfo:
+    case Field::pResults:
+    case Field::pSampleLocations:
     case Field::pSampleLocationsInfo:
     case Field::pSampleMask:
+    case Field::pSampledImage:
     case Field::pSampler:
     case Field::pScissors:
     case Field::pSemaphore:
+    case Field::pSemaphores:
     case Field::pSession:
     case Field::pSetLayout:
+    case Field::pSetLayouts:
+    case Field::pSetupReferenceSlot:
+    case Field::pShaderGroupCaptureReplayHandle:
     case Field::pShaderModule:
     case Field::pShaders:
+    case Field::pShadingRatePaletteEntries:
     case Field::pShadingRatePalettes:
     case Field::pSignalInfo:
+    case Field::pSignalSemaphoreDeviceIndices:
+    case Field::pSignalSemaphoreInfos:
+    case Field::pSignalSemaphoreValues:
+    case Field::pSignalSemaphores:
     case Field::pSizeInfo:
     case Field::pSizes:
+    case Field::pSliceOffsets:
+    case Field::pSliceSegmentOffsets:
     case Field::pSparseMemoryRequirementCount:
     case Field::pSparseMemoryRequirements:
+    case Field::pSpecializationInfo:
+    case Field::pSplitInstanceBindRegions:
     case Field::pSrcCaches:
     case Field::pStages:
     case Field::pStatisticCount:
     case Field::pStatistics:
+    case Field::pStdHeaderVersion:
+    case Field::pStdPPSs:
+    case Field::pStdPictureInfo:
+    case Field::pStdReferenceInfo:
+    case Field::pStdSPSs:
+    case Field::pStdSliceHeader:
+    case Field::pStdSliceSegmentHeader:
+    case Field::pStdVPSs:
+    case Field::pStencilAttachment:
+    case Field::pStorageBuffer:
+    case Field::pStorageImage:
+    case Field::pStorageTexelBuffer:
+    case Field::pStreamStrides:
+    case Field::pStreams:
     case Field::pStrides:
     case Field::pSubmits:
     case Field::pSubpassBeginInfo:
     case Field::pSubpassEndInfo:
+    case Field::pSubpassFeedback:
+    case Field::pSubpasses:
     case Field::pSubresource:
     case Field::pSupport:
     case Field::pSupported:
@@ -4455,22 +4605,36 @@ bool IsFieldPointer(Field field) {
     case Field::pSwapchainImageCount:
     case Field::pSwapchainImages:
     case Field::pSwapchains:
+    case Field::pTag:
     case Field::pTagInfo:
+    case Field::pTessellationState:
+    case Field::pTexelBufferView:
     case Field::pTimeDomainCount:
     case Field::pTimeDomains:
+    case Field::pTimes:
     case Field::pTimestampInfos:
     case Field::pTimestamps:
+    case Field::pTokens:
     case Field::pToolCount:
     case Field::pToolProperties:
     case Field::pTransitions:
+    case Field::pUniformBuffer:
+    case Field::pUniformTexelBuffer:
     case Field::pUpdateInfo:
+    case Field::pUsageCounts:
+    case Field::pUserData:
     case Field::pValidationCache:
     case Field::pValue:
     case Field::pValues:
+    case Field::pVendorBinaryData:
+    case Field::pVendorInfos:
+    case Field::pVersionData:
     case Field::pVersionInfo:
     case Field::pVertexAttributeDescriptions:
     case Field::pVertexBindingDescriptions:
+    case Field::pVertexBindingDivisors:
     case Field::pVertexInfo:
+    case Field::pVertexInputState:
     case Field::pVertexOffset:
     case Field::pVideoFormatInfo:
     case Field::pVideoFormatProperties:
@@ -4480,15 +4644,38 @@ bool IsFieldPointer(Field field) {
     case Field::pVideoSessionParameters:
     case Field::pVideoSessionParametersInfo:
     case Field::pView:
+    case Field::pViewFormats:
+    case Field::pViewMasks:
+    case Field::pViewOffsets:
+    case Field::pViewportDepths:
+    case Field::pViewportState:
     case Field::pViewportSwizzles:
     case Field::pViewportWScalings:
     case Field::pViewports:
+    case Field::pWaitDstStageMask:
     case Field::pWaitInfo:
+    case Field::pWaitSemaphoreDeviceIndices:
+    case Field::pWaitSemaphoreInfos:
+    case Field::pWaitSemaphoreValues:
+    case Field::pWaitSemaphores:
     case Field::pYcbcrConversion:
     case Field::pZirconHandle:
+    case Field::pfnAllocation:
+    case Field::pfnCallback:
+    case Field::pfnFree:
+    case Field::pfnGetInstanceProcAddr:
+    case Field::pfnInternalAllocation:
+    case Field::pfnInternalFree:
+    case Field::pfnReallocation:
+    case Field::pfnUserCallback:
     case Field::ppBuildRangeInfos:
     case Field::ppData:
+    case Field::ppEnabledExtensionNames:
+    case Field::ppEnabledLayerNames:
+    case Field::ppGeometries:
     case Field::ppMaxPrimitiveCounts:
+    case Field::ppUsageCounts:
+    case Field::valueString:
         return true;
     default:
         return false;
