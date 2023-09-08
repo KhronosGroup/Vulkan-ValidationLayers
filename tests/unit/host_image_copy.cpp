@@ -1576,3 +1576,96 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
 
     image.memory().unmap();
 }
+
+TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
+    TEST_DESCRIPTION("Copy with host memory and image memory overlapping");
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    constexpr uint32_t width = 32;
+    constexpr uint32_t height = 32;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format,
+                                                  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                                  VK_IMAGE_TILING_OPTIMAL);
+    image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    HostImageCopyTest::InitHostImageCopyTest(image_ci);
+    if (::testing::Test::IsSkipped()) return;
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "sparseBinding feature is required.";
+    }
+    const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    if (!sparse_index) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_ci);
+
+    const uint32_t bufferSize = width * height * 4;
+    std::vector<uint8_t> data(bufferSize);
+
+    VkImageSubresourceLayers imageSubresource = {};
+    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageSubresource.layerCount = 1;
+
+    auto region = LvlInitStruct<VkImageToMemoryCopyEXT>();
+    region.pHostPointer = data.data();
+    region.memoryRowLength = 0;
+    region.memoryImageHeight = 0;
+    region.imageSubresource = imageSubresource;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {width, height, 1};
+
+    auto copy_image_to_memory = LvlInitStruct<VkCopyImageToMemoryInfoEXT>();
+    copy_image_to_memory.srcImage = image.handle();
+    copy_image_to_memory.srcImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    copy_image_to_memory.regionCount = 1;
+    copy_image_to_memory.pRegions = &region;
+
+    // LAYOUT_UNDEFINED will not be allowed, but image has no memory
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09109");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
+    m_errorMonitor->VerifyFound();
+
+    auto region2 = LvlInitStruct<VkMemoryToImageCopyEXT>();
+    region2.pHostPointer = data.data();
+    region2.memoryRowLength = 0;
+    region2.memoryImageHeight = 0;
+    region2.imageSubresource = imageSubresource;
+    region2.imageOffset = {0, 0, 0};
+    region2.imageExtent = {width, height, 1};
+
+    auto copy_memory_to_image = LvlInitStruct<VkCopyMemoryToImageInfoEXT>();
+    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_memory_to_image.regionCount = 1;
+    copy_memory_to_image.pRegions = &region2;
+
+    // LAYOUT_UNDEFINED will not be allowed, but image has no memory
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09109");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
+    m_errorMonitor->VerifyFound();
+
+    VkImageObj image2(m_device);
+    // Images have to be identical, and some drivers have no memory for both USAGE_HOST_TRANSFER and SPARSE_BINDING
+    // so check for both src and dst in one call
+    image2.init_no_mem(*m_device, image_ci);
+
+    auto image_copy = LvlInitStruct<VkImageCopy2>();
+    image_copy.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy.extent = {32, 32, 1};
+    auto copy_image_to_image = LvlInitStruct<VkCopyImageToImageInfoEXT>();
+    copy_image_to_image.regionCount = 1;
+    copy_image_to_image.pRegions = &image_copy;
+    copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.srcImage = image;
+    copy_image_to_image.dstImage = image2;
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-09109");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09071");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-09109");
+    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
+    m_errorMonitor->VerifyFound();
+}
