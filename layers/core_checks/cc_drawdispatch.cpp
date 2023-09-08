@@ -29,6 +29,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDraw-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDraw-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDraw-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDraw-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDraw-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDraw-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDraw-magFilter-04553";
@@ -279,6 +280,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawMultiEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMultiEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMultiEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMultiEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMultiEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMultiEXT-magFilter-04553";
@@ -530,6 +532,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndexed-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexed-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexed-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndexed-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndexed-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexed-magFilter-04553";
@@ -781,6 +784,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawMultiIndexedEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMultiIndexedEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMultiIndexedEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMultiIndexedEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMultiIndexedEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-04553";
@@ -1031,6 +1035,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndirect-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirect-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirect-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndirect-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndirect-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirect-magFilter-04553";
@@ -1284,6 +1289,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndexedIndirect-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirect-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndexedIndirect-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirect-magFilter-04553";
@@ -1622,6 +1628,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndirectCount-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirectCount-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirectCount-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndirectCount-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndirectCount-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectCount-magFilter-04553";
@@ -1878,6 +1885,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndexedIndirectCount-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndexedIndirectCount-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndexedIndirectCount-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553";
@@ -2303,6 +2311,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksNV-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksNV-magFilter-04553";
@@ -2536,6 +2545,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553";
@@ -2772,6 +2782,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553";
@@ -3011,6 +3022,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksEXT-magFilter-04553";
@@ -3244,6 +3256,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectEXT-magFilter-04553";
@@ -3480,6 +3493,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         pipeline_or_shaders_bound_08607          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08607";
         compatible_pipeline_08600                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-magFilter-04553";
@@ -3721,6 +3735,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_binding_null_04008                = "VUID-vkCmdDrawIndirectByteCountEXT-None-04008";
         compatible_pipeline_08600                = "VUID-vkCmdDrawIndirectByteCountEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684";
+        render_pass_began_08876                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-08876";
         subpass_index_02685                      = "VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685";
         sample_location_02689                    = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689";
         linear_filter_sampler_04553              = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
