@@ -5025,11 +5025,8 @@ TEST_F(NegativeCommand, IndirectDraw) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5127,11 +5124,8 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -5220,11 +5214,8 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
@@ -6665,13 +6656,8 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
     stencil_disabled_pipe.CreateGraphicsPipeline(false);
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     CreatePipelineHelper stencil_dynamic_pipe(*this);
-    stencil_dynamic_pipe.dyn_state_ci_ = dyn_state_ci;
+    stencil_dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
     stencil_dynamic_pipe.InitState();
     stencil_dynamic_pipe.LateBindPipelineInfo();
     stencil_dynamic_pipe.gp_ci_.renderPass = render_pass.handle();

@@ -558,11 +558,6 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageDepthStencilReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 2;
-    dyn_state_ci.pDynamicStates = dyn_states;
-
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_state.depthWriteEnable = VK_TRUE;
 
@@ -588,7 +583,8 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pMultisampleState = &ms_ci;
     pipe.gp_ci_.pDepthStencilState = &ds_state;
-    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&dsl});
     pipe.InitState();
     pipe.CreateGraphicsPipeline();

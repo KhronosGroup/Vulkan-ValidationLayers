@@ -112,6 +112,12 @@ class CreatePipelineHelper {
         std::array<const char *, 0> errors;
         OneshotTest(test, info_override, flags, errors);
     }
+
+    void AddDynamicState(VkDynamicState dynamic_state);
+
+  private:
+    // Hold some state for making certain pipeline creations easier
+    std::vector<VkDynamicState> dynamic_states_;
 };
 
 class CreateComputePipelineHelper {
