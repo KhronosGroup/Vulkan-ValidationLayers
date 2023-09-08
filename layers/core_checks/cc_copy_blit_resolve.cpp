@@ -2828,6 +2828,13 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer info
         LogObjectList(device, image), *image_state, image_loc,
         from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07966" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07966");
 
+    if (image_state->sparse && (!image_state->HasFullRangeBound())) {
+        const char *vuid =
+            from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-09109" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-09109";
+        LogObjectList objlist(device, image_state->image());
+        skip |= LogError(vuid, objlist, image_loc, "is a sparse image with no memory bound");
+    }
+
     if (image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const char *vuid =
             from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969" : "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969";
@@ -3140,6 +3147,17 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     skip |= ValidateHostCopyImageLayout(device, info_ptr->dstImage, props->copyDstLayoutCount, props->pCopyDstLayouts,
                                         info_ptr->dstImageLayout, loc.dot(Field::dstImageLayout), "pCopyDstLayouts",
                                         "VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09073");
+
+    if (src_image_state->sparse && (!src_image_state->HasFullRangeBound())) {
+        LogObjectList objlist(device, src_image_state->image());
+        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-srcImage-09109", objlist, loc.dot(Field::srcImage),
+                         "is a sparse image with no memory bound");
+    }
+    if (dst_image_state->sparse && (!dst_image_state->HasFullRangeBound())) {
+        LogObjectList objlist(device, dst_image_state->image());
+        skip |= LogError("VUID-VkCopyImageToImageInfoEXT-dstImage-09109", objlist, loc.dot(Field::dstImage),
+                         "is a sparse image with no memory bound");
+    }
 
     bool has_stencil = false;
     bool has_non_stencil = false;
