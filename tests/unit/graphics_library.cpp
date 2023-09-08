@@ -322,6 +322,38 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
     }
 }
 
+TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
+    TEST_DESCRIPTION("Create a library with fragment shader state, but no fragment output state, and no DS state, but ignored");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state_features);
+    InitBasicGraphicsLibrary(&dynamic_rendering_features);
+    if (::testing::Test::IsSkipped()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.InitState();
+
+    frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_OP);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    // forgetting VK_EXT_extended_dynamic_state3
+    frag_shader_lib.CreateGraphicsPipeline();
+}
+
 TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
     TEST_DESCRIPTION("Create a library with fragment output state and invalid ColorBlendState state");
 

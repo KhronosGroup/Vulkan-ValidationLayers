@@ -447,6 +447,22 @@ class PIPELINE_STATE : public BASE_NODE {
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const { return dynamic_state.test(ConvertToCBDynamicState(state)); }
 
+    // From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3263
+    // None of these require VK_EXT_extended_dynamic_state3
+    inline bool IsDepthStencilStateDynamic() const {
+        return IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) && IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) &&
+               IsDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) && IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE) &&
+               IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE) && IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP) &&
+               IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    }
+
+    // If true, VK_EXT_extended_dynamic_state3 must also have been enabled
+    inline bool IsColorBlendStateDynamic() const {
+        return IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT) && IsDynamic(VK_DYNAMIC_STATE_LOGIC_OP_EXT) &&
+               IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) && IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+               IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) && IsDynamic(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+    }
+
     template <typename ValidationObject, typename CreateInfo>
     static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
         // If this is an executable pipeline created from linking graphics libraries, we need to find the pre-raster library to

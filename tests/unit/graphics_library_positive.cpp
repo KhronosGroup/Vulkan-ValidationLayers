@@ -1377,3 +1377,103 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     pipe_ci.layout = pipe.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, pipe_ci);
 }
+
+TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
+    TEST_DESCRIPTION("Create a library with fragment shader state, but no fragment output state, and no DS state, but ignored");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state_features);
+    InitBasicGraphicsLibrary(&dynamic_rendering_features);
+    if (::testing::Test::IsSkipped()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.InitState();
+
+    frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_OP);
+    frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
+    frag_shader_lib.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveGraphicsLibrary, ColorBlendStateIgnored) {
+    TEST_DESCRIPTION("Create a library with fragment output state and invalid ColorBlendState state");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto extended_dynamic_state3_features =
+        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state3_features);
+    InitBasicGraphicsLibrary(&dynamic_rendering_features);
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
+        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
+    }
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitState();
+
+        pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_output_lib(*this);
+    {
+        link_info.pNext = &pipeline_rendering_info;
+        link_info.libraryCount = 1;
+        link_info.pLibraries = &pre_raster_lib.pipeline_;
+
+        frag_output_lib.InitFragmentOutputLibInfo(&link_info);
+        frag_output_lib.InitState();
+
+        frag_output_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        frag_output_lib.gp_ci_.pColorBlendState = nullptr;
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+        frag_output_lib.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+        frag_output_lib.CreateGraphicsPipeline();
+    }
+}

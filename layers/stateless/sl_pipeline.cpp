@@ -743,13 +743,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
             if (has_pre_raster_state && (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
                 (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-                if (create_info.pTessellationState == nullptr) {
-                    // TODO 6184 - Add tests and fix logic for all combinations
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
-                                     "includes a tessellation control "
-                                     "shader stage and a tessellation evaluation shader stage, "
-                                     "but pTessellationState is NULL.");
-                } else {
+                if (create_info.pTessellationState) {
                     skip |= ValidatePipelineTessellationStateCreateInfo(*create_info.pTessellationState, i, create_info_loc);
 
                     if (create_info.pTessellationState->patchControlPoints == 0 ||
@@ -760,6 +754,12 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                      "%" PRIu32 ", but should between 0 and maxTessellationPatchSize (%" PRIu32 ").",
                                      create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
                     }
+                } else if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
+                           !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
+                                     "includes a tessellation control "
+                                     "shader stage and a tessellation evaluation shader stage, "
+                                     "but pTessellationState is NULL.");
                 }
             }
 
@@ -875,14 +875,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             if ((create_info.pRasterizationState != nullptr) &&
                 (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
                 // Everything in here has a pre-rasterization shader state
-                if (create_info.pViewportState == nullptr) {
-                    // TODO 6184 - Add tests and fix logic for all combinations
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024", device, create_info_loc,
-                                     "Rasterization is enabled (pCreateInfos[%" PRIu32
-                                     "].pRasterizationState->rasterizerDiscardEnable is VK_FALSE), but pCreateInfos[%" PRIu32
-                                     "].pViewportState is NULL.",
-                                     i, i);
-                } else {
+                if (create_info.pViewportState) {
                     const auto &viewport_state = *create_info.pViewportState;
                     const Location &viewport_loc = create_info_loc.dot(Field::pViewportState);
                     skip |= ValidatePipelineViewportStateCreateInfo(*create_info.pViewportState, i, create_info_loc);
@@ -1191,6 +1184,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                 "is VK_TRUE but the depthClipControl feature was not enabled.");
                         }
                     }
+                } else if (!has_dynamic_viewport_with_count || !has_dynamic_scissor_with_count ||
+                           !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024", device, create_info_loc,
+                                     "Rasterization is enabled (pCreateInfos[%" PRIu32
+                                     "].pRasterizationState->rasterizerDiscardEnable is VK_FALSE), but pCreateInfos[%" PRIu32
+                                     "].pViewportState is NULL.",
+                                     i, i);
                 }
 
                 // It is possible for pCreateInfos[i].pMultisampleState to be null when creating a graphics library

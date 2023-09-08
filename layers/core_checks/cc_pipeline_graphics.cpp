@@ -130,9 +130,12 @@ bool CoreChecks::ValidateGraphicsPipeline(const PIPELINE_STATE &pipeline, const 
         }
 
         if (!pipeline.InputAssemblyState()) {
-            // TODO 6184 - Add tests and fix logic for all combinations
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031", device,
-                             create_info_loc.dot(Field::pInputAssemblyState), "is NULL.");
+            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) ||
+                !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ||
+                !pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ||
+                !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted)
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-dynamicPrimitiveTopologyUnrestricted-09031", device,
+                                 create_info_loc.dot(Field::pInputAssemblyState), "is NULL.");
         }
     }
 
@@ -1123,7 +1126,6 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                 const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
                 const auto ds_state = pipeline.DepthStencilState();
                 if (!ds_state) {
-                    // TODO 6184 - Add tests and fix logic for all combinations
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-alphaToCoverageEnable-08891", device, ds_loc,
                                      "is NULL when rasterization is enabled "
                                      "and subpass uses a depth/stencil attachment.");
@@ -1170,8 +1172,7 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
             }
 
             if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
-                !pipeline.fragment_output_state->color_blend_state) {
-                // TODO 6184 - Add tests and fix logic for all combinations
+                !pipeline.fragment_output_state->color_blend_state && !pipeline.IsColorBlendStateDynamic()) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09030", device,
                                  create_info_loc.dot(Field::pColorBlendState),
                                  "is NULL when rasterization is enabled and "
@@ -1599,6 +1600,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
     }
 
     if (!multisample_state && pipeline.fragment_output_state) {
+        // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
             pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.core.alphaToOne;
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
@@ -1627,13 +1629,9 @@ bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE 
                              "is %s but renderPass is VK_NULL_HANDLE.",
                              string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
         }
-    } else {
-        if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-            // TODO 6184 - Add tests and fix logic for all combinations
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc,
-                         "is NULL.");
-        }
+    } else if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state &&
+               !pipeline.IsDepthStencilStateDynamic() && !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, ds_loc, "is NULL.");
     }
 
     return skip;
@@ -2149,8 +2147,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
         if (pipeline.fragment_shader_state && pipeline.fragment_output_state &&
             ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
              (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
-            !pipeline.DepthStencilState()) {
-            // TODO 6184 - Add tests and fix logic for all combinations
+            !pipeline.DepthStencilState() && !pipeline.IsDepthStencilStateDynamic() &&
+            !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
             skip |= LogError(
                 "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033", device, create_info_loc.dot(Field::pDepthStencilState),
                 "is NULL, but %s is %s and stencilAttachmentFormat is %s.",
@@ -2160,8 +2158,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
         }
 
         if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
+            !pipeline.IsColorBlendStateDynamic() &&
             pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            // TODO 6184 - Add tests and fix logic for all combinations
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
                          "is NULL, but %s is %" PRIu32 ".",

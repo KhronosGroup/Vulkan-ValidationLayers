@@ -883,3 +883,93 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnoredAlphaToOne) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicState, InputAssemblyStateIgnored) {
+    TEST_DESCRIPTION("Ignore null pInputAssemblyState");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto extended_dynamic_state2_features =
+        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>(&extended_dynamic_state_features);
+    auto extended_dynamic_state3_features =
+        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    GetPhysicalDeviceProperties2(dynamic_state_3_props);
+    if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
+        GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
+    pipe.gp_ci_.pInputAssemblyState = nullptr;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveDynamicState, ViewportStateIgnored) {
+    TEST_DESCRIPTION("Ignore null pViewportState");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
+    pipe.gp_ci_.pViewportState = nullptr;
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveDynamicState, ColorBlendStateIgnored) {
+    TEST_DESCRIPTION("Ignore null pColorBlendState");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto extended_dynamic_state3_features =
+        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
+        GTEST_SKIP() << "extendedDynamicState3LogicOpEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEnable not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+        GTEST_SKIP() << "extendedDynamicState3ColorBlendEquation not supported";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+
+    VkPipelineColorBlendAttachmentState att_state = {};
+    att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    att_state.blendEnable = VK_TRUE;
+    pipe.cb_attachments_[0] = att_state;
+    pipe.gp_ci_.pColorBlendState = nullptr;
+
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
