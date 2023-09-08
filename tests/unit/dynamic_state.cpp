@@ -4823,3 +4823,70 @@ TEST_F(NegativeDynamicState, SetDepthBiasClampDisabled) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicState, MultisampleStateIgnored) {
+    TEST_DESCRIPTION("dont ignore null pMultisampleState because missing some dynamic states");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3RasterizationSamples";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3SampleMask) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3SampleMask";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
+    }
+    features2.features.alphaToOne = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+    // missing VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT
+    pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicState, MultisampleStateIgnoredAlphaToOne) {
+    TEST_DESCRIPTION("Ignore null pMultisampleState with alphaToOne enabled");
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicExtendedDynamicState3(extended_dynamic_state3_features);
+    if (::testing::Test::IsSkipped()) return;
+    if (!extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3RasterizationSamples";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3SampleMask) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3SampleMask";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToCoverageEnable";
+    }
+    if (!extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState3AlphaToOneEnable";
+    }
+    if (!m_device->phy().features().alphaToOne) {
+        GTEST_SKIP() << "Test requires (unsupported) alphaToOne";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
+    // missing VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT
+    pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
