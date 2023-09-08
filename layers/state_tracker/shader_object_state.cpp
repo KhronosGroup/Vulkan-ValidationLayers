@@ -53,9 +53,11 @@ SHADER_OBJECT_STATE::SHADER_OBJECT_STATE(ValidationStateTracker *dev_data, const
 }
 
 VkPrimitiveTopology SHADER_OBJECT_STATE::GetTopology() const {
-    const auto topology = spirv->GetTopology(*entrypoint);
-    if (topology) {
-        return *topology;
+    if (spirv) {
+        const auto topology = spirv->GetTopology(*entrypoint);
+        if (topology) {
+            return *topology;
+        }
     }
     return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 };
