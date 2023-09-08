@@ -726,7 +726,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE,
                                                   objlist, loc, vuid.set_depth_bounds_test_enable_08632);
             }
-            if (cb_state.dynamic_state_value.depth_bounds_test_enable) {
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE] &&
+                cb_state.dynamic_state_value.depth_bounds_test_enable) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_BOUNDS, objlist, loc,
                                                   vuid.set_depth_bounds_08622);
             }
