@@ -148,11 +148,8 @@ class counter {
                 assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
-                    std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
-                            << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
-                            << " and thread " << tid;
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
+                    const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
+                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
@@ -169,11 +166,8 @@ class counter {
             } else {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
-                    std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
-                            << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
-                            << " and thread " << tid;
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
+                    const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
+                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
@@ -221,11 +215,8 @@ class counter {
             use_data->thread = tid;
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
-            std::stringstream err_str;
-            err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
-                    << " is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed) << " and thread "
-                    << tid;
-            skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
+            const auto error_message = GetErrorMessage(tid, command, use_data->thread.load(std::memory_order_relaxed));
+            skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
                 use_data->WaitForObjectIdle(false);
@@ -252,6 +243,12 @@ class counter {
     }
 
   private:
+    std::string GetErrorMessage(std::thread::id tid, vvl::Func command, std::thread::id other_tid) const {
+        std::stringstream err_str;
+        err_str << "THREADING ERROR : " << vvl::String(command) << "(): object of type " << object_string[object_type]
+                << " is simultaneously used in current thread " << tid << " and thread " << other_tid;
+        return err_str.str();
+    }
 };
 
 class ThreadSafety : public ValidationObject {
