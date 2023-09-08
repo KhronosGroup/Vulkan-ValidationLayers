@@ -1498,3 +1498,81 @@ TEST_F(NegativeHostImageCopy, Features) {
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
+    TEST_DESCRIPTION("Copy with host memory and image memory overlapping");
+
+    constexpr uint32_t width = 32;
+    constexpr uint32_t height = 32;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(
+        width, height, 4, 1, format,
+        VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_IMAGE_TILING_OPTIMAL);
+    InitHostImageCopyTest(image_ci);
+    if (::testing::Test::IsSkipped()) return;
+
+    VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkImageObj image(m_device);
+    image.Init(image_ci, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+
+    VkDeviceAddress *data = (VkDeviceAddress *)image.memory().map();
+
+    VkImageSubresourceLayers imageSubresource = {};
+    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageSubresource.layerCount = 1;
+
+    auto region = LvlInitStruct<VkImageToMemoryCopyEXT>();
+    region.pHostPointer = data;
+    region.memoryRowLength = 0;
+    region.memoryImageHeight = 0;
+    region.imageSubresource = imageSubresource;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {32, 32, 1};
+    const uint32_t copy_size = (32 * 32 * 4) / 8;  // 64 bit pointer
+    auto copy_image_to_memory = LvlInitStruct<VkCopyImageToMemoryInfoEXT>();
+    copy_image_to_memory.srcImage = image.handle();
+    copy_image_to_memory.srcImageLayout = layout;
+    copy_image_to_memory.regionCount = 1;
+    copy_image_to_memory.pRegions = &region;
+
+    // Start of copy overlaps
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
+    m_errorMonitor->VerifyFound();
+
+    // End of copy overlaps
+    region.pHostPointer = data - (copy_size / 2);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
+    m_errorMonitor->VerifyFound();
+
+    // Extent fits, but rowLength * imageHeight doesn't
+    region.pHostPointer = data - copy_size - 1;
+    region.memoryRowLength = 48;
+    region.memoryImageHeight = 32;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
+    m_errorMonitor->VerifyFound();
+
+    auto region2 = LvlInitStruct<VkMemoryToImageCopyEXT>();
+    region2.pHostPointer = data;
+    region2.memoryRowLength = 0;
+    region2.memoryImageHeight = 0;
+    region2.imageSubresource = imageSubresource;
+    region2.imageOffset = {0, 0, 0};
+    region2.imageExtent = {32, 32, 1};
+
+    auto copy_memory_to_image = LvlInitStruct<VkCopyMemoryToImageInfoEXT>();
+    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImageLayout = layout;
+    copy_memory_to_image.regionCount = 1;
+    copy_memory_to_image.pRegions = &region2;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryToImageCopyEXT-pRegions-09062");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
+    m_errorMonitor->VerifyFound();
+
+    image.memory().unmap();
+}
