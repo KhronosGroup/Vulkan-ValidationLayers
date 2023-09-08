@@ -1599,9 +1599,13 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
     }
 
     if (!multisample_state && pipeline.fragment_output_state) {
-        // TODO 6184 - Add tests and fix logic for all combinations
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device, ms_loc,
-                         "is NULL.");
+        const bool dynamic_alpha_to_one =
+            pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.core.alphaToOne;
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
+            !pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
+            !pipeline.IsDynamic(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device, ms_loc, "is NULL.");
+        }
     }
 
     return skip;
