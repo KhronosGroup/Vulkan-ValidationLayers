@@ -2779,11 +2779,16 @@ bool CoreChecks::ValidateShaderObjectDrawtimeState(const LAST_BOUND_STATE &last_
             break;
         }
         if (state) {
+            next_stage = VK_SHADER_STAGE_ALL;
             if (!state->linked_shaders.empty()) {
                 prev_stage = stage;
-                next_stage = static_cast<VkShaderStageFlagBits>(state->create_info.nextStage);
-            } else {
-                next_stage = VK_SHADER_STAGE_ALL;
+                for (const auto &linked_shader : state->linked_shaders) {
+                    const auto &linked_state = Get<SHADER_OBJECT_STATE>(linked_shader);
+                    if (linked_state->create_info.stage == state->create_info.nextStage) {
+                        next_stage = static_cast<VkShaderStageFlagBits>(state->create_info.nextStage);
+                        break;
+                    }
+                }
             }
         }
     }
