@@ -1581,10 +1581,15 @@ bool CoreChecks::ValidateBarriersToImages(const Location &loc, const CMD_BUFFER_
 
         // checks color format and (single-plane or non-disjoint)
         // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
-        if ((FormatIsColor(image_format) == true) &&
-            ((FormatIsMultiplane(image_format) == false) || (image_state->disjoint == false))) {
-            if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
-                const auto &vuid = GetImageBarrierVUID(loc, ImageError::kNotColorAspect);
+
+        if (FormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+            if (!FormatIsMultiplane(image_format)) {
+                const auto &vuid = GetImageBarrierVUID(loc, ImageError::kNotColorAspectSinglePlane);
+                skip |= LogError(vuid, img_barrier.image, loc, "(%s) has color format %s, but its aspectMask is %s.",
+                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
+                                 string_VkImageAspectFlags(aspect_mask).c_str());
+            } else if (!image_state->disjoint) {
+                const auto &vuid = GetImageBarrierVUID(loc, ImageError::kNotColorAspectNonDisjoint);
                 skip |= LogError(vuid, img_barrier.image, loc, "(%s) has color format %s, but its aspectMask is %s.",
                                  FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
                                  string_VkImageAspectFlags(aspect_mask).c_str());

@@ -583,12 +583,12 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToFromMemory) {
         image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_to_image.dstImage = image_multi_planar3;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07982");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
         region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_from_image.srcImage = image_multi_planar3;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07982");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
 
@@ -1115,8 +1115,8 @@ TEST_F(NegativeHostImageCopy, HostCopyImageToImage) {
         image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_image_to_image.dstImage = image_multi_threeplane1;
         copy_image_to_image.srcImage = image_multi_threeplane2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07982");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07982");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-srcImage-07981");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageToImageInfoEXT-dstImage-07981");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
     }
@@ -1266,7 +1266,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
     // Bad aspectMask
     transition_info.image = image;
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1358,12 +1358,12 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
             if (separate_depth_stencil) {
                 transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
                 // Will also get error for aspect != color
-                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-03319");
             } else {
                 transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
                 // Will also get error for aspect != color
-                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+                m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-image-03320");
             }
             vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
@@ -1374,7 +1374,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
             transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
             transition_info.newLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             // Will also get error for aspect != color
-            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08702");
             vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
             m_errorMonitor->VerifyFound();
@@ -1384,7 +1384,7 @@ TEST_F(NegativeHostImageCopy, HostTransitionImageLayout) {
             transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
             transition_info.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             // Will also get error for aspect != color
-            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671");
+            m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08703");
             vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
             m_errorMonitor->VerifyFound();

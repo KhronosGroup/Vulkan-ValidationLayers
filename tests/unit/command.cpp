@@ -2054,7 +2054,7 @@ TEST_F(NegativeCommand, ImageBufferCopy) {
             m_errorMonitor->VerifyFound();
 
             // uses single-plane aspect mask
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07982");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07981");
             mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
                                      VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);

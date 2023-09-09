@@ -521,14 +521,6 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
             "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981",
             "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981",
         }},
-        {"07982", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07982",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07982",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07982",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07982",
-            "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07982",
-            "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07982",
-        }},
         {"07983", {
             "VUID-vkCmdCopyBufferToImage-dstImage-07983",
             "VUID-vkCmdCopyImageToBuffer-srcImage-07983",
@@ -862,22 +854,11 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         }
 
         // Checks that apply only to multi-planar format images
-        if (FormatIsMultiplane(image_format)) {
-            // VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes
-            if ((FormatPlaneCount(image_format) < 3) && (region_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                const LogObjectList objlist(handle, image_state.image());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07981", from_image, is_2, is_memory), objlist,
-                                 subresource_loc.dot(Field::aspectMask),
-                                 "(%s) cannot be VK_IMAGE_ASPECT_PLANE_2_BIT for 2-plane format %s.",
-                                 string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
-            }
-            if (0 ==
-                (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
-                const LogObjectList objlist(handle, image_state.image());
-                skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07982", from_image, is_2, is_memory), objlist,
-                                 subresource_loc.dot(Field::aspectMask), "is %s for multi-plane image formats %s.",
-                                 string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
-            }
+        if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, region_aspect_mask)) {
+            const LogObjectList objlist(handle, image_state.image());
+            skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07981", from_image, is_2, is_memory), objlist,
+                             subresource_loc.dot(Field::aspectMask), "(%s) is invalid for multi-planar format %s.",
+                             string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
         }
     }
     return skip;
@@ -3081,7 +3062,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
         (aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT && aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT &&
          aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
         const char *vuid =
-            is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07982" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07982";
+            is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07981" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07981";
         Field field = is_src ? Field::srcSubresource : Field::dstSubresource;
         LogObjectList objlist(device, image_state.image());
         skip |= LogError(vuid, objlist, region_loc.dot(field), "is %s but %s has 3-plane format (%s).",
