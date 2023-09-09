@@ -2283,17 +2283,22 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
             ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state, transition_loc.dot(Field::image),
                                          "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
 
-        if ((image_state->disjoint == false) ||
-            ((FormatIsColor(image_format) == true) && (FormatIsMultiplane(image_format) == false))) {
-            if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+        if (FormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+            if (!FormatIsMultiplane(image_format)) {
                 const LogObjectList objlist(device, image_state->Handle());
-                skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01671", objlist,
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241", objlist,
+                                 transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
+                                 "is %s (not VK_IMAGE_ASPECT_COLOR_BIT) and image was created with format %s.",
+                                 string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
+            } else if (!image_state->disjoint) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09242", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
                                  "is %s (not VK_IMAGE_ASPECT_COLOR_BIT) and image was created with format %s.",
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
             }
         }
-        if ((FormatIsMultiplane(image_format)) && (image_state->disjoint == true)) {
+        if ((FormatIsMultiplane(image_format)) && (image_state->disjoint)) {
             if (!IsValidPlaneAspect(image_format, aspect_mask) && ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
                 const LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01672", objlist,

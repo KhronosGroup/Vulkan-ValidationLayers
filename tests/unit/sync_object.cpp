@@ -453,12 +453,12 @@ TEST_F(NegativeSyncObject, Barriers) {
     // COLOR bit must be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    conc_test("VUID-VkImageMemoryBarrier-image-01671");
+    conc_test("VUID-VkImageMemoryBarrier-image-09241");
 
     // No bits other than COLOR may be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    conc_test("VUID-VkImageMemoryBarrier-image-01671");
+    conc_test("VUID-VkImageMemoryBarrier-image-09241");
 
     // Test multip-planar image
     if (mp_extensions) {
@@ -977,12 +977,12 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // COLOR bit must be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    conc_test("VUID-VkImageMemoryBarrier2-image-01671");
+    conc_test("VUID-VkImageMemoryBarrier2-image-09241");
 
     // No bits other than COLOR may be set
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-    conc_test("VUID-VkImageMemoryBarrier2-image-01671");
+    conc_test("VUID-VkImageMemoryBarrier2-image-09241");
 
     // A barrier's new and old VkImageLayout must be compatible with an image's VkImageUsageFlags.
     {
