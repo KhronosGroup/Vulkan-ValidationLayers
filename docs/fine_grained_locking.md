@@ -828,15 +828,12 @@ This data is fully encapsulated by accessor methods that manage the locking.
 
 Multithreading is limited to the following test cases:
 
-* VkLayerTest.ThreadCommandBufferCollision
-* VkLayerTest.ThreadUpdateDescriptorCollision
-* VkLayerTest.ThreadUpdateDescriptorUpdateAfterBindNoCollision
-* VkLayerTest.ThreadUpdateDescriptorUpdateAfterBindNoCollision
-* VkPositiveLayerTest.ThreadSafetyDisplayObjects
-* VkPositiveLayerTest.ThreadSafetyDisplayPlaneObjects
-* VkPositiveLayerTest.ThreadNullFenceCollision
-
-Further tests are needed and should include Thread in their name, or be in a separate test suite.
+* NegativeThreading.CommandBufferCollision
+* NegativeThreading.UpdateDescriptorCollision
+* PositiveThreading.UpdateDescriptorUpdateAfterBindNoCollision
+* PositiveThreading.DisplayObjects
+* PositiveThreading.DisplayPlaneObjects
+* PositiveThreading.NullFenceCollision
 
 
 ## CTS

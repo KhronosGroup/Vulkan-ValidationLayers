@@ -617,6 +617,11 @@ class MultiDeviceTest : public VkLayerTest {
     VkDeviceObj *m_second_device = nullptr;
 };
 
+// Thread safety tests and other tests that implement non-trivial threading scenarios
+class ThreadingTest : public VkLayerTest {};
+class NegativeThreading : public ThreadingTest {};
+class PositiveThreading : public ThreadingTest {};
+
 class VkBufferTest {
   public:
     enum eTestEnFlags {
