@@ -75,10 +75,12 @@ class alignas(kObjectUserDataAlignment) ObjectUseData {
     }
     WriteReadCount RemoveWriter() {
         int64_t prev = writer_reader_count.fetch_add(-(1LL << 32));
+        assert(prev > 0);
         return WriteReadCount(prev);
     }
     WriteReadCount RemoveReader() {
         int64_t prev = writer_reader_count.fetch_add(-1LL);
+        assert(prev > 0);
         return WriteReadCount(prev);
     }
     WriteReadCount GetCount() { return WriteReadCount(writer_reader_count); }
