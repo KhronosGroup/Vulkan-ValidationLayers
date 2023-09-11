@@ -9135,7 +9135,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(instance, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(instance, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructTypeArray(loc, "pPhysicalDeviceGroupCount", "pPhysicalDeviceGroupProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType", "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter", kVUIDUndefined);
     if (pPhysicalDeviceGroupProperties != nullptr)
     {
@@ -9229,7 +9229,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pFeatures", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2", pFeatures, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, true, "VUID-vkGetPhysicalDeviceFeatures2-pFeatures-parameter", "VUID-VkPhysicalDeviceFeatures2-sType-sType");
     return skip;
 }
@@ -9240,7 +9240,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", pProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceProperties2-pProperties-parameter", "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != nullptr)
     {
@@ -9258,7 +9258,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateRangedEnum(loc, "format", "VkFormat", format, "VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter");
     skip |= ValidateStructType(loc, "pFormatProperties", "VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2", pFormatProperties, VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceFormatProperties2-pFormatProperties-parameter", "VUID-VkFormatProperties2-sType-sType");
     if (pFormatProperties != nullptr)
@@ -9277,7 +9277,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pImageFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2", pImageFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatInfo-parameter", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-sType");
     if (pImageFormatInfo != nullptr)
     {
@@ -9313,7 +9313,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructTypeArray(loc, "pQueueFamilyPropertyCount", "pQueueFamilyProperties", "VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2", pQueueFamilyPropertyCount, pQueueFamilyProperties, VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, true, false, false, "VUID-VkQueueFamilyProperties2-sType-sType", "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter", kVUIDUndefined);
     if (pQueueFamilyProperties != nullptr)
     {
@@ -9333,7 +9333,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pMemoryProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2", pMemoryProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceMemoryProperties2-pMemoryProperties-parameter", "VUID-VkPhysicalDeviceMemoryProperties2-sType-sType");
     if (pMemoryProperties != nullptr)
     {
@@ -9352,7 +9352,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
     if (pFormatInfo != nullptr)
     {
@@ -9602,7 +9602,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pExternalBufferInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO", pExternalBufferInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-sType");
     if (pExternalBufferInfo != nullptr)
     {
@@ -9631,7 +9631,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pExternalFenceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO", pExternalFenceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-sType-sType");
     if (pExternalFenceInfo != nullptr)
     {
@@ -9654,7 +9654,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_1)) return true;
     skip |= ValidateStructType(loc, "pExternalSemaphoreInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO", pExternalSemaphoreInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO, true, "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreInfo-parameter", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-sType");
     if (pExternalSemaphoreInfo != nullptr)
     {
@@ -9868,23 +9868,19 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
 
                 skip |= ValidateStructPnext(loc, ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2", pCreateInfo->pDependencies[dependencyIndex].pNext, allowed_structs_VkSubpassDependency2.size(), allowed_structs_VkSubpassDependency2.data(), GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
                 }
 
@@ -10108,7 +10104,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceToolProperties(
     const ErrorObject&                          error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location& loc = error_obj.location;
-     if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_3)) return true;
+    if (CheckPromotedApiAgainstVulkanVersion(physicalDevice, loc, VK_API_VERSION_1_3)) return true;
     skip |= ValidateStructTypeArray(loc, "pToolCount", "pToolProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES", pToolCount, pToolProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceToolProperties-sType-sType", "VUID-vkGetPhysicalDeviceToolProperties-pToolProperties-parameter", kVUIDUndefined);
     if (pToolProperties != nullptr)
     {
@@ -13328,23 +13324,19 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
 
                 skip |= ValidateStructPnext(loc, ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2", pCreateInfo->pDependencies[dependencyIndex].pNext, allowed_structs_VkSubpassDependency2.size(), allowed_structs_VkSubpassDependency2.data(), GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
-                {
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(loc, ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
                 }
 
