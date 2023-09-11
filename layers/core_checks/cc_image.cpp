@@ -497,10 +497,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 string_VkImageTiling(image_format_info.tiling), string_VkImageUsageFlags(image_format_info.usage).c_str(),
                 string_VkImageCreateFlags(image_format_info.flags).c_str(), string_VkResult(result));
         } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-00990", device,
-                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
-                             "(%s) is not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2.",
-                             string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str());
+            skip |= LogError(
+                "VUID-VkImageCreateInfo-pNext-00990", device,
+                create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
+                "(%s) is not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2. Compatible types are %s.",
+                string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str(),
+                string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());
         }
     } else if (external_memory_create_info_nv && external_memory_create_info_nv->handleTypes != 0) {
         if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
