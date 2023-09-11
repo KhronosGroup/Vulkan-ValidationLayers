@@ -88,32 +88,6 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
-if(BUILD_LAYER_SUPPORT_FILES)
-    message(WARNING "BUILD_LAYER_SUPPORT_FILES will be deprecated! See https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/18")
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/containers/custom_containers.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/containers)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/error_message DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan FILES_MATCHING PATTERN "logging.h")
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/external DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan FILES_MATCHING PATTERN "xxhash.h")
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_format_utils.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_validation_error_messages.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_layer_dispatch_table.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_dispatch_table_helper.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_object_types.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_api_version.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_extension_helper.h
-                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_typemap_helper.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/generated)
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/utils/cast_utils.h
-                  ${CMAKE_SOURCE_DIR}/layers/utils/hash_util.h
-                  ${CMAKE_SOURCE_DIR}/layers/utils/hash_vk_types.h
-                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.h
-                  ${CMAKE_SOURCE_DIR}/layers/utils/ray_tracing_utils.h
-                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_utils.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/utils)
-    install(FILES vk_layer_config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
-    install(TARGETS VkLayer_utils)
-endif()
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(VkLayer_utils PRIVATE
         -Wno-sign-conversion
@@ -127,10 +101,6 @@ elseif(MSVC)
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
     )
-endif()
-
-if (NOT BUILD_LAYERS)
-    return()
 endif()
 
 # Represents all SPIRV libraries we need
