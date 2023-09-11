@@ -310,6 +310,19 @@ TEST_F(NegativeSubgroup, Features) {
     ASSERT_TRUE(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT);
 }
 
+// TODO 5600 - Not all pNext structs are being passed in to check version
+TEST_F(NegativeSubgroup, DISABLED_pNextDisabled) {
+    TEST_DESCRIPTION("Try to use structs with 1.0");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
+    auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
+    vk::GetPhysicalDeviceProperties2(gpu_, &props2);
+}
+
 TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);

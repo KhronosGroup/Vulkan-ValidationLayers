@@ -977,8 +977,9 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
-    skip |= ValidateArray(error_obj.location, "commandBufferCount", "pCommandBuffers", commandBufferCount, &pCommandBuffers, true,
-                          true, kVUIDUndefined, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    skip |= ValidateArray(error_obj.location.dot(Field::commandBufferCount), error_obj.location.dot(Field::pCommandBuffers),
+                          commandBufferCount, &pCommandBuffers, true, true, kVUIDUndefined,
+                          "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
     return skip;
 }
 
@@ -1002,23 +1003,23 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
     const bool k_not_required = false;
     const char *k_no_vuid = nullptr;
     const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
-    skip |=
-        ValidateStructType(error_obj.location, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
-                           info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
-                           "VUID-VkCommandBufferInheritanceInfo-sType-sType");
+    const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
+    const Location inheritance_loc = begin_info_loc.dot(Field::pInheritanceInfo);
+    skip |= ValidateStructType(inheritance_loc, "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO", info,
+                               VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
+                               "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
     if (info) {
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
                                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
                                                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
                                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
-        skip |= ValidateStructPnext(
-            error_obj.location, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT",
-            info->pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
-            "VUID-VkCommandBufferInheritanceInfo-pNext-pNext", "VUID-VkCommandBufferInheritanceInfo-sType-unique");
+        skip |= ValidateStructPnext(inheritance_loc, "VkCommandBufferInheritanceConditionalRenderingInfoEXT", info->pNext,
+                                    allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
+                                    "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
+                                    "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
-        skip |=
-            ValidateBool32(error_obj.location, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
+        skip |= ValidateBool32(inheritance_loc.dot(Field::occlusionQueryEnable), info->occlusionQueryEnable);
 
         // Explicit VUs
         if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
@@ -1028,21 +1029,20 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         }
 
         if (physical_device_features.inheritedQueries) {
-            skip |= ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
-                                  AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
-                                  "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+            skip |= ValidateFlags(inheritance_loc.dot(Field::queryFlags), "VkQueryControlFlagBits", AllVkQueryControlFlagBits,
+                                  info->queryFlags, kOptionalFlags, "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
         } else {  // !inheritedQueries
-            skip |= ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
+            skip |= ValidateReservedFlags(inheritance_loc.dot(Field::queryFlags), info->queryFlags,
                                           "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
         }
 
         if (physical_device_features.pipelineStatisticsQuery) {
-            skip |= ValidateFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
-                                  "VkQueryPipelineStatisticFlagBits", AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics,
-                                  kOptionalFlags, "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
+            skip |= ValidateFlags(inheritance_loc.dot(Field::pipelineStatistics), "VkQueryPipelineStatisticFlagBits",
+                                  AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
+                                  "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
         } else {  // !pipelineStatisticsQuery
-            skip |= ValidateReservedFlags(error_obj.location, "pBeginInfo->pInheritanceInfo->pipelineStatistics",
-                                          info->pipelineStatistics, "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
+            skip |= ValidateReservedFlags(inheritance_loc.dot(Field::pipelineStatistics), info->pipelineStatistics,
+                                          "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
 
         const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);

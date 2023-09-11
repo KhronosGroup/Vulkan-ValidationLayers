@@ -578,13 +578,11 @@ TEST_F(NegativeBuffer, VertexBuffer) {
     }
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetUnexpectedError("value of pCreateInfo->usage must not be 0");
+    m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-None-09206");
     if (VkBufferTest::GetTestConditionValid(m_device, VkBufferTest::eInvalidMemoryOffset)) {
         // Create and bind a memory buffer with an invalid offset.
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
-        m_errorMonitor->SetUnexpectedError(
-            "If buffer was created with the VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
-            "memoryOffset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment");
+        m_errorMonitor->SetUnexpectedError("VUID-vkGetBufferMemoryRequirements-buffer-parameter");
         VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, VkBufferTest::eInvalidMemoryOffset);
         (void)buffer_test;
         m_errorMonitor->VerifyFound();

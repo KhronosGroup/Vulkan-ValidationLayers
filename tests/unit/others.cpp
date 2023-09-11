@@ -543,14 +543,14 @@ TEST_F(VkLayerTest, RequiredParameter) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pFeatures specified as NULL");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
     // Specify NULL for a pointer to a handle
     // Expected to trigger an error with
     // StatelessValidation::ValidateRequiredPointer
     vk::GetPhysicalDeviceFeatures(gpu(), NULL);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pQueueFamilyPropertyCount specified as NULL");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
     // Specify NULL for pointer to array count
     // Expected to trigger an error with StatelessValidation::ValidateArray
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), NULL, NULL);
@@ -582,7 +582,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     vk::UnmapMemory(device(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pFences[0] specified as VK_NULL_HANDLE");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
     // Specify VK_NULL_HANDLE for a required handle array entry
     // Expected to trigger an error with
     // StatelessValidation::ValidateRequiredHandleArray
@@ -590,7 +590,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     vk::ResetFences(device(), 1, &fence);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pAllocateInfo specified as NULL");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-pAllocateInfo-parameter");
     // Specify NULL for a required struct pointer
     // Expected to trigger an error with
     // StatelessValidation::ValidateStructType
@@ -598,7 +598,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     vk::AllocateMemory(device(), NULL, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "value of faceMask must not be 0");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
     // Specify 0 for a required VkFlags parameter
     // Expected to trigger an error with StatelessValidation::ValidateFlags
     m_commandBuffer->SetStencilReference(0, 0);
@@ -1043,12 +1043,37 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     vk::DestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }
 
+TEST_F(VkLayerTest, DebugUtilsParameterFlags) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    DebugUtilsLabelCheckData callback_data;
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
+        data->count++;
+    };
+    callback_data.count = 0;
+    callback_data.callback = empty_callback;
+
+    auto callback_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    callback_create_info.messageSeverity = 0;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
+    vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidStructSType) {
     TEST_DESCRIPTION("Specify an invalid VkStructureType for a Vulkan structure's sType field");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "parameter pAllocateInfo->sType must be");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-sType-sType");
     // Zero struct memory, effectively setting sType to
     // VK_STRUCTURE_TYPE_APPLICATION_INFO
     // Expected to trigger an error with
@@ -1058,7 +1083,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "parameter pSubmits[0].sType must be");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-sType-sType");
     // Zero struct memory, effectively setting sType to
     // VK_STRUCTURE_TYPE_APPLICATION_INFO
     // Expected to trigger an error with
@@ -2890,5 +2915,19 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
         LvlInitStruct<VkPhysicalDeviceProperties2>(&protected_memory_properties_1);
 
     vk::GetPhysicalDeviceProperties2(gpu(), &physical_device_properties2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, GetPhysicalDeviceImageFormatPropertiesFlags) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkImageFormatProperties dummy_props;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceImageFormatProperties-usage-requiredbitmask");
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
+                                               VK_IMAGE_TILING_OPTIMAL, 0, 0, &dummy_props);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceImageFormatProperties-flags-parameter");
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
+                                               VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0xBAD00000, &dummy_props);
     m_errorMonitor->VerifyFound();
 }

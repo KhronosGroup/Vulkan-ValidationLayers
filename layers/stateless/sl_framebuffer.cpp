@@ -24,8 +24,9 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= ValidateArray(error_obj.location, "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
-                              &pCreateInfo->pAttachments, false, true, kVUIDUndefined, "VUID-VkFramebufferCreateInfo-flags-02778");
+        skip |= ValidateArray(error_obj.location.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
+                              pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined,
+                              "VUID-VkFramebufferCreateInfo-flags-02778");
     }
 
     // Verify FB dimensions are greater than zero

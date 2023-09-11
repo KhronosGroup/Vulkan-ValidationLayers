@@ -189,7 +189,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
     const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
     if (pCreateInfo->compareEnable == VK_TRUE) {
-        skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->compareOp", "VkCompareOp", pCreateInfo->compareOp,
+        skip |= ValidateRangedEnum(create_info_loc.dot(Field::compareOp), "VkCompareOp", pCreateInfo->compareOp,
                                    "VUID-VkSamplerCreateInfo-compareEnable-01080");
         if (sampler_reduction != nullptr) {
             if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
@@ -219,7 +219,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
         (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
         (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
-        skip |= ValidateRangedEnum(error_obj.location, "pCreateInfo->borderColor", "VkBorderColor", pCreateInfo->borderColor,
+        skip |= ValidateRangedEnum(create_info_loc.dot(Field::borderColor), "VkBorderColor", pCreateInfo->borderColor,
                                    "VUID-VkSamplerCreateInfo-addressModeU-01078");
     }
 
@@ -630,8 +630,9 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
-    return ValidateArray(error_obj.location, "descriptorSetCount", "pDescriptorSets", descriptorSetCount, &pDescriptorSets, true,
-                         true, kVUIDUndefined, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
+    return ValidateArray(error_obj.location.dot(Field::descriptorSetCount), error_obj.location.dot(Field::pDescriptorSets),
+                         descriptorSetCount, &pDescriptorSets, true, true, kVUIDUndefined,
+                         "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
 }
 
 bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const uint32_t descriptorWriteCount,
@@ -653,8 +654,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
         if (!isPushDescriptor) {
             // dstSet must be a valid VkDescriptorSet handle
-            skip |= ValidateRequiredHandle(loc, ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
-                                           pDescriptorWrites[i].dstSet);
+            skip |= ValidateRequiredHandle(loc.dot(Field::pDescriptorWrites, i).dot(Field::dstSet), pDescriptorWrites[i].dstSet);
         }
 
         if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
@@ -694,11 +694,9 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageLayout
                 // member of any given element of pImageInfo must be a valid VkImageLayout
                 for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount; ++descriptor_index) {
-                    skip |= ValidateRangedEnum(loc,
-                                               ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
-                                                             ParameterName::IndexVector{i, descriptor_index}),
-                                               "VkImageLayout", pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout,
-                                               kVUIDUndefined);
+                    skip |= ValidateRangedEnum(
+                        loc.dot(Field::pDescriptorWrites, i).dot(Field::pImageInfo, descriptor_index).dot(Field::imageLayout),
+                        "VkImageLayout", pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout, kVUIDUndefined);
                 }
             }
         } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||

@@ -61,6 +61,10 @@ struct Location {
         Location result(*this, this->structure, sub_field, sub_index, false);
         return result;
     }
+    Location dot(uint32_t sub_index) const {
+        Location result(*this, this->structure, this->field, sub_index, false);
+        return result;
+    }
 
     // same as dot() but will mark these were part of a pNext struct
     Location pNext(vvl::Struct s, vvl::Field sub_field = vvl::Field::Empty, uint32_t sub_index = kNoIndex) const {
