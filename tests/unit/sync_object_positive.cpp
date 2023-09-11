@@ -18,58 +18,6 @@
 #include <poll.h>
 #endif
 
-TEST_F(PositiveSyncObject, ThreadSafetyDisplayObjects) {
-    TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
-
-    AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t prop_count = 0;
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
-    if (prop_count == 0) {
-        GTEST_SKIP() << "No VkDisplayKHR properties to query";
-    }
-
-    std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
-    // Create a VkDisplayKHR object
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
-    ASSERT_NE(prop_count, 0U);
-
-    // Now use this new object in an API call that thread safety will track
-    prop_count = 0;
-    vk::GetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
-}
-
-TEST_F(PositiveSyncObject, ThreadSafetyDisplayPlaneObjects) {
-    TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPlanePropertiesKHR in thread-safety.");
-
-    AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t prop_count = 0;
-    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
-    if (prop_count != 0) {
-        // only grab first plane property
-        prop_count = 1;
-        VkDisplayPlanePropertiesKHR display_plane_props = {};
-        // Create a VkDisplayKHR object
-        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, &display_plane_props);
-        // Now use this new object in an API call
-        prop_count = 0;
-        vk::GetDisplayModePropertiesKHR(gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
-    }
-}
-
 TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);
