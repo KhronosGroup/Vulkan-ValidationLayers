@@ -9,7 +9,7 @@ assignees: ''
 
 **Environment:**
  - OS: 
- - GPU:
+ - GPU and driver version:
  - SDK or header version if building from repo:
  - Options enabled (synchronization, best practices, etc.):
 
