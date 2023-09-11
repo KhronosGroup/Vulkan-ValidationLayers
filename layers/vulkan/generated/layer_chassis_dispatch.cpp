@@ -38,6 +38,20 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
         VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);
 
         switch (header->sType) {
+            case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT: {
+                    safe_VkFrameBoundaryEXT *safe_struct = reinterpret_cast<safe_VkFrameBoundaryEXT *>(cur_pnext);
+                    if (safe_struct->pImages) {
+                        for (uint32_t index0 = 0; index0 < safe_struct->imageCount; ++index0) {
+                            safe_struct->pImages[index0] = layer_data->Unwrap(safe_struct->pImages[index0]);
+                        }
+                    }
+                    if (safe_struct->pBuffers) {
+                        for (uint32_t index0 = 0; index0 < safe_struct->bufferCount; ++index0) {
+                            safe_struct->pBuffers[index0] = layer_data->Unwrap(safe_struct->pBuffers[index0]);
+                        }
+                    }
+                } break;
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR: {
                     safe_VkWin32KeyedMutexAcquireReleaseInfoKHR *safe_struct = reinterpret_cast<safe_VkWin32KeyedMutexAcquireReleaseInfoKHR *>(cur_pnext);
@@ -692,6 +706,7 @@ VkResult DispatchQueueBindSparse(
             local_pBindInfo = new safe_VkBindSparseInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfo[index0].initialize(&pBindInfo[index0]);
+                WrapPnextChainHandles(layer_data, local_pBindInfo[index0].pNext);
                 if (local_pBindInfo[index0].pWaitSemaphores) {
                     for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].waitSemaphoreCount; ++index1) {
                         local_pBindInfo[index0].pWaitSemaphores[index1] = layer_data->Unwrap(local_pBindInfo[index0].pWaitSemaphores[index1]);

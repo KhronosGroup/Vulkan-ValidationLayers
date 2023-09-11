@@ -3000,7 +3000,7 @@ bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCo
                                         pCopyMemoryToImageInfo->dstImageLayout, copy_loc.dot(Field::dstImageLayout),
                                         "pCopyDstLayouts", "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
     return skip;
-};
+}
 
 bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo,
                                                      const ErrorObject &error_obj) const {
@@ -3015,7 +3015,7 @@ bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCo
                                         pCopyImageToMemoryInfo->srcImageLayout, copy_loc.dot(Field::srcImageLayout),
                                         "pCopySrcLayouts", "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
     return skip;
-};
+}
 
 bool CoreChecks::ValidateMemcpyExtents(VkDevice device, const VkImageCopy2 region, const IMAGE_STATE &image_state, bool is_src,
                                        const Location &region_loc) const {
@@ -3143,7 +3143,7 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
                                    "VUID-VkCopyImageToImageInfoEXT-dstImage-09111", "VUID-VkCopyImageToImageInfoEXT-dstImage-09112",
                                    "VUID-VkCopyImageToImageInfoEXT-dstImage-09113", error_obj.location);
     return skip;
-};
+}
 
 template <typename RegionType>
 bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,

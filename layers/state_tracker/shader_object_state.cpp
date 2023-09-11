@@ -60,4 +60,4 @@ VkPrimitiveTopology SHADER_OBJECT_STATE::GetTopology() const {
         }
     }
     return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-};
+}

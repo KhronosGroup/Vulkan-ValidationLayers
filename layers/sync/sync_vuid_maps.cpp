@@ -1197,4 +1197,4 @@ const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageEr
     return result;
 }
 
-};  // namespace sync_vuid_maps
+}  // namespace sync_vuid_maps

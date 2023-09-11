@@ -699,7 +699,7 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
         default:
             return "Unhandled OpCapability";
     };
-};
+}
 
 // Will return the Vulkan format for a given SPIR-V image format value
 // Note: will return VK_FORMAT_UNDEFINED if non valid input
@@ -792,7 +792,7 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
         default:
             return VK_FORMAT_UNDEFINED;
     };
-};
+}
 
 static inline const char* SpvCapabilityRequirments(uint32_t capability) {
     static const vvl::unordered_map<uint32_t, std::string_view> table {

@@ -260,7 +260,7 @@ struct RequiredSpirvInfo {
         out.append('        default:\n')
         out.append('            return \"Unhandled OpCapability\";\n')
         out.append('    };\n')
-        out.append('};\n')
+        out.append('}\n')
         #
         # Creates SPIR-V image format helper
         out.append('''
@@ -277,7 +277,7 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
         out.append('        default:\n')
         out.append('            return VK_FORMAT_UNDEFINED;\n')
         out.append('    };\n')
-        out.append('};\n')
+        out.append('}\n')
 
 
         out.append('''

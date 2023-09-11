@@ -191,11 +191,11 @@ Times to NOT use it
 */
 [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
     return (extension != kNotEnabled);
-};
+}
 
 [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
-};
+}
 ''')
 
         out.append('\nstruct InstanceExtensions {\n')

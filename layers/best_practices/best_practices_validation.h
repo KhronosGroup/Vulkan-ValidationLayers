@@ -352,12 +352,12 @@ class Pipeline : public PIPELINE_STATE {
 };
 }  // namespace bp_state
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkPhysicalDevice, bp_state::PhysicalDevice, PHYSICAL_DEVICE_STATE);
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, bp_state::CommandBuffer, CMD_BUFFER_STATE);
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, bp_state::Swapchain, SWAPCHAIN_NODE);
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, IMAGE_STATE);
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, DESCRIPTOR_POOL_STATE);
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, PIPELINE_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkPhysicalDevice, bp_state::PhysicalDevice, PHYSICAL_DEVICE_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, bp_state::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, bp_state::Swapchain, SWAPCHAIN_NODE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, IMAGE_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, DESCRIPTOR_POOL_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, PIPELINE_STATE)
 
 class BestPractices : public ValidationStateTracker {
   public:
