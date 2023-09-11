@@ -387,9 +387,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
-
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-        skip |= ValidateString(error_obj.location, "pCreateInfo->ppEnabledLayerNames",
+        skip |= ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
                                "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
     }
 
@@ -403,7 +403,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         skip |=
-            ValidateString(error_obj.location, "pCreateInfo->ppEnabledExtensionNames",
+            ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
         skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
                                       pCreateInfo->ppEnabledExtensionNames[i]);
@@ -792,8 +792,8 @@ bool StatelessValidation::manual_PreCallValidateEnumerateDeviceExtensionProperti
                                                                                    const char *pLayerName, uint32_t *pPropertyCount,
                                                                                    VkExtensionProperties *pProperties) const {
     const Location loc(Func::vkEnumerateDeviceExtensionProperties);
-    return ValidateArray(loc, "pPropertyCount", "pProperties", pPropertyCount, &pProperties, true, false, false, kVUIDUndefined,
-                         "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
+    return ValidateArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties, true, false,
+                         false, kVUIDUndefined, "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,

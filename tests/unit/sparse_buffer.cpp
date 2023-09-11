@@ -548,3 +548,50 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
+    TEST_DESCRIPTION("test VkSparseMemoryBind::flags is valid");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    buffer_create_info.size = 1024;
+    buffer_create_info.queueFamilyIndexCount = 0;
+
+    if (m_device->phy().features().sparseResidencyBuffer) {
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    } else {
+        GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
+    }
+
+    VkBufferObj buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vk_testing::DeviceMemory buffer_mem;
+    buffer_mem.init(*m_device, buffer_mem_alloc);
+
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = 256;
+    buffer_memory_bind.memory = buffer_mem.handle();
+    buffer_memory_bind.memoryOffset = 0;
+    buffer_memory_bind.flags = 0xBAD00000;
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-flags-parameter");
+    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}

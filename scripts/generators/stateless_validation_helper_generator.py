@@ -322,7 +322,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
 #include <vulkan/layer/vk_layer_settings_ext.h>
 
-bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const ParameterName &parameter_name,
+bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                                                       const VkBaseOutStructure* header, const char *pnext_vuid,
                                                       bool is_physdev_api, bool is_const_param) const {
     bool skip = false;
@@ -332,18 +332,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
             # The string returned will be nested in an if check for a NULL pointer, so needs its indent incremented
-            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{valuePrefix}', '{displayNamePrefix}', struct.name, False)
+            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{errorLoc}', '{valuePrefix}', '{displayNamePrefix}', struct.name, False)
             if lines:
                 self.validatedStructs[struct.name] = lines
 
         # Do some processing here to extract data from validatedstructs...
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
-
-            postProcSpec = {}
-            postProcSpec['ppp'] = '{postProcPrefix}'
-            postProcSpec['pps'] = '{postProcSuffix}'
-            postProcSpec['ppi'] = '{postProcInsert}'
 
             pnext_case = '\n'
             pnext_check = ''
@@ -354,10 +349,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
                 pnext_check += f'''            if (api_version < {struct.version.nameApi}) {{
                 skip |= LogError(
-                           pnext_vuid, instance, loc,
-                           "Includes a pNext pointer (%s) to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                           "current effective API version is %s.",
-                           parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
+                           pnext_vuid, instance, loc.dot(Field::pNext),
+                           "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
+                           "current effective API version is %s.", StringAPIVersion(api_version).c_str());
             }}\n'''
 
             if struct.sType in stype_version_dict.keys():
@@ -382,17 +376,17 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 pnext_check += f'''            if (is_const_param) {{
                 {extension_check}
                         skip |= LogError(
-                               pnext_vuid, instance, loc,
-                               "Includes a pNext pointer (%s) to a VkStructureType ({struct.sType}), but its parent extension "
-                               "{extension.name} has not been enabled.",
-                               parameter_name.get_name().c_str());
+                               pnext_vuid, instance, loc.dot(Field::pNext),
+                               "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
+                               "{extension.name} has not been enabled.");
                 }}
             }}\n'''
 
-            expr = self.expandStructCode(struct.name, struct.name, 'structure->', '', '                ', [], postProcSpec)
+            expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', '                ', [])
             struct_validation_source = self.ScrubStructCode(expr)
             if struct_validation_source != '':
                 pnext_check += '            if (is_const_param) {\n'
+                pnext_check += f'                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
                 struct_validation_source = f'                {struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
                 struct_validation_source += '            }\n'
             pnext_case += f'{pnext_check}{struct_validation_source}'
@@ -421,7 +415,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             out.append('    bool skip = false;\n')
 
             # Create a copy here to make the logic simpler passing into ValidatePnextStructContents
-            out.append('    [[maybe_unused]] const Location& loc = error_obj.location;\n')
+            out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
 
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if command.extensions and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
@@ -442,7 +436,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
-            lines = self.genFuncBody(command.params[startIndex:], command.name, '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
+            lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
 
             if command.instance and command.version:
                 out.append(f'    if (CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
@@ -509,7 +503,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         return vuid
 
     # Generate the pointer check string
-    def makePointerCheck(self, valuePrefix,  member: Member, lengthMember: Member, valueRequired, lenValueRequired, lenPtrRequired, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName):
+    def makePointerCheck(self, valuePrefix, member: Member, lengthMember: Member, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName):
         checkExpr = []
         vuid_tag_name = structTypeName if structTypeName is not None else funcName
         if lengthMember:
@@ -524,8 +518,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenPtrRequired == 'true' or lenValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                    checkExpr.append('skip |= ValidateArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {}, {});\n'.format(
-                         lenPtrRequired, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, pf=valuePrefix, **postProcSpec))
+                    checkExpr.append(f'skip |= ValidateArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
             # This is an array with an integer count value
             else:
                 # If count and array parameters are optional, there will be no validation
@@ -533,12 +526,18 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     if member.type != 'char':
                         # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
                         count_required_vuid = self.GetVuid(vuid_tag_name, f"{member.length.replace('->', '::')}-arraylength")
-                        checkExpr.append('skip |= ValidateArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
-                            lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, pf=valuePrefix, **postProcSpec))
+                        # TODO - some length have unhandled symbols
+                        count_loc = f'{errorLoc}.dot(Field::{member.length})'
+                        if '->' in member.length:
+                            count_loc = f'{errorLoc}.dot(Field::{member.length.split("->")[0]}).dot(Field::{member.length.split("->")[1]})'
+                        elif ' + ' in member.length:
+                            count_loc = f'{errorLoc}.dot(Field::samples)' # hardcoded only instance for now
+                        elif ' / ' in member.length:
+                            count_loc = f'{errorLoc}.dot(Field::{member.length.split(" / ")[0]})'
+                        checkExpr.append(f'skip |= ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
                     else:
                         # Arrays of strings receive special processing
-                        checkExpr.append('skip |= ValidateStringArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {});\n'.format(
-                             lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, pf=valuePrefix, **postProcSpec))
+                        checkExpr.append(f'skip |= ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
             if checkExpr and lengthMember and length_deref and member.length.count('->'):
                 # Add checks to ensure the validation call does not dereference a NULL pointer to obtain the count
                 count = member.length.count('->')
@@ -569,53 +568,37 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 vuid = allocator_dict.get(member.name)
                 if vuid is not None:
                     ptr_required_vuid = vuid
-                checkExpr.append('skip |= ValidateRequiredPointer(loc, {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(valueDisplayName, valuePrefix, member.name, ptr_required_vuid, **postProcSpec))
+                checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), reinterpret_cast<const void*>({valuePrefix}{member.name}), {ptr_required_vuid});\n')
             else:
-                checkExpr.append('skip |= ValidateRequiredPointer(loc, {ppp}"{}"{pps}, {}{}, {});\n'.format(valueDisplayName, valuePrefix, member.name, ptr_required_vuid, **postProcSpec))
+                checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {ptr_required_vuid});\n')
         else:
             # Special case for optional internal allocation function pointers.
             if (member.type, member.name) == ('PFN_vkInternalAllocationNotification', 'pfnInternalAllocation'):
-                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, 'pfnInternalFree', postProcSpec))
+                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, errorLoc, 'pfnInternalFree'))
             elif (member.type, member.name) == ('PFN_vkInternalFreeNotification', 'pfnInternalFree'):
-                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, 'pfnInternalAllocation', postProcSpec))
+                checkExpr.extend(self.internalAllocationCheck(valuePrefix, member.name, errorLoc, 'pfnInternalAllocation'))
         return checkExpr
 
     # Generate internal allocation function pointer check.
-    def internalAllocationCheck(self, valuePrefix, name, complementaryName, postProcSpec):
+    def internalAllocationCheck(self, valuePrefix, name, errorLoc, complementaryName):
         checkExpr = []
         vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
         checkExpr.append(f'if ({valuePrefix}{name} != nullptr)')
         checkExpr.append('{')
         local_indent = incIndent('')
         # Function pointers need a reinterpret_cast to void*
-        checkExpr.append(local_indent + 'skip |= ValidateRequiredPointer(loc, {ppp}"{}{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(valuePrefix, complementaryName, valuePrefix, complementaryName, vuid, **postProcSpec))
+        checkExpr.append(f'{local_indent}skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{name}), reinterpret_cast<const void*>({valuePrefix}{complementaryName}), {vuid});\n')
         checkExpr.append('}\n')
         return checkExpr
 
     # Process struct member validation code, performing name substitution if required
-    def processStructMemberCode(self, line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec):
+    def processStructMemberCode(self, line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix):
         # Build format specifier list
         kwargs = {}
-        if '{postProcPrefix}' in line:
-            # If we have a tuple that includes a format string and format parameters, need to use ParameterName class
-            if type(memberDisplayNamePrefix) is tuple:
-                kwargs['postProcPrefix'] = 'ParameterName('
-            else:
-                kwargs['postProcPrefix'] = postProcSpec['ppp']
-        if '{postProcSuffix}' in line:
-            # If we have a tuple that includes a format string and format parameters, need to use ParameterName class
-            if type(memberDisplayNamePrefix) is tuple:
-                kwargs['postProcSuffix'] = f', ParameterName::IndexVector{{ {postProcSpec["ppi"]}{memberDisplayNamePrefix[1]} }})'
-            else:
-                kwargs['postProcSuffix'] = postProcSpec['pps']
-        if '{postProcInsert}' in line:
-            # If we have a tuple that includes a format string and format parameters, need to use ParameterName class
-            if type(memberDisplayNamePrefix) is tuple:
-                kwargs['postProcInsert'] = f'{postProcSpec["ppi"]}{memberDisplayNamePrefix[1]}, '
-            else:
-                kwargs['postProcInsert'] = postProcSpec['ppi']
         if '{funcName}' in line:
             kwargs['funcName'] = funcName
+        if '{errorLoc}' in line:
+            kwargs['errorLoc'] = errorLoc
         if '{valuePrefix}' in line:
             kwargs['valuePrefix'] = memberNamePrefix
         if '{displayNamePrefix}' in line:
@@ -643,10 +626,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 continue
             if 'xml-driven validation' in line:
                 continue
-            line = line.replace('{postProcPrefix}', '')
-            line = line.replace('{postProcSuffix}', '')
-            line = line.replace('{postProcInsert}', '')
             line = line.replace('{funcName}', '')
+            line = line.replace('{errorLoc}', '')
             line = line.replace('{valuePrefix}', '')
             line = line.replace('{displayNamePrefix}', '')
             line = line.replace('{IndexVector}', '')
@@ -655,20 +636,20 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         return scrubbed_lines
 
     # Process struct validation code for inclusion in function or parent struct validation code
-    def expandStructCode(self, item_type, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
+    def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, indent, output):
         lines = self.validatedStructs[item_type]
         for line in lines:
             if output:
                 output[-1] += '\n'
             if type(line) is list:
                 for sub in line:
-                    output.append(self.processStructMemberCode(indent + sub, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec))
+                    output.append(self.processStructMemberCode(indent + sub, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
             else:
-                output.append(self.processStructMemberCode(indent + line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec))
+                output.append(self.processStructMemberCode(indent + line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
         return output
 
     # Generate the parameter checking code
-    def genFuncBody(self, members: list[Member], funcName, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
+    def genFuncBody(self, members: list[Member], funcName, errorLoc, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
         struct = self.vk.structs[structTypeName] if structTypeName in self.vk.structs else None
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
@@ -683,12 +664,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             lengthMember = None
             condition = None
             #
-            # Prefix and suffix for post processing of parameter names for struct members.  Arrays of structures need special processing to include the array index in the full parameter name.
-            postProcSpec = {}
-            postProcSpec['ppp'] = '' if not structTypeName else '{postProcPrefix}'
-            postProcSpec['pps'] = '' if not structTypeName else '{postProcSuffix}'
-            postProcSpec['ppi'] = '' if not structTypeName else '{postProcInsert}'
-            #
             # Generate the full name of the value, which will be printed in the error message, by adding the variable prefix to the value name
             valueDisplayName = f'{displayNamePrefix}{member.name}'
             #
@@ -699,7 +674,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 valueRequired = 'true'    # Parameter cannot be NULL
                 lenPtrRequired = 'true'  # Count pointer cannot be NULL
                 lenValueRequired = 'true'  # Count value cannot be 0
-                lenDisplayName = None # Name of length parameter to print with validation messages; parameter name with prefix applied
                 countRequiredVuid = None # If there is a count required VUID to check
                 # Generate required/optional parameter strings for the pointer and count values
                 if member.optional or member.optionalPointer:
@@ -720,7 +694,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             lengthMember = candidates[0]
 
                     if lengthMember:
-                        lenDisplayName = member.length.split(',')[0].replace(lengthMember.name, displayNamePrefix + lengthMember.name)
                         if lengthMember.pointer:
                             lenPtrRequired = 'false' if lengthMember.optional else lenPtrRequired
                             lenValueRequired = 'false' if lengthMember.optionalPointer else lenValueRequired
@@ -767,8 +740,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     objectName = structTypeName if structTypeName else funcName
                     self.logMsg('diag', f'ParameterValidation: No validation for {objectName} {member.name}')
                 elif countRequiredVuid:
-                    usedLines.append('skip |= ValidateArray(loc, {ppp}"{ldn}"{pps}, "", {pf}{ln}, &{pf}{vn}, true, false, {}, kVUIDUndefined);\n'.format(
-                        countRequiredVuid, pf=valuePrefix, ldn=lenDisplayName, ln=member.length, vn=member.name, **postProcSpec))
+                    usedLines.append(f'skip |= ValidateArray({errorLoc}.dot(Field::{member.length}), loc, {valuePrefix}{member.length}, &{valuePrefix}{member.name}, true, false, {countRequiredVuid}, kVUIDUndefined);\n')
                 else:
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         # If this is a pointer to a struct with an sType field, verify the type
@@ -780,22 +752,17 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             count_required_vuid = self.GetVuid(vuid_name, f"{member.length}-arraylength")
                             # This is an array of struct pointers
                             if member.cDeclaration.count('*') == 2:
-                                usedLines.append('skip |= ValidateStructPointerTypeArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
-                                    lenValueRequired, valueRequired, stypeVUID, paramVUID, count_required_vuid, ln=lengthMember.name, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, sv=struct.sType, pf=valuePrefix, **postProcSpec))
+                                usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
                             # This is an array with a pointer to a count value
                             elif lengthMember.pointer:
                                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                                usedLines.append('skip |= ValidateStructTypeArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {}, {});\n'.format(
-                                    lenPtrRequired, lenValueRequired, valueRequired, stypeVUID, paramVUID, count_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, sv=struct.sType, pf=valuePrefix, **postProcSpec))
+                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenPtrRequired}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
                             # This is an array with an integer count value
                             else:
-                                usedLines.append('skip |= ValidateStructTypeArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
-                                    lenValueRequired, valueRequired, stypeVUID, paramVUID, count_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, sv=struct.sType, pf=valuePrefix, **postProcSpec))
+                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
                         # This is an individual struct
                         else:
-                            usedLines.append('skip |= ValidateStructType(loc, {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
-                                valueDisplayName, valuePrefix, valueRequired, paramVUID, stypeVUID, vn=member.name, sv=struct.sType, vt=member.type, **postProcSpec))
-
+                            usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), "{struct.sType}", {valuePrefix}{member.name}, {struct.sType}, {valueRequired}, {paramVUID}, {stypeVUID});\n')
                     # If this is an input handle array that is not allowed to contain NULL handles, verify that none of the handles are VK_NULL_HANDLE
                     elif member.type in self.vk.handles and member.const and not self.isHandleOptional(member, lengthMember):
                         if not lengthMember:
@@ -806,8 +773,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             raise Exception('Unsupported parameter validation case: Output handle array elements are not NULL checked')
                         count_required_vuid = self.GetVuid(funcName, f"{member.length}-arraylength")
                         # This is an array with an integer count value
-                        usedLines.append('skip |= ValidateHandleArray(loc, {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {});\n'.format(
-                            lenValueRequired, valueRequired, count_required_vuid, ln=member.length, ldn=lenDisplayName, dn=valueDisplayName, vn=member.name, pf=valuePrefix, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateHandleArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid});\n')
                     elif member.type in self.flags and member.const:
                         callerName = structTypeName if structTypeName else funcName
                         # Generate check string for an array of VkFlags values
@@ -816,13 +782,12 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             raise Exception('Unsupported parameter validation case: array of reserved VkFlags')
                         allFlags = 'All' + flagBitsName
                         array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append('skip |= ValidateFlagsArray(loc, {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(lenDisplayName, valueDisplayName, flagBitsName, allFlags, member.length, member.name, lenValueRequired, array_required_vuid, pf=valuePrefix, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {array_required_vuid});\n')
                     elif member.type == 'VkBool32' and member.const:
-                        usedLines.append('skip |= ValidateBool32Array(loc, {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(lenDisplayName, valueDisplayName, member.length, member.name, lenValueRequired, valueRequired, pf=valuePrefix, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
                     elif member.type in self.vk.enums and member.const:
-                        prefix = postProcSpec.get('ppp', '')
-                        suffix = postProcSpec.get('pps', '')
-                        usedLines.append(f'skip |= ValidateRangedEnumArray(loc, {prefix}"{lenDisplayName}"{suffix}, {prefix}"{valueDisplayName}"{suffix}, "{member.type}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
+                        lenLoc = 'loc' if member.fixedSizeArray else f'{errorLoc}.dot(Field::{member.length})'
+                        usedLines.append(f'skip |= ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired});\n')
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
                         extStructCount = 0
@@ -840,36 +805,37 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                             extStructNames = '"' + ', '.join(struct.extendedBy) + extraStruct + '"'
                             extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
                             usedLines.append(f'constexpr std::array {extStructVar} = {{ {extendedBy}{extraStype} }};\n')
-                        usedLines.append('skip |= ValidateStructPnext(loc, {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedVulkanHeaderVersion, {}, {});\n'.format(
-                            valueDisplayName, extStructNames, valuePrefix, member.name, extStructCount, extStructData, pNextVuid, sTypeVuid, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {extStructNames}, {valuePrefix}{member.name}, {extStructCount}, {extStructData}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
-                        usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, valueRequired, lenValueRequired, lenPtrRequired, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
+                        usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName)
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
                     if member.type in self.validatedStructs and (member.const or self.vk.structs[member.type].returnedOnly):
                         # Process struct pointer/array validation code, performing name substitution if required
                         expr = []
                         expr.append(f'if ({valuePrefix}{member.name} != nullptr)\n')
-                        expr.append('{')
+                        expr.append('{\n')
+                        newErrorLoc = f'{member.name}_loc'
                         indent = incIndent(None)
                         if lengthMember:
                             # Need to process all elements in the array
                             length = member.length.split(',')[0]
                             indexName = length.replace('Count', 'Index')
-                            expr[-1] += '\n'
                             # If the length value is a pointer, de-reference it for the count.
                             deref = '*' if lengthMember.pointer else ''
                             expr.append(f'{indent}for (uint32_t {indexName} = 0; {indexName} < {deref}{valuePrefix}{length}; ++{indexName})\n')
-                            expr.append(indent + '{')
+                            expr.append(indent + '{\n')
                             indent = incIndent(indent)
+                            expr.append(f'{indent}[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name}, {indexName});')
                             # Prefix for value name to display in error message
                             connector = '->' if member.cDeclaration.count('*') == 2 else '.'
                             memberNamePrefix = f'{valuePrefix}{member.name}[{indexName}]{connector}'
                             memberDisplayNamePrefix = (f'{valueDisplayName}[%i]{connector}', indexName)
                         else:
+                            expr.append(f'{indent}[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name});')
                             memberNamePrefix = f'{valuePrefix}{member.name}->'
                             memberDisplayNamePrefix = f'{valueDisplayName}->'
                         # Expand the struct validation lines
-                        expr = self.expandStructCode(member.type, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, expr, postProcSpec)
+                        expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, indent, expr)
                         if lengthMember:
                             indent = decIndent(indent) # Close if and for scopes
                             expr.append(indent + '}\n')
@@ -897,14 +863,14 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     vuid_name_tag = structTypeName if structTypeName is not None else funcName
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         vuid = self.GetVuid(member.type, "sType-sType")
-                        usedLines.append('skip |= ValidateStructType(loc, {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, kVUIDUndefined, {});\n'.format(
-                            valueDisplayName, valuePrefix, vuid, vn=member.name, sv=self.vk.structs[member.type].sType, vt=member.type, **postProcSpec))
+                        sType = self.vk.structs[member.type].sType
+                        usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), "{sType}", &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {vuid});\n')
                     elif member.type in self.vk.handles:
                         if not member.optional:
-                            usedLines.append('skip |= ValidateRequiredHandle(loc, {ppp}"{}"{pps}, {}{});\n'.format(valueDisplayName, valuePrefix, member.name, **postProcSpec))
+                            usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.flags and member.type.replace('Flags', 'FlagBits') not in self.flagBits:
                         vuid = self.GetVuid(vuid_name_tag, f"{member.name}-zerobitmask")
-                        usedLines.append('skip |= ValidateReservedFlags(loc, {ppp}"{}"{pps}, {pf}{}, {});\n'.format(valueDisplayName, member.name, vuid, pf=valuePrefix, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateReservedFlags({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {vuid});\n')
                     elif member.type in self.flags or member.type in self.flagBits:
                         if member.type in self.flags:
                             flagBitsName = member.type.replace('Flags', 'FlagBits')
@@ -922,20 +888,17 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                         allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
-                        # usedLines.append(f'skip |= ValidateFlags(loc, "{flagBitsName}", {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
-                        usedLines.append('skip |= ValidateFlags(loc, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, {}{});\n'.format(valueDisplayName, flagBitsName, allFlagsName, member.name, flagsType, invalidVuid, zeroVuidArg, pf=valuePrefix, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), "{flagBitsName}", {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
                     elif member.type == 'VkBool32':
-                        usedLines.append('skip |= ValidateBool32(loc, {ppp}"{}"{pps}, {}{});\n'.format(valueDisplayName, valuePrefix, member.name, **postProcSpec))
+                        usedLines.append(f'skip |= ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':
                         vuid = self.GetVuid(vuid_name_tag, f"{member.name}-parameter")
-                        prefix = postProcSpec.get('ppp', '')
-                        suffix = postProcSpec.get('pps', '')
-                        usedLines.append(f'skip |= ValidateRangedEnum(loc, {prefix}"{valueDisplayName}"{suffix}, "{member.type}", {valuePrefix}{member.name}, {vuid});\n')
+                        usedLines.append(f'skip |= ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), "{member.type}", {valuePrefix}{member.name}, {vuid});\n')
                     # If this is a struct, see if it contains members that need to be checked
                     if member.type in self.validatedStructs:
                         memberNamePrefix = f'{valuePrefix}{member.name}.'
                         memberDisplayNamePrefix = f'{valueDisplayName}.'
-                        usedLines.append(self.expandStructCode(member.type, funcName, memberNamePrefix, memberDisplayNamePrefix, '', [], postProcSpec))
+                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, '', []))
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks

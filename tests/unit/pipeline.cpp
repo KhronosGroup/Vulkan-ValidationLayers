@@ -479,8 +479,8 @@ TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
                                       "VUID-VkPipelineViewportDepthClipControlCreateInfoEXT-negativeOneToOne-06470");
 }
 
-TEST_F(NegativePipeline, SamplePNext) {
-    // Enable sample shading in pipeline when the feature is disabled.
+TEST_F(NegativePipeline, SamplePNextUnknown) {
+    TEST_DESCRIPTION("Pass unknown pNext into VkPipelineMultisampleStateCreateInfo");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -489,12 +489,24 @@ TEST_F(NegativePipeline, SamplePNext) {
     auto sample_locations = LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
     sample_locations.sampleLocationsInfo = LvlInitStruct<VkSampleLocationsInfoEXT>();
     auto good_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &sample_locations; };
-    CreatePipelineHelper::OneshotTest(*this, good_chain, (kErrorBit | kWarningBit));
+    CreatePipelineHelper::OneshotTest(*this, good_chain, kErrorBit);
 
     auto instance_ci = LvlInitStruct<VkInstanceCreateInfo>();
     auto bad_chain = [&instance_ci](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &instance_ci; };
-    CreatePipelineHelper::OneshotTest(*this, bad_chain, (kErrorBit | kWarningBit),
-                                      "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
+    CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
+}
+
+// TODO 5600 - Not all pNext structs are being passed in to check extensions
+TEST_F(NegativePipeline, DISABLED_SamplePNextDisabled) {
+    TEST_DESCRIPTION("Pass valid pNext VkPipelineMultisampleStateCreateInfo, but without extension enabled");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto sample_locations = LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
+    sample_locations.sampleLocationsInfo = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    auto bad_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &sample_locations; };
+    CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
 TEST_F(NegativePipeline, SubpassRasterizationSamples) {

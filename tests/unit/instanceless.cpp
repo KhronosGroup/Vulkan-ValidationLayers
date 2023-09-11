@@ -179,8 +179,9 @@ TEST_F(NegativeInstanceless, InstanceValidationFlags) {
         validation_flags.disabledValidationCheckCount = 0;
         ici.pNext = &validation_flags;
 
+        // TODO - Currently returns VUID_Undefined
         // VUID-VkValidationFlagsEXT-disabledValidationCheckCount-arraylength
-        Monitor().SetDesiredFailureMsg(kErrorBit, "parameter disabledValidationCheckCount must be greater than 0");
+        Monitor().SetDesiredFailureMsg(kErrorBit, "disabledValidationCheckCount must be greater than 0");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }

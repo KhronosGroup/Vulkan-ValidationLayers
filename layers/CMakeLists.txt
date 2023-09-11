@@ -278,7 +278,6 @@ target_sources(vvl PRIVATE
     state_tracker/state_tracker.h
     state_tracker/video_session_state.cpp
     state_tracker/video_session_state.h
-    stateless/parameter_name.h
     stateless/sl_buffer.cpp
     stateless/sl_cmd_buffer_dynamic.cpp
     stateless/sl_cmd_buffer.cpp

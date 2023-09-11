@@ -224,7 +224,6 @@ stateless_validation_sources = [
   "layers/vulkan/generated/stateless_validation_helper.cpp",
   "layers/vulkan/generated/stateless_validation_helper.h",
   "layers/vulkan/generated/enum_flag_bits.h",
-  "layers/stateless/parameter_name.h",
   "layers/stateless/sl_buffer.cpp",
   "layers/stateless/sl_cmd_buffer_dynamic.cpp",
   "layers/stateless/sl_cmd_buffer.cpp",
