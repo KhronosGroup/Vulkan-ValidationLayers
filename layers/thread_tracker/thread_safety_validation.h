@@ -137,29 +137,30 @@ class counter {
         }
 
         const std::thread::id tid = std::this_thread::get_id();
-        const ObjectUseData::WriteReadCount prevCount = use_data->AddWriter();
+        const ObjectUseData::WriteReadCount prev_count = use_data->AddWriter();
+        const bool prev_read = prev_count.GetReadCount() != 0;
+        const bool prev_write = prev_count.GetWriteCount() != 0;
 
-        if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
-            // There is no current use of the object.  Record writer thread.
+        if (!prev_read && !prev_write) {
+            // There is no current use of the object. Record writer thread.
             use_data->thread = tid;
-        } else {
-            if (prevCount.GetReadCount() == 0) {
-                assert(prevCount.GetWriteCount() != 0);
-                // There are no readers.  Two writers just collided.
-                if (use_data->thread != tid) {
-                    HandleErrorOnWrite(use_data, object, command);
-                } else {
-                    // This is either safe multiple use in one call, or recursive use.
-                    // There is no way to make recursion safe.  Just forge ahead.
-                }
+        } else if (!prev_read) {
+            assert(prev_write);
+            // There are no other readers but there is another writer. Two writers just collided.
+            if (use_data->thread != tid) {
+                HandleErrorOnWrite(use_data, object, command);
             } else {
-                // There are readers.  This writer collided with them.
-                if (use_data->thread != tid) {
-                    HandleErrorOnWrite(use_data, object, command);
-                } else {
-                    // This is either safe multiple use in one call, or recursive use.
-                    // There is no way to make recursion safe.  Just forge ahead.
-                }
+                // This is either safe multiple use in one call, or recursive use.
+                // There is no way to make recursion safe. Just forge ahead.
+            }
+        } else {
+            assert(prev_read);
+            // There are other readers. This writer collided with them.
+            if (use_data->thread != tid) {
+                HandleErrorOnWrite(use_data, object, command);
+            } else {
+                // This is either safe multiple use in one call, or recursive use.
+                // There is no way to make recursion safe. Just forge ahead.
             }
         }
     }
@@ -168,7 +169,6 @@ class counter {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        // Object is no longer in use
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
@@ -186,28 +186,31 @@ class counter {
         }
 
         const std::thread::id tid = std::this_thread::get_id();
-        const ObjectUseData::WriteReadCount prevCount = use_data->AddReader();
+        const ObjectUseData::WriteReadCount prev_count = use_data->AddReader();
+        const bool prev_read = prev_count.GetReadCount() != 0;
+        const bool prev_write = prev_count.GetWriteCount() != 0;
 
-        if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
-            // There is no current use of the object.
+        if (!prev_read && !prev_write) {
+            // There is no current use of the object. Record reader thread.
             use_data->thread = tid;
-        } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
+        } else if (prev_write && use_data->thread != tid) {
             HandleErrorOnRead(use_data, object, command);
         } else {
             // There are other readers of the object.
         }
     }
+
     void FinishRead(T object, vvl::Func command) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
         }
         use_data->RemoveReader();
     }
+
     counter(VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject *val_obj = nullptr) {
         object_type = type;
         object_data = val_obj;
