@@ -227,7 +227,7 @@ jobs:
       - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
         run: ccache --show-stats
 
-  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, or the Chromium build.
+  # Test to ensure we don't accidentally break the Chromium build.
   integration_test:
     runs-on: ubuntu-22.04
     steps:
@@ -235,16 +235,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - uses: lukka/get-cmake@latest
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: integration_test_ccache
       - name: Install WSI dependencies
         run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Configure SDK Integration Test
-        run: cmake -S tests/integration -B tests/integration/build
-      - name: Build SDK Integration Test
-        run: cmake --build tests/integration/build
       - name: Test chromium build
         run: python scripts/gn.py
