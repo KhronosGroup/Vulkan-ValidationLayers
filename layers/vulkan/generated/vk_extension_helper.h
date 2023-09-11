@@ -64,11 +64,11 @@ Times to NOT use it
 */
 [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
     return (extension != kNotEnabled);
-};
+}
 
 [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
-};
+}
 
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
@@ -613,6 +613,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_huawei_invocation_mask{kNotEnabled};
     ExtEnabled vk_nv_external_memory_rdma{kNotEnabled};
     ExtEnabled vk_ext_pipeline_properties{kNotEnabled};
+    ExtEnabled vk_ext_frame_boundary{kNotEnabled};
     ExtEnabled vk_ext_multisampled_render_to_single_sampled{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state2{kNotEnabled};
     ExtEnabled vk_ext_color_write_enable{kNotEnabled};
@@ -664,6 +665,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_filter_cubic_clamp{kNotEnabled};
     ExtEnabled vk_ext_attachment_feedback_loop_dynamic_state{kNotEnabled};
     ExtEnabled vk_qnx_external_memory_screen_buffer{kNotEnabled};
+    ExtEnabled vk_msft_layered_driver{kNotEnabled};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
@@ -1218,6 +1220,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
             {VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_properties, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_frame_boundary, {})},
             {VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_multisampled_render_to_single_sampled, {{
                            {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_depth_stencil_resolve, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME}}})},
@@ -1341,6 +1344,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME},
                            {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME}}})},
 #endif
+            {VK_MSFT_LAYERED_DRIVER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_msft_layered_driver, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_descriptor_pool_overallocation, {{
                            {&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_acceleration_structure, {{
@@ -1800,6 +1805,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME,
     VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME,
     VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME,
+    VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME,
     VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
     VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME,
@@ -1855,6 +1861,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     VK_QNX_EXTERNAL_MEMORY_SCREEN_BUFFER_EXTENSION_NAME,
 #endif
+    VK_MSFT_LAYERED_DRIVER_EXTENSION_NAME,
     VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_EXTENSION_NAME,
     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,

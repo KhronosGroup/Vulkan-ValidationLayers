@@ -96,7 +96,7 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         out.extend([f'        case kVulkanObjectType{handle.name[2:]}: return {handle.type};\n' for handle in self.vk.handles.values()])
         out.append('''        default: return VK_OBJECT_TYPE_UNKNOWN;
     }
-};\n''')
+}\n''')
 
         out.append('''
 // Helper function to get internal layers object ids from the official Vulkan VkObjectType enum
@@ -105,7 +105,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         out.extend([f'        case {handle.type}: return kVulkanObjectType{handle.name[2:]};\n' for handle in self.vk.handles.values()])
         out.append('''        default: return kVulkanObjectTypeUnknown;
     }
-};\n''')
+}\n''')
 
         out.append('''
 static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
@@ -117,7 +117,7 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
                 out.append(f'        case {handle.type}: return {object};\n')
         out.append('''        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     }
-};\n''')
+}\n''')
 
         out.append('''
 // Traits objects from each type statically map from Vk<handleType> to the various enums

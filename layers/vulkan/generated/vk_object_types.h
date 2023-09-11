@@ -238,7 +238,7 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeShaderEXT: return VK_OBJECT_TYPE_SHADER_EXT;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
-};
+}
 
 // Helper function to get internal layers object ids from the official Vulkan VkObjectType enum
 static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulkan_object_type) {
@@ -293,7 +293,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_SHADER_EXT: return kVulkanObjectTypeShaderEXT;
         default: return kVulkanObjectTypeUnknown;
     }
-};
+}
 
 static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {
     switch (core_report_obj) {
@@ -338,7 +338,7 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA: return VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT;
         default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     }
-};
+}
 
 // Traits objects from each type statically map from Vk<handleType> to the various enums
 template <typename VkType> struct VkHandleInfo {};

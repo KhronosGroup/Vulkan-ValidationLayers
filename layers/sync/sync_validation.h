@@ -66,7 +66,7 @@ class ImageState : public IMAGE_STATE {
     VkDeviceSize opaque_base_address_ = 0U;
 };
 }  // namespace syncval_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE)
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
@@ -1637,7 +1637,7 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     void Reset() override;
 };
 }  // namespace syncval_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE)
 
 class QueueSyncState;
 
@@ -1739,7 +1739,7 @@ class Swapchain : public SWAPCHAIN_NODE {
     PresentedImages presented;  // Build this on demand
 };
 }  // namespace syncval_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, SWAPCHAIN_NODE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, SWAPCHAIN_NODE)
 
 class QueueBatchContext : public CommandExecutionContext {
   public:

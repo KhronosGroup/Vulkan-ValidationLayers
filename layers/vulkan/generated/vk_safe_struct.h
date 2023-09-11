@@ -12600,6 +12600,44 @@ struct safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT {
     VkPhysicalDevicePipelinePropertiesFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePipelinePropertiesFeaturesEXT *>(this); }
     VkPhysicalDevicePipelinePropertiesFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelinePropertiesFeaturesEXT const *>(this); }
 };
+struct safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 frameBoundary;
+
+    safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT(const VkPhysicalDeviceFrameBoundaryFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT(const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& operator=(const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT();
+    ~safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT();
+    void initialize(const VkPhysicalDeviceFrameBoundaryFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceFrameBoundaryFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceFrameBoundaryFeaturesEXT *>(this); }
+    VkPhysicalDeviceFrameBoundaryFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFrameBoundaryFeaturesEXT const *>(this); }
+};
+struct safe_VkFrameBoundaryEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkFrameBoundaryFlagsEXT flags;
+    uint64_t frameID;
+    uint32_t imageCount;
+    VkImage* pImages{};
+    uint32_t bufferCount;
+    VkBuffer* pBuffers{};
+    uint64_t tagName;
+    size_t tagSize;
+    const void* pTag{};
+
+    safe_VkFrameBoundaryEXT(const VkFrameBoundaryEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkFrameBoundaryEXT(const safe_VkFrameBoundaryEXT& copy_src);
+    safe_VkFrameBoundaryEXT& operator=(const safe_VkFrameBoundaryEXT& copy_src);
+    safe_VkFrameBoundaryEXT();
+    ~safe_VkFrameBoundaryEXT();
+    void initialize(const VkFrameBoundaryEXT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkFrameBoundaryEXT* copy_src, PNextCopyState* copy_state = {});
+    VkFrameBoundaryEXT *ptr() { return reinterpret_cast<VkFrameBoundaryEXT *>(this); }
+    VkFrameBoundaryEXT const *ptr() const { return reinterpret_cast<VkFrameBoundaryEXT const *>(this); }
+};
 struct safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
@@ -14439,6 +14477,21 @@ struct safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX {
     VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX const *ptr() const { return reinterpret_cast<VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX const *>(this); }
 };
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+struct safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT {
+    VkStructureType sType;
+    void* pNext{};
+    VkLayeredDriverUnderlyingApiMSFT underlyingAPI;
+
+    safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const VkPhysicalDeviceLayeredDriverPropertiesMSFT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src);
+    safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& operator=(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src);
+    safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT();
+    ~safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT();
+    void initialize(const VkPhysicalDeviceLayeredDriverPropertiesMSFT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceLayeredDriverPropertiesMSFT *ptr() { return reinterpret_cast<VkPhysicalDeviceLayeredDriverPropertiesMSFT *>(this); }
+    VkPhysicalDeviceLayeredDriverPropertiesMSFT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceLayeredDriverPropertiesMSFT const *>(this); }
+};
 struct safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV {
     VkStructureType sType;
     void* pNext{};

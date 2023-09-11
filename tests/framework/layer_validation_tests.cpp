@@ -1281,7 +1281,7 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(VkDeviceObj *device, uint32_t
     command_pool = new VkCommandPoolObj(device, qf_index, cp_flags);
     command_buffer = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
     command_buffer2 = new VkCommandBufferObj(device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, queue);
-};
+}
 
 BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {
     if (0 == queue_family_indices.size()) {
@@ -1403,7 +1403,7 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
         monitor.VerifyFound();
     }
     context_->Reset();
-};
+}
 
 void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, uint32_t src, uint32_t dst,
                                                uint32_t queue_family_index, Modifier mod) {
@@ -1454,7 +1454,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
         monitor.VerifyFound();
     }
     context_->Reset();
-};
+}
 
 void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     // Enable synchronization validation

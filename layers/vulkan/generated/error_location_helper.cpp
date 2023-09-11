@@ -964,6 +964,7 @@ const char* String(Struct structure) {
     {"VkFormatProperties2", 20},
     {"VkFormatProperties3", 20},
     {"VkFragmentShadingRateAttachmentInfoKHR", 39},
+    {"VkFrameBoundaryEXT", 19},
     {"VkFramebufferAttachmentImageInfo", 33},
     {"VkFramebufferAttachmentsCreateInfo", 35},
     {"VkFramebufferCreateInfo", 24},
@@ -1196,6 +1197,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceFragmentShadingRateFeaturesKHR", 47},
     {"VkPhysicalDeviceFragmentShadingRateKHR", 39},
     {"VkPhysicalDeviceFragmentShadingRatePropertiesKHR", 49},
+    {"VkPhysicalDeviceFrameBoundaryFeaturesEXT", 41},
     {"VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR", 47},
     {"VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT", 51},
     {"VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT", 53},
@@ -1223,6 +1225,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceInlineUniformBlockFeatures", 43},
     {"VkPhysicalDeviceInlineUniformBlockProperties", 45},
     {"VkPhysicalDeviceInvocationMaskFeaturesHUAWEI", 45},
+    {"VkPhysicalDeviceLayeredDriverPropertiesMSFT", 44},
     {"VkPhysicalDeviceLegacyDitheringFeaturesEXT", 43},
     {"VkPhysicalDeviceLimits", 23},
     {"VkPhysicalDeviceLineRasterizationFeaturesEXT", 45},
@@ -2243,6 +2246,8 @@ const char* String(Field field) {
     {"fragmentSize", 13},
     {"fragmentStoresAndAtomics", 25},
     {"frameBSize", 11},
+    {"frameBoundary", 14},
+    {"frameID", 8},
     {"frameISize", 11},
     {"framePSize", 11},
     {"frameRateDenominator", 21},
@@ -2336,6 +2341,7 @@ const char* String(Field field) {
     {"imageCompressionControlSwapchain", 33},
     {"imageCompressionFixedRateFlags", 31},
     {"imageCompressionFlags", 22},
+    {"imageCount", 11},
     {"imageCreateFlags", 17},
     {"imageCreateInfo", 16},
     {"imageCubeArray", 15},
@@ -3102,6 +3108,7 @@ const char* String(Field field) {
     {"pImageMemoryBarriers", 21},
     {"pImageOpaqueBinds", 18},
     {"pImageSubresources", 19},
+    {"pImages", 8},
     {"pImmutableSamplers", 19},
     {"pImportFenceFdInfo", 19},
     {"pImportFenceWin32HandleInfo", 28},
@@ -4059,6 +4066,7 @@ const char* String(Field field) {
     {"u64", 4},
     {"uint32", 7},
     {"uint64", 7},
+    {"underlyingAPI", 14},
     {"uniformAndStorageBuffer16BitAccess", 35},
     {"uniformAndStorageBuffer8BitAccess", 34},
     {"uniformBufferDescriptorSize", 28},
@@ -4391,6 +4399,7 @@ bool IsFieldPointer(Field field) {
     case Field::pImageMemoryBarriers:
     case Field::pImageOpaqueBinds:
     case Field::pImageSubresources:
+    case Field::pImages:
     case Field::pImmutableSamplers:
     case Field::pImportFenceFdInfo:
     case Field::pImportFenceWin32HandleInfo:

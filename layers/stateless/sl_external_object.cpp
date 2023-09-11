@@ -160,14 +160,15 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreWin32HandleKHR(Vk
     static constexpr auto kNameAllowedTypes =
         VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
     if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
-        skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01466", info->semaphore,
-                         error_obj.location.dot(Field::info).dot(Field::name), "(%p) must be NULL if handleType is %s", info->name,
-                         string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
+        skip |=
+            LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01466", info->semaphore,
+                     error_obj.location.dot(Field::info).dot(Field::name), "(%p) must be NULL if handleType is %s",
+                     reinterpret_cast<const void *>(info->name), string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
     }
     if (info->handle && info->name) {
         skip |=
             LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-handle-01469", info->semaphore, error_obj.location.dot(Field::info),
-                     "both handle (%p) and name (%p) are non-NULL", info->handle, info->name);
+                     "both handle (%p) and name (%p) are non-NULL", info->handle, reinterpret_cast<const void *>(info->name));
     }
     return skip;
 }
@@ -194,12 +195,12 @@ bool StatelessValidation::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevi
     static constexpr auto kNameAllowedTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
         skip |= LogError("VUID-VkImportFenceWin32HandleInfoKHR-handleType-01459", info->fence,
-                         error_obj.location.dot(Field::info).dot(Field::name), "(%p) must be NULL if handleType is %s", info->name,
-                         string_VkExternalFenceHandleTypeFlagBits(info->handleType));
+                         error_obj.location.dot(Field::info).dot(Field::name), "(%p) must be NULL if handleType is %s",
+                         reinterpret_cast<const void *>(info->name), string_VkExternalFenceHandleTypeFlagBits(info->handleType));
     }
     if (info->handle && info->name) {
         skip |= LogError("VUID-VkImportFenceWin32HandleInfoKHR-handle-01462", info->fence, error_obj.location.dot(Field::info),
-                         "both handle (%p) and name (%p) are non-NULL", info->handle, info->name);
+                         "both handle (%p) and name (%p) are non-NULL", info->handle, reinterpret_cast<const void *>(info->name));
     }
     return skip;
 }

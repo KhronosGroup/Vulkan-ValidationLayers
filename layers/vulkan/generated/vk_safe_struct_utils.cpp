@@ -1472,6 +1472,12 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelinePropertiesFeaturesEXT *>(pNext), copy_state);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceFrameBoundaryFeaturesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT:
+            safe_pNext = new safe_VkFrameBoundaryEXT(reinterpret_cast<const VkFrameBoundaryEXT *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT *>(pNext), copy_state);
             break;
@@ -1753,6 +1759,9 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             safe_pNext = new safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(reinterpret_cast<const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *>(pNext), copy_state);
             break;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT:
+            safe_pNext = new safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(reinterpret_cast<const VkPhysicalDeviceLayeredDriverPropertiesMSFT *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV:
             safe_pNext = new safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(reinterpret_cast<const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(pNext), copy_state);
             break;
@@ -3229,6 +3238,12 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelinePropertiesFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceFrameBoundaryFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT:
+            delete reinterpret_cast<const safe_VkFrameBoundaryEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT *>(header);
             break;
@@ -3510,6 +3525,9 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *>(header);
             break;
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV *>(header);
             break;

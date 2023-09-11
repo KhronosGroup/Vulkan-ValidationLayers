@@ -14649,6 +14649,62 @@ void safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::initialize(cons
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const VkPhysicalDeviceLayeredDriverPropertiesMSFT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    underlyingAPI(in_struct->underlyingAPI)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT),
+    pNext(nullptr),
+    underlyingAPI()
+{}
+
+safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src)
+{
+    sType = copy_src.sType;
+    underlyingAPI = copy_src.underlyingAPI;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::operator=(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    underlyingAPI = copy_src.underlyingAPI;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::~safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::initialize(const VkPhysicalDeviceLayeredDriverPropertiesMSFT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    underlyingAPI = in_struct->underlyingAPI;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT::initialize(const safe_VkPhysicalDeviceLayeredDriverPropertiesMSFT* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    underlyingAPI = copy_src->underlyingAPI;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV::safe_VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV(const VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     descriptorPoolOverallocation(in_struct->descriptorPoolOverallocation)

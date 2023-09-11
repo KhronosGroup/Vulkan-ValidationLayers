@@ -2374,7 +2374,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
         }
     }
     return skip;
-};
+}
 
 void CoreChecks::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                         const VkHostImageLayoutTransitionInfoEXT *pTransitions,

@@ -6370,6 +6370,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPER
     typedef VkPhysicalDevicePipelinePropertiesFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDeviceFrameBoundaryFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceFrameBoundaryFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT> {
+    typedef VkPhysicalDeviceFrameBoundaryFeaturesEXT Type;
+};
+
+// Map type VkFrameBoundaryEXT to id VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT
+template <> struct LvlTypeMap<VkFrameBoundaryEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT> {
+    typedef VkFrameBoundaryEXT Type;
+};
+
 // Map type VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT;
@@ -7359,6 +7377,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY
     typedef VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX Type;
 };
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+// Map type VkPhysicalDeviceLayeredDriverPropertiesMSFT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT
+template <> struct LvlTypeMap<VkPhysicalDeviceLayeredDriverPropertiesMSFT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT> {
+    typedef VkPhysicalDeviceLayeredDriverPropertiesMSFT Type;
+};
 
 // Map type VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV
 template <> struct LvlTypeMap<VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV> {

@@ -43,5 +43,5 @@ VkDeviceSize ComputeScratchSize(const VkDevice device, const VkAccelerationStruc
             return static_cast<VkDeviceSize>(0);
             break;
     }
-};
+}
 }  // namespace rt
