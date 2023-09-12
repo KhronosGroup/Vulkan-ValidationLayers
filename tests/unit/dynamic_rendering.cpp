@@ -131,7 +131,6 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
     pipe.SetDepthStencil(&ds_state);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -834,11 +833,11 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     const VkPipelineLayoutObj pl(m_device);
     VkPipelineObj pipe(m_device);
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment_state(2);
 
     auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-    color_blend_state_create_info.attachmentCount = 1;
-    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+    color_blend_state_create_info.attachmentCount = 2;
+    color_blend_state_create_info.pAttachments = color_blend_attachment_state.data();
 
     VkFormat color_format[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT};
 
@@ -876,13 +875,13 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-multiview-06577");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
+    color_blend_state_create_info.attachmentCount = 1;
     create_info.pColorBlendState = nullptr;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
     pipeline_rendering_info.viewMask = 0x0;
@@ -892,7 +891,7 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     m_errorMonitor->VerifyFound();
 
     color_format[0] = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    color_blend_attachment_state.blendEnable = VK_TRUE;
+    color_blend_attachment_state[0].blendEnable = VK_TRUE;
     create_info.pColorBlendState = &color_blend_state_create_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062");
@@ -911,6 +910,45 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06483");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
+    TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
+
+    auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    color_blend_state_create_info.attachmentCount = 0;
+    color_blend_state_create_info.pAttachments = nullptr;
+
+    CreatePipelineHelper lib(*this);
+
+    const VkFormat color_format = VK_FORMAT_UNDEFINED;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.gp_ci_.pNext = &pipeline_rendering_info;
+        pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pipe.cb_ci_ = color_blend_state_create_info;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.gp_ci_.pNext = &pipeline_rendering_info;
+        pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
@@ -1023,7 +1061,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
-    pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
     pipe2.SetDepthStencil(&ds_state);
@@ -1065,7 +1102,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats) {
     if (testStencil) {
         pipe3.AddShader(&vs);
         pipe3.AddShader(&fs);
-        pipe3.AddDefaultColorAttachment();
         pipe3.SetViewport(m_viewports);
         pipe3.SetScissor(m_scissors);
         pipe3.SetDepthStencil(&ds_state);
@@ -1191,7 +1227,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
     VkPipelineObj pipeline_depth(m_device);
     pipeline_depth.AddShader(&vs);
     pipeline_depth.AddShader(&fs);
-    pipeline_depth.AddDefaultColorAttachment();
     pipeline_depth.SetViewport(m_viewports);
     pipeline_depth.SetScissor(m_scissors);
     pipeline_depth.SetDepthStencil(&ds_state);
@@ -1211,7 +1246,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats2) {
     VkPipelineObj pipeline_stencil(m_device);
     pipeline_stencil.AddShader(&vs);
     pipeline_stencil.AddShader(&fs);
-    pipeline_stencil.AddDefaultColorAttachment();
     pipeline_stencil.SetViewport(m_viewports);
     pipeline_stencil.SetScissor(m_scissors);
     pipeline_stencil.SetDepthStencil(&ds_state);
@@ -1337,7 +1371,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3) {
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
-    pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
     pipe2.SetDepthStencil(&ds_state);
@@ -1379,7 +1412,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3) {
     if (testStencil) {
         pipe3.AddShader(&vs);
         pipe3.AddShader(&fs);
-        pipe3.AddDefaultColorAttachment();
         pipe3.SetViewport(m_viewports);
         pipe3.SetScissor(m_scissors);
         pipe3.SetDepthStencil(&ds_state);
@@ -1508,7 +1540,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamples) {
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
-    pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
     pipe2.SetDepthStencil(&ds_state);
@@ -1529,7 +1560,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentSamples) {
 
     pipe3.AddShader(&vs);
     pipe3.AddShader(&fs);
-    pipe3.AddDefaultColorAttachment();
     pipe3.SetViewport(m_viewports);
     pipe3.SetScissor(m_scissors);
     pipe3.SetDepthStencil(&ds_state);
@@ -1672,7 +1702,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamples) {
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
-    pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
     pipe2.SetDepthStencil(&ds_state);
@@ -1695,7 +1724,6 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamples) {
 
     pipe3.AddShader(&vs);
     pipe3.AddShader(&fs);
-    pipe3.AddDefaultColorAttachment();
     pipe3.SetViewport(m_viewports);
     pipe3.SetScissor(m_scissors);
     pipe3.SetDepthStencil(&ds_state);
@@ -1785,7 +1813,6 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
     pipe.SetDepthStencil(&ds_state);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -3529,7 +3556,11 @@ TEST_F(NegativeDynamicRendering, AttachmentSampleCount) {
     auto samples_info = LvlInitStruct<VkAttachmentSampleCountInfoAMD>();
     samples_info.colorAttachmentCount = 1;
     samples_info.pColorAttachmentSamples = &color_attachment_samples;
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>(&samples_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pNext = &pipeline_rendering_info;
@@ -6521,7 +6552,6 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     m_errorMonitor->VerifyFound();
 
     // Invalid depth format
-    pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06587");
@@ -6543,13 +6573,13 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingParameters) {
     // mismatching depth/stencil formats
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589");
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 
     // Non-zero viewMask
     color_formats = VK_FORMAT_R8G8B8A8_UNORM;
-    pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
     pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;

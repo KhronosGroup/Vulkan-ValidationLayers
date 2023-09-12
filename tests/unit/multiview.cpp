@@ -1385,8 +1385,11 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     VkPhysicalDeviceMultiviewProperties multiview_properties = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(multiview_properties);
 
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
     pipeline_rendering_info.viewMask = 0x1;
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
