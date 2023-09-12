@@ -88,12 +88,12 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/memory_positive.cpp
     unit/mesh.cpp
     unit/mesh_positive.cpp
-    unit/multi_device.cpp
     unit/multiview.cpp
     unit/nvidia_best_practices.cpp
     unit/object_lifetime.cpp
     unit/other_positive.cpp
     unit/others.cpp
+    unit/parent.cpp
     unit/pipeline.cpp
     unit/pipeline_advanced_blend.cpp
     unit/pipeline_layout.cpp

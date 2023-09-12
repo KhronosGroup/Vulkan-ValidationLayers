@@ -3,14 +3,14 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
-MultiDeviceTest::~MultiDeviceTest() {
+ParentTest::~ParentTest() {
     if (m_second_device) {
         delete m_second_device;
         m_second_device = nullptr;
     }
 }
 
-TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
+TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -30,7 +30,7 @@ TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
     m_commandBuffer->end();
 }
 
-TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
+TEST_F(NegativeParent, BindBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -70,7 +70,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(MultiDeviceTest, CommonParentBindImage) {
+TEST_F(NegativeParent, BindImage) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -108,7 +108,7 @@ TEST_F(MultiDeviceTest, CommonParentBindImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(MultiDeviceTest, CommonParentImageView) {
+TEST_F(NegativeParent, ImageView) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -135,7 +135,7 @@ TEST_F(MultiDeviceTest, CommonParentImageView) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
+TEST_F(NegativeParent, BindPipeline) {
     TEST_DESCRIPTION("Test binding pipeline from another device");
 
     ASSERT_NO_FATAL_FAILURE(Init());

@@ -602,11 +602,12 @@ class CooperativeMatrixTest : public VkLayerTest {};
 class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
-class MultiDeviceTest : public VkLayerTest {
+class ParentTest : public VkLayerTest {
   public:
-    ~MultiDeviceTest();
+    ~ParentTest();
     vkt::Device *m_second_device = nullptr;
 };
+class NegativeParent : public ParentTest {};
 
 // Thread safety tests and other tests that implement non-trivial threading scenarios
 class ThreadingTest : public VkLayerTest {};
