@@ -304,23 +304,46 @@ class CachedInsertSet : public std::set<IntegralKey> {
 using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
 
-struct HazardResult {
-    std::unique_ptr<const ResourceAccessState> access_state;
-    std::unique_ptr<const ResourceFirstAccess> recorded_access;
-    SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
-    SyncHazard hazard = NONE;
-    SyncStageAccessFlags prior_access = 0U;  // TODO -- change to a NONE enum in ...Bits
-    ResourceUsageTag tag = ResourceUsageTag();
+class HazardResult {
+  public:
+    struct HazardState {
+        std::unique_ptr<const ResourceAccessState> access_state;
+        std::unique_ptr<const ResourceFirstAccess> recorded_access;
+        SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
+        SyncStageAccessFlags prior_access;
+        ResourceUsageTag tag = ResourceUsageTag();
+        SyncHazard hazard = NONE;
+        HazardState(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
+                    const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
+    };
+
     void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
              const ResourceAccessWriteState &prior_write);
     void Set(const ResourceAccessState *access_state_, const SyncStageAccessInfoType &usage_info_, SyncHazard hazard_,
-             const SyncStageAccessInfoType &prior_, ResourceUsageTag tag_) {
-        Set(access_state_, usage_info_.stage_access_index, hazard_, prior_.stage_access_bit, tag_);
-    }
-    void Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
              const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
-    bool IsHazard() const { return NONE != hazard; }
+
+    bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
+    bool IsWAWHazard() const;
+    ResourceUsageTag Tag() const {
+        assert(state_);
+        return state_->tag;
+    }
+    SyncHazard Hazard() const {
+        assert(state_);
+        return state_->hazard;
+    }
+    const std::unique_ptr<const ResourceFirstAccess> &RecordedAccess() const {
+        assert(state_);
+        return state_->recorded_access;
+    }
+    const HazardState &State() const {
+        assert(state_);
+        return state_.value();
+    }
+
+  private:
+    std::optional<HazardState> state_;
 };
 
 struct SyncExecScope {
