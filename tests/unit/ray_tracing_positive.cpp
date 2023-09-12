@@ -342,8 +342,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
 
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabledRTXEnabled) {
@@ -417,8 +415,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
 
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
@@ -511,7 +507,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
-    alloc_info.allocationSize = 8192 * 3;
+    alloc_info.allocationSize = 8192 * build_info_count;
     vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test using non overlapping memory chunks from the same buffer in multiple builds
@@ -519,7 +515,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     {
         auto scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
         scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        scratch_buffer_ci.size = 8192 * 3;
+        scratch_buffer_ci.size = 8192 * build_info_count;
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -537,6 +533,5 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->begin();
         rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
         m_commandBuffer->end();
-        m_errorMonitor->VerifyFound();
     }
 }
