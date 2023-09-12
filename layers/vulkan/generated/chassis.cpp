@@ -849,11 +849,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShadersEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
-    create_shader_module_api_state csm_state{};
+    create_shader_object_api_state csm_state(createInfoCount, pCreateInfos);
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, error_obj);
+        skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, csm_state.instrumented_create_info, pAllocator,
+                                                           pShaders, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {

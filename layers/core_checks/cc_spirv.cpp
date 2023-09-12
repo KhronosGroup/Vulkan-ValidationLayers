@@ -2362,7 +2362,7 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
                                                void *csm_state_data) {
     ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders,
                                                           csm_state_data);
-    create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     // TODO - Move SPIR-V only validation from a pipeline check to here
     csm_state->valid_spirv = true;
 }

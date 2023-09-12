@@ -81,6 +81,7 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
+    VkShaderEXT shader_object;
     std::vector<uint32_t> pgm;
 };
 
@@ -118,6 +119,13 @@ class GpuAssistedBase : public ValidationStateTracker {
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                             const RecordObject &record_obj) override;
+    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+                                       const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                       void *csm_state_data) override;
+    void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                        const RecordObject &record_obj, void *state_data) override;
+    void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator) override;
 
     void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
@@ -215,6 +223,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     uint32_t output_buffer_size = 0;
     VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
+    VkPipelineLayout debug_pipeline_layout = VK_NULL_HANDLE;
     uint32_t desc_set_bind_index = 0;
     VmaAllocator vmaAllocator = {};
     VmaPool output_buffer_pool = VK_NULL_HANDLE;
