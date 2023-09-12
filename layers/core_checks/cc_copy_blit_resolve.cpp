@@ -170,8 +170,8 @@ VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE &cb_state, const IMAG
     const auto pool = cb_state.command_pool;
     if (pool) {
         granularity = physical_device_state->queue_family_properties[pool->queueFamilyIndex].minImageTransferGranularity;
-        if (FormatIsBlockedImage(image_format)) {
-            auto block_size = FormatTexelBlockExtent(image_format);
+        if (vkuFormatIsBlockedImage(image_format)) {
+            auto block_size = vkuFormatTexelBlockExtent(image_format);
             granularity.width *= block_size.width;
             granularity.height *= block_size.height;
         }
@@ -561,16 +561,16 @@ static const char *GetBufferMemoryImageCopyCommandVUID(const std::string &id, bo
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
-        if (!(FormatIsColor(format) || FormatIsMultiplane(format))) return false;
+        if (!(vkuFormatIsColor(format) || vkuFormatIsMultiplane(format))) return false;
     }
     if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
-        if (!FormatHasDepth(format)) return false;
+        if (!vkuFormatHasDepth(format)) return false;
     }
     if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
-        if (!FormatHasStencil(format)) return false;
+        if (!vkuFormatHasStencil(format)) return false;
     }
     if (0 != (aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
-        if (FormatPlaneCount(format) == 1) return false;
+        if (vkuFormatPlaneCount(format) == 1) return false;
     }
     return true;
 }
@@ -742,7 +742,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
                              string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
         }
 
-        auto block_size = FormatTexelBlockExtent(image_format);
+        auto block_size = vkuFormatTexelBlockExtent(image_format);
         //  BufferRowLength must be a multiple of block width
         if (SafeModulo(row_length, block_size.width) != 0) {
             const LogObjectList objlist(handle, image_state.image());
@@ -838,7 +838,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         // *RowLength divided by the texel block extent width and then multiplied by the texel block size of the image must be
         // less than or equal to 2^31-1
         const uint32_t element_size =
-            FormatIsDepthOrStencil(image_format) ? 0 : FormatElementSize(image_format, region_aspect_mask);
+            vkuFormatIsDepthOrStencil(image_format) ? 0 : vkuFormatElementSizeWithAspect(image_format, static_cast<VkImageAspectFlagBits>(region_aspect_mask));
         double test_value = row_length / block_size.width;
         test_value = test_value * element_size;
         const auto two_to_31_minus_1 = static_cast<double>((1u << 31) - 1);
@@ -854,7 +854,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, uint32_t re
         }
 
         // Checks that apply only to multi-planar format images
-        if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, region_aspect_mask)) {
+        if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, region_aspect_mask)) {
             const LogObjectList objlist(handle, image_state.image());
             skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07981", from_image, is_2, is_memory), objlist,
                              subresource_loc.dot(Field::aspectMask), "(%s) is invalid for multi-planar format %s.",
@@ -885,10 +885,10 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
         // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
         const uint32_t element_size =
-            FormatIsDepthOrStencil(image_format) ? 0 : FormatElementSize(image_format, region_aspect_mask);
+            vkuFormatIsDepthOrStencil(image_format) ? 0 : vkuFormatElementSizeWithAspect(image_format, static_cast<VkImageAspectFlagBits>(region_aspect_mask));
         const VkDeviceSize bufferOffset = region.bufferOffset;
 
-        if (FormatIsDepthOrStencil(image_format)) {
+        if (vkuFormatIsDepthOrStencil(image_format)) {
             if (SafeModulo(bufferOffset, 4) != 0) {
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
                 skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07978", image_to_buffer, is_2), objlist,
@@ -898,7 +898,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
             }
         } else {
             // If not depth/stencil and not multi-plane
-            if (!FormatIsMultiplane(image_format) && (SafeModulo(bufferOffset, element_size) != 0)) {
+            if (!vkuFormatIsMultiplane(image_format) && (SafeModulo(bufferOffset, element_size) != 0)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
                 skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07975", image_to_buffer, is_2), objlist,
                                  region_loc.dot(Field::bufferOffset),
@@ -908,20 +908,20 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         }
 
         // Checks that apply only to multi-planar format images
-        if (FormatIsMultiplane(image_format)) {
+        if (vkuFormatIsMultiplane(image_format)) {
 
             // image subresource aspectMask must be VK_IMAGE_ASPECT_PLANE_*_BIT
             if (0 !=
                 (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
                 // Know aspect mask is valid
-                const VkFormat compatible_format = FindMultiplaneCompatibleFormat(image_format, region_aspect_mask);
-                const uint32_t compatible_size = FormatElementSize(compatible_format);
+                const VkFormat compatible_format = vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(region_aspect_mask));
+                const uint32_t compatible_size = vkuFormatElementSize(compatible_format);
                 if (SafeModulo(bufferOffset, compatible_size) != 0) {
                     const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
                     skip |= LogError(GetBufferMemoryImageCopyCommandVUID("07976", image_to_buffer, is_2), objlist,
                                      region_loc.dot(Field::bufferOffset),
                                      "(%" PRIu64 ") is not a multiple of %s texel size (%" PRIu32 ") for plane %" PRIu32 " (%s).",
-                                     bufferOffset, string_VkFormat(image_format), element_size, GetPlaneIndex(region_aspect_mask),
+                                     bufferOffset, string_VkFormat(image_format), element_size, vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(region_aspect_mask)),
                                      string_VkFormat(compatible_format));
                 }
             }
@@ -1411,7 +1411,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
         }
 
         {  // Used to be compressed checks, now apply to all
-            const VkExtent3D block_size = FormatTexelBlockExtent(src_image_state.createInfo.format);
+            const VkExtent3D block_size = vkuFormatTexelBlockExtent(src_image_state.createInfo.format);
             if (SafeModulo(region.srcOffset.x, block_size.width) != 0) {
                 const LogObjectList objlist(handle, src_image_state.image());
                 skip |= LogError(GetImageCopyVUID("07278", is_2, is_host), objlist, region_loc,
@@ -1560,7 +1560,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const uint32_t regi
         }
 
         {
-            const VkExtent3D block_size = FormatTexelBlockExtent(dst_image_state.createInfo.format);
+            const VkExtent3D block_size = vkuFormatTexelBlockExtent(dst_image_state.createInfo.format);
             //  image offsets x must be multiple of block width
             if (SafeModulo(region.dstOffset.x, block_size.width) != 0) {
                 const LogObjectList objlist(handle, src_image_state.image());
@@ -1959,7 +1959,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
         }
 
-        if ((!FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format))) {
+        if ((!vkuFormatIsMultiplane(src_format)) && (!vkuFormatIsMultiplane(dst_format))) {
             // If neither image is multi-plane the aspectMask member of src and dst must match
             if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
@@ -1972,7 +1972,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         } else {
             // Source image multiplane checks
             VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
-            if (FormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
+            if (vkuFormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
                 const LogObjectList objlist(commandBuffer, srcImage);
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
                 skip |= LogError(vuid, objlist, src_subresource_loc.dot(Field::aspectMask),
@@ -1980,7 +1980,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  string_VkFormat(src_format));
             }
             // Single-plane to multi-plane
-            if ((!FormatIsMultiplane(src_format)) && (FormatIsMultiplane(dst_format)) && (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            if ((!vkuFormatIsMultiplane(src_format)) && (vkuFormatIsMultiplane(dst_format)) && (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01557" : "VUID-vkCmdCopyImage-dstImage-01557";
                 skip |=
@@ -1991,7 +1991,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
             // Dest image multiplane checks
             aspect = region.dstSubresource.aspectMask;
-            if (FormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
+            if (vkuFormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
                 const LogObjectList objlist(commandBuffer, dstImage);
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
                 skip |= LogError(vuid, objlist, dst_subresource_loc.dot(Field::aspectMask),
@@ -1999,7 +1999,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  string_VkFormat(dst_format));
             }
             // Multi-plane to single-plane
-            if ((FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format)) && (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            if ((vkuFormatIsMultiplane(src_format)) && (!vkuFormatIsMultiplane(dst_format)) && (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01556" : "VUID-vkCmdCopyImage-srcImage-01556";
                 skip |=
@@ -2017,7 +2017,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (src_image_state->image() == dst_image_state->image()) {
             for (uint32_t j = 0; j < regionCount; j++) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
-                if (auto intersection = GetRegionIntersection(region, pRegions[j], src_image_type, FormatIsMultiplane(src_format));
+                if (auto intersection = GetRegionIntersection(region, pRegions[j], src_image_type, vkuFormatIsMultiplane(src_format));
                     intersection.has_instersection) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
                     skip |= LogError(vuid, objlist, loc,
@@ -2029,15 +2029,15 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Check for multi-plane format compatiblity
-        if (FormatIsMultiplane(src_format) || FormatIsMultiplane(dst_format)) {
-            const VkFormat src_plane_format = FormatIsMultiplane(src_format)
-                                                  ? FindMultiplaneCompatibleFormat(src_format, region.srcSubresource.aspectMask)
+        if (vkuFormatIsMultiplane(src_format) || vkuFormatIsMultiplane(dst_format)) {
+            const VkFormat src_plane_format = vkuFormatIsMultiplane(src_format)
+                                                  ? vkuFindMultiplaneCompatibleFormat(src_format, static_cast<VkImageAspectFlagBits>(region.srcSubresource.aspectMask))
                                                   : src_format;
-            const VkFormat dst_plane_format = FormatIsMultiplane(dst_format)
-                                                  ? FindMultiplaneCompatibleFormat(dst_format, region.dstSubresource.aspectMask)
+            const VkFormat dst_plane_format = vkuFormatIsMultiplane(dst_format)
+                                                  ? vkuFindMultiplaneCompatibleFormat(dst_format, static_cast<VkImageAspectFlagBits>(region.dstSubresource.aspectMask))
                                                   : dst_format;
-            const size_t src_format_size = FormatElementSize(src_plane_format);
-            const size_t dst_format_size = FormatElementSize(dst_plane_format);
+            const size_t src_format_size = vkuFormatElementSize(src_plane_format);
+            const size_t dst_format_size = vkuFormatElementSize(dst_plane_format);
 
             // If size is still zero, then format is invalid and will be caught in another VU
             if ((src_format_size != dst_format_size) && (src_format_size != 0) && (dst_format_size != 0)) {
@@ -2062,22 +2062,22 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
     // size in bytes is the same between both formats. For example, VK_FORMAT_R8G8B8A8_UNORM is compatible with VK_FORMAT_R32_UINT
     // because because both texels are 4 bytes in size.
-    if (!FormatIsMultiplane(src_format) && !FormatIsMultiplane(dst_format)) {
+    if (!vkuFormatIsMultiplane(src_format) && !vkuFormatIsMultiplane(dst_format)) {
         const char *compatible_vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-01548";
         // Depth/stencil formats must match exactly.
-        if (FormatIsDepthOrStencil(src_format) || FormatIsDepthOrStencil(dst_format)) {
+        if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
             if (src_format != dst_format) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                 skip |= LogError(compatible_vuid, objlist, loc, "srcImage format (%s) id different from dstImage format (%s).",
                                  string_VkFormat(src_format), string_VkFormat(dst_format));
             }
         } else {
-            if (FormatElementSize(src_format) != FormatElementSize(dst_format)) {
+            if (vkuFormatElementSize(src_format) != vkuFormatElementSize(dst_format)) {
                 const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                 skip |= LogError(compatible_vuid, objlist, loc,
                                  "srcImage format %s has size of %" PRIu32 " and dstImage format %s has size of %" PRIu32 ".",
-                                 string_VkFormat(src_format), FormatElementSize(src_format), string_VkFormat(dst_format),
-                                 FormatElementSize(dst_format));
+                                 string_VkFormat(src_format), vkuFormatElementSize(src_format), string_VkFormat(dst_format),
+                                 vkuFormatElementSize(dst_format));
             }
         }
     }
@@ -2338,8 +2338,8 @@ bool CoreChecks::ValidateImageBounds(const HandleT handle, const IMAGE_STATE &im
 
         // If we're using a blocked image format, valid extent is rounded up to multiple of block size (per
         // vkspec.html#_common_operation)
-        if (FormatIsBlockedImage(image_info->format)) {
-            auto block_extent = FormatTexelBlockExtent(image_info->format);
+        if (vkuFormatIsBlockedImage(image_info->format)) {
+            auto block_extent = vkuFormatTexelBlockExtent(image_info->format);
             if (image_extent.width % block_extent.width) {
                 image_extent.width += (block_extent.width - (image_extent.width % block_extent.width));
             }
@@ -3048,7 +3048,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
                                             const Location &region_loc) const {
     bool skip = false;
     auto aspect_mask = is_src ? region.srcSubresource.aspectMask : region.dstSubresource.aspectMask;
-    if (FormatPlaneCount(image_state.createInfo.format) == 2 &&
+    if (vkuFormatPlaneCount(image_state.createInfo.format) == 2 &&
         (aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT && aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
         const char *vuid =
             is_src ? "VUID-VkCopyImageToImageInfoEXT-srcImage-07981" : "VUID-VkCopyImageToImageInfoEXT-dstImage-07981";
@@ -3058,7 +3058,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(VkDevice device, VkImageCopy2 region
                          string_VkImageAspectFlags(aspect_mask).c_str(), is_src ? "srcImage" : "dstImage",
                          string_VkFormat(image_state.createInfo.format));
     }
-    if (FormatPlaneCount(image_state.createInfo.format) == 3 &&
+    if (vkuFormatPlaneCount(image_state.createInfo.format) == 3 &&
         (aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT && aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT &&
          aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
         const char *vuid =
@@ -3080,8 +3080,8 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     auto src_image_state = Get<IMAGE_STATE>(info_ptr->srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(info_ptr->dstImage);
     // Formats are required to match, but check each image anyway
-    auto src_plane_count = FormatPlaneCount(src_image_state->createInfo.format);
-    auto dst_plane_count = FormatPlaneCount(dst_image_state->createInfo.format);
+    auto src_plane_count = vkuFormatPlaneCount(src_image_state->createInfo.format);
+    auto dst_plane_count = vkuFormatPlaneCount(dst_image_state->createInfo.format);
     bool check_multiplane = ((src_plane_count == 2 || src_plane_count == 3) || (dst_plane_count == 2 || dst_plane_count == 3));
     bool check_memcpy = (info_ptr->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
     auto regionCount = info_ptr->regionCount;
@@ -3241,28 +3241,28 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
     }
 
     // Validate consistency for unsigned formats
-    if (FormatIsUINT(src_format) != FormatIsUINT(dst_format)) {
+    if (vkuFormatIsUINT(src_format) != vkuFormatIsUINT(dst_format)) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00230" : "VUID-vkCmdBlitImage-srcImage-00230";
         skip |= LogError(vuid, all_objlist, loc, "srcImage format %s is different than dstImage format %s.",
                          string_VkFormat(src_format), string_VkFormat(dst_format));
     }
 
     // Validate consistency for signed formats
-    if (FormatIsSINT(src_format) != FormatIsSINT(dst_format)) {
+    if (vkuFormatIsSINT(src_format) != vkuFormatIsSINT(dst_format)) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00229" : "VUID-vkCmdBlitImage-srcImage-00229";
         skip |= LogError(vuid, all_objlist, loc, "srcImage format %s is different than dstImage format %s.",
                          string_VkFormat(src_format), string_VkFormat(dst_format));
     }
 
     // Validate filter for Depth/Stencil formats
-    if (FormatIsDepthOrStencil(src_format) && (filter != VK_FILTER_NEAREST)) {
+    if (vkuFormatIsDepthOrStencil(src_format) && (filter != VK_FILTER_NEAREST)) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00232" : "VUID-vkCmdBlitImage-srcImage-00232";
         skip |= LogError(vuid, src_objlist, src_image_loc, "has depth-stencil format %s but filter is %s.",
                          string_VkFormat(src_format), string_VkFilter(filter));
     }
 
     // Validate aspect bits and formats for depth/stencil images
-    if (FormatIsDepthOrStencil(src_format) || FormatIsDepthOrStencil(dst_format)) {
+    if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
         if (src_format != dst_format) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00231" : "VUID-vkCmdBlitImage-srcImage-00231";
             skip |= LogError(vuid, all_objlist, loc, "srcImage format %s is different than dstImage format %s.",
@@ -3471,7 +3471,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         if (srcImage == dstImage) {
             for (uint32_t j = 0; j < regionCount; j++) {
                 if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->createInfo.imageType,
-                                         FormatIsMultiplane(src_format))) {
+                                         vkuFormatIsMultiplane(src_format))) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
                     skip |=
                         LogError(vuid, all_objlist, loc, "pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", i, j);

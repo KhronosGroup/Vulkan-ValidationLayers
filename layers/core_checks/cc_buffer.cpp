@@ -51,7 +51,7 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE &buffer_state, const
 
     const VkDeviceSize &range = pCreateInfo->range;
     const VkFormat format = pCreateInfo->format;
-    const uint32_t format_size = FormatElementSize(format);
+    const uint32_t format_size = vkuFormatElementSize(format);
     if (range != VK_WHOLE_SIZE) {
         // Range must be greater than 0
         if (range <= 0) {
@@ -307,7 +307,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     const auto &buffer_state = *buffer_state_ptr;
     const LogObjectList objlist(device, pCreateInfo->buffer);
 
-    if (FormatIsDepthOrStencil(pCreateInfo->format)) {
+    if (vkuFormatIsDepthOrStencil(pCreateInfo->format)) {
         // Should never hopefully get here, but there are known driver advertising the wrong feature flags
         // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
         skip |= LogError(kVUID_Core_invalidDepthStencilFormat, device, create_info_loc.dot(Field::format),
@@ -342,7 +342,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     }
 
     if (enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
-        VkDeviceSize element_size = FormatElementSize(pCreateInfo->format);
+        VkDeviceSize element_size = vkuFormatElementSize(pCreateInfo->format);
         if ((element_size % 3) == 0) {
             element_size /= 3;
         }

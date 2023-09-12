@@ -360,10 +360,10 @@ static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearCo
     std::copy_n(clear_value.uint32, raw_color.size(), raw_color.data());
 
     // Zero out unused components to avoid polluting the cache with garbage
-    if (!FormatHasRed(format)) raw_color[0] = 0;
-    if (!FormatHasGreen(format)) raw_color[1] = 0;
-    if (!FormatHasBlue(format)) raw_color[2] = 0;
-    if (!FormatHasAlpha(format)) raw_color[3] = 0;
+    if (!vkuFormatHasRed(format)) raw_color[0] = 0;
+    if (!vkuFormatHasGreen(format)) raw_color[1] = 0;
+    if (!vkuFormatHasBlue(format)) raw_color[2] = 0;
+    if (!vkuFormatHasAlpha(format)) raw_color[3] = 0;
 
     return raw_color;
 }
@@ -378,11 +378,11 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     memcpy(&raw_zero, &zero, sizeof(zero));
 
     const bool is_one =
-        (!FormatHasRed(format) || (clear_color[0] == raw_one)) && (!FormatHasGreen(format) || (clear_color[1] == raw_one)) &&
-        (!FormatHasBlue(format) || (clear_color[2] == raw_one)) && (!FormatHasAlpha(format) || (clear_color[3] == raw_one));
+        (!vkuFormatHasRed(format) || (clear_color[0] == raw_one)) && (!vkuFormatHasGreen(format) || (clear_color[1] == raw_one)) &&
+        (!vkuFormatHasBlue(format) || (clear_color[2] == raw_one)) && (!vkuFormatHasAlpha(format) || (clear_color[3] == raw_one));
     const bool is_zero =
-        (!FormatHasRed(format) || (clear_color[0] == raw_zero)) && (!FormatHasGreen(format) || (clear_color[1] == raw_zero)) &&
-        (!FormatHasBlue(format) || (clear_color[2] == raw_zero)) && (!FormatHasAlpha(format) || (clear_color[3] == raw_zero));
+        (!vkuFormatHasRed(format) || (clear_color[0] == raw_zero)) && (!vkuFormatHasGreen(format) || (clear_color[1] == raw_zero)) &&
+        (!vkuFormatHasBlue(format) || (clear_color[2] == raw_zero)) && (!vkuFormatHasAlpha(format) || (clear_color[3] == raw_zero));
     return is_one || is_zero;
 }
 
@@ -460,10 +460,10 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
         if (!registered) {
             std::string clear_color_str;
 
-            if (FormatIsUINT(format)) {
+            if (vkuFormatIsUINT(format)) {
                 clear_color_str = std::to_string(clear_value.uint32[0]) + ", " + std::to_string(clear_value.uint32[1]) + ", " +
                                   std::to_string(clear_value.uint32[2]) + ", " + std::to_string(clear_value.uint32[3]);
-            } else if (FormatIsSINT(format)) {
+            } else if (vkuFormatIsSINT(format)) {
                 clear_color_str = std::to_string(clear_value.int32[0]) + ", " + std::to_string(clear_value.int32[1]) + ", " +
                                   std::to_string(clear_value.int32[2]) + ", " + std::to_string(clear_value.int32[3]);
             } else {

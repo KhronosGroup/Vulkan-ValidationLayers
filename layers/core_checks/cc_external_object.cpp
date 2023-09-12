@@ -297,7 +297,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VkImageCreateInfo structure",
                                 FormatHandle(metal_texture_ptr->image).c_str());
                         }
-                        auto format_plane_count = FormatPlaneCount(image_info->createInfo.format);
+                        auto format_plane_count = vkuFormatPlaneCount(image_info->createInfo.format);
                         auto image_plane = metal_texture_ptr->plane;
                         if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
                             skip |= LogError(
@@ -334,7 +334,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VkImageViewCreateInfo structure",
                                 FormatHandle(metal_texture_ptr->imageView).c_str());
                         }
-                        auto format_plane_count = FormatPlaneCount(image_view_info->create_info.format);
+                        auto format_plane_count = vkuFormatPlaneCount(image_view_info->create_info.format);
                         auto image_plane = metal_texture_ptr->plane;
                         if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
                             skip |= LogError(

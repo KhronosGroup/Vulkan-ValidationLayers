@@ -1418,10 +1418,10 @@ std::string InterfaceSlot::Describe() const {
 }
 
 uint32_t GetFormatType(VkFormat format) {
-    if (FormatIsSINT(format)) return NumericTypeSint;
-    if (FormatIsUINT(format)) return NumericTypeUint;
+    if (vkuFormatIsSINT(format)) return NumericTypeSint;
+    if (vkuFormatIsUINT(format)) return NumericTypeUint;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
-    if (FormatIsDepthAndStencil(format)) return NumericTypeFloat | NumericTypeUint;
+    if (vkuFormatIsDepthAndStencil(format)) return NumericTypeFloat | NumericTypeUint;
     if (format == VK_FORMAT_UNDEFINED) return NumericTypeUnknown;
     // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
     return NumericTypeFloat;

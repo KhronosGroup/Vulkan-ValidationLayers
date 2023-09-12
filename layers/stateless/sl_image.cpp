@@ -251,7 +251,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              string_VkImageType(pCreateInfo->imageType));
         }
 
-        if ((image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(image_format)) {
+        if ((image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || vkuFormatIsDepthOrStencil(image_format)) {
             skip |= LogError("VUID-VkImageCreateInfo-flags-02051", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
                              "it must not also contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT and format (%s) must not be a "
@@ -274,7 +274,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     }
 
     if (((image_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
-        (FormatHasDepth(image_format) == false)) {
+        (vkuFormatHasDepth(image_format) == false)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-01533", device, create_info_loc.dot(Field::flags),
                          "includes VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT the "
                          "format (%s) must be a depth or depth/stencil format.",
@@ -294,7 +294,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        if (FormatIsDepthOrStencil(image_format)) {
+        if (vkuFormatIsDepthOrStencil(image_format)) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
                 if (pCreateInfo->extent.width > device_limits.maxFramebufferWidth) {
                     skip |= LogError("VUID-VkImageCreateInfo-Format-02536", device,
@@ -541,13 +541,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     }
 
     // If Chroma subsampled format ( _420_ or _422_ )
-    if (FormatIsXChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.width, 2) != 0)) {
+    if (vkuFormatIsXChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.width, 2) != 0)) {
         skip |=
             LogError("VUID-VkImageCreateInfo-format-04712", device, create_info_loc.dot(Field::format),
                      "(%s) is X Chroma Subsampled (has _422 or _420 suffix) so the width (%" PRIu32 ") must be a multiple of 2.",
                      string_VkFormat(image_format), pCreateInfo->extent.width);
     }
-    if (FormatIsYChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.height, 2) != 0)) {
+    if (vkuFormatIsYChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.height, 2) != 0)) {
         skip |= LogError("VUID-VkImageCreateInfo-format-04713", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the height (%" PRIu32 ") must be a multiple of 2.",
                          string_VkFormat(image_format), pCreateInfo->extent.height);
@@ -565,12 +565,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         // Check if viewFormatCount is not zero that it is all compatible
         for (uint32_t i = 0; i < viewFormatCount; i++) {
             const bool class_compatible =
-                FormatCompatibilityClass(format_list_info->pViewFormats[i]) == FormatCompatibilityClass(image_format);
+                vkuFormatCompatibilityClass(format_list_info->pViewFormats[i]) == vkuFormatCompatibilityClass(image_format);
             if (!class_compatible) {
                 if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
                     const bool size_compatible =
-                        !FormatIsCompressed(format_list_info->pViewFormats[i]) &&
-                        FormatElementSize(format_list_info->pViewFormats[i]) == FormatElementSize(image_format);
+                        !vkuFormatIsCompressed(format_list_info->pViewFormats[i]) &&
+                        vkuFormatElementSize(format_list_info->pViewFormats[i]) == vkuFormatElementSize(image_format);
                     if (!size_compatible) {
                         skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device,
                                          create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
@@ -626,7 +626,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "VK_IMAGE_ASPECT_PLANE_2_BIT are allowed",
                              string_VkImageAspectFlags(import_metal_texture_info->plane).c_str());
         }
-        auto format_plane_count = FormatPlaneCount(pCreateInfo->format);
+        auto format_plane_count = vkuFormatPlaneCount(pCreateInfo->format);
         if ((format_plane_count <= 1) && (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
             skip |=
                 LogError("VUID-VkImageCreateInfo-pNext-06785", device, texture_info_loc,
@@ -685,8 +685,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
                              create_info_loc.pNext(Struct::VkImageViewASTCDecodeModeEXT, Field::decodeMode), "is %s.",
                              string_VkFormat(astc_decode_mode->decodeMode));
         }
-        if ((FormatIsCompressed_ASTC_LDR(pCreateInfo->format) == false) &&
-            (FormatIsCompressed_ASTC_HDR(pCreateInfo->format) == false)) {
+        if ((vkuFormatIsCompressed_ASTC_LDR(pCreateInfo->format) == false) &&
+            (vkuFormatIsCompressed_ASTC_HDR(pCreateInfo->format) == false)) {
             skip |=
                 LogError("VUID-VkImageViewASTCDecodeModeEXT-format-04084", pCreateInfo->image, create_info_loc.dot(Field::format),
                          "%s is  not an ASTC format (because VkImageViewASTCDecodeModeEXT was passed in the pNext chain).",

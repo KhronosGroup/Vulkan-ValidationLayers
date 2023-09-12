@@ -30,7 +30,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         bool attachment_should_be_transient =
             (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
 
-        if (FormatHasStencil(attachment.format)) {
+        if (vkuFormatHasStencil(attachment.format)) {
             attachment_should_be_transient &= (attachment.stencilLoadOp != VK_ATTACHMENT_LOAD_OP_LOAD &&
                                                attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
         }

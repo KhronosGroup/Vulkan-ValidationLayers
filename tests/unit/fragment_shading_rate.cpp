@@ -1498,11 +1498,11 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     createinfo.subresourceRange.layerCount = 1;
     createinfo.subresourceRange.baseMipLevel = 0;
     createinfo.subresourceRange.levelCount = 1;
-    if (FormatIsColor(format)) {
+    if (vkuFormatIsColor(format)) {
         createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    } else if (FormatHasDepth(format)) {
+    } else if (vkuFormatHasDepth(format)) {
         createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatHasStencil(format)) {
+    } else if (vkuFormatHasStencil(format)) {
         createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 

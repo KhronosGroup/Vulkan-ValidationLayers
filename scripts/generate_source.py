@@ -54,7 +54,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
     from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
     from generators.command_validation_generator import CommandValidationOutputGenerator
-    from generators.format_utils_generator import FormatUtilsOutputGenerator
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
     from generators.typemap_helper_generator import TypemapHelperOutputGenerator
@@ -259,14 +258,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         'dynamic_state_helper.cpp' : {
             'generator' : DynamicStateOutputGenerator,
             'genCombined': False,
-        },
-        'vk_format_utils.h' : {
-            'generator' : FormatUtilsOutputGenerator,
-            'genCombined': True,
-        },
-        'vk_format_utils.cpp' : {
-            'generator' : FormatUtilsOutputGenerator,
-            'genCombined': True,
         },
         'pnext_chain_extraction.h' : {
             'generator' : PnextChainExtractionGenerator,

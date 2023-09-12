@@ -22,7 +22,8 @@
 #include <cassert>
 #include <cstring>
 
-#include "generated/vk_format_utils.h"
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "generated/vk_extension_helper.h"
 #include "utils/vk_layer_utils.h"
 #include "layer_validation_tests.h"
@@ -1575,11 +1576,11 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     m_arrayLayers = create_info->arrayLayers;
 
     VkImageAspectFlags image_aspect = 0;
-    if (FormatIsDepthAndStencil(create_info->format)) {
+    if (vkuFormatIsDepthAndStencil(create_info->format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsDepthOnly(create_info->format)) {
+    } else if (vkuFormatIsDepthOnly(create_info->format)) {
         image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsStencilOnly(create_info->format)) {
+    } else if (vkuFormatIsStencilOnly(create_info->format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
     } else {  // color
         image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2186,8 +2187,8 @@ void VkCommandBufferObj::ClearAllBuffers(const vector<std::unique_ptr<VkImageObj
 
     if (depth_stencil_obj && depth_stencil_obj->Initialized()) {
         subrange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        if (FormatIsDepthOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (FormatIsStencilOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        if (vkuFormatIsDepthOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (vkuFormatIsStencilOnly(depth_stencil_obj->format())) subrange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
 
         depth_stencil_obj->Layout(VK_IMAGE_LAYOUT_UNDEFINED);
         depth_stencil_obj->SetLayout(this, subrange.aspectMask, clear_layout);
@@ -2246,8 +2247,8 @@ void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImage
 
     if (depth_stencil_att && depth_stencil_att->Initialized()) {
         VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        if (FormatIsDepthOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (FormatIsStencilOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+        if (vkuFormatIsDepthOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (vkuFormatIsStencilOnly(depth_stencil_att->Format())) aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
 
         depth_stencil_att->SetLayout(this, aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
@@ -2413,9 +2414,9 @@ void VkDepthStencilObj::Init(VkDeviceObj *device, uint32_t width, uint32_t heigh
     // allows for overriding by caller
     if (aspect == 0) {
         aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (FormatIsDepthOnly(format))
+        if (vkuFormatIsDepthOnly(format))
             aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-        else if (FormatIsStencilOnly(format))
+        else if (vkuFormatIsStencilOnly(format))
             aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
     }
     SetLayout(aspect, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);

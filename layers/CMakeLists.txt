@@ -36,8 +36,6 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/pnext_chain_extraction.h
     ${API_TYPE}/generated/vk_function_pointers.cpp
     ${API_TYPE}/generated/vk_function_pointers.h
-    ${API_TYPE}/generated/vk_format_utils.h
-    ${API_TYPE}/generated/vk_format_utils.cpp
     ${API_TYPE}/generated/vk_validation_error_messages.h
     ${API_TYPE}/generated/vk_layer_dispatch_table.h
     ${API_TYPE}/generated/vk_dispatch_table_helper.h

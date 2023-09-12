@@ -23,9 +23,10 @@
 #include <android_native_app_glue.h>
 #endif
 
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "test_common.h"
 #include "containers/custom_containers.h"
-#include "generated/vk_format_utils.h"
 #include "generated/vk_extension_helper.h"
 #include "render.h"
 #include "generated/vk_typemap_helper.h"

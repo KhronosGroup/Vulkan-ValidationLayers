@@ -804,7 +804,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         m_errorMonitor->VerifyFound();
 
         VkBindImagePlaneMemoryInfo plane_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
-        ASSERT_TRUE(FormatPlaneCount(mp_format) == 2);
+        ASSERT_TRUE(vkuFormatPlaneCount(mp_format) == 2);
         plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
         VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info);
@@ -1475,7 +1475,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     }
 
     // TODO - 01564 appears to be impossible to hit due to the following check in descriptor_validation.cpp:
-    // if (sampler && !desc->IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) ...
+    // if (sampler && !desc->IsImmutableSampler() && vkuFormatIsMultiplane(image_state->createInfo.format)) ...
     //   - !desc->IsImmutableSampler() will cause 02738; IOW, multi-plane conversion _requires_ an immutable sampler
     //   - !desc->IsImmutableSampler() must be removed for 01564 to get hit, but it's not clear whether or not this is
     //   correct based on the comments in the code

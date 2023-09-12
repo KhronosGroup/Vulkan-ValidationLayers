@@ -199,7 +199,7 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
                          "pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.");
     }
 
-    if (FormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
+    if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
         if (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
                              "is VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.");

@@ -34,11 +34,11 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     const bool is_external_format_conversion = false;
 #endif
 
-    if (FormatIsColor(format) || FormatIsMultiplane(format) || is_external_format_conversion) {
+    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || is_external_format_conversion) {
         init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
     } else {
         init_range.aspectMask =
-            (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+            (vkuFormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (vkuFormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
     }
     return NormalizeSubresourceRange(create_info, init_range);
 }
@@ -50,11 +50,11 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     norm.layerCount = ResolveRemainingLayers(image_create_info, range);
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    if (FormatIsMultiplane(image_create_info.format)) {
+    if (vkuFormatIsMultiplane(image_create_info.format)) {
         if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
             norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
             norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            if (FormatPlaneCount(image_create_info.format) > 2) {
+            if (vkuFormatPlaneCount(image_create_info.format) > 2) {
                 norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
             }
         }
@@ -118,7 +118,7 @@ static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracke
         if (disjoint == false) {
             DispatchGetImageMemoryRequirements(dev_data->device, img, &result[0]);
         } else {
-            uint32_t plane_count = FormatPlaneCount(create_info->format);
+            uint32_t plane_count = vkuFormatPlaneCount(create_info->format);
             static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
                                                                       VK_IMAGE_ASPECT_PLANE_2_BIT};
             assert(plane_count <= aspects.size());
@@ -220,7 +220,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
         tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
         SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
     } else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
-        tracker_.emplace<BindableMultiplanarMemoryTracker>(requirements.data(), FormatPlaneCount(pCreateInfo->format));
+        tracker_.emplace<BindableMultiplanarMemoryTracker>(requirements.data(), vkuFormatPlaneCount(pCreateInfo->format));
         SetMemoryTracker(&std::get<BindableMultiplanarMemoryTracker>(tracker_));
     } else {
         tracker_.emplace<BindableLinearMemoryTracker>(requirements.data());

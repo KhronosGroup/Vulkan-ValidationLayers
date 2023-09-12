@@ -20,7 +20,8 @@
 
 #include <algorithm>
 
-#include "generated/vk_format_utils.h"
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "containers/custom_containers.h"
 #include "utils/vk_layer_utils.h"
 #include "generated/vk_typemap_helper.h"
@@ -4001,7 +4002,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
                 VkDeviceSize plane_index = 0u;
                 if (image_state->disjoint && image_state->IsExternalBuffer() == false) {
                     auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
-                    plane_index = GetPlaneIndex(plane_info->planeAspect);
+                    plane_index = vkuGetPlaneIndex(plane_info->planeAspect);
                 }
                 image_state->BindMemory(
                     image_state.get(), mem_info, bindInfo.memoryOffset, plane_index,

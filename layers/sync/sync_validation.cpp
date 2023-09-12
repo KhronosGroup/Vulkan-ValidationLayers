@@ -687,8 +687,8 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const A
         const auto src_at = subpass_ci.pDepthStencilAttachment->attachment;
         const auto src_ci = attachment_ci[src_at];
         // The formats are required to match so we can pick either
-        const bool resolve_depth = (ds_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasDepth(src_ci.format);
-        const bool resolve_stencil = (ds_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasStencil(src_ci.format);
+        const bool resolve_depth = (ds_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) && vkuFormatHasDepth(src_ci.format);
+        const bool resolve_stencil = (ds_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE) && vkuFormatHasStencil(src_ci.format);
         const auto dst_at = ds_resolve->pDepthStencilResolveAttachment->attachment;
 
         // Figure out which aspects are actually touched during resolve operations
@@ -1227,8 +1227,8 @@ bool AccessContext::ValidateLoadOperation(const CommandExecutionContext &exec_co
             // 2) if there isn't a layout transition, we need to look at the  external context with a "detect hazard" operation
             //    for each aspect loaded.
 
-            const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool has_depth = vkuFormatHasDepth(ci.format);
+            const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
 
             const SyncStageAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
@@ -1297,8 +1297,8 @@ bool AccessContext::ValidateStoreOperation(const CommandExecutionContext &exec_c
             // The spec states that "don't care" is an operation with VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             // so we assume that an implementation is *free* to write in that case, meaning that for correctness
             // sake, we treat DONT_CARE as writing.
-            const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool has_depth = vkuFormatHasDepth(ci.format);
+            const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
             const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
             if (!has_stencil && !store_op_stores) continue;
@@ -1880,8 +1880,8 @@ void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_stat
             if (!view_gen.IsValid()) continue;  // UNUSED
 
             const auto &ci = attachment_ci[i];
-            const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool has_depth = vkuFormatHasDepth(ci.format);
+            const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
             const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_EXT;
 
@@ -2585,7 +2585,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (!FormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
+        if (!vkuFormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2593,7 +2593,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (!FormatIsDepthOnly(view_state.create_info.format) && stencil_test_enable &&
+        if (!vkuFormatIsDepthOnly(view_state.create_info.format) && stencil_test_enable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
@@ -2674,7 +2674,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && !FormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
+        if (has_depth && !vkuFormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2682,7 +2682,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_stencil && !FormatIsDepthOnly(view_state.create_info.format) && stencil_test_enable &&
+        if (has_stencil && !vkuFormatIsDepthOnly(view_state.create_info.format) && stencil_test_enable &&
             IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
@@ -2975,8 +2975,8 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
             if (!view_gen.IsValid()) continue;  // UNUSED
 
             const auto &ci = attachment_ci[i];
-            const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool has_depth = vkuFormatHasDepth(ci.format);
+            const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
 
             if (is_color) {

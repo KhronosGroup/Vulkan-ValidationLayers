@@ -176,7 +176,7 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
                 loc.dot(Field::pVertexAttributeDescriptions, vertex_attribute_description_index).dot(Field::format), "VkFormat",
                 info.pVertexAttributeDescriptions[vertex_attribute_description_index].format,
                 "VUID-VkVertexInputAttributeDescription-format-parameter");
-            if (FormatIsDepthOrStencil(format)) {
+            if (vkuFormatIsDepthOrStencil(format)) {
                 // Should never hopefully get here, but there are known driver advertising the wrong feature flags
                 // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
                 skip |= LogError(device, kVUID_Core_invalidDepthStencilFormat,
@@ -460,7 +460,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                 "VkFormat", rendering_struct->depthAttachmentFormat,
                                 "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
 
-                            if (!FormatHasDepth(rendering_struct->depthAttachmentFormat)) {
+                            if (!vkuFormatHasDepth(rendering_struct->depthAttachmentFormat)) {
                                 skip |= LogError(
                                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-06587", device,
                                     create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
@@ -473,7 +473,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
                                 "VkFormat", rendering_struct->stencilAttachmentFormat,
                                 "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
-                            if (!FormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
+                            if (!vkuFormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
                                 skip |= LogError(
                                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588", device,
                                     create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),

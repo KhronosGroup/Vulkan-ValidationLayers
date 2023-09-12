@@ -377,8 +377,6 @@ source_set("vulkan_layer_utils") {
     "layers/vulkan/generated/pnext_chain_extraction.h",
     "layers/vulkan/generated/vk_api_version.h",
     "layers/vulkan/generated/vk_extension_helper.h",
-    "layers/vulkan/generated/vk_format_utils.cpp",
-    "layers/vulkan/generated/vk_format_utils.h",
     "layers/vulkan/generated/layer_chassis_dispatch.h",
     "layers/vulkan/generated/vk_layer_dispatch_table.h",
     "layers/vulkan/generated/vk_object_types.h",

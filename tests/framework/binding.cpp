@@ -20,8 +20,9 @@
 
 #include <string.h>  // memset(), memcmp()
 #include <cassert>
+
+#include <vulkan/utility/vk_format_utils.h>
 #include "generated/vk_typemap_helper.h"
-#include "generated/vk_format_utils.h"
 
 namespace {
 
@@ -759,11 +760,11 @@ bool Image::transparent() const {
 
 VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     VkImageAspectFlags image_aspect;
-    if (FormatIsDepthAndStencil(format)) {
+    if (vkuFormatIsDepthAndStencil(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsDepthOnly(format)) {
+    } else if (vkuFormatIsDepthOnly(format)) {
         image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsStencilOnly(format)) {
+    } else if (vkuFormatIsStencilOnly(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
     } else {  // color
         image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;

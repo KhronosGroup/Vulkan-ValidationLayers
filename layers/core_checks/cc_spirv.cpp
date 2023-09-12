@@ -2050,7 +2050,7 @@ bool CoreChecks::ValidateImageWrite(const SPIRV_MODULE_STATE &module_state, cons
         if (image_format != spv::ImageFormatUnknown) {
             const VkFormat compatible_format = CompatibleSpirvImageFormat(image_format);
             if (compatible_format != VK_FORMAT_UNDEFINED) {
-                const uint32_t format_component_count = FormatComponentCount(compatible_format);
+                const uint32_t format_component_count = vkuFormatComponentCount(compatible_format);
                 const uint32_t texel_component_count = module_state.GetTexelComponentCount(insn);
                 if (texel_component_count < format_component_count) {
                     skip |= LogError("VUID-RuntimeSpirv-OpImageWrite-07112", module_state.handle(), loc,

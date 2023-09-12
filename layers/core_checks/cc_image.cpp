@@ -83,7 +83,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     }
 
     // Lack of disjoint format feature support while using the flag
-    if (FormatIsMultiplane(image_format) && ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
+    if (vkuFormatIsMultiplane(image_format) && ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
         ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_CREATE_DISJOINT_BIT, but %s doesn't support "
@@ -261,9 +261,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                static_cast<uint64_t>(pCreateInfo->samples);
 
         // Depth/Stencil formats size can't be accurately calculated
-        if (!FormatIsDepthAndStencil(pCreateInfo->format)) {
+        if (!vkuFormatIsDepthAndStencil(pCreateInfo->format)) {
             uint64_t total_size =
-                static_cast<uint64_t>(std::ceil(FormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
+                static_cast<uint64_t>(std::ceil(vkuFormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
 
             // Round up to imageGranularity boundary
             VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
@@ -335,7 +335,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-            if (!FormatIsCompressed(pCreateInfo->format)) {
+            if (!vkuFormatIsCompressed(pCreateInfo->format)) {
                 skip |= LogError(
                     "VUID-VkImageCreateInfo-flags-01572", device, create_info_loc.dot(Field::flags),
                     "contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, but format (%s) must be a compressed image format.",
@@ -354,7 +354,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                                     create_info_loc, "VUID-VkImageCreateInfo-sharingMode-01420");
     }
 
-    if (!FormatIsMultiplane(pCreateInfo->format) && !(pCreateInfo->flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
+    if (!vkuFormatIsMultiplane(pCreateInfo->format) && !(pCreateInfo->flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
         (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
         skip |= LogError("VUID-VkImageCreateInfo-format-01577", device, create_info_loc,
                          "format is %s and flags are %s. The flags should not include VK_IMAGE_CREATE_DISJOINT_BIT.",
@@ -685,12 +685,12 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     }
 
     const VkFormat format = image_state.createInfo.format;
-    if (FormatIsDepthOrStencil(format)) {
+    if (vkuFormatIsDepthOrStencil(format)) {
         LogObjectList objlist(commandBuffer, image);
         skip |=
             LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
                      "(%s) was created with a depth/stencil format (%s).", FormatHandle(image).c_str(), string_VkFormat(format));
-    } else if (FormatIsCompressed(format)) {
+    } else if (vkuFormatIsCompressed(format)) {
         LogObjectList objlist(commandBuffer, image);
         skip |= LogError("VUID-vkCmdClearColorImage-image-00007", objlist, image_loc,
                          "(%s) was created with a compressed format (%s).", FormatHandle(image).c_str(), string_VkFormat(format));
@@ -784,7 +784,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                          "is %s (can only be DEPTH_BIT or STENCIL_BIT).", string_VkImageAspectFlags(pRanges[i].aspectMask).c_str());
         }
         if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
-            if (FormatHasDepth(image_format) == false) {
+            if (vkuFormatHasDepth(image_format) == false) {
                 LogObjectList objlist(cb_state.commandBuffer(), image);
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-image-02826", objlist, range_loc.dot(Field::aspectMask),
                                  "has a VK_IMAGE_ASPECT_DEPTH_BIT but %s "
@@ -799,7 +799,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             }
         }
         if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
-            if (FormatHasStencil(image_format) == false) {
+            if (vkuFormatHasStencil(image_format) == false) {
                 LogObjectList objlist(cb_state.commandBuffer(), image);
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-image-02825", objlist, range_loc.dot(Field::aspectMask),
                                  "has a VK_IMAGE_ASPECT_STENCIL_BIT but "
@@ -825,7 +825,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         }
     }
 
-    if (!FormatIsDepthOrStencil(image_format)) {
+    if (!vkuFormatIsDepthOrStencil(image_format)) {
         LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |=
             LogError("VUID-vkCmdClearDepthStencilImage-image-00014", objlist, image_loc,
@@ -971,7 +971,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     stencil_view_state = depth_view_state;
 
                     const VkFormat image_view_format = depth_view_state->safe_create_info.format;
-                    if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !FormatHasDepth(image_view_format)) {
+                    if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !vkuFormatHasDepth(image_view_format)) {
                         const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass(),
                                                     depth_view_state->image_view());
                         skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07884", objlist, attachment_loc,
@@ -980,7 +980,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                          cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
                     }
 
-                    if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !FormatHasStencil(image_view_format)) {
+                    if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !vkuFormatHasStencil(image_view_format)) {
                         const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass(),
                                                     stencil_view_state->image_view());
                         skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07885", objlist, attachment_loc,
@@ -1201,7 +1201,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
     bool skip = false;
     // checks color format and (single-plane or non-disjoint)
     // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
-    if ((FormatIsColor(format)) && ((FormatIsMultiplane(format) == false) || (is_image_disjoint == false))) {
+    if ((vkuFormatIsColor(format)) && ((vkuFormatIsMultiplane(format) == false) || (is_image_disjoint == false))) {
         if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= LogError(
                 vuid, image, loc,
@@ -1213,7 +1213,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
                              "VK_IMAGE_ASPECT_COLOR_BIT set.",
                              string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
-    } else if (FormatIsDepthAndStencil(format)) {
+    } else if (vkuFormatIsDepthAndStencil(format)) {
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) == 0) {
             skip |= LogError(vuid, image, loc,
                              "Using format (%s) with aspect flags (%s) but depth/stencil image formats must have at least one "
@@ -1225,7 +1225,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
                              "only the VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT set.",
                              string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
-    } else if (FormatIsDepthOnly(format)) {
+    } else if (vkuFormatIsDepthOnly(format)) {
         if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) {
             skip |= LogError(vuid, image, loc,
                              "Using format (%s) with aspect flags (%s) but depth-only image formats must have the "
@@ -1237,7 +1237,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
                              "VK_IMAGE_ASPECT_DEPTH_BIT set.",
                              string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
-    } else if (FormatIsStencilOnly(format)) {
+    } else if (vkuFormatIsStencilOnly(format)) {
         if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT) {
             skip |= LogError(vuid, image, loc,
                              "Using format (%s) with aspect flags (%s) but stencil-only image formats must have the "
@@ -1249,9 +1249,9 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
                              "VK_IMAGE_ASPECT_STENCIL_BIT set.",
                              string_VkFormat(format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
-    } else if (FormatIsMultiplane(format)) {
+    } else if (vkuFormatIsMultiplane(format)) {
         VkImageAspectFlags valid_flags = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
-        if (3 == FormatPlaneCount(format)) {
+        if (3 == vkuFormatPlaneCount(format)) {
             valid_flags = valid_flags | VK_IMAGE_ASPECT_PLANE_2_BIT;
         }
         if ((aspect_mask & valid_flags) != aspect_mask) {
@@ -1477,6 +1477,34 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
 
     return skip;
 }
+// Returns whether two formats have identical components (compares the size and type of each component)
+// EX. (R8G8B8A8, B8G8R8A8) -> true
+bool FormatsEqualComponentBits(VkFormat format_a, VkFormat format_b) {
+    const VKU_FORMAT_INFO format_info_a = vkuGetFormatInfo(format_a);
+    const VKU_FORMAT_INFO format_info_b = vkuGetFormatInfo(format_b);
+    if (format_info_a.compatibility == VKU_FORMAT_COMPATIBILITY_CLASS_NONE || format_info_b.compatibility == VKU_FORMAT_COMPATIBILITY_CLASS_NONE) {
+        return false;
+    } else if (format_info_a.component_count != format_info_b.component_count) {
+        return false;
+    }
+    // Need to loop match each component type is found in both formats
+    // formats are maxed at 4 components, so the double loop is not going to scale
+    for (uint32_t i = 0; i < format_info_a.component_count; i++) {
+        const VKU_FORMAT_COMPONENT_INFO component_a = format_info_a.components[i];
+        bool component_match = false;
+        for (uint32_t j = 0; j < format_info_b.component_count; j++) {
+            const VKU_FORMAT_COMPONENT_INFO component_b = format_info_b.components[j];
+            if ((component_a.type == component_b.type) && (component_a.size == component_b.size)) {
+                component_match = true;
+                break;
+            }
+        }
+        if (!component_match) {
+            return false;
+        }
+    }
+    return true;
+}
 
 bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                 [[maybe_unused]] const VkAllocationCallbacks *pAllocator,
@@ -1625,7 +1653,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
-    const bool multiplane_image = FormatIsMultiplane(image_format);
+    const bool multiplane_image = vkuFormatIsMultiplane(image_format);
     if (multiplane_image && IsMultiplePlaneAspect(aspect_mask)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-subresourceRange-07818", pCreateInfo->image,
                          create_info_loc.dot(Field::subresourceRange).dot(Field::aspectMask), "(%s) is invalid for %s.",
@@ -1634,26 +1662,26 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
-        const auto view_class = FormatCompatibilityClass(view_format);
+        const auto view_class = vkuFormatCompatibilityClass(view_format);
         if (multiplane_image) {
-            const VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
-            const auto image_class = FormatCompatibilityClass(compat_format);
+            const VkFormat compat_format = vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(aspect_mask));
+            const auto image_class = vkuFormatCompatibilityClass(compat_format);
             // Need valid aspect mask otherwise will throw extra error when getting compatible format
             // Also this can be VK_IMAGE_ASPECT_COLOR_BIT
             const bool has_valid_aspect = IsOnlyOneValidPlaneAspect(image_format, aspect_mask);
-            if (has_valid_aspect && ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE))) {
+            if (has_valid_aspect && ((image_class != view_class) || (image_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE))) {
                 // Need to only check if one is NONE to handle edge case both are NONE
                 // View format must match the multiplane compatible format
                 skip |= LogError("VUID-VkImageViewCreateInfo-image-01586", pCreateInfo->image, create_info_loc.dot(Field::format),
                                  "(%s) is not compatible with plane %" PRIu32 " of the %s format %s, must be compatible with %s.",
-                                 string_VkFormat(view_format), GetPlaneIndex(aspect_mask), FormatHandle(pCreateInfo->image).c_str(),
+                                 string_VkFormat(view_format), vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(aspect_mask)), FormatHandle(pCreateInfo->image).c_str(),
                                  string_VkFormat(image_format), string_VkFormat(compat_format));
             }
         } else if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
             // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
-            const auto image_class = FormatCompatibilityClass(image_format);
+            const auto image_class = vkuFormatCompatibilityClass(image_format);
             // Need to only check if one is NONE to handle edge case both are NONE
-            if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
+            if ((image_class != view_class) || (image_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE)) {
                 skip |=
                     LogError("VUID-VkImageViewCreateInfo-image-01761", pCreateInfo->image, create_info_loc.dot(Field::format),
                              "%s is not in the same format compatibility class as %s format %s. Images created with the "
@@ -1895,7 +1923,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-        if (!FormatIsCompressed(view_format)) {
+        if (!vkuFormatIsCompressed(view_format)) {
             if (pCreateInfo->subresourceRange.levelCount != 1) {
                 skip |= LogError("VUID-VkImageViewCreateInfo-image-07072", pCreateInfo->image, create_info_loc.dot(Field::image),
                                  "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
@@ -1910,10 +1938,10 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        const bool class_compatible = FormatCompatibilityClass(view_format) == FormatCompatibilityClass(image_format);
+        const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);
         // "uncompressed format that is size-compatible" so if compressed, same as not being compatible
         const bool size_compatible =
-            FormatIsCompressed(view_format) ? false : FormatElementSize(view_format) == FormatElementSize(image_format);
+            vkuFormatIsCompressed(view_format) ? false : vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
         if (!class_compatible && !size_compatible) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
                              "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
@@ -1971,7 +1999,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Ensure ImageView's format has the same number of bits and components as Image's format if format reinterpretation is
         // disabled
         if (!enabled_features.portability_subset_features.imageViewFormatReinterpretation &&
-            !FormatsSameComponentBits(pCreateInfo->format, image_state.createInfo.format)) {
+            !FormatsEqualComponentBits(pCreateInfo->format, image_state.createInfo.format)) {
             skip |=
                 LogError("VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466", pCreateInfo->image, create_info_loc,
                          "(portability error): ImageView format must have"
@@ -2087,7 +2115,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
     const VkFormat image_format = image_state.createInfo.format;
     const bool tiling_linear_optimal =
         image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR || image_state.createInfo.tiling == VK_IMAGE_TILING_OPTIMAL;
-    if (FormatIsColor(image_format) && !FormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
+    if (vkuFormatIsColor(image_format) && !vkuFormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
         tiling_linear_optimal) {
         const char *vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-format-08886" : "VUID-vkGetImageSubresourceLayout-format-08886";
@@ -2096,7 +2124,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
                          string_VkFormat(image_format));
     }
 
-    if (FormatHasDepth(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0)) {
+    if (vkuFormatHasDepth(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0)) {
         const char *vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-format-04462" : "VUID-vkGetImageSubresourceLayout-format-04462";
         skip |= LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask),
@@ -2104,7 +2132,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
                          string_VkFormat(image_format));
     }
 
-    if (FormatHasStencil(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0)) {
+    if (vkuFormatHasStencil(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0)) {
         const char *vuid =
             is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-format-04463" : "VUID-vkGetImageSubresourceLayout-format-04463";
         skip |= LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask),
@@ -2112,7 +2140,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
                          string_VkFormat(image_format));
     }
 
-    if (!FormatHasDepth(image_format) && !FormatHasStencil(image_format)) {
+    if (!vkuFormatHasDepth(image_format) && !vkuFormatHasStencil(image_format)) {
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             const char *vuid =
                 is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-format-04464" : "VUID-vkGetImageSubresourceLayout-format-04464";
@@ -2124,7 +2152,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
 
     // subresource's aspect must be compatible with image's format.
     if (image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
-        if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
+        if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
             const char *vuid =
                 is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
             skip |= LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask), "(%s) is invalid for format %s.",
@@ -2272,8 +2300,8 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
             ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state, transition_loc.dot(Field::image),
                                          "VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
 
-        if (FormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
-            if (!FormatIsMultiplane(image_format)) {
+        if (vkuFormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+            if (!vkuFormatIsMultiplane(image_format)) {
                 const LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
@@ -2287,7 +2315,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
             }
         }
-        if ((FormatIsMultiplane(image_format)) && (image_state->disjoint)) {
+        if ((vkuFormatIsMultiplane(image_format)) && (image_state->disjoint)) {
             if (!IsValidPlaneAspect(image_format, aspect_mask) && ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
                 const LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01672", objlist,
@@ -2296,7 +2324,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
                                  string_VkFormat(image_format));
             }
         }
-        if (FormatIsDepthAndStencil(image_format)) {
+        if (vkuFormatIsDepthAndStencil(image_format)) {
             if (enabled_features.core12.separateDepthStencilLayouts) {
                 if (!has_depth_mask && !has_stencil_mask) {
                     const LogObjectList objlist(device, image_state->Handle());
