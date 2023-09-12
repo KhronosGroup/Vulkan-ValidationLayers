@@ -464,46 +464,73 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
 
             # Handle Structs that contain objects at some level
             elif member.type in self.vk.structs:
+                nested_struct = []
                 struct = self.vk.structs[member.type]
+
                 # Structs at first level will have an object
-                if self.structContainsObject(struct):
-                    # Struct Array
-                    if member.length is not None:
-                        # Update struct prefix
-                        pre_call_validate += f'{indent}if ({prefix}{member.name}) {{\n'
+                contains_object = self.structContainsObject(struct)
+
+                # Struct Array
+                if member.length is not None:
+                    # Update struct prefix
+                    nested_struct.append(f'{indent}if ({prefix}{member.name}) {{\n')
+                    indent = incIndent(indent)
+                    nested_struct.append(f'{indent}for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n')
+                    indent = incIndent(indent)
+                    new_error_loc = f'{index}_loc'
+                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n')
+                    new_prefix = f'{prefix}{member.name}[{index}].'
+                # Single Struct Pointer
+                elif member.pointer:
+                    # Update struct prefix
+                    new_prefix = f'{prefix}{member.name}->'
+                    # Declare safe_VarType for struct
+                    nested_struct.append(f'{indent}if ({prefix}{member.name}) {{\n')
+                    indent = incIndent(indent)
+                    new_error_loc = f'{member.name}_loc'
+                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
+                # Single Nested Struct
+                else:
+                    # Update struct prefix
+                    new_prefix = f'{prefix}{member.name}.'
+                    new_error_loc = f'{member.name}_loc'
+                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
+                    # Process sub-structs
+
+                if contains_object:
+                    nested_struct.append(self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False))
+
+                contains_pNext = False
+                if struct.extendedBy:
+                    for extendedBy in struct.extendedBy:
+                        extended_struct = self.vk.structs[extendedBy]
+                        extended_members = [x for x in extended_struct.members if x.type in self.vk.handles]
+                        if not extended_members:
+                            continue
+                        contains_pNext = True
+                        nested_struct.extend([f'#ifdef {extended_struct.protect}\n'] if extended_struct.protect else [])
+                        nested_struct.append(f'{indent}if (auto pNext = LvlFindInChain<{extendedBy}>({new_prefix}pNext)) {{\n')
                         indent = incIndent(indent)
-                        pre_call_validate += f'{indent}for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
-                        indent = incIndent(indent)
-                        new_error_loc = f'{index}_loc'
-                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n'
-                        new_prefix = f'{prefix}{member.name}[{index}].'
-                        # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
+                        nested_struct.append(f'{indent}const Location pNext_loc = {new_error_loc}.pNext(Struct::{extendedBy});\n')
+                        nested_struct.append(self.validateObjects(extended_members, indent, 'pNext->', arrayIndex + 1, extendedBy, topCommand, 'pNext_loc', False))
                         indent = decIndent(indent)
-                        pre_call_validate += f'{indent}}}\n'
-                        indent = decIndent(indent)
-                        pre_call_validate += f'{indent}}}\n'
-                    # Single Struct Pointer
-                    elif member.pointer:
-                        # Update struct prefix
-                        new_prefix = f'{prefix}{member.name}->'
-                        # Declare safe_VarType for struct
-                        pre_call_validate += f'{indent}if ({prefix}{member.name}) {{\n'
-                        indent = incIndent(indent)
-                        new_error_loc = f'{member.name}_loc'
-                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n'
-                        # Process sub-structs in this struct
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
-                        indent = decIndent(indent)
-                        pre_call_validate += '%s}\n' % indent
-                    # Single Nested Struct
-                    else:
-                        # Update struct prefix
-                        new_prefix = f'{prefix}{member.name}.'
-                        new_error_loc = f'{member.name}_loc'
-                        pre_call_validate += f'{indent}const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n'
-                        # Process sub-structs
-                        pre_call_validate += self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False)
+                        nested_struct.append(f'{indent}}}\n')
+                        nested_struct.extend([f'#endif // {extended_struct.protect}\n'] if extended_struct.protect else [])
+
+                # Close indentation
+                if member.length is not None:
+                    indent = decIndent(indent)
+                    nested_struct.append(f'{indent}}}\n')
+                    indent = decIndent(indent)
+                    nested_struct.append(f'{indent}}}\n')
+                elif member.pointer:
+                    indent = decIndent(indent)
+                    nested_struct.append('%s}\n' % indent)
+
+                # Only print if called into validateObjects
+                if contains_object or contains_pNext:
+                    pre_call_validate += "".join(nested_struct)
+
         return pre_call_validate
     #
     # For a particular API, generate the object handling code

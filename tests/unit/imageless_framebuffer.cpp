@@ -114,9 +114,10 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     vk_testing::ImageView imageView(*m_device, imageViewCreateInfo);
     ASSERT_TRUE(imageView.initialized());
 
+    VkImageView image_views[2] = {imageView.handle(), imageView.handle()};
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = LvlInitStruct<VkRenderPassAttachmentBeginInfo>();
     renderPassAttachmentBeginInfo.attachmentCount = 1;
-    renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
+    renderPassAttachmentBeginInfo.pAttachments = image_views;
     VkRenderPassBeginInfo renderPassBeginInfo = LvlInitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo);
     renderPassBeginInfo.renderPass = rp.handle();
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
