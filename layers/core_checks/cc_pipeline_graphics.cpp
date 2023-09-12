@@ -766,22 +766,13 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
 
 bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const auto *color_blend_state = pipeline.ColorBlendState();
     const auto &rp_state = pipeline.RenderPassState();
-    if (!rp_state || !color_blend_state) {
+    if (!rp_state) {
         return false;
     }
     const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
 
-    if (rp_state->UsesDynamicRendering()) {
-        if (color_blend_state->attachmentCount != rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
-                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
-                             "(%" PRIu32 ") is different from %s (%" PRIu32 ").",
-                             rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
-                             color_loc.dot(Field::attachmentCount).Fields().c_str(), color_blend_state->attachmentCount);
-        }
-    } else {
+    if (!rp_state->UsesDynamicRendering()) {
         const auto subpass = pipeline.Subpass();
         const auto *subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
 

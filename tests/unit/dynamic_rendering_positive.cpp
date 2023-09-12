@@ -1023,7 +1023,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     VkPipelineObj pipeline_depth(m_device);
     pipeline_depth.AddShader(&vs);
     pipeline_depth.AddShader(&fs);
-    pipeline_depth.AddDefaultColorAttachment();
     pipeline_depth.SetViewport(m_viewports);
     pipeline_depth.SetScissor(m_scissors);
     pipeline_depth.SetDepthStencil(&ds_state);
@@ -1043,7 +1042,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     VkPipelineObj pipeline_stencil(m_device);
     pipeline_stencil.AddShader(&vs);
     pipeline_stencil.AddShader(&fs);
-    pipeline_stencil.AddDefaultColorAttachment();
     pipeline_stencil.SetViewport(m_viewports);
     pipeline_stencil.SetScissor(m_scissors);
     pipeline_stencil.SetDepthStencil(&ds_state);
@@ -1167,7 +1165,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     VkPipelineObj pipeline_depth(m_device);
     pipeline_depth.AddShader(&vs);
     pipeline_depth.AddShader(&fs);
-    pipeline_depth.AddDefaultColorAttachment();
     pipeline_depth.SetViewport(m_viewports);
     pipeline_depth.SetScissor(m_scissors);
     pipeline_depth.SetDepthStencil(&ds_state);
@@ -1187,7 +1184,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     VkPipelineObj pipeline_stencil(m_device);
     pipeline_stencil.AddShader(&vs);
     pipeline_stencil.AddShader(&fs);
-    pipeline_stencil.AddDefaultColorAttachment();
     pipeline_stencil.SetViewport(m_viewports);
     pipeline_stencil.SetScissor(m_scissors);
     pipeline_stencil.SetDepthStencil(&ds_state);
