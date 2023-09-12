@@ -3487,10 +3487,6 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    auto graphics_library_create_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
-    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&graphics_library_create_info);
-
     VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
     auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     color_blend_state_create_info.attachmentCount = 1;
@@ -3498,21 +3494,24 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
 
     CreatePipelineHelper lib(*this);
     lib.cb_ci_ = color_blend_state_create_info;
-    lib.gp_ci_.pNext = &library_create_info;
+    lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
     lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib.InitState();
     lib.CreateGraphicsPipeline();
 
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    pipeline_rendering_info.viewMask = 0x1;
+    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&pipeline_rendering_info);
     library_create_info.libraryCount = 1;
     library_create_info.pLibraries = &lib.pipeline_;
-    pipeline_rendering_info.viewMask = 0x1;
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.pNext = &library_create_info;
+    pipe.InitFragmentLibInfo(&fs_stage.stage_ci, &library_create_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.shader_stages_ = {pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
+
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895");  // spec bug
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     pipe.CreateGraphicsPipeline();
@@ -3581,18 +3580,11 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
-    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
-    fs_ci.pCode = fs_spv.data();
-
-    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
-    fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fs_stage_ci.module = VK_NULL_HANDLE;
-    fs_stage_ci.pName = "main";
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper lib2(*this);
     lib2.cb_ci_ = color_blend_state_create_info;
-    lib2.InitFragmentLibInfo(&fs_stage_ci, &pipeline_rendering_info);
+    lib2.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
     lib2.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib2.ds_ci_ = ds_ci;
     lib2.InitState();
