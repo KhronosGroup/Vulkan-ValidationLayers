@@ -910,7 +910,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             string_NumericType(variable.image_format_type), string_VkFormat(image_view_ci.format));
         }
 
-        const bool image_format_width_64 = FormatHasComponentSize(image_view_ci.format, 64);
+        const bool image_format_width_64 = vkuFormatHasComponentSize(image_view_ci.format, 64);
         if (image_format_width_64) {
             if (binding_info.second.variable->image_sampled_type_width != 64) {
                 auto set = context.descriptor_set.GetSet();
@@ -1356,7 +1356,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     }
 
     for (const uint32_t texel_component_count : binding_info.second.variable->write_without_formats_component_count_list) {
-        const uint32_t format_component_count = FormatComponentCount(image_view_format);
+        const uint32_t format_component_count = vkuFormatComponentCount(image_view_format);
         if (image_view_format == VK_FORMAT_A8_UNORM_KHR) {
             if (texel_component_count != 4) {
                 auto set = context.descriptor_set.GetSet();
@@ -1433,7 +1433,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         string_NumericType(variable.image_format_type), string_VkFormat(buffer_view_format));
     }
 
-    const bool buffer_format_width_64 = FormatHasComponentSize(buffer_view_format, 64);
+    const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);
     if (buffer_format_width_64 && binding_info.second.variable->image_sampled_type_width != 64) {
         auto set = context.descriptor_set.GetSet();
         const LogObjectList objlist(set, buffer_view);
@@ -1520,7 +1520,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     }
 
     for (const uint32_t texel_component_count : binding_info.second.variable->write_without_formats_component_count_list) {
-        const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
+        const uint32_t format_component_count = vkuFormatComponentCount(buffer_view_format);
         if (texel_component_count < format_component_count) {
             auto set = context.descriptor_set.GetSet();
 
@@ -1990,7 +1990,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         }
     }
 
-    const bool ds = FormatIsDepthOrStencil(format);
+    const bool ds = vkuFormatIsDepthOrStencil(format);
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
@@ -2785,7 +2785,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
                     }
                 }
                 // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
-                if (sampler && !desc.IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) {
+                if (sampler && !desc.IsImmutableSampler() && vkuFormatIsMultiplane(image_state->createInfo.format)) {
                     // multiplane formats must be created with mutable format bit
                     const VkFormat image_format = image_state->createInfo.format;
                     if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {

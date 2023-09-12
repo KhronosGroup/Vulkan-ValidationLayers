@@ -49,7 +49,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
             // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are
             // "standard" color formats being used
             const VkFormat format = vi->pVertexAttributeDescriptions[i].format;
-            const uint32_t format_size = FormatElementSize(format);
+            const uint32_t format_size = vkuFormatElementSize(format);
             // Vulkan Spec: Location is made up of 16 bytes, never can have 0 Locations
             const uint32_t bytes_in_location = 16;
             const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
@@ -123,7 +123,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
                              string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
             } else {
                 // 64-bit can't be used if both the Vertex Attribute AND Shader Input Variable are both not 64-bit.
-                const bool attribute64 = FormatIs64bit(attribute_format);
+                const bool attribute64 = vkuFormatIs64bit(attribute_format);
                 const bool shader64 = module_state.GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
                 if (attribute64 && !shader64) {
                     skip |= LogError(
@@ -139,7 +139,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
                         string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
                 } else if (attribute64 && shader64) {
                     // Unlike 32-bit, the components for 64-bit inputs have to match exactly
-                    const uint32_t attribute_components = FormatComponentCount(attribute_format);
+                    const uint32_t attribute_components = vkuFormatComponentCount(attribute_format);
                     const uint32_t input_components = module_state.GetNumComponentsInBaseType(shader_input);
                     if (attribute_components < input_components) {
                         skip |= LogError(

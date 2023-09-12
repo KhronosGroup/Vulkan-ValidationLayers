@@ -83,7 +83,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkFormat format = pCreateInfo->pAttachments[i].format;
         if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-            if ((FormatIsColor(format) || FormatHasDepth(format)) &&
+            if ((vkuFormatIsColor(format) || vkuFormatHasDepth(format)) &&
                 pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 skip |= LogWarning(device, kVUID_BestPractices_RenderPass_Attatchment,
                                    "Render pass has an attachment with loadOp == VK_ATTACHMENT_LOAD_OP_LOAD and "
@@ -91,7 +91,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
                                    "intended.  Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
                                    "image truely is undefined at the start of the render pass.");
             }
-            if (FormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            if (vkuFormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 skip |= LogWarning(device, kVUID_BestPractices_RenderPass_Attatchment,
                                    "Render pass has an attachment with stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD "
                                    "and initialLayout == VK_IMAGE_LAYOUT_UNDEFINED.  This is probably not what you "
@@ -105,7 +105,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
             bool access_requires_memory =
                 attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE;
 
-            if (FormatHasStencil(format)) {
+            if (vkuFormatHasStencil(format)) {
                 access_requires_memory |= attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
                                           attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE;
             }
@@ -155,11 +155,11 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
             const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             bool attachment_has_readback = false;
-            if (!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            if (!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 attachment_has_readback = true;
             }
 
-            if (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+            if (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 attachment_has_readback = true;
             }
 
@@ -374,18 +374,18 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             }
 
             // If renderpass doesn't load attachment, no need to validate image in queue
-            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT) ||
-                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT)) {
+            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT) ||
+                (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT)) {
                 continue;
             }
 
             IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED;
 
-            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
-                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
+            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
+                (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE;
-            } else if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
-                       (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+            } else if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) ||
+                       (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED;
             } else if (RenderPassUsesAttachmentAsImageOnly(rp_state->createInfo, att)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS;
@@ -416,15 +416,15 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             }
 
             // If renderpass doesn't store attachment, no need to validate image in queue
-            if ((!FormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
-                (FormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_NONE)) {
+            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
+                (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_NONE)) {
                 continue;
             }
 
             IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED;
 
-            if ((!FormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE) ||
-                (FormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+            if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE) ||
+                (vkuFormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
                 usage = IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED;
             }
 
@@ -746,16 +746,16 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 
             VkImageAspectFlags bandwidth_aspects = 0;
 
-            if (!FormatIsStencilOnly(attachment.format) &&
+            if (!vkuFormatIsStencilOnly(attachment.format) &&
                 (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE)) {
-                if (FormatHasDepth(attachment.format)) {
+                if (vkuFormatHasDepth(attachment.format)) {
                     bandwidth_aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
                 } else {
                     bandwidth_aspects |= VK_IMAGE_ASPECT_COLOR_BIT;
                 }
             }
 
-            if (FormatHasStencil(attachment.format) && (attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
+            if (vkuFormatHasStencil(attachment.format) && (attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
                                                         attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
                 bandwidth_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }

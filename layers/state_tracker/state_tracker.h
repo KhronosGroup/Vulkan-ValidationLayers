@@ -180,13 +180,13 @@ struct TraitsBase {
 // Destination image texel extents must be adjusted by block size for the dest validation checks
 static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
     VkExtent3D adjusted_extent = extent;
-    if (FormatIsBlockedImage(src_format) && !FormatIsBlockedImage(dst_format)) {
-        VkExtent3D block_size = FormatTexelBlockExtent(src_format);
+    if (vkuFormatIsBlockedImage(src_format) && !vkuFormatIsBlockedImage(dst_format)) {
+        VkExtent3D block_size = vkuFormatTexelBlockExtent(src_format);
         adjusted_extent.width /= block_size.width;
         adjusted_extent.height /= block_size.height;
         adjusted_extent.depth /= block_size.depth;
-    } else if (!FormatIsBlockedImage(src_format) && FormatIsBlockedImage(dst_format)) {
-        VkExtent3D block_size = FormatTexelBlockExtent(dst_format);
+    } else if (!vkuFormatIsBlockedImage(src_format) && vkuFormatIsBlockedImage(dst_format)) {
+        VkExtent3D block_size = vkuFormatTexelBlockExtent(dst_format);
         adjusted_extent.width *= block_size.width;
         adjusted_extent.height *= block_size.height;
         adjusted_extent.depth *= block_size.depth;
@@ -237,12 +237,12 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
         }
     } else {
         // size (bytes) of texel or block
-        unit_size = FormatElementSize(image_format, region.imageSubresource.aspectMask);
+        unit_size = vkuFormatElementSizeWithAspect(image_format, static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
     }
 
-    if (FormatIsBlockedImage(image_format)) {
+    if (vkuFormatIsBlockedImage(image_format)) {
         // Switch to texel block units, rounding up for any partially-used blocks
-        auto block_dim = FormatTexelBlockExtent(image_format);
+        auto block_dim = vkuFormatTexelBlockExtent(image_format);
         buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
         buffer_height = (buffer_height + block_dim.height - 1) / block_dim.height;
 

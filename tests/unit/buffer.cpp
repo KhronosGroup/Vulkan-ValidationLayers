@@ -305,7 +305,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.range = 0;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00928"});
 
-    uint32_t format_size = FormatElementSize(buff_view_ci.format);
+    uint32_t format_size = vkuFormatElementSize(buff_view_ci.format);
     // Range must be a multiple of the element size of format, so add one to ensure it is not
     buff_view_ci.range = format_size + 1;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00929"});

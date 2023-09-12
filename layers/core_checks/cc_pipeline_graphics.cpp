@@ -201,13 +201,13 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
             const auto vertex_binding_map_it = pipeline.vertex_input_state->binding_to_index_map.find(attrib.binding);
             if (vertex_binding_map_it != pipeline.vertex_input_state->binding_to_index_map.cend()) {
                 const auto &desc = pipeline.vertex_input_state->binding_descriptions[vertex_binding_map_it->second];
-                if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
+                if ((attrib.offset + vkuFormatElementSize(attrib.format)) > desc.stride) {
                     skip |= LogError(
                         "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457", device, create_info_loc,
                         "(portability error): attribute.offset (%" PRIu32
                         ") + "
                         "sizeof(vertex_description.format) (%" PRIu32 ") is larger than the vertex stride (%" PRIu32 ").",
-                        attrib.offset, FormatElementSize(attrib.format), desc.stride);
+                        attrib.offset, vkuFormatElementSize(attrib.format), desc.stride);
                 }
             }
         }
@@ -2461,7 +2461,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                 if (pipeline->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
                     vertex_buffer_stride = static_cast<uint32_t>(current_vtx_bfr_binding_info[vertex_binding].stride);
                     const uint32_t attribute_binding_extent =
-                        attribute_description.offset + FormatElementSize(attribute_description.format);
+                        attribute_description.offset + vkuFormatElementSize(attribute_description.format);
                     if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline->pipeline());
                         skip |= LogError(objlist, "VUID-vkCmdBindVertexBuffers2-pStrides-06209",

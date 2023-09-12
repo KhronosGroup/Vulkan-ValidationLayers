@@ -1532,7 +1532,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &loc, const CMD_BUFFER_
         const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
         auto image_loc = loc.dot(Field::image);
-        if (FormatIsDepthAndStencil(image_format)) {
+        if (vkuFormatIsDepthAndStencil(image_format)) {
             if (enabled_features.core12.separateDepthStencilLayouts) {
                 if (!has_depth_mask && !has_stencil_mask) {
                     auto vuid = GetImageBarrierVUID(loc, ImageError::kNotDepthOrStencilAspect);
@@ -1582,8 +1582,8 @@ bool CoreChecks::ValidateBarriersToImages(const Location &loc, const CMD_BUFFER_
         // checks color format and (single-plane or non-disjoint)
         // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
 
-        if (FormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
-            if (!FormatIsMultiplane(image_format)) {
+        if (vkuFormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+            if (!vkuFormatIsMultiplane(image_format)) {
                 const auto &vuid = GetImageBarrierVUID(loc, ImageError::kNotColorAspectSinglePlane);
                 skip |= LogError(vuid, img_barrier.image, loc, "(%s) has color format %s, but its aspectMask is %s.",
                                  FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
@@ -1596,7 +1596,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &loc, const CMD_BUFFER_
             }
         }
 
-        if ((FormatIsMultiplane(image_format)) && (image_state->disjoint == true)) {
+        if ((vkuFormatIsMultiplane(image_format)) && (image_state->disjoint == true)) {
             if (!IsValidPlaneAspect(image_format, aspect_mask) && ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
                 const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
                 skip |= LogError(vuid, img_barrier.image, loc, "(%s) has Multiplane format %s, but its aspectMask is %s.",

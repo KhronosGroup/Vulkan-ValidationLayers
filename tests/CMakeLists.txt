@@ -65,7 +65,6 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/dynamic_state_positive.cpp
     unit/external_memory_sync.cpp
     unit/external_memory_sync_positive.cpp
-    unit/format_utils_positive.cpp
     unit/fragment_shading_rate.cpp
     unit/fragment_shading_rate_positive.cpp
     unit/geometry_tessellation.cpp

@@ -382,8 +382,8 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
     if (color_depth_op != op && stencil_op != op) {
         return false;
     }
-    const bool check_color_depth_load_op = !FormatIsStencilOnly(format);
-    const bool check_stencil_load_op = FormatIsDepthAndStencil(format) || !check_color_depth_load_op;
+    const bool check_color_depth_load_op = !vkuFormatIsStencilOnly(format);
+    const bool check_stencil_load_op = vkuFormatIsDepthAndStencil(format) || !check_color_depth_load_op;
 
     return ((check_color_depth_load_op && (color_depth_op == op)) || (check_stencil_load_op && (stencil_op == op)));
 }
@@ -439,7 +439,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                                  VK_ATTACHMENT_LOAD_OP_CLEAR)) {
             clear_op_size = static_cast<uint32_t>(i) + 1;
 
-            if (FormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
+            if (vkuFormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
                 skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
                                                        rp_begin_loc.dot(Field::pClearValues, i).dot(Field::depthStencil));
             }
@@ -1664,7 +1664,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                 "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampled was set to "
                                 "VK_TRUE.");
                         }
-                        if (FormatHasDepth(attachment_format)) {
+                        if (vkuFormatHasDepth(attachment_format)) {
                             if (subpass_depth_stencil_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE &&
                                 !(subpass_depth_stencil_resolve->depthResolveMode &
                                   phys_dev_props_core12.supportedDepthResolveModes)) {
@@ -1679,7 +1679,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                     attachment_loc.dot(Field::format).Fields().c_str(), string_VkFormat(attachment_format));
                             }
                         }
-                        if (FormatHasStencil(attachment_format)) {
+                        if (vkuFormatHasStencil(attachment_format)) {
                             if (subpass_depth_stencil_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE &&
                                 !(subpass_depth_stencil_resolve->stencilResolveMode &
                                   phys_dev_props_core12.supportedStencilResolveModes)) {
@@ -1694,7 +1694,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                     attachment_loc.dot(Field::format).Fields().c_str(), string_VkFormat(attachment_format));
                             }
                         }
-                        if (FormatIsDepthAndStencil(attachment_format)) {
+                        if (vkuFormatIsDepthAndStencil(attachment_format)) {
                             if (phys_dev_props_core12.independentResolve == VK_FALSE &&
                                 phys_dev_props_core12.independentResolveNone == VK_FALSE &&
                                 (subpass_depth_stencil_resolve->stencilResolveMode !=
@@ -1731,14 +1731,14 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                 if (IsImageLayoutDepthOnly(subpass.pDepthStencilAttachment->layout)) {
                     if (LvlFindInChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext) == nullptr) {
-                        if (FormatIsDepthAndStencil(attachment_format)) {
+                        if (vkuFormatIsDepthAndStencil(attachment_format)) {
                             skip |=
                                 LogError("VUID-VkRenderPassCreateInfo2-attachment-06244", device, attachment_loc.dot(Field::format),
                                          "(%s) has both depth and stencil components (referenced by %s).",
                                          string_VkFormat(attachment_format), ds_loc.Fields().c_str());
                         }
                     }
-                    if (FormatIsStencilOnly(attachment_format)) {
+                    if (vkuFormatIsStencilOnly(attachment_format)) {
                         skip |= LogError("VUID-VkRenderPassCreateInfo2-attachment-06246", device, attachment_loc.dot(Field::format),
                                          "(%s) only has a stencil component (referenced by %s).",
                                          string_VkFormat(attachment_format), ds_loc.Fields().c_str());
@@ -1746,7 +1746,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 }
 
                 if (IsImageLayoutStencilOnly(subpass.pDepthStencilAttachment->layout)) {
-                    if (!FormatIsStencilOnly(attachment_format)) {
+                    if (!vkuFormatIsStencilOnly(attachment_format)) {
                         skip |= LogError("VUID-VkRenderPassCreateInfo2-attachment-06245", device, attachment_loc.dot(Field::format),
                                          "(%s) does not only have a stencil component (referenced by %s).",
                                          string_VkFormat(attachment_format), ds_loc.Fields().c_str());
@@ -2468,9 +2468,9 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         const VkFormat resolve_attachment_format = pCreateInfo->pAttachments[resolve_attachment].format;
 
         // "depthResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a depth component"
-        const bool resolve_has_depth = FormatHasDepth(resolve_attachment_format);
+        const bool resolve_has_depth = vkuFormatHasDepth(resolve_attachment_format);
         // "stencilResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a stencil component"
-        const bool resolve_has_stencil = FormatHasStencil(resolve_attachment_format);
+        const bool resolve_has_stencil = vkuFormatHasStencil(resolve_attachment_format);
 
         if (resolve_has_depth) {
             if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
@@ -2537,29 +2537,29 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                              ds_resolve_loc, "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.");
         }
 
-        const uint32_t resolve_depth_size = FormatDepthSize(resolve_attachment_format);
-        const uint32_t resolve_stencil_size = FormatStencilSize(resolve_attachment_format);
+        const uint32_t resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
+        const uint32_t resolve_stencil_size = vkuFormatStencilSize(resolve_attachment_format);
 
         if (resolve_depth_size > 0 &&
-            ((FormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
-             (FormatDepthNumericalType(ds_attachment_format) != FormatDepthNumericalType(ds_attachment_format)))) {
+            ((vkuFormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
+             (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(ds_attachment_format)))) {
             skip |= LogError(
                 "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
                 "has a depth component (size %" PRIu32
                 "). The depth component "
                 "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_depth_size, FormatDepthSize(ds_attachment_format));
+                resolve_depth_size, vkuFormatDepthSize(ds_attachment_format));
         }
 
         if (resolve_stencil_size > 0 &&
-            ((FormatStencilSize(ds_attachment_format) != resolve_stencil_size) ||
-             (FormatStencilNumericalType(ds_attachment_format) != FormatStencilNumericalType(resolve_attachment_format)))) {
+            ((vkuFormatStencilSize(ds_attachment_format) != resolve_stencil_size) ||
+             (vkuFormatStencilNumericalType(ds_attachment_format) != vkuFormatStencilNumericalType(resolve_attachment_format)))) {
             skip |= LogError(
                 "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182", device, ds_resolve_loc,
                 "has a stencil component (size %" PRIu32
                 "). The stencil component "
                 "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_stencil_size, FormatStencilSize(ds_attachment_format));
+                resolve_stencil_size, vkuFormatStencilSize(ds_attachment_format));
         }
 
         if (pCreateInfo->pAttachments[ds_attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
@@ -2864,8 +2864,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                          "must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
     }
 
-    if ((!FormatIsSINT(image_view_state.create_info.format) && !FormatIsUINT(image_view_state.create_info.format)) &&
-        FormatIsColor(image_view_state.create_info.format) &&
+    if ((!vkuFormatIsSINT(image_view_state.create_info.format) && !vkuFormatIsUINT(image_view_state.create_info.format)) &&
+        vkuFormatIsColor(image_view_state.create_info.format) &&
         !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
         const LogObjectList objlist(commandBuffer, pAttachment->imageView);
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06129", objlist, loc.dot(Field::resolveMode),
@@ -2874,8 +2874,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                          string_VkFormat(image_view_state.create_info.format));
     }
 
-    if ((FormatIsSINT(image_view_state.create_info.format) || FormatIsUINT(image_view_state.create_info.format)) &&
-        FormatIsColor(image_view_state.create_info.format) &&
+    if ((vkuFormatIsSINT(image_view_state.create_info.format) || vkuFormatIsUINT(image_view_state.create_info.format)) &&
+        vkuFormatIsColor(image_view_state.create_info.format) &&
         !(pAttachment->resolveMode == VK_RESOLVE_MODE_NONE || pAttachment->resolveMode == VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
         const LogObjectList objlist(commandBuffer, pAttachment->imageView);
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06130", objlist, loc.dot(Field::resolveMode),
@@ -3559,7 +3559,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                  "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.");
             }
 
-            if (!FormatHasDepth(depth_view_state->create_info.format)) {
+            if (!vkuFormatHasDepth(depth_view_state->create_info.format)) {
                 const LogObjectList objlist(commandBuffer, depth_view_state->image_view());
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06547", objlist,
                                  rendering_info.dot(Field::pDepthAttachment).dot(Field::imageView),
@@ -3583,7 +3583,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                  "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.");
             }
 
-            if (!FormatHasStencil(stencil_view_state->create_info.format)) {
+            if (!vkuFormatHasStencil(stencil_view_state->create_info.format)) {
                 const LogObjectList objlist(commandBuffer, stencil_view_state->image_view());
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06548", objlist,
                                  rendering_info.dot(Field::pStencilAttachment).dot(Field::imageView),
@@ -4199,7 +4199,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                     if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
                         auto image_state = Get<IMAGE_STATE>(ivci.image);
                         if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
-                            if (FormatIsDepthOrStencil(ivci.format)) {
+                            if (vkuFormatIsDepthOrStencil(ivci.format)) {
                                 const LogObjectList objlist(device, ivci.image);
                                 skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00891", objlist, attachment_loc,
                                                  "has an image view type of %s which was taken from image %s of type "

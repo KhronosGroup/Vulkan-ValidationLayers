@@ -20,7 +20,8 @@
 
 #include <vector>
 
-#include "generated/vk_format_utils.h"
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "generated/vk_typemap_helper.h"
 
 static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
@@ -167,14 +168,14 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
                     if (input_attachment.attachment != VK_ATTACHMENT_UNUSED) {
                         const auto format = out_struct.pAttachments[input_attachment.attachment].format;
 
-                        if (FormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
-                        if (FormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
-                        if (FormatHasStencil(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_STENCIL_BIT;
-                        if (FormatPlaneCount(format) > 1) {
+                        if (vkuFormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
+                        if (vkuFormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
+                        if (vkuFormatHasStencil(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                        if (vkuFormatPlaneCount(format) > 1) {
                             input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_0_BIT;
                             input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_1_BIT;
                         }
-                        if (FormatPlaneCount(format) > 2) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+                        if (vkuFormatPlaneCount(format) > 2) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_2_BIT;
                     }
                 }
             }

@@ -47,9 +47,9 @@ VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphic
 
         vertex_attribute_alignments.reserve(vertex_attribute_descriptions.size());
         for (const auto &attr : vertex_attribute_descriptions) {
-            VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attr.format);
-            if (FormatElementIsTexel(attr.format)) {
-                vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatComponentCount(attr.format));
+            VkDeviceSize vtx_attrib_req_alignment = vkuFormatElementSize(attr.format);
+            if (vkuFormatElementIsTexel(attr.format)) {
+                vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attr.format));
             }
             vertex_attribute_alignments.push_back(vtx_attrib_req_alignment);
         }

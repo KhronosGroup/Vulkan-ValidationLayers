@@ -271,7 +271,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
     if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) && entrypoint) {
         for (uint32_t i = 0; i < cb_state.dynamic_state_value.vertex_attribute_descriptions.size(); ++i) {
             const auto& description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
-            bool format64 = FormatIs64bit(description.format);
+            bool format64 = vkuFormatIs64bit(description.format);
             for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
                 if (variable_ptr->decorations.location == description.location &&
                     variable_ptr->storage_class == spv::StorageClass::StorageClassInput) {
@@ -296,13 +296,13 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
                     }
                     if (format64) {
                         if (spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type) >
-                            FormatComponentCount(description.format)) {
+                            vkuFormatComponentCount(description.format)) {
                             skip |=
                                 LogError(vuid.vertex_input_format_09203, spirv_state->handle(), loc,
                                          "Attribute at location %" PRIu32 " uses %" PRIu32 " components, but format %s has %" PRIu32
                                          " components.",
                                          description.location, spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type),
-                                         string_VkFormat(description.format), FormatComponentCount(description.format));
+                                         string_VkFormat(description.format), vkuFormatComponentCount(description.format));
                         }
                     }
                 }
@@ -664,7 +664,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             if (cb_state.active_attachments) {
                 for (uint32_t i = 0; i < cb_state.active_attachments->size(); ++i) {
                     const auto attachment = (*cb_state.active_attachments)[i];
-                    if (attachment && FormatIsColor(attachment->create_info.format) &&
+                    if (attachment && vkuFormatIsColor(attachment->create_info.format) &&
                         (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
                         cb_state.dynamic_state_value.color_blend_enabled[i] == VK_TRUE) {
                         skip |= LogError(vuid.set_color_blend_enable_08643, cb_state.commandBuffer(), loc,

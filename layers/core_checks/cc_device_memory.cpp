@@ -733,7 +733,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
     const auto *image_plane_info = LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
     if (!image_plane_info && image_state->disjoint) {
-        if (FormatIsMultiplane(image_format)) {
+        if (vkuFormatIsMultiplane(image_format)) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-01589", pInfo->image, image_loc,
                              "(%s) was created with a multi-planar format (%s) and "
                              "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
@@ -755,7 +755,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
                              FormatHandle(pInfo->image).c_str());
         }
 
-        if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
+        if ((vkuFormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-02280", pInfo->image, image_loc,
                              "(%s) is a single-plane format (%s) and does not have tiling of "
                              "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
@@ -766,7 +766,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
         if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
             // Make sure planeAspect is only a single, valid plane
             const VkImageAspectFlags aspect = image_plane_info->planeAspect;
-            if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
+            if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
                 skip |=
                     LogError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281", pInfo->image,
                              info_loc.pNext(Struct::VkImagePlaneMemoryRequirementsInfo, Field::planeAspect),
@@ -1096,7 +1096,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // All validation using the image_state->plane*_requirements for external AHB is check in android only section
                 if (image_state->IsExternalBuffer() == false) {
                     const VkImageAspectFlagBits aspect = plane_info->planeAspect;
-                    plane = GetPlaneIndex(aspect);
+                    plane = vkuGetPlaneIndex(aspect);
                     const VkMemoryRequirements &disjoint_mem_req = image_state->requirements[plane];
 
                     // Validate memory requirements alignment
@@ -1460,7 +1460,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // Make sure planeAspect is only a single, valid plane
                 const VkFormat image_format = image_state->createInfo.format;
                 const VkImageAspectFlags aspect = plane_info->planeAspect;
-                if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
+                if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |=
                         LogError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283", objlist,
@@ -1497,7 +1497,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     for (auto &resource : resources_bound) {
         auto image_state = Get<IMAGE_STATE>(resource.first);
         if (image_state->disjoint == true) {
-            uint32_t total_planes = FormatPlaneCount(image_state->createInfo.format);
+            uint32_t total_planes = vkuFormatPlaneCount(image_state->createInfo.format);
             for (uint32_t i = 0; i < total_planes; i++) {
                 if (resource.second[i] == vvl::kU32Max) {
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-02858", resource.first, error_obj.location,

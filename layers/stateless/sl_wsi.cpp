@@ -81,8 +81,8 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(VkSwapchainCreateInfoKHR c
 
             // Using the first format, compare the rest of the formats against it that they are compatible
             for (uint32_t i = 1; i < viewFormatCount; i++) {
-                if (FormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
-                    FormatCompatibilityClass(format_list_info->pViewFormats[i])) {
+                if (vkuFormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
+                    vkuFormatCompatibilityClass(format_list_info->pViewFormats[i])) {
                     skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
                                      loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i),
                                      "(%s) and pViewFormats[0] (%s) are not compatible in the pNext chain.",

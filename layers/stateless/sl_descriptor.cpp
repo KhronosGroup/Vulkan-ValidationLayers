@@ -323,10 +323,10 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                              "struct in pNext chain.",
                              string_VkBorderColor(pCreateInfo->borderColor));
         } else {
-            if ((custom_create_info->format != VK_FORMAT_UNDEFINED) && !FormatIsDepthAndStencil(custom_create_info->format) &&
-                ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT && !FormatIsSampledInt(custom_create_info->format)) ||
+            if ((custom_create_info->format != VK_FORMAT_UNDEFINED) && !vkuFormatIsDepthAndStencil(custom_create_info->format) &&
+                ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT && !vkuFormatIsSampledInt(custom_create_info->format)) ||
                  (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
-                  !FormatIsSampledFloat(custom_create_info->format)))) {
+                  !vkuFormatIsSampledFloat(custom_create_info->format)))) {
                 skip |= LogError("VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605", device,
                                  create_info_loc.pNext(Struct::VkSamplerCustomBorderColorCreateInfoEXT, Field::format),
                                  "%s does not match borderColor (%s).", string_VkFormat(custom_create_info->format),
@@ -1045,7 +1045,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
     if (!is_external_format) {
         const VkComponentMapping components = pCreateInfo->components;
         // XChroma Subsampled is same as "the format has a _422 or _420 suffix" from spec
-        if (FormatIsXChromaSubsampled(format) == true) {
+        if (vkuFormatIsXChromaSubsampled(format) == true) {
             if ((components.g != VK_COMPONENT_SWIZZLE_G) && (components.g != VK_COMPONENT_SWIZZLE_IDENTITY)) {
                 skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-components-02581", device, create_info_loc,
                                  "When using a XChroma subsampled format (%s) the components.g needs to be VK_COMPONENT_SWIZZLE_G "
@@ -1110,7 +1110,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
             // 2 = no [b,a]
             // 1 = no [g,b,a]
             // depth/stencil = no [g,b,a] (shouldn't ever occur, but no VU preventing it)
-            const uint32_t component_count = (FormatIsDepthOrStencil(format) == true) ? 1 : FormatComponentCount(format);
+            const uint32_t component_count = (vkuFormatIsDepthOrStencil(format) == true) ? 1 : vkuFormatComponentCount(format);
 
             if ((component_count < 4) && ((components.r == VK_COMPONENT_SWIZZLE_A) || (components.g == VK_COMPONENT_SWIZZLE_A) ||
                                           (components.b == VK_COMPONENT_SWIZZLE_A))) {

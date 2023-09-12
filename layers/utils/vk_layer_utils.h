@@ -25,9 +25,11 @@
 #include <string>
 #include <vector>
 #include <bitset>
+
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "cast_utils.h"
 #include "generated/vk_extension_helper.h"
-#include "generated/vk_format_utils.h"
 #include "error_message/logging.h"
 
 #ifndef WIN32
@@ -357,28 +359,9 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
-static inline uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
-    // Returns an out of bounds index on error
-    switch (aspect) {
-        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-            return 0;
-            break;
-        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-            return 1;
-            break;
-        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-            return 2;
-            break;
-        default:
-            // If more than one plane bit is set, return error condition
-            return FORMAT_MAX_PLANES;
-            break;
-    }
-}
-
 // vkspec.html#formats-planes-image-aspect
 static inline bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
-    const uint32_t planes = FormatPlaneCount(format);
+    const uint32_t planes = vkuFormatPlaneCount(format);
     constexpr VkImageAspectFlags valid_planes =
         VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 
@@ -490,8 +473,8 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 
     // If multi-plane, adjust per-plane extent
     const VkFormat format = ci.format;
-    if (FormatIsMultiplane(format)) {
-        VkExtent2D divisors = FindMultiplaneExtentDivisors(format, aspect_mask);
+    if (vkuFormatIsMultiplane(format)) {
+        VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, static_cast<VkImageAspectFlagBits>(aspect_mask));
         extent.width /= divisors.width;
         extent.height /= divisors.height;
     }

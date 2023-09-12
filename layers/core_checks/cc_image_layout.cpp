@@ -1038,8 +1038,8 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subr
         return false;
     }
     if (!VerifyAspectsPresent(subres_range.aspectMask, image_state.createInfo.format)) return false;
-    if (((FormatPlaneCount(image_state.createInfo.format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
-        ((FormatPlaneCount(image_state.createInfo.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT)))
+    if (((vkuFormatPlaneCount(image_state.createInfo.format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
+        ((vkuFormatPlaneCount(image_state.createInfo.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT)))
         return false;
     if (subres_range.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT ||
         subres_range.aspectMask & VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT ||

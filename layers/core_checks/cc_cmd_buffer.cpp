@@ -186,7 +186,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             "is %s with potential format features %s.", string_VkFormat(depth_format),
                             string_VkFormatFeatureFlags2(potential_format_features).c_str());
                     }
-                    if (!FormatHasDepth(depth_format)) {
+                    if (!vkuFormatHasDepth(depth_format)) {
                         skip |= LogError(
                             "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540", commandBuffer,
                             inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::depthAttachmentFormat),
@@ -204,7 +204,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             "is %s with potential format features %s.", string_VkFormat(stencil_format),
                             string_VkFormatFeatureFlags2(potential_format_features).c_str());
                     }
-                    if (!FormatHasStencil(stencil_format)) {
+                    if (!vkuFormatHasStencil(stencil_format)) {
                         skip |= LogError(
                             "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541", commandBuffer,
                             inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::stencilAttachmentFormat),

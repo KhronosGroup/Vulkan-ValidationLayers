@@ -173,7 +173,7 @@ void gpuav_state::DescriptorSet::SetBindingState(uint32_t *data, uint32_t index,
                 } else {
                     auto buffer_view_state = desc.GetBufferViewState();
                     auto view_size = buffer_view_state->Size();
-                    data[index++] = static_cast<uint32_t>(view_size / FormatElementSize(buffer_view_state->create_info.format));
+                    data[index++] = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
                 }
             }
             break;

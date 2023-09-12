@@ -19,8 +19,9 @@
  *
  */
 #include <cassert>
+#include <vulkan/utility/vk_format_utils.h>
+
 #include "subresource_adapter.h"
-#include "generated/vk_format_utils.h"
 #include <cmath>
 #include "state_tracker/image_state.h"
 #include "generated/layer_chassis_dispatch.h"
@@ -292,15 +293,15 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         }
     }
 
-    is_compressed_ = FormatIsCompressed(image.createInfo.format);
-    texel_extent_ = FormatTexelBlockExtent(image.createInfo.format);
+    is_compressed_ = vkuFormatIsCompressed(image.createInfo.format);
+    texel_extent_ = vkuFormatTexelBlockExtent(image.createInfo.format);
 
     is_3_d_ = image.createInfo.imageType == VK_IMAGE_TYPE_3D;
     y_interleave_ = false;
     for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
         subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
         subres_layers.aspectMask = subres.aspectMask;
-        texel_sizes_.push_back(FormatTexelSize(image.createInfo.format, subres.aspectMask));
+        texel_sizes_.push_back(vkuFormatTexelSizeWithAspect(image.createInfo.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
         IndexType aspect_size = 0;
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;
