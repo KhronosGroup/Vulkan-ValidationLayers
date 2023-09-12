@@ -535,3 +535,332 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         m_commandBuffer->end();
     }
 }
+
+TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
+    TEST_DESCRIPTION("Repro https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery feature is not supported";
+    }
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature is not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Allocate a memory chunk that will be used as backing memory for scratch buffer
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+    alloc_info.allocationSize = 8192;
+    vk_testing::DeviceMemory common_scratch_memory(*m_device, alloc_info);
+
+    VkCommandBufferObj cmd_buffer_frame_0(m_device, m_commandPool);
+    VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
+    VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
+
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_0;
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
+
+    auto scratch_buffer_frame_0 = std::make_shared<VkBufferObj>();
+    auto scratch_buffer_frame_1 = std::make_shared<VkBufferObj>();
+    auto scratch_buffer_frame_2 = std::make_shared<VkBufferObj>();
+
+    VkFenceObj fence_frame_0(*m_device);
+    VkFenceObj fence_frame_1(*m_device);
+    VkFenceObj fence_frame_2(*m_device);
+
+    // Frame 0
+    {
+        // Nothing to wait for, resources used in frame 0 will be released in frame 2
+
+        // Create scratch buffer
+        auto scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        scratch_buffer_frame_0->init_no_mem(*m_device, scratch_buffer_ci);
+
+        // Bind memory to scratch buffer
+        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_info.SetScratchBuffer(scratch_buffer_frame_0);
+        build_infos_frame_0.emplace_back(std::move(build_info));
+        cmd_buffer_frame_0.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = scratch_buffer_frame_0->handle();
+        barrier.size = scratch_buffer_ci.size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_0.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_0.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_0.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_0);
+    }
+
+    // Frame 1
+    {
+        // Still nothing to wait for
+
+        // Create scratch buffer
+        auto scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        scratch_buffer_frame_1->init_no_mem(*m_device, scratch_buffer_ci);
+
+        // Bind memory to scratch buffer
+        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_info.SetScratchBuffer(scratch_buffer_frame_1);
+        build_infos_frame_1.emplace_back(std::move(build_info));
+        cmd_buffer_frame_1.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = scratch_buffer_frame_1->handle();
+        barrier.size = scratch_buffer_ci.size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_1.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_1.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_1.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_1);
+    }
+
+    // Frame 2
+    {
+        // Free resources from frame 0
+        fence_frame_0.wait(kWaitTimeout);
+        // Destroying buffer triggers VUID-vkDestroyBuffer-buffer-00922, it is still considered in use by cmd_buffer_frame_0 this
+        // should not happen assuming synchronization is correct
+        // Adding "fence_frame_1.wait(kWaitTimeout);" used to solve this issue.
+        // Using a dedicated memory chunk for each scratch buffer also used to solve it.
+        // The issue was that when recording a acceleration structure build command,
+        // any buffer indirectly mentioned through a device address used to be added using a call to GetBuffersByAddress.
+        // So when recording the build happening on frame 1, given that all scratch buffers have the same base device address,
+        // scratch_buffer_frame_0 was *also* be added as a child to cmd_buffer_frame_1.
+        // So when destroying it hereinafter, since frame 1 is still in flight, scratch_buffer_frame_0 is still
+        // considered in use, so 00922 is triggered.
+        // => Solution: buffers obtained through a call to GetBuffersByAddress should not get added as children,
+        // since there is no 1 to 1 mapping between a device address and a buffer.
+        scratch_buffer_frame_0 = nullptr;  // Remove reference
+        build_infos_frame_0.clear();       // scratch_buffer_frame_0 will be destroyed in this call
+
+        // Create scratch buffer
+        auto scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        scratch_buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        scratch_buffer_ci.size = 8192;
+        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        scratch_buffer_frame_2->init_no_mem(*m_device, scratch_buffer_ci);
+
+        // Bind memory to scratch buffer
+        vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_info.SetScratchBuffer(scratch_buffer_frame_2);
+        build_infos_frame_2.emplace_back(std::move(build_info));
+        cmd_buffer_frame_2.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = scratch_buffer_frame_2->handle();
+        barrier.size = scratch_buffer_ci.size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_2.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_2.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_2.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_2);
+    }
+
+    fence_frame_1.wait(kWaitTimeout);
+    fence_frame_2.wait(kWaitTimeout);
+}
+
+TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
+    TEST_DESCRIPTION(
+        "Repro https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461"
+        "This time, each scratch buffer has its own memory");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery feature is not supported";
+    }
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature is not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkCommandBufferObj cmd_buffer_frame_0(m_device, m_commandPool);
+    VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
+    VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
+
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_0;
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
+
+    VkFenceObj fence_frame_0(*m_device);
+    VkFenceObj fence_frame_1(*m_device);
+    VkFenceObj fence_frame_2(*m_device);
+
+    // Frame 0
+    {
+        // Nothing to wait for, resources used in frame 0 will be released in frame 2
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+
+        build_infos_frame_0.emplace_back(std::move(build_info));
+        cmd_buffer_frame_0.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = build_infos_frame_0[0].GetScratchBuffer()->handle();
+        barrier.size = build_infos_frame_0[0].GetScratchBuffer()->create_info().size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_0.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_0.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_0.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_0);
+    }
+
+    // Frame 1
+    {
+        // Still nothing to wait for
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_infos_frame_1.emplace_back(std::move(build_info));
+        cmd_buffer_frame_1.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = build_infos_frame_1[0].GetScratchBuffer()->handle();
+        barrier.size = build_infos_frame_1[0].GetScratchBuffer()->create_info().size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_1.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_1.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_1.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_1);
+    }
+
+    // Frame 2
+    {
+        // Free resources from frame 0
+        fence_frame_0.wait(kWaitTimeout);
+        build_infos_frame_0.clear();  // No validation error
+
+        // Build a dummy acceleration structure
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_infos_frame_2.emplace_back(std::move(build_info));
+        cmd_buffer_frame_2.begin();
+        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
+
+        // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
+        auto barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        barrier.buffer = build_infos_frame_2[0].GetScratchBuffer()->handle();
+        barrier.size = build_infos_frame_2[0].GetScratchBuffer()->create_info().size;
+        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        cmd_buffer_frame_2.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0,
+                                           nullptr);
+        cmd_buffer_frame_2.end();
+
+        // Submit command buffer
+        VkCommandBuffer cmd_buffer_handle = cmd_buffer_frame_2.handle();
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer_handle;
+        vk::QueueSubmit(m_device->GetDefaultQueue()->handle(), 1, &submit_info, fence_frame_2);
+    }
+
+    fence_frame_1.wait(kWaitTimeout);
+    fence_frame_2.wait(kWaitTimeout);
+}

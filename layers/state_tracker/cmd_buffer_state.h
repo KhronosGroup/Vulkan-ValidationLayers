@@ -469,13 +469,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         AddChild(base);
     }
 
-    void AddChildren(vvl::span<BUFFER_STATE *> &child_nodes) {
-        for (auto &child_node : child_nodes) {
-            auto child_node_shared_ptr = child_node->shared_from_this();
-            AddChild(child_node_shared_ptr);
-        }
-    }
-
     void RemoveChild(std::shared_ptr<BASE_NODE> &base_node);
     template <typename StateObject>
     void RemoveChild(std::shared_ptr<StateObject> &child_node) {

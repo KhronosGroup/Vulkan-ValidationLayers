@@ -3068,55 +3068,10 @@ void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFF
     if (src_as_state) {
         cb_state.AddChild(src_as_state);
     }
-    auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
-    if (!scratch_buffers.empty()) {
-        cb_state.AddChildren(scratch_buffers);
-    }
 
-    for (uint32_t i = 0; i < info.geometryCount; i++) {
-        // only one of pGeometries and ppGeometries can be non-null
-        const auto &geom = info.pGeometries ? info.pGeometries[i] : *info.ppGeometries[i];
-        switch (geom.geometryType) {
-            case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
-                auto vertex_buffers = GetBuffersByAddress(geom.geometry.triangles.vertexData.deviceAddress);
-                if (!vertex_buffers.empty()) {
-                    cb_state.AddChildren(vertex_buffers);
-                }
-                auto index_buffers = GetBuffersByAddress(geom.geometry.triangles.indexData.deviceAddress);
-                if (!index_buffers.empty()) {
-                    cb_state.AddChildren(index_buffers);
-                }
-                auto transform_buffers = GetBuffersByAddress(geom.geometry.triangles.transformData.deviceAddress);
-                if (!transform_buffers.empty()) {
-                    cb_state.AddChildren(transform_buffers);
-                }
-                const auto *motion_data = LvlFindInChain<VkAccelerationStructureGeometryMotionTrianglesDataNV>(info.pNext);
-                if (motion_data) {
-                    auto motion_buffers = GetBuffersByAddress(motion_data->vertexData.deviceAddress);
-                    if (!motion_buffers.empty()) {
-                        cb_state.AddChildren(motion_buffers);
-                    }
-                }
-            } break;
-            case VK_GEOMETRY_TYPE_AABBS_KHR: {
-                auto data_buffers = GetBuffersByAddress(geom.geometry.aabbs.data.deviceAddress);
-                if (!data_buffers.empty()) {
-                    cb_state.AddChildren(data_buffers);
-                }
-            } break;
-            case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
-                // NOTE: if arrayOfPointers is true, we don't track the pointers in the array. That would
-                // require that data buffer be mapped to the CPU so that we could walk through it. We can't
-                // easily ensure that's true.
-                auto data_buffers = GetBuffersByAddress(geom.geometry.instances.data.deviceAddress);
-                if (!data_buffers.empty()) {
-                    cb_state.AddChildren(data_buffers);
-                }
-            } break;
-            default:
-                break;
-        }
-    }
+    // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
+    // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a command
+    // buffer
 }
 
 void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
@@ -3144,12 +3099,9 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     cb_state->RecordCmd(record_obj.location.function);
     for (uint32_t i = 0; i < infoCount; i++) {
         RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
-        if (!disabled[command_buffer_state]) {
-            auto indirect_buffer = GetBuffersByAddress(pIndirectDeviceAddresses[i]);
-            if (!indirect_buffer.empty()) {
-                cb_state->AddChildren(indirect_buffer);
-            }
-        }
+        // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
+        // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a command
+        // buffer
     }
     cb_state->has_build_as_cmd = true;
 }
@@ -5337,10 +5289,9 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureToMemoryK
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(src_as_state);
         }
-        auto dst_buffers = GetBuffersByAddress(pInfo->dst.deviceAddress);
-        if (!dst_buffers.empty()) {
-            cb_state->AddChildren(dst_buffers);
-        }
+        // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
+        // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a command
+        // buffer
     }
 }
 
@@ -5350,12 +5301,12 @@ void ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureK
     if (cb_state) {
         cb_state->RecordCmd(record_obj.location.function);
         if (!disabled[command_buffer_state]) {
-            auto src_buffers = GetBuffersByAddress(pInfo->src.deviceAddress);
-            if (!src_buffers.empty()) {
-                cb_state->AddChildren(src_buffers);
-            }
             auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
             cb_state->AddChild(dst_as_state);
+
+            // Issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6461
+            // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a
+            // command buffer
         }
     }
 }
