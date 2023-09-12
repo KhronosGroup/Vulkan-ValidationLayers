@@ -22,7 +22,7 @@ target_sources(VkLayer_device_profile_api PRIVATE
     vk_lunarg_device_profile_api_layer.h
 )
 
-target_link_libraries(VkLayer_device_profile_api PRIVATE VkLayer_utils)
+target_link_libraries(VkLayer_device_profile_api PRIVATE vvl_utils)
 
 if (WIN32)
     target_link_options(VkLayer_device_profile_api PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_device_profile_api.def)

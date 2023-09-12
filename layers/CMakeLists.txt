@@ -20,8 +20,8 @@
 # based on the target API variant (e.g. Vulkan SC)
 set(LAYER_NAME "VkLayer_khronos_validation")
 
-add_library(VkLayer_utils STATIC)
-target_sources(VkLayer_utils PRIVATE
+add_library(vvl_utils STATIC)
+target_sources(vvl_utils PRIVATE
     containers/custom_containers.h
     error_message/logging.h
     error_message/logging.cpp
@@ -72,31 +72,31 @@ target_sources(VkLayer_utils PRIVATE
 # v0.8.1 also has compilation issues that are removed by setting this define.
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
-target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
+target_compile_definitions(vvl_utils PUBLIC XXH_NO_LONG_LONG)
 
-target_link_libraries(VkLayer_utils PUBLIC
+target_link_libraries(vvl_utils PUBLIC
     Vulkan::Headers
     Vulkan::LayerSettings
     Vulkan::UtilityHeaders
     ${CMAKE_DL_LIBS}
 )
-target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
-target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
+target_include_directories(vvl_utils SYSTEM PRIVATE external)
+target_include_directories(vvl_utils PUBLIC . ${API_TYPE})
 
 find_package(robin_hood CONFIG)
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
 if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
+    target_link_libraries(vvl_utils PUBLIC robin_hood::robin_hood)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    target_compile_options(VkLayer_utils PRIVATE
+    target_compile_options(vvl_utils PRIVATE
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
     )
 elseif(MSVC)
-    target_compile_options(VkLayer_utils PRIVATE
+    target_compile_options(vvl_utils PRIVATE
         /wd4324 # padding
         /wd4458 # hiding class member
         /wd4457 # hiding function parameter
@@ -352,9 +352,9 @@ if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(vvl PRIVATE robin_hood::robin_hood)
 endif()
 
-# Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
-# Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
+# Order matters here. vvl_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
+# Otherwise, libraries after vvl_utils will not benefit from this performance improvement.
+target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS vvl_utils)
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
 # OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
@@ -379,7 +379,7 @@ if (ANDROID)
     endif()
 
     # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
-    target_link_libraries(VkLayer_utils PUBLIC log)
+    target_link_libraries(vvl_utils PUBLIC log)
 
     install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
