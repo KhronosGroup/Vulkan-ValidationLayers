@@ -101,6 +101,10 @@
                 "VkPhysicalDevicePresentWaitFeaturesKHR": {
                     "presentWait": true
                 },
+                "VkPhysicalDeviceCooperativeMatrixFeaturesKHR": {
+                    "cooperativeMatrix": true,
+                    "cooperativeMatrixRobustBufferAccess": true
+                },
                 "VkPhysicalDevice16BitStorageFeatures": {
                     "storageBuffer16BitAccess": true,
                     "uniformAndStorageBuffer16BitAccess": true,
@@ -1022,6 +1026,18 @@
                 "VkPhysicalDevicePushDescriptorPropertiesKHR": {
                     "maxPushDescriptors": 4294967000
                 },
+                "VkPhysicalDeviceCooperativeMatrixPropertiesKHR": {
+                    "cooperativeMatrixSupportedStages": [
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR"
+                    ]
+                },
                 "VkPhysicalDeviceDriverProperties": {},
                 "VkPhysicalDeviceIDProperties": {},
                 "VkPhysicalDeviceMultiviewProperties": {
@@ -1822,6 +1838,7 @@
                 "VK_KHR_android_surface": 1,
                 "VK_KHR_bind_memory2": 1,
                 "VK_KHR_buffer_device_address": 1,
+                "VK_KHR_cooperative_matrix": 1,
                 "VK_KHR_copy_commands2": 1,
                 "VK_KHR_create_renderpass2": 1,
                 "VK_KHR_dedicated_allocation": 1,

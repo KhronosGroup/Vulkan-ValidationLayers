@@ -780,6 +780,7 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
                     builtin_decoration_inst.push_back(&insn);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     spec_const_map[insn.Word(3)] = target_id;
+                    id_to_spec_id[target_id] = insn.Word(3);
                 }
             } break;
             case spv::OpMemberDecorate: {
@@ -909,6 +910,13 @@ SPIRV_MODULE_STATE::StaticData::StaticData(const SPIRV_MODULE_STATE& module_stat
             }
             case spv::OpReadClockKHR: {
                 read_clock_inst.push_back(&insn);
+                break;
+            }
+            case spv::OpTypeCooperativeMatrixNV:
+            case spv::OpCooperativeMatrixMulAddNV:
+            case spv::OpTypeCooperativeMatrixKHR:
+            case spv::OpCooperativeMatrixMulAddKHR: {
+                cooperative_matrix_inst.push_back(&insn);
                 break;
             }
 

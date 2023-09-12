@@ -26,6 +26,7 @@
 
 #pragma once
 #include <cstdint>
+#include <string>
 #include <spirv/unified1/spirv.hpp>
 
 bool AtomicOperation(uint32_t opcode);
@@ -52,5 +53,6 @@ const char* string_SpvExecutionModel(uint32_t execution_model);
 const char* string_SpvDecoration(uint32_t decoration);
 const char* string_SpvBuiltIn(uint32_t built_in);
 const char* string_SpvDim(uint32_t dim);
+std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
 
 // NOLINTEND
