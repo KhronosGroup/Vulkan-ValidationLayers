@@ -1414,4 +1414,39 @@ const char* string_SpvDim(uint32_t dim) {
     }
 }
 
+static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatrixOperandsMask mask) {
+    switch(mask) {
+        case spv::CooperativeMatrixOperandsMaskNone:
+            return "None";
+        case spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask:
+            return "MatrixASignedComponentsKHR";
+        case spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask:
+            return "MatrixBSignedComponentsKHR";
+        case spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask:
+            return "MatrixCSignedComponentsKHR";
+        case spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask:
+            return "MatrixResultSignedComponentsKHR";
+        case spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask:
+            return "SaturatingAccumulationKHR";
+
+        default:
+            return "Unknown CooperativeMatrixOperandsMask";
+    }
+}
+
+std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
+    std::string ret;
+    int index = 0;
+    while(mask) {
+        if (mask & 1) {
+            if(!ret.empty()) ret.append("|");
+            ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(1U << mask)));
+        }
+        ++index;
+        mask >>= 1;
+    }
+    if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
+    return ret;
+}
+
 // NOLINTEND

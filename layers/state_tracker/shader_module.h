@@ -439,6 +439,9 @@ struct SPIRV_MODULE_STATE {
 
         // <Specialization constant ID -> target ID> mapping
         vvl::unordered_map<uint32_t, uint32_t> spec_const_map;
+        // <target ID - > Specialization constant ID> mapping
+        // TODO - Remove having a second copy for the map in reverse
+        vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
         std::vector<const Instruction *> decoration_inst;
         std::vector<const Instruction *> member_decoration_inst;
@@ -463,6 +466,7 @@ struct SPIRV_MODULE_STATE {
         std::vector<const Instruction *> atomic_inst;
         std::vector<const Instruction *> group_inst;
         std::vector<const Instruction *> read_clock_inst;
+        std::vector<const Instruction *> cooperative_matrix_inst;
         std::vector<spv::Capability> capability_list;
 
         bool has_specialization_constants{false};

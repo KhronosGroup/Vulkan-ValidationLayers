@@ -962,9 +962,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderStageGroupNonUniform(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                             const Location& loc) const;
     bool ValidateMemoryScope(const SPIRV_MODULE_STATE& module_state, const Instruction& insn, const Location& loc) const;
-    bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state, const PipelineStageState& stage_state) const;
-    bool ValidateCooperativeMatrixKHR(const SPIRV_MODULE_STATE& module_state, const PipelineStageState& stage_state,
-                                      const uint32_t local_size_x) const;
+    bool ValidateCooperativeMatrix(const SPIRV_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                   const PipelineStageState& stage_state, const uint32_t local_size_x, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const StageCreateInfo& create_info, const Location& loc) const;
     bool ValidateShaderSubgroupSizeControl(const StageCreateInfo& stage_create_info, VkShaderStageFlagBits stage,

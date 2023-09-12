@@ -41,16 +41,17 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.decorationList = []
         self.builtInList = []
         self.dimList = []
+        self.cooperativeMatrixList = []
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
 
         self.parseGrammar(grammar)
 
-    def addToStingList(self, operandKind, kind, list):
+    def addToStingList(self, operandKind, kind, list, ignoreList = []):
         if operandKind['kind'] == kind:
             values = [] # prevent alias from being duplicatd
             for enum in operandKind['enumerants']:
-                if enum['value'] not in values:
+                if enum['value'] not in values and enum['enumerant'] not in ignoreList:
                     list.append(enum['enumerant'])
                     values.append(enum['value'])
 
@@ -95,6 +96,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 self.addToStingList(operandKind, 'Decoration', self.decorationList)
                 self.addToStingList(operandKind, 'BuiltIn', self.builtInList)
                 self.addToStingList(operandKind, 'Dim', self.dimList)
+                self.addToStingList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
 
             for instruction in instructions:
                 opname = instruction['opname']
@@ -217,6 +219,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         out.append('''
 #pragma once
 #include <cstdint>
+#include <string>
 #include <spirv/unified1/spirv.hpp>
 
 bool AtomicOperation(uint32_t opcode);
@@ -243,6 +246,7 @@ const char* string_SpvExecutionModel(uint32_t execution_model);
 const char* string_SpvDecoration(uint32_t decoration);
 const char* string_SpvBuiltIn(uint32_t built_in);
 const char* string_SpvDim(uint32_t dim);
+std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
 ''')
         self.write("".join(out))
 
@@ -528,6 +532,33 @@ const char* string_SpvDim(uint32_t dim) {{
         default:
             return "Unknown Dim";
     }}
+}}
+
+static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatrixOperandsMask mask) {{
+    switch(mask) {{
+        case spv::CooperativeMatrixOperandsMaskNone:
+            return "None";
+{"".join([f"""        case spv::CooperativeMatrixOperands{x}Mask:
+            return "{x}";
+""" for x in self.cooperativeMatrixList])}
+        default:
+            return "Unknown CooperativeMatrixOperandsMask";
+    }}
+}}
+
+std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {{
+    std::string ret;
+    int index = 0;
+    while(mask) {{
+        if (mask & 1) {{
+            if(!ret.empty()) ret.append("|");
+            ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(1U << mask)));
+        }}
+        ++index;
+        mask >>= 1;
+    }}
+    if (ret.empty()) ret.append("CooperativeMatrixOperandsMask(0)");
+    return ret;
 }}
 ''')
         self.write("".join(out))

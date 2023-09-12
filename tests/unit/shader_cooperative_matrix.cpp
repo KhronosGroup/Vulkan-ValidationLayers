@@ -124,10 +124,10 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRUnsupportedStage) {
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
         void main() {
-            coopmat<int32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
-            coopmat<int32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
-            coopmat<int32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
-            coopmat<int32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
        }
     )glsl";
 
@@ -232,10 +232,10 @@ TEST_F(NegativeShaderCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
         void main() {
-            coopmat<float32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
-            coopmat<float32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
-            coopmat<float32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
-            coopmat<float32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
         }
     )glsl";
 
