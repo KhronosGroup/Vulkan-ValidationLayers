@@ -103,7 +103,7 @@ class VkRenderFramework : public VkTestFramework {
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     void DestroySwapchain();
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
-    bool CreateSurface(SurfaceContext& surface_context, VkSurfaceKHR& surface);
+    bool CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
     void DestroySurface(VkSurfaceKHR& surface);
     void DestroySurfaceContext(SurfaceContext& surface_context);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);

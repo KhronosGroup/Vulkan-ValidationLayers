@@ -577,7 +577,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface) {
+bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance) {
+    const VkInstance surface_instance = (custom_instance != VK_NULL_HANDLE) ? custom_instance : instance();
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     if (IsExtensionsEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
         HINSTANCE window_instance = GetModuleHandle(nullptr);
@@ -593,7 +594,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
         VkWin32SurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.hinstance = window_instance;
         surface_create_info.hwnd = window;
-        return VK_SUCCESS == vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+        return VK_SUCCESS == vk::CreateWin32SurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
@@ -601,7 +602,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
     if (IsExtensionsEnabled(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
         VkAndroidSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.window = VkTestFramework::window;
-        return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+        return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
     }
 #endif
 
@@ -616,7 +617,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
             VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.dpy = surface_context.m_surface_dpy;
             surface_create_info.window = surface_context.m_surface_window;
-            return VK_SUCCESS == vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+            return VK_SUCCESS == vk::CreateXlibSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
         }
     }
 #endif
@@ -629,7 +630,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
             VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
             surface_create_info.window = window;
-            return VK_SUCCESS == vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+            return VK_SUCCESS == vk::CreateXcbSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
         }
     }
 #endif
