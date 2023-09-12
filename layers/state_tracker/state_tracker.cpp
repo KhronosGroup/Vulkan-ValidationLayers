@@ -5211,7 +5211,7 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
                                                              const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                              void *csm_state_data) {
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    csm_state->module_state = std::make_unique<SPIRV_MODULE_STATE>(pCreateInfo->codeSize, pCreateInfo->pCode);
+    csm_state->module_state = std::make_shared<SPIRV_MODULE_STATE>(pCreateInfo->codeSize, pCreateInfo->pCode);
     if (csm_state->module_state && csm_state->module_state->static_data_.has_group_decoration) {
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
@@ -5226,7 +5226,7 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
             csm_state->module_state =
-                std::make_unique<SPIRV_MODULE_STATE>(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data());
+                std::make_shared<SPIRV_MODULE_STATE>(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data());
         }
     }
 }
@@ -5235,7 +5235,14 @@ void ValidationStateTracker::PreCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const VkShaderCreateInfoEXT *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                            void *csm_state_data) {
-    // TODO - Add support for VK_EXT_shader_object
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        // don't need to worry about GroupDecoration with VK_EXT_shader_object
+        if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
+            csm_state->module_states[i] = std::make_shared<SPIRV_MODULE_STATE>(
+                pCreateInfos[i].codeSize, static_cast<const uint32_t *>(pCreateInfos[i].pCode));
+        }
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
@@ -5250,11 +5257,12 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
 void ValidationStateTracker::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                             const VkShaderCreateInfoEXT *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                            const RecordObject &record_obj) {
+                                                            const RecordObject &record_obj, void *csm_state_data) {
     if (VK_SUCCESS != record_obj.result) return;
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         if (pShaders[i] != VK_NULL_HANDLE) {
-            Add(std::make_shared<SHADER_OBJECT_STATE>(this, pCreateInfos[i], pShaders[i], createInfoCount, pShaders, 0));
+            Add(std::make_shared<SHADER_OBJECT_STATE>(this, pCreateInfos[i], pShaders[i], csm_state->module_states[i], createInfoCount, pShaders, csm_state->unique_shader_ids[i]));
         }
     }
 }

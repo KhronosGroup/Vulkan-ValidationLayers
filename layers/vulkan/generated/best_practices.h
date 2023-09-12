@@ -985,8 +985,8 @@ void PostCallRecordBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowS
                                                  VkImageLayout layout, const RecordObject& record_obj) override;
 
 void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                    const RecordObject& record_obj) override;
+                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders, const RecordObject& record_obj,
+                                    void* state_data) override;
 
 void PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
                                           const RecordObject& record_obj) override;

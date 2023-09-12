@@ -383,8 +383,17 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
     VkResult result2 = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, NULL, &dummy_desc_layout);
 
-    assert((result1 == VK_SUCCESS) && (result2 == VK_SUCCESS));
-    if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS)) {
+    std::vector<VkDescriptorSetLayout> debug_layouts;
+    for (uint32_t j = 0; j < adjusted_max_desc_sets - 1; ++j) {
+        debug_layouts.push_back(dummy_desc_layout);
+    }
+    debug_layouts.push_back(debug_desc_layout);
+    const VkPipelineLayoutCreateInfo debug_pipeline_layout_info = {
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, NULL, 0u, static_cast<uint32_t>(debug_layouts.size()), debug_layouts.data(), 0u, NULL};
+    VkResult result3 = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, NULL, &debug_pipeline_layout);
+
+    assert((result1 == VK_SUCCESS) && (result2 == VK_SUCCESS) && (result3 == VK_SUCCESS));
+    if ((result1 != VK_SUCCESS) || (result2 != VK_SUCCESS) || (result3 != VK_SUCCESS)) {
         ReportSetupProblem(device, "Unable to create descriptor set layout.");
         if (result1 == VK_SUCCESS) {
             DispatchDestroyDescriptorSetLayout(device, debug_desc_layout, NULL);
@@ -392,8 +401,12 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         if (result2 == VK_SUCCESS) {
             DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
         }
+        if (result3 == VK_SUCCESS) {
+            DispatchDestroyPipelineLayout(device, debug_pipeline_layout, NULL);
+        }
         debug_desc_layout = VK_NULL_HANDLE;
         dummy_desc_layout = VK_NULL_HANDLE;
+        debug_pipeline_layout = VK_NULL_HANDLE;
         aborted = true;
         return;
     }
@@ -407,6 +420,9 @@ void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
     if (dummy_desc_layout) {
         DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout, NULL);
         dummy_desc_layout = VK_NULL_HANDLE;
+    }
+    if (debug_pipeline_layout) {
+        DispatchDestroyPipelineLayout(device, debug_pipeline_layout, NULL);
     }
     ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
     // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
@@ -663,6 +679,63 @@ void GpuAssistedBase::PostCallRecordCreatePipelineLayout(VkDevice device, const 
     ValidationStateTracker::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
 }
 
+void GpuAssistedBase::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                    const VkShaderCreateInfoEXT *pCreateInfos,
+                                                    const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                                    void *csm_state_data) {
+    if (aborted) {
+        return;
+    }
+    auto cso_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (cso_state->instrumented_create_info->setLayoutCount >= adjusted_max_desc_sets) {
+            std::ostringstream strm;
+            strm << "Descriptor Set Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
+                 << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
+                 << "Validation is not modifying the pipeline layout. "
+                 << "Instrumented shaders are replaced with non-instrumented shaders.";
+            ReportSetupProblem(device, strm.str().c_str());
+        } else {
+            // Modify the pipeline layout by:
+            // 1. Copying the caller's descriptor set desc_layouts
+            // 2. Fill in dummy descriptor layouts up to the max binding
+            // 3. Fill in with the debug descriptor layout at the max binding slot
+            cso_state->new_layouts.reserve(adjusted_max_desc_sets);
+            cso_state->new_layouts.insert(cso_state->new_layouts.end(), pCreateInfos[i].pSetLayouts,
+                                          &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
+            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < adjusted_max_desc_sets - 1; ++j) {
+                cso_state->new_layouts.push_back(dummy_desc_layout);
+            }
+            cso_state->new_layouts.push_back(debug_desc_layout);
+            cso_state->instrumented_create_info->pSetLayouts = cso_state->new_layouts.data();
+            cso_state->instrumented_create_info->setLayoutCount = adjusted_max_desc_sets;
+        }
+    }
+}
+
+void GpuAssistedBase::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                     const VkShaderCreateInfoEXT *pCreateInfos,
+                                                     const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                                     const RecordObject &record_obj, void *csm_state_data) {
+    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                                           csm_state_data);
+    if (aborted) return;
+
+    auto cso_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        shader_map.insert_or_assign(cso_state->unique_shader_ids[i], VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
+                                    cso_state->instrumented_spirv[i]);
+    }
+}
+
+void GpuAssistedBase::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator) {
+    auto to_erase = shader_map.snapshot([shader](const GpuAssistedShaderTracker &entry) { return entry.shader_object == shader; });
+    for (const auto &entry : to_erase) {
+        shader_map.erase(entry.first);
+    }
+    ValidationStateTracker::PreCallRecordDestroyShaderEXT(device, shader, pAllocator);
+}
+
 void GpuAssistedBase::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -903,7 +976,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         const VkShaderStageFlagBits stage = stage_state.getStage();
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         const auto pass =
-                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
+                            InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv, &csm_state.unique_shader_id);
                         if (pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
@@ -916,7 +989,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                                     LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
-                                sm_ci->SetCode(csm_state.instrumented_pgm);
+                                sm_ci->SetCode(csm_state.instrumented_spirv);
                             }
                         }
                     }
@@ -967,7 +1040,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
                 if (module_state && module_state->spirv) code = module_state->spirv->words_;
 
                 shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->pipeline(),
-                                            shader_module.Cast<VkShaderModule>(), std::move(code));
+                                            shader_module.Cast<VkShaderModule>(), VK_NULL_HANDLE, std::move(code));
             }
         }
     }

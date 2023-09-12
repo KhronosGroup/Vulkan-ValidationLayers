@@ -2590,8 +2590,9 @@ void BestPractices::PostCallRecordBindOpticalFlowSessionImageNV(VkDevice device,
 void BestPractices::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                    const VkShaderCreateInfoEXT* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj);
+                                                   const RecordObject& record_obj, void* state_data) {
+    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                                           state_data);
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
     }

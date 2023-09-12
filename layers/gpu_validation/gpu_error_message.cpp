@@ -104,11 +104,11 @@ static std::string LookupDebugUtilsName(const debug_report_data *report_data, co
 // Generate message from the common portion of the debug report record.
 void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
                                const uint32_t *debug_record, const VkShaderModule shader_module_handle,
-                               const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
-                               const uint32_t operation_index, std::string &msg) {
+                               const VkPipeline pipeline_handle, const VkShaderEXT shader_object_handle,
+                               const VkPipelineBindPoint pipeline_bind_point, const uint32_t operation_index, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
-    if (shader_module_handle == VK_NULL_HANDLE) {
+    if (shader_module_handle == VK_NULL_HANDLE && shader_object_handle == VK_NULL_HANDLE) {
         strm << std::hex << std::showbase << "Internal Error: Unable to locate information for shader used in command buffer "
              << LookupDebugUtilsName(report_data, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer) << "). ";
         assert(true);
@@ -125,11 +125,17 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
             assert(false);
             strm << "Unknown Pipeline Operation ";
         }
-        strm << "Index " << operation_index << ". "
-             << "Pipeline " << LookupDebugUtilsName(report_data, HandleToUint64(pipeline_handle)) << "("
-             << HandleToUint64(pipeline_handle) << "). "
-             << "Shader Module " << LookupDebugUtilsName(report_data, HandleToUint64(shader_module_handle)) << "("
-             << HandleToUint64(shader_module_handle) << "). ";
+        if (shader_module_handle) {
+            strm << "Index " << operation_index << ". "
+                 << "Pipeline " << LookupDebugUtilsName(report_data, HandleToUint64(pipeline_handle)) << "("
+                 << HandleToUint64(pipeline_handle) << "). "
+                 << "Shader Module " << LookupDebugUtilsName(report_data, HandleToUint64(shader_module_handle)) << "("
+                 << HandleToUint64(shader_module_handle) << "). ";
+        } else {
+            strm << "Index " << operation_index << ". "
+                 << "Shader Object " << LookupDebugUtilsName(report_data, HandleToUint64(shader_object_handle)) << "("
+                 << HandleToUint64(shader_object_handle) << "). ";
+        }
     }
     strm << std::dec << std::noshowbase;
     strm << "Shader Instruction Index = " << debug_record[kInstCommonOutInstructionIdx] << ". ";

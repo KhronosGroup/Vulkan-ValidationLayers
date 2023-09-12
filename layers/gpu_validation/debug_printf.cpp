@@ -66,11 +66,6 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         aborted = true;
         return;
     }
-
-    if (IsExtEnabled(device_extensions.vk_ext_shader_object)) {
-        ReportSetupProblem(
-            device, "VK_EXT_shader_object is enabled, but Debug Printf does not currently support printing from shader_objects");
-    }
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
@@ -132,17 +127,29 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, &csm_state->unique_shader_id);
     if (pass) {
-        csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
-        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
+        csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
+        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
     }
 }
 
 void DebugPrintf::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, void *csm_state_data) {
-    // TODO - Add VK_EXT_shader_object support
+    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders,
+                                                          csm_state_data);
+    GpuAssistedBase::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, csm_state_data);
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        const bool pass = InstrumentShader(
+            vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
+            csm_state->instrumented_spirv[i], &csm_state->unique_shader_ids[i]);
+        if (pass) {
+            csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
+            csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
+        }
+    }
 }
 
 vartype vartype_lookup(char intype) {
@@ -318,6 +325,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
+        VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
         vvl::span<const uint32_t> pgm;
 
         DPFOutputRecord *debug_record = reinterpret_cast<DPFOutputRecord *>(&debug_output_buffer[index]);
@@ -327,6 +335,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         if (it != shader_map.end()) {
             shader_module_handle = it->second.shader_module;
             pipeline_handle = it->second.pipeline;
+            shader_object_handle = it->second.shader_object;
             pgm = it->second.pgm;
         }
         assert(pgm.size() != 0);
@@ -396,7 +405,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             std::string source_message;
             UtilGenerateStageMessage(&debug_output_buffer[index], stage_message);
             UtilGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle,
-                                      pipeline_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
+                                      pipeline_handle, shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
                 std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " " << stage_message.c_str() << " "
@@ -662,8 +671,8 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     const auto &last_bound = cb_node->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
-    if (!pipeline_state) {
-        ReportSetupProblem(device, "Pipeline state not found, aborting Debug Printf");
+    if (!pipeline_state && !last_bound.HasShaderObjects()) {
+        ReportSetupProblem(device, "Neither pipeline state nor shader object states were found, aborting Debug Printf");
         aborted = true;
         return;
     }
@@ -704,16 +713,24 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     desc_writes.dstBinding = 3;
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
 
-    const auto pipeline_layout = pipeline_state->PipelineLayoutState();
-    // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
-    // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
-    // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
-    // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
-    // null handle.
-    const auto pipeline_layout_handle =
-        (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->layout();
-    if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(), 0,
+    const auto pipeline_layout =
+        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<PIPELINE_LAYOUT_STATE>(last_bound.pipeline_layout);
+    if (pipeline_layout) {
+        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
+        // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
+        // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
+        // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
+        // null handle.
+        const auto pipeline_layout_handle =
+            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->layout();
+        if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
+                                          0, nullptr);
+        }
+    } else {
+        // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
+        // layout
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, debug_pipeline_layout, desc_set_bind_index, 1, desc_sets.data(), 0,
                                       nullptr);
     }
     // Record buffer and memory info in CB state tracking

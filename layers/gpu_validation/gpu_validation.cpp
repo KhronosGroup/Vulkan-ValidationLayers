@@ -154,11 +154,6 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_shader_object)) {
-        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
-                   "VK_EXT_shader_Object is enabled, but GPU-AV does not currently support validation of shader objects");
-    }
-
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
@@ -1033,17 +1028,29 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, &csm_state->unique_shader_id);
     if (pass) {
-        csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
-        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
+        csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
+        csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
     }
 }
 
 void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, void *csm_state_data) {
-    // TODO - Add VK_EXT_shader_object support
+    ValidationStateTracker::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders,
+                                                          csm_state_data);
+    GpuAssistedBase::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, csm_state_data);
+    create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        const bool pass = InstrumentShader(
+            vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
+            csm_state->instrumented_spirv[i], &csm_state->unique_shader_ids[i]);
+        if (pass) {
+            csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
+            csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
+        }
+    }
 }
 
 // Generate the part of the message describing the violation.
@@ -1222,6 +1229,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     std::string vuid_msg;
     VkShaderModule shader_module_handle = VK_NULL_HANDLE;
     VkPipeline pipeline_handle = VK_NULL_HANDLE;
+    VkShaderEXT shader_object_handle = VK_NULL_HANDLE;
     vvl::span<const uint32_t> pgm;
     // The first record starts at this offset after the total_words.
     const uint32_t *debug_record = &debug_output_buffer[kDebugOutputDataOffset];
@@ -1231,6 +1239,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     if (it != shader_map.end()) {
         shader_module_handle = it->second.shader_module;
         pipeline_handle = it->second.pipeline;
+        shader_object_handle = it->second.shader_object;
         pgm = it->second.pgm;
     }
     const bool gen_full_message =
@@ -1238,7 +1247,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     if (gen_full_message) {
         UtilGenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
-                                  buffer_info.pipeline_bind_point, operation_index, common_message);
+                                  shader_object_handle, buffer_info.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
         if (buffer_info.uses_robustness && oob_access) {
             if (warn_on_robust_oob) {
@@ -1952,8 +1961,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     const auto *pipeline_state = last_bound.pipeline_state;
     bool uses_robustness = false;
 
-    if (!pipeline_state) {
-        ReportSetupProblem(device, "Pipeline state not found, aborting GPU-AV");
+    if (!pipeline_state && !last_bound.HasShaderObjects()) {
+        ReportSetupProblem(device, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
         aborted = true;
         return;
     }
@@ -1993,7 +2002,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         if (validate_descriptors) {
             uses_robustness =
                 (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2 ||
-                 pipeline_state->uses_pipeline_robustness);
+                 (pipeline_state && pipeline_state->uses_pipeline_robustness));
             data_ptr[spvtools::kDebugOutputFlagsOffset] = spvtools::kInstBufferOOBEnable;
         }
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
@@ -2165,8 +2174,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     desc_writes[0].dstSet = desc_sets[0];
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
-
-    const auto pipeline_layout = pipeline_state->PipelineLayoutState();
+    const auto pipeline_layout =
+        pipeline_state ? pipeline_state->PipelineLayoutState() : Get<PIPELINE_LAYOUT_STATE>(last_bound.pipeline_layout);
     // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
     // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
     // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout

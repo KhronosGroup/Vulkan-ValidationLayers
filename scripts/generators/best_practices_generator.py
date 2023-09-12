@@ -42,6 +42,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
         # Commands that require an extra parameter for state sharing between validate/record steps
         self.extra_parameter_list = [
             "vkCreateShaderModule",
+            "vkCreateShadersEXT",
             "vkCreateGraphicsPipelines",
             "vkCreateComputePipelines",
             "vkAllocateDescriptorSets",
