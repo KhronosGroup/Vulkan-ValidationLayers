@@ -329,7 +329,7 @@ const char* DynamicStateToString(CBDynamicState dynamic_state) {
     return string_VkDynamicState(ConvertToDynamicState(dynamic_state));
 }
 
-std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states) {
+std::string DynamicStatesToString(CBDynamicFlags const& dynamic_states) {
     std::string ret;
     // enum is not zero based
     for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {

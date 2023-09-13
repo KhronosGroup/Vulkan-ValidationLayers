@@ -50,6 +50,7 @@ class TypemapHelperOutputGenerator(BaseGenerator):
 * limitations under the License.
 ****************************************************************************/\n''')
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        out.append('// clang-format off')
         out.append('''
 #pragma once
 #include <vulkan/vulkan.h>
@@ -74,6 +75,7 @@ template <> struct LvlSTypeMap<{struct.sType}> {{
 }};\n''')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
 
+        out.append('// clang-format on')
         out.append('''
 // Find an entry of the given type in the const pNext chain
 template <typename T> const T *LvlFindInChain(const void *next) {

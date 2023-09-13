@@ -29,7 +29,7 @@ class PnextChainExtractionGenerator(BaseGenerator):
         self.target_structs = [
             'VkPhysicalDeviceImageFormatInfo2'
             ]
-    
+
     def generate(self):
         out = []
         out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -79,7 +79,7 @@ namespace vvl {
 // Add element to the end of a pNext chain
 void* PnextChainAdd(void *chain, void *new_struct);
 
-// Remove last element from a pNext chain 
+// Remove last element from a pNext chain
 void PnextChainRemoveLast(void *chain);
 
 // Helper class relying on RAII to help with adding and removing an element from a pNext chain
@@ -95,6 +95,8 @@ class PnextChainScopedAdd {
   private:
     void *chain = nullptr;
 };
+
+// clang-format off
 
 // Utility to make a selective copy of a pNext chain.
 // Structs listed in the returned tuple type are the one extending some reference Vulkan structs, like VkPhysicalDeviceImageFormatInfo2.
@@ -119,6 +121,7 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
             out.append(f'void *PnextChainExtract(const void *in_pnext_chain, PnextChain{struct_name} &out);\n\n')
 
         out.append('}\n')
+        out.append('// clang-format on\n')
         return "".join(out)
 
     def generateSource(self):
@@ -129,7 +132,7 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
 #include "vk_typemap_helper.h"
 
 namespace vvl {{
-       
+
 void* PnextChainAdd(void *chain, void *new_struct) {{
     assert(chain);
     assert(new_struct);
@@ -160,7 +163,7 @@ void PnextChainRemoveLast(void *chain) {{
             struct = self.vk.structs[struct_name]
             out.append('\ntemplate <>\n')
             out.append(f'void *PnextChainExtract(const void *in_pnext_chain, PnextChain{struct_name} &out) {{')
-            
+
             out.append(f'''
     void *chain_begin = nullptr;
     void *chain_end = nullptr;\n''')

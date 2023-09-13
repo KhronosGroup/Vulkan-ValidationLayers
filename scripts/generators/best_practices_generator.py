@@ -186,14 +186,13 @@ class BestPracticesOutputGenerator(BaseGenerator):
 
             if hasNonVkSuccess(command.successCodes):
                 out.append('    if (record_obj.result > VK_SUCCESS) {\n')
-                results = [ x for x in command.successCodes if x != 'VK_SUCCESS' ]
-                out.append(f'        LogPositiveSuccessCode(record_obj); // {", ".join(results)}\n')
+                out.append('        LogPositiveSuccessCode(record_obj);\n')
                 out.append('        return;\n')
                 out.append('    }\n')
 
             if command.errorCodes is not None:
                 out.append('    if (record_obj.result < VK_SUCCESS) {\n')
-                out.append(f'        LogErrorCode(record_obj); // {", ".join(command.errorCodes)}\n')
+                out.append('        LogErrorCode(record_obj);\n')
                 out.append('    }\n')
 
             out.append('}\n')

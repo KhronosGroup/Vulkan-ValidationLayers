@@ -281,6 +281,7 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
 
 
         out.append('''
+// clang-format off
 static inline const char* SpvCapabilityRequirments(uint32_t capability) {
     static const vvl::unordered_map<uint32_t, std::string_view> table {
 ''')
@@ -303,9 +304,11 @@ static inline const char* SpvCapabilityRequirments(uint32_t capability) {
     const auto entry = table.find(capability);
     return entry->second.data();
 }
+// clang-format on
 ''')
 
         out.append('''
+// clang-format off
 static inline const char* SpvExtensionRequirments(std::string_view extension) {
     static const vvl::unordered_map<std::string_view, std::string_view> table {
 ''')
@@ -328,6 +331,7 @@ static inline const char* SpvExtensionRequirments(std::string_view extension) {
     const auto entry = table.find(extension);
     return entry->second.data();
 }
+// clang-format on
 ''')
 
         # The chance of an SPIR-V extension having a property as a requirement is low

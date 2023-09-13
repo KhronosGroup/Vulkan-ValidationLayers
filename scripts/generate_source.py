@@ -26,9 +26,14 @@ import sys
 import tempfile
 import difflib
 import json
+import common_ci
 from xml.etree import ElementTree
 
-def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetFilter: str):
+def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFile: str, targetFilter: str):
+
+    has_clang_format = shutil.which('clang-format') is not None
+    if not has_clang_format:
+        print("WARNING: Unable to find clang-format!")
 
     # These live in the Vulkan-Docs repo, but are pulled in via the
     # Vulkan-Headers/registry folder
@@ -314,6 +319,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, targetF
         # Finally, use the output generator to create the requested target
         reg.apiGen()
 
+        # Run clang-format on the file
+        if has_clang_format:
+            common_ci.RunShellCmd(f'clang-format -i --style=file:{styleFile} {os.path.join(directory, target)}')
+
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
@@ -338,6 +347,16 @@ def main(argv):
     args = parser.parse_args(argv)
 
     repo_dir = repo_relative(f'layers/{args.api}/generated')
+
+    # Need pass style file incase running with --verify and it can't find the file automatically in the temp directory
+    styleFile = os.path.join(repo_dir, '.clang-format')
+    if common_ci.IsGHA() and args.verify:
+        # Have found that sometimes (~5%) the 20.04 Ubuntu machines have clang-format v11 but we need v14 to
+        # use a dedicated styleFile location. For these case there we can survive just skipping the verify check
+        stdout = subprocess.check_output(['clang-format', '--version']).decode("utf-8")
+        version = stdout[stdout.index('version') + 8:][:2]
+        if int(version) < 14:
+            return 0 # Success
 
     # Update the api_version in the respective json files
     if args.generated_version:
@@ -364,11 +383,11 @@ def main(argv):
         gen_dir = repo_dir
 
     if args.output_directory is not None:
-      gen_dir = args.output_directory;
+      gen_dir = args.output_directory
 
     registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
     grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
-    RunGenerators(args.api, registry, grammar, gen_dir, args.target)
+    RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target)
 
     # Generate vk_validation_error_messages.h
     try:

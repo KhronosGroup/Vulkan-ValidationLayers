@@ -46,6 +46,7 @@ class FunctionPointersOutputGenerator(BaseGenerator):
 * limitations under the License.
 ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        self.write('// clang-format off')
 
         if self.filename == 'vk_function_pointers.h':
             self.generateHeader()
@@ -54,6 +55,7 @@ class FunctionPointersOutputGenerator(BaseGenerator):
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')
 
+        self.write('// clang-format on')
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
     def generateHeader(self):

@@ -2,33 +2,29 @@
 // See command_validation_generator.py for modifications
 
 /***************************************************************************
-*
-* Copyright (c) 2021-2023 Valve Corporation
-* Copyright (c) 2021-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/
+ *
+ * Copyright (c) 2021-2023 Valve Corporation
+ * Copyright (c) 2021-2023 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ****************************************************************************/
 
 // NOLINTBEGIN
 
 #include "error_message/logging.h"
 #include "core_checks/core_validation.h"
 
-enum CMD_SCOPE_TYPE {
-    CMD_SCOPE_INSIDE,
-    CMD_SCOPE_OUTSIDE,
-    CMD_SCOPE_BOTH
-};
+enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
 
 struct CommandValidationInfo {
     const char* recording_vuid;
@@ -45,6 +41,7 @@ struct CommandValidationInfo {
 };
 
 using Func = vvl::Func;
+// clang-format off
 static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {
 {Func::vkCmdBindPipeline, {
     "VUID-vkCmdBindPipeline-commandBuffer-recording",
@@ -1748,6 +1745,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-videocoding",
 }},
 };
+// clang-format off
 
 // Ran on all vkCmd* commands
 // Because it validate the implicit VUs that stateless can't, if this fails, it is likely

@@ -22,6 +22,7 @@
 // NOLINTBEGIN
 
 #include "sync_validation_types.h"
+// clang-format off
 const std::array<SyncStageAccessInfoType, 135>& syncStageAccessInfoByStageAccessIndex() {
 static const std::array<SyncStageAccessInfoType, 135> variable = { {
     {
@@ -2168,5 +2169,6 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
     return variable;
 }
 
+// clang-format on
 
 // NOLINTEND

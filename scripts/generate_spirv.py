@@ -30,7 +30,7 @@ def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
 SPIRV_MAGIC = 0x07230203
-COLUMNS = 4
+COLUMNS = 10
 INDENT = 4
 
 def identifierize(s):

@@ -58,11 +58,12 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
     def generateHeader(self):
         out = []
-
+        out.append("// clang-format off\n")
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
             out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
             out.append(f'template<> std::vector<{enum.name}> ValidationObject::ValidParamValues() const;\n')
             out.extend([f'#endif //{enum.protect}\n'] if enum.protect else [])
+        out.append("// clang-format on\n")
 
         self.write("".join(out))
 
@@ -76,8 +77,9 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 //      Ideally "values" would be something like a static variable that is built once and this function returns
 //      a span of the container. This does not work for applications which create and destroy many instances and
 //      devices over the lifespan of the project (e.g., VLT).
-''')
 
+''')
+        out.append("// clang-format off\n")
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
             out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
             out.append(f'template<>\nstd::vector<{enum.name}> ValidationObject::ValidParamValues() const {{\n')
@@ -107,4 +109,5 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             out.extend([f'#endif //{enum.protect}\n'] if enum.protect else [])
             out.append('\n')
 
+        out.append("// clang-format on\n")
         self.write(''.join(out))

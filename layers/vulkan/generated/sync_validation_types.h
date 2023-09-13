@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
+// clang-format off
 
 // Fake stages and accesses for acquire present support
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000040000000000ULL;
@@ -479,5 +480,6 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarli
 
 // Masks of logically later stage flags for a given stage flag
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
+// clang-format on
 
 // NOLINTEND

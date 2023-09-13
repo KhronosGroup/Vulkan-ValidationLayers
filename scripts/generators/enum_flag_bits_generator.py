@@ -88,10 +88,10 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
         out.append('''
 #pragma once
-
 #include <array>
 #include "vulkan/vulkan.h"\n''')
 
+        out.append('// clang-format off\n')
         out.append(f'const uint32_t GeneratedVulkanHeaderVersion = {self.vk.headerVersion};\n')
         for bitmask in bitmasks:
             if bitmask.flagName == 'VkGeometryInstanceFlagsKHR':
@@ -115,5 +115,6 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
         for bitmask in [self.vk.bitmasks[x] for x in flagBitsAsArray]:
             out.append(f'[[maybe_unused]] constexpr std::array All{bitmask.flagName} = {{{",".join([flag.name for flag in bitmask.flags])}}};\n')
 
+        out.append('// clang-format on\n')
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))
