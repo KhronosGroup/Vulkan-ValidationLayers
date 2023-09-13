@@ -59,7 +59,7 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     void Reset();
     void Destroy() override;
 
-    bool InUse() const override;
+    const VulkanTypedHandle *InUse() const override;
     uint32_t GetAvailableCount(uint32_t type) const {
         auto guard = ReadLock();
         auto iter = available_counts_.find(type);
