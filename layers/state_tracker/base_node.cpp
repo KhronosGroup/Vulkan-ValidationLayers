@@ -25,22 +25,20 @@ void BASE_NODE::Destroy() {
     destroyed_ = true;
 }
 
-bool BASE_NODE::InUse() const {
+const VulkanTypedHandle* BASE_NODE::InUse() const {
     // NOTE: for performance reasons, this method calls up the tree
     // with the read lock held.
     auto guard = ReadLockTree();
-    bool result = false;
     for (auto& item : parent_nodes_) {
         auto node = item.second.lock();
         if (!node) {
             continue;
         }
-        result |= node->InUse();
-        if (result) {
-            break;
+        if (node->InUse()) {
+            return &node->Handle();
         }
     }
-    return result;
+    return nullptr;
 }
 
 bool BASE_NODE::AddParent(BASE_NODE* parent_node) {

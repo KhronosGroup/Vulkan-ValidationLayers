@@ -785,9 +785,11 @@ bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const Locatio
     if (disabled[object_in_use]) return false;
     auto obj_struct = obj_node->Handle();
     bool skip = false;
-    if (obj_node->InUse()) {
-        skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by a command buffer.",
-                         FormatHandle(obj_struct).c_str());
+
+    const auto *used_handle = obj_node->InUse();
+    if (used_handle) {
+        skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by %s.",
+                         FormatHandle(obj_struct).c_str(), FormatHandle(*used_handle).c_str());
     }
     return skip;
 }

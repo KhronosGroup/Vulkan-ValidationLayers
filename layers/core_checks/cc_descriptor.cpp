@@ -2618,10 +2618,12 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
                          FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str());
     }
 
-    if (dst_set.InUse() && !(dest.IsBindless())) {
+    const auto *used_handle = dst_set.InUse();
+    if (used_handle && !(dest.IsBindless())) {
         skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
-                         "(%" PRIu32 ") was created with %s, but %s is in use by a command buffer.", update.dstBinding,
-                         string_VkDescriptorBindingFlags(dest.binding_flags).c_str(), FormatHandle(update.dstSet).c_str());
+                         "(%" PRIu32 ") was created with %s, but %s is in use by %s.", update.dstBinding,
+                         string_VkDescriptorBindingFlags(dest.binding_flags).c_str(), FormatHandle(update.dstSet).c_str(),
+                         FormatHandle(*used_handle).c_str());
     }
     // We know that binding is valid, verify update and do update on each descriptor
     if ((dest.type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) && (dest.type != update.descriptorType)) {
@@ -3930,9 +3932,14 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     if (disabled[object_in_use]) return false;
     bool skip = false;
     auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
-    if (pool && pool->InUse()) {
+    if (!pool) {
+        return false;
+    }
+    const auto *used_handle = pool->InUse();
+    if (used_handle) {
         skip |= LogError("VUID-vkResetDescriptorPool-descriptorPool-00313", descriptorPool,
-                         error_obj.location.dot(Field::descriptorPool), "descriptor sets in use by a command buffer.");
+                         error_obj.location.dot(Field::descriptorPool), "descriptor sets in use by %s.",
+                         FormatHandle(*used_handle).c_str());
     }
     return skip;
 }
@@ -4059,12 +4066,14 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const Location &
     if (disabled[object_in_use]) return false;
     bool skip = false;
     auto set_node = Get<cvdescriptorset::DescriptorSet>(set);
-    if (set_node) {
-        // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
-        if (set_node->InUse()) {
-            skip |= LogError("VUID-vkFreeDescriptorSets-pDescriptorSets-00309", set, loc, "%s is in use by a command buffer.",
-                             FormatHandle(set).c_str());
-        }
+    if (!set_node) {
+        return false;
+    }
+    // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
+    const auto *used_handle = set_node->InUse();
+    if (used_handle) {
+        skip |= LogError("VUID-vkFreeDescriptorSets-pDescriptorSets-00309", set, loc, "%s is in use by %s.",
+                         FormatHandle(set).c_str(), FormatHandle(*used_handle).c_str());
     }
     return skip;
 }

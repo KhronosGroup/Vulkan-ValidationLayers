@@ -78,7 +78,7 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE>, public TypedHa
     static VulkanTypedHandle Handle(const BASE_NODE *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
     static VulkanTypedHandle Handle(const std::shared_ptr<const BASE_NODE> &node) { return Handle(node.get()); }
 
-    virtual bool InUse() const;
+    virtual const VulkanTypedHandle* InUse() const;
 
     virtual bool AddParent(BASE_NODE *parent_node);
     virtual void RemoveParent(BASE_NODE *parent_node);
@@ -133,5 +133,5 @@ class REFCOUNTED_NODE : public BASE_NODE {
 
     void EndUse() { in_use_.fetch_sub(1); }
 
-    bool InUse() const override { return (in_use_.load() > 0) || BASE_NODE::InUse(); }
+    const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || BASE_NODE::InUse()) ? &Handle() : nullptr; }
 };

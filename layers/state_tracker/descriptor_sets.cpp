@@ -101,15 +101,15 @@ void DESCRIPTOR_POOL_STATE::Reset() {
     available_sets_ = maxSets;
 }
 
-bool DESCRIPTOR_POOL_STATE::InUse() const {
+const VulkanTypedHandle *DESCRIPTOR_POOL_STATE::InUse() const {
     auto guard = ReadLock();
     for (const auto &entry : sets_) {
         const auto *ds = entry.second;
-        if (ds && ds->InUse()) {
-            return true;
+        if (ds) {
+            return ds->InUse();
         }
     }
-    return false;
+    return nullptr;
 }
 
 void DESCRIPTOR_POOL_STATE::Destroy() {
