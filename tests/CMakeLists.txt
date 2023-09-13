@@ -103,6 +103,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/protected_memory.cpp
     unit/protected_memory_positive.cpp
     unit/query.cpp
+    unit/push_descriptor.cpp
+    unit/push_descriptor_positive.cpp
     unit/query_positive.cpp
     unit/ray_tracing.cpp
     unit/ray_tracing_gpu.cpp

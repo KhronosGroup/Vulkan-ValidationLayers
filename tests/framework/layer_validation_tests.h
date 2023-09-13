@@ -324,6 +324,10 @@ class DescriptorsTest : public VkLayerTest {};
 class NegativeDescriptors : public DescriptorsTest {};
 class PositiveDescriptors : public DescriptorsTest {};
 
+class PushDescriptorTest : public VkLayerTest {};
+class NegativePushDescriptor : public PushDescriptorTest {};
+class PositivePushDescriptor : public PushDescriptorTest {};
+
 class DescriptorBufferTest : public VkLayerTest {
   public:
     void InitBasicDescriptorBuffer(void *pNextFeatures = nullptr);
