@@ -155,6 +155,7 @@ class SyncValidationOutputGenerator(BaseGenerator):
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
 ''')
+        out.append('// clang-format off\n')
         out.append(f'''
 // Fake stages and accesses for acquire present support
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x{(1 << self.pipelineStagePresentEngine.value):016X}ULL;
@@ -228,6 +229,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarli
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 ''')
 
+        out.append('// clang-format on\n')
         self.write("".join(out))
 
     def generateSource(self):
@@ -236,6 +238,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 #include "sync_validation_types.h"
 ''')
 
+        out.append('// clang-format off\n')
         out.append(f'const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex() {{\n')
         out.append(f'static const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}> variable = {{ {{\n')
         for stageAccess in self.stageAccessCombo:
@@ -368,6 +371,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
         out.append('    };\n')
         out.append('    return variable;\n')
         out.append('}\n\n')
+        out.append('// clang-format on\n')
 
         self.write("".join(out))
 

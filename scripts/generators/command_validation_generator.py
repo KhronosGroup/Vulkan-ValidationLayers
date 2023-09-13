@@ -86,7 +86,7 @@ struct CommandValidationInfo {
 
 using Func = vvl::Func;
 ''')
-
+        out.append('// clang-format off\n')
         out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             out.append(f'{{Func::{command.name}, {{\n')
@@ -146,7 +146,7 @@ using Func = vvl::Func;
 
             out.append('}},\n')
         out.append('};\n')
-
+        out.append('// clang-format off\n')
 
         #
         # The main function to validate all the commands

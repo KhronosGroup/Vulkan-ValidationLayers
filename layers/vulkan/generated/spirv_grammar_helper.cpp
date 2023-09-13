@@ -31,15 +31,15 @@
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {
     const char* name;
-    bool has_type; // always operand 0 if present
-    bool has_result; // always operand 1 if present
+    bool has_type;    // always operand 0 if present
+    bool has_result;  // always operand 1 if present
 
-    uint32_t memory_scope_position; // operand ID position or zero if not present
-    uint32_t execution_scope_position; // operand ID position or zero if not present
-    uint32_t image_operands_position; // operand ID position or zero if not present
+    uint32_t memory_scope_position;     // operand ID position or zero if not present
+    uint32_t execution_scope_position;  // operand ID position or zero if not present
+    uint32_t image_operands_position;   // operand ID position or zero if not present
 
-    uint32_t image_access_operands_position; // operand ID position or zero if not present
-    uint32_t sampled_image_access_operands_position; // operand ID position or zero if not present
+    uint32_t image_access_operands_position;          // operand ID position or zero if not present
+    uint32_t sampled_image_access_operands_position;  // operand ID position or zero if not present
 };
 
 // Static table to replace having many large switch statement functions for looking up each part
@@ -783,7 +783,7 @@ const char* string_SpvOpcode(uint32_t opcode) {
 }
 
 const char* string_SpvStorageClass(uint32_t storage_class) {
-    switch(storage_class) {
+    switch (storage_class) {
         case spv::StorageClassUniformConstant:
             return "UniformConstant";
         case spv::StorageClassInput:
@@ -847,7 +847,7 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
 }
 
 const char* string_SpvExecutionModel(uint32_t execution_model) {
-    switch(execution_model) {
+    switch (execution_model) {
         case spv::ExecutionModelVertex:
             return "Vertex";
         case spv::ExecutionModelTessellationControl:
@@ -889,7 +889,7 @@ const char* string_SpvExecutionModel(uint32_t execution_model) {
 }
 
 const char* string_SpvDecoration(uint32_t decoration) {
-    switch(decoration) {
+    switch (decoration) {
         case spv::DecorationRelaxedPrecision:
             return "RelaxedPrecision";
         case spv::DecorationSpecId:
@@ -1159,7 +1159,7 @@ const char* string_SpvDecoration(uint32_t decoration) {
 }
 
 const char* string_SpvBuiltIn(uint32_t built_in) {
-    switch(built_in) {
+    switch (built_in) {
         case spv::BuiltInPosition:
             return "Position";
         case spv::BuiltInPointSize:
@@ -1391,7 +1391,7 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
 }
 
 const char* string_SpvDim(uint32_t dim) {
-    switch(dim) {
+    switch (dim) {
         case spv::Dim1D:
             return "1D";
         case spv::Dim2D:
@@ -1415,7 +1415,7 @@ const char* string_SpvDim(uint32_t dim) {
 }
 
 static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatrixOperandsMask mask) {
-    switch(mask) {
+    switch (mask) {
         case spv::CooperativeMatrixOperandsMaskNone:
             return "None";
         case spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask:
@@ -1437,9 +1437,9 @@ static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatri
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
     std::string ret;
     int index = 0;
-    while(mask) {
+    while (mask) {
         if (mask & 1) {
-            if(!ret.empty()) ret.append("|");
+            if (!ret.empty()) ret.append("|");
             ret.append(string_SpvCooperativeMatrixOperandsMask(static_cast<spv::CooperativeMatrixOperandsMask>(1U << mask)));
         }
         ++index;

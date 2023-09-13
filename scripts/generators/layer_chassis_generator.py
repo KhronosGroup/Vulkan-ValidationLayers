@@ -119,6 +119,7 @@ class APISpecific:
             # Vulkan specific InitObjectDispatchVector
             case 'vulkan':
                 return '''
+// clang-format off
 void ValidationObject::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \\
@@ -179,6 +180,7 @@ void ValidationObject::InitObjectDispatchVectors() {
             }
         }
     };
+// clang-format on
 
     intercept_vectors.resize(InterceptIdCount);
 '''
@@ -648,6 +650,7 @@ class ValidationObject {
             return WrapDisplay(handle, map_data);
         }
 
+        // clang-format off
         // Pre/post hook point declarations
 ''')
 
@@ -752,6 +755,7 @@ class ValidationObject {
         template <typename T>
         std::vector<T> ValidParamValues() const;
 };
+// clang-format on
 ''')
 
         out.append('extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;')
@@ -1852,6 +1856,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
 #ifdef _MSC_VER
 #pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
 #endif
+// clang-format off
 const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vk_layerGetPhysicalDeviceProcAddr", {kFuncTypeInst, (void*)GetPhysicalDeviceProcAddr}},
 ''')
@@ -1861,6 +1866,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
             out.extend(['#endif\n'] if command.protect else [])
         out.append('};\n')
         out.append('} // namespace vulkan_layer_chassis\n')
+        out.append('// clang-format on\n')
 
         out.append('''
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {

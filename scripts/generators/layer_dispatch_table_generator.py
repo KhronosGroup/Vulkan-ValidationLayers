@@ -49,6 +49,7 @@ class LayerDispatchTableOutputGenerator(BaseGenerator):
 * limitations under the License.
 ****************************************************************************/\n''')
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        out.append('// clang-format off')
 
         out.append('''
 #pragma once
@@ -77,5 +78,6 @@ typedef struct VkLayerDispatchTable_ {
             out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
         out.append('} VkLayerDispatchTable;\n')
 
+        out.append('// clang-format on')
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))

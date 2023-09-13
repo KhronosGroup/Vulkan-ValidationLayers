@@ -208,6 +208,7 @@ char *SafeStringCopy(const char *in_string) {
     return std::strcpy(dest, in_string);
 }
 
+// clang-format off
 void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
     if (!pNext) return nullptr;
 
@@ -311,6 +312,7 @@ void FreePnextChain(const void *pNext) {
             break;
     }
 }''')
+        out.append('// clang-format on\n')
         self.write("".join(out))
 
     def generateSource(self):

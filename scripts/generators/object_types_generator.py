@@ -61,6 +61,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
 * limitations under the License.
 ****************************************************************************/\n''')
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+        out.append('// clang-format off')
         out.append('''
 #pragma once
 #include "utils/cast_utils.h"
@@ -206,5 +207,6 @@ struct VulkanTypedHandle {
         type(kVulkanObjectTypeUnknown) {}
     operator bool() const { return handle != 0; }
 };\n''')
+        out.append('// clang-format on')
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
         self.write("".join(out))

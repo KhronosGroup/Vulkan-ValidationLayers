@@ -262,6 +262,7 @@ void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice 
 
     def generateSource(self):
         out = []
+        out.append('// clang-format off')
         out.append('''
 #include "chassis.h"
 #include "object_tracker/object_lifetime_validation.h"
@@ -310,6 +311,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and self.isParentDevice(x)]:
             out.append(f'    DestroyUndestroyedObjects(kVulkanObjectType{handle.name[2:]});\n')
         out.append('}\n')
+
+        out.append('// clang-format on')
 
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])

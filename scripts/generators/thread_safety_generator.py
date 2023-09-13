@@ -309,25 +309,31 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
 
     def generateCounterDefinitions(self):
         out = []
+        out.append('// clang-format off\n')
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
             out.append(f'counter<{handle.name}> c_{handle.name};\n')
             out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.append('// clang-format on\n')
         self.write("".join(out))
 
     def generateCounterInstance(self):
         out = []
+        out.append('// clang-format off\n')
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
             out.append(f'c_{handle.name}(kVulkanObjectType{handle.name[2:]}, this),\n')
             out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.append('// clang-format on\n')
         self.write("".join(out))
 
     def generateCounterBodies(self):
         out = []
+        out.append('// clang-format off\n')
         wrapParenet = ['VkSurfaceKHR', 'VkSwapchainKHR', 'VkDebugReportCallbackEXT', 'VkDebugUtilsMessengerEXT', 'VkDisplayKHR']
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
             out.extend([f'WRAPPER_PARENT_INSTANCE({handle.name})\n'] if handle.name in wrapParenet else [f'WRAPPER({handle.name})\n'])
             out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
+        out.append('// clang-format on\n')
         self.write("".join(out))

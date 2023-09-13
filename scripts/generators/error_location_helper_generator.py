@@ -131,6 +131,7 @@ bool IsFieldPointer(Field field);
 #include "containers/custom_containers.h"
 #include <assert.h>
 
+// clang-format off
 namespace vvl {
 ''')
         out.append('''
@@ -177,5 +178,6 @@ bool IsFieldPointer(Field field) {
     }
 }
 }  // namespace vvl
+// clang-format on
 ''')
         self.write("".join(out))

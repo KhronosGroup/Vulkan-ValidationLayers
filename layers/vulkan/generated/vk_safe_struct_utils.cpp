@@ -2,24 +2,24 @@
 // See safe_struct_generator.py for modifications
 
 /***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-* Copyright (c) 2015-2023 Google Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/
+ *
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ****************************************************************************/
 
 // NOLINTBEGIN
 
@@ -32,10 +32,11 @@ extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
 char *SafeStringCopy(const char *in_string) {
     if (nullptr == in_string) return nullptr;
-    char* dest = new char[std::strlen(in_string) + 1];
+    char *dest = new char[std::strlen(in_string) + 1];
     return std::strcpy(dest, in_string);
 }
 
+// clang-format off
 void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
     if (!pNext) return nullptr;
 
@@ -3572,5 +3573,6 @@ void FreePnextChain(const void *pNext) {
             }
             break;
     }
-}
+}  // clang-format on
+
 // NOLINTEND
