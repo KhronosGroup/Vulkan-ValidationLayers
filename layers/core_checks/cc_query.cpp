@@ -1048,8 +1048,8 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
     bool skip = false;
     skip |= ValidateCmdWriteTimestamp(*cb_state, queryPool, slot, error_obj.location);
 
-    const Location loc(Func::vkCmdWriteTimestamp, Field::pipelineStage);
-    skip |= ValidatePipelineStage(LogObjectList(commandBuffer), loc, cb_state->GetQueueFlags(), pipelineStage);
+    const Location stage_loc = error_obj.location.dot(Field::pipelineStage);
+    skip |= ValidatePipelineStage(LogObjectList(commandBuffer), stage_loc, cb_state->GetQueueFlags(), pipelineStage);
     return skip;
 }
 

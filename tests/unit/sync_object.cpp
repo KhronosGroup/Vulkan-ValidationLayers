@@ -2102,7 +2102,7 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
 TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     vk_testing::Fence testFence;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "submitted in SIGNALED state.  Fences must be reset before being submitted");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00063");
 
     VkFenceCreateInfo fenceInfo = LvlInitStruct<VkFenceCreateInfo>();
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;

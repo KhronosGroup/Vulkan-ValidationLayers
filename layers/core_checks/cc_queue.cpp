@@ -130,24 +130,25 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        const Location loc = error_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
+        const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
             if (cb_state) {
-                skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
+                skip |= cb_submit_state.Validate(submit_loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
 
                 // Validate flags for dynamic rendering
                 if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
-                    skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06016", queue, loc,
+                    skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06016", queue, submit_loc,
                                      "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
                                      "] has its own render pass instance that does not resume it.",
                                      i);
                 }
                 if (cb_state->resumesRenderPassInstance) {
                     if (!suspended_render_pass_instance) {
-                        skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06193", queue, loc.dot(Field::pCommandBuffers, i),
-                                         "resumes a render pass instance, but there is no suspended render pass instance.");
+                        skip |=
+                            LogError("VUID-VkSubmitInfo-pCommandBuffers-06193", queue, submit_loc.dot(Field::pCommandBuffers, i),
+                                     "resumes a render pass instance, but there is no suspended render pass instance.");
                     }
                     suspended_render_pass_instance = false;
                 }
@@ -158,10 +159,10 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         }
         // Renderpass should not be in suspended state after the final cmdbuf
         if (suspended_render_pass_instance) {
-            skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06014", queue, loc,
+            skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06014", queue, submit_loc,
                              "has a suspended render pass instance that was not resumed.");
         }
-        skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, loc);
+        skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
         auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupSubmitInfo>(submit.pNext);
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
@@ -169,24 +170,24 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 const LogObjectList objlist(queue);
                 skip |= ValidateDeviceMaskToPhysicalDeviceCount(
                     chained_device_group_struct->pCommandBufferDeviceMasks[i], objlist,
-                    loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::pCommandBufferDeviceMasks, i),
+                    submit_loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::pCommandBufferDeviceMasks, i),
                     "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
             }
             if (chained_device_group_struct->signalSemaphoreCount != submit.signalSemaphoreCount) {
                 skip |= LogError("VUID-VkDeviceGroupSubmitInfo-signalSemaphoreCount-00084", queue,
-                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::signalSemaphoreCount),
+                                 submit_loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::signalSemaphoreCount),
                                  "(%" PRIu32 ") is different than signalSemaphoreCount (%" PRIu32 ").",
                                  chained_device_group_struct->signalSemaphoreCount, submit.signalSemaphoreCount);
             }
             if (chained_device_group_struct->waitSemaphoreCount != submit.waitSemaphoreCount) {
                 skip |= LogError("VUID-VkDeviceGroupSubmitInfo-waitSemaphoreCount-00082", queue,
-                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::waitSemaphoreCount),
+                                 submit_loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::waitSemaphoreCount),
                                  "(%" PRIu32 ") is different than waitSemaphoreCount (%" PRIu32 ").",
                                  chained_device_group_struct->waitSemaphoreCount, submit.waitSemaphoreCount);
             }
             if (chained_device_group_struct->commandBufferCount != submit.commandBufferCount) {
                 skip |= LogError("VUID-VkDeviceGroupSubmitInfo-commandBufferCount-00083", queue,
-                                 loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::commandBufferCount),
+                                 submit_loc.pNext(Struct::VkDeviceGroupSubmitInfo, Field::commandBufferCount),
                                  "(%" PRIu32 ") is different than commandBufferCount (%" PRIu32 ").",
                                  chained_device_group_struct->commandBufferCount, submit.commandBufferCount);
             }
@@ -198,7 +199,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         if (protected_submit_info) {
             protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
             if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
-                skip |= LogError("VUID-vkQueueSubmit-queue-06448", queue, loc,
+                skip |= LogError("VUID-vkQueueSubmit-queue-06448", queue, submit_loc,
                                  "contains a protected submission to %s which was not created with "
                                  "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
                                  FormatHandle(queue).c_str());
@@ -207,7 +208,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
         // Make sure command buffers are all protected or unprotected
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
-            const Location cb_loc = loc.dot(Field::pCommandBuffers, i);
+            const Location cb_loc = submit_loc.dot(Field::pCommandBuffers, i);
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
             if (cb_state) {
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
@@ -257,16 +258,16 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const Location loc = error_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
+        const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
         const VkSubmitInfo2KHR &submit = pSubmits[submit_idx];
         const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, loc);
+        skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
         const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
         if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
-            skip |= LogError("VUID-vkQueueSubmit2-queue-06447", queue, loc,
+            skip |= LogError("VUID-vkQueueSubmit2-queue-06447", queue, submit_loc,
                              "contains a protected submission to %s which was not created with "
                              "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
                              FormatHandle(queue).c_str());
@@ -274,7 +275,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
         bool suspended_render_pass_instance = false;
         for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
-            const Location info_loc = loc.dot(Struct::VkCommandBufferSubmitInfo, Field::pCommandBufferInfos, i);
+            const Location info_loc = submit_loc.dot(Struct::VkCommandBufferSubmitInfo, Field::pCommandBufferInfos, i);
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBufferInfos[i].commandBuffer);
             skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
@@ -290,18 +291,18 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
                     const LogObjectList objlist(cb_state->commandBuffer(), queue);
                     skip |= LogError("VUID-VkSubmitInfo2-flags-03886", objlist, info_loc.dot(Field::commandBuffer),
-                                     "is unprotected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR set", loc.Fields().c_str(),
-                                     string_VkSubmitFlags(submit.flags).c_str());
+                                     "is unprotected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR set",
+                                     submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
                 }
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
                     const LogObjectList objlist(cb_state->commandBuffer(), queue);
                     skip |= LogError("VUID-VkSubmitInfo2-flags-03887", objlist, info_loc.dot(Field::commandBuffer),
                                      "is protected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR not set",
-                                     loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
+                                     submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
                 }
 
                 if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
-                    skip |= LogError("VUID-VkSubmitInfo2KHR-commandBuffer-06012", queue, loc,
+                    skip |= LogError("VUID-VkSubmitInfo2KHR-commandBuffer-06012", queue, submit_loc,
                                      "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
                                      "] has its own render pass instance that does not resume it.",
                                      i);
@@ -319,7 +320,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             }
         }
         if (suspended_render_pass_instance) {
-            skip |= LogError("VUID-VkSubmitInfo2KHR-commandBuffer-06010", queue, loc,
+            skip |= LogError("VUID-VkSubmitInfo2KHR-commandBuffer-06010", queue, submit_loc,
                              "has a suspended render pass instance that was not resumed.");
         }
     }
@@ -595,10 +596,10 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_data->queueFamilyIndex].queueFlags);
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
-        const Location loc = error_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
+        const Location bind_info_loc = error_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
 
-        skip |= ValidateSemaphoresForSubmit(sem_submit_state, bind_info, loc);
+        skip |= ValidateSemaphoresForSubmit(sem_submit_state, bind_info, bind_info_loc);
 
         if (bind_info.pBufferBinds) {
             for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
@@ -607,7 +608,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     auto buffer_state = Get<BUFFER_STATE>(buffer_bind.buffer);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
-                        const Location buffer_loc = loc.dot(Field::pBufferBinds, buffer_idx);
+                        const Location buffer_loc = bind_info_loc.dot(Field::pBufferBinds, buffer_idx);
                         const Location bind_loc = buffer_loc.dot(Field::pBinds, buffer_bind_idx);
                         skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, bind_loc);
                     }
@@ -623,7 +624,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
-                        const Location image_loc = loc.dot(Field::pImageOpaqueBinds, image_opaque_idx);
+                        const Location image_loc = bind_info_loc.dot(Field::pImageOpaqueBinds, image_opaque_idx);
                         const Location bind_loc = image_loc.dot(Field::pBinds, image_opaque_bind_idx);
                         // Assuming that no multiplanar disjointed images are possible with sparse memory binding. Needs
                         // confirmation
@@ -635,7 +636,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
         if (bind_info.pImageBinds) {
             for (uint32_t image_idx = 0; image_idx < bind_info.imageBindCount; ++image_idx) {
-                const Location bind_loc = loc.dot(Field::pImageBinds, image_idx);
+                const Location bind_loc = bind_info_loc.dot(Field::pImageBinds, image_idx);
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<IMAGE_STATE>(image_bind.image);
 

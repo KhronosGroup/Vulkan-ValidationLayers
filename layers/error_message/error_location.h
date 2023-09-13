@@ -150,8 +150,25 @@ struct Entry {
 // look for a matching VUID in a vector or array-ish table
 template <typename Table>
 static const std::string& FindVUID(const Location& loc, const Table& table) {
+    // TODO - Remove having to squash KHR version here
+    Func f = loc.function;
+    if (f == Func::vkQueueSubmit2KHR) {
+        f = Func::vkQueueSubmit2;
+    } else if (f == Func::vkCmdPipelineBarrier2KHR) {
+        f = Func::vkCmdPipelineBarrier2;
+    } else if (f == Func::vkCmdResetEvent2KHR) {
+        f = Func::vkCmdResetEvent2;
+    } else if (f == Func::vkCmdSetEvent2KHR) {
+        f = Func::vkCmdSetEvent2;
+    } else if (f == Func::vkCmdWaitEvents2KHR) {
+        f = Func::vkCmdWaitEvents2;
+    } else if (f == Func::vkCmdWriteTimestamp2KHR) {
+        f = Func::vkCmdWriteTimestamp2;
+    }
+    const Location core_loc(f, loc.structure, loc.field, loc.index);
+
     static const std::string empty;
-    auto predicate = [&loc](const Entry& entry) { return entry.k == loc; };
+    auto predicate = [&core_loc](const Entry& entry) { return entry.k == core_loc; };
 
     // consistency check: there should never be more than 1 match in a table
     assert(std::count_if(table.begin(), table.end(), predicate) <= 1);
