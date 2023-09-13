@@ -1166,8 +1166,15 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     const auto &result = FindVUID(error, loc, kSubmitErrors);
-    assert(!result.empty());
     if (result.empty()) {
+        // TODO - Handle better way then Key::recursive to find certain VUs
+        // Can reproduce with NegativeSyncObject.Sync2QueueSubmitTimelineSemaphoreValue
+        if (loc.structure == Struct::VkSubmitInfo2) {
+            if (loc.prev->field == Field::pWaitSemaphoreInfos || loc.prev->field == Field::pSignalSemaphoreInfos) {
+                return FindVUID(error, *loc.prev, kSubmitErrors);
+            }
+        }
+
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-submit-error");
         return unhandled;
     }

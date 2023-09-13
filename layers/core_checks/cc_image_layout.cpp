@@ -907,7 +907,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
     return skip;
 }
 
-bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
+bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &image_loc,
                                                    const ImageBarrier &img_barrier, const CommandBufferImageLayoutMap &current_map,
                                                    CommandBufferImageLayoutMap &layout_updates) const {
     bool skip = false;
@@ -934,20 +934,20 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_st
         auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
         normalized_isr.aspectMask = test_aspect;
         skip |=
-            read_subresource_map->AnyInRange(normalized_isr, [this, read_subresource_map, cb_state, &layout_check, &loc,
+            read_subresource_map->AnyInRange(normalized_isr, [this, read_subresource_map, cb_state, &layout_check, &image_loc,
                                                               &img_barrier](const LayoutRange &range, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
-                    const auto &vuid = GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kConflictingLayout);
+                    const auto &vuid = GetImageBarrierVUID(image_loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
                     const LogObjectList objlist(cb_state->commandBuffer(), img_barrier.image);
                     subres_skip =
-                        LogError(objlist, vuid,
-                                 "%s %s cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
+                        LogError(vuid, objlist, image_loc,
+                                 "(%s) cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
                                  " from %s when the "
                                  "%s layout is %s.",
-                                 loc.Message().c_str(), FormatHandle(img_barrier.image).c_str(), subres.aspectMask, subres.mipLevel,
-                                 subres.arrayLayer, string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
+                                 FormatHandle(img_barrier.image).c_str(), subres.aspectMask, subres.mipLevel, subres.arrayLayer,
+                                 string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
                                  string_VkImageLayout(layout_check.layout));
                 }
                 return subres_skip;
