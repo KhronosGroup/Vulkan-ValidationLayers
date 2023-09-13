@@ -129,48 +129,70 @@ class ObjectLifetimes : public ValidationObject {
             }
         }
         return nullptr;
-    };
+    }
+
+    bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const {
+        // Look for object in object map
+        if (object_map[object_type].contains(object_handle)) {
+            return true;
+        }
+        // If object is an image, also look for it in the swapchain image map
+        if (object_type == kVulkanObjectTypeImage && swapchainImageMap.find(object_handle) != swapchainImageMap.end()) {
+            return true;
+        }
+        return false;
+    }
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_code,
                              const char *wrong_device_code, const Location &loc) const {
-        // Look for object in object map
-        if (!object_map[object_type].contains(object_handle)) {
-            // If object is an image, also look for it in the swapchain image map
-            if ((object_type != kVulkanObjectTypeImage) || (swapchainImageMap.find(object_handle) == swapchainImageMap.end())) {
-                // Object not found, look for it in other device object maps
-                for (const auto &other_device_data : layer_data_map) {
-                    for (auto *layer_object_data : other_device_data.second->object_dispatch) {
-                        if (layer_object_data->container_type == LayerObjectTypeObjectTracker) {
-                            auto object_lifetime_data = reinterpret_cast<ObjectLifetimes *>(layer_object_data);
-                            if (object_lifetime_data && (object_lifetime_data != this)) {
-                                if (object_lifetime_data->object_map[object_type].find(object_handle) !=
-                                        object_lifetime_data->object_map[object_type].end() ||
-                                    (object_type == kVulkanObjectTypeImage &&
-                                     object_lifetime_data->swapchainImageMap.find(object_handle) !=
-                                         object_lifetime_data->swapchainImageMap.end())) {
-                                    // Object found on other device, report an error if object has a device parent error code
-                                    if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
-                                        const LogObjectList objlist(instance, device, layer_object_data->device);
-                                        return LogError(wrong_device_code, objlist, loc,
-                                                        "Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
-                                                        ") was created, allocated or retrieved from %s.",
-                                                        FormatHandle(device).c_str(), object_string[object_type], object_handle,
-                                                        FormatHandle(layer_object_data->device).c_str());
+        constexpr bool skip = false;
 
-                                    } else {
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
+        // If this instance of lifetime validation tracks the object, report success
+        if (TracksObject(object_handle, object_type)) {
+            return skip;
+        }
+
+        // Object not found, look for it in other device object maps
+        bool found = false;
+        VkDevice other_device = VK_NULL_HANDLE;
+        for (const auto &other_device_data : layer_data_map) {
+            for (auto *layer_object_data : other_device_data.second->object_dispatch) {
+                if (layer_object_data->container_type != LayerObjectTypeObjectTracker) {
+                    continue;
                 }
-                // Report an error if object was not found anywhere
-                return LogError(invalid_handle_code, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
-                                object_string[object_type], object_handle);
+                auto *object_lifetime_data = static_cast<ObjectLifetimes *>(layer_object_data);
+                if (!object_lifetime_data || object_lifetime_data == this) {
+                    continue;
+                }
+                if (object_lifetime_data->TracksObject(object_handle, object_type)) {
+                    other_device = layer_object_data->device;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                break;
             }
         }
-        return false;
+
+        // Report about findings.
+        if (!found) {
+            // Object was not found anywhere
+            return LogError(invalid_handle_code, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
+                            object_handle);
+        } else if (wrong_device_code != kVUIDUndefined && object_type != kVulkanObjectTypeSurfaceKHR) {
+            // Object found on other device and device error code is provided
+            const LogObjectList objlist(instance, device, other_device);
+            return LogError(wrong_device_code, objlist, loc,
+                            "Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
+                            ") was created, allocated or retrieved from %s.",
+                            FormatHandle(device).c_str(), object_string[object_type], object_handle,
+                            FormatHandle(other_device).c_str());
+        } else {
+            // Object was found on other device, but it's not a device error.
+            // TODO: this could be an instance-level error, we need to add support for this.
+            return skip;
+        }
     }
 
     template <typename T1>
