@@ -54,11 +54,11 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
 }
 
 bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed,
-                                              const char *invalid_handle_code, const char *wrong_device_code,
+                                              const char *invalid_handle_vuid, const char *wrong_parent_vuid,
                                               const Location &loc) const {
     if (null_allowed && (object == HandleToUint64(VK_NULL_HANDLE))) return false;
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return CheckObjectValidity(object, object_type, invalid_handle_code, wrong_device_code, loc);
+    return CheckObjectValidity(object, object_type, invalid_handle_vuid, wrong_parent_vuid, loc);
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -716,8 +716,13 @@ void ObjectLifetimes::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommand
 bool ObjectLifetimes::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                          const VkAllocationCallbacks *pAllocator,
                                                          const ErrorObject &error_obj) const {
-    return ValidateDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR, pAllocator, "VUID-vkDestroySwapchainKHR-swapchain-01283",
-                                 "VUID-vkDestroySwapchainKHR-swapchain-01284", error_obj.location);
+    bool skip = false;
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, true, "VUID-vkDestroySwapchainKHR-swapchain-parameter",
+                           "VUID-vkDestroySwapchainKHR-swapchain-parent", error_obj.location);
+    skip |=
+        ValidateDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR, pAllocator, "VUID-vkDestroySwapchainKHR-swapchain-01283",
+                              "VUID-vkDestroySwapchainKHR-swapchain-01284", error_obj.location);
+    return skip;
 }
 
 void ObjectLifetimes::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
@@ -892,7 +897,7 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevic
     // Checked by chassis: physicalDevice: "VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter"
 
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModePropertiesKHR-display-parameter",
-                           kVUIDUndefined, error_obj.location);
+                           "VUID-vkGetDisplayModePropertiesKHR-display-parent", error_obj.location);
 
     return skip;
 }
@@ -937,7 +942,7 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevi
     // Checked by chassis: physicalDevice: "VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter"
 
     skip |= ValidateObject(display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkGetDisplayModeProperties2KHR-display-parameter",
-                           kVUIDUndefined, error_obj.location);
+                           "VUID-vkGetDisplayModeProperties2KHR-display-parent", error_obj.location);
 
     return skip;
 }

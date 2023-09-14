@@ -1013,38 +1013,6 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     swapchain_create_info.pQueueFamilyIndices = &bogus_int;
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-
-    // Create another device, create another swapchain, and use this one for oldSwapchain
-    // It is legal to include an 'oldSwapchain' object that is from a different device
-    const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
-    queue_ci.queueFamilyIndex = 0;
-    queue_ci.queueCount = 1;
-    queue_ci.pQueuePriorities = q_priority;
-
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.queueCreateInfoCount = 1;
-    device_ci.pQueueCreateInfos = &queue_ci;
-    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
-
-    VkDevice test_device;
-    vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
-
-    swapchain_create_info.oldSwapchain = m_swapchain;
-    VkSwapchainKHR new_swapchain = VK_NULL_HANDLE;
-    vk::CreateSwapchainKHR(test_device, &swapchain_create_info, nullptr, &new_swapchain);
-
-    if (new_swapchain != VK_NULL_HANDLE) {
-        vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
-    }
-
-    vk::DestroyDevice(test_device, nullptr);
-
-    if (m_surface != VK_NULL_HANDLE) {
-        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
-        m_surface = VK_NULL_HANDLE;
-    }
 }
 
 TEST_F(VkPositiveLayerTest, InitSwapchain) {

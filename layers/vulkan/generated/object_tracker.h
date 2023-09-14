@@ -415,6 +415,12 @@ bool PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* p
                                    const ErrorObject& error_obj) const override;
 bool PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                           const ErrorObject& error_obj) const override;
+bool PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                  const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
+                                                        const ErrorObject& error_obj) const override;
 void PostCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
                                          const RecordObject& record_obj) override;
@@ -724,6 +730,12 @@ bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalI
                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                       const ErrorObject& error_obj) const override;
+bool PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
+                                                           const ErrorObject& error_obj) const override;
 void PostCallRecordCreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                               VkDeferredOperationKHR* pDeferredOperation, const RecordObject& record_obj) override;
 bool PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
@@ -836,6 +848,8 @@ bool PreCallValidateDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX functi
 void PreCallRecordDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) override;
 bool PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo,
                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties,
                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1056,6 +1070,8 @@ void PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfa
                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                          const RecordObject& record_obj) override;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                              const ErrorObject& error_obj) const override;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                              const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
@@ -1298,6 +1314,8 @@ bool PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice device, con
                                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                       VkPipeline pipeline, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
+                                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                  VkShaderModuleIdentifierEXT* pIdentifier,
                                                  const ErrorObject& error_obj) const override;
@@ -1395,6 +1413,9 @@ bool PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer comm
 bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                             const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                             const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
+                                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
                                                                 const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                 VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery,
