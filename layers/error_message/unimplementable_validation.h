@@ -32,4 +32,7 @@ const char* unimplementable_validation[] = {
 
     // This VUID cannot be validated at vkCmdEndDebugUtilsLabelEXT time. Needs spec clarification.
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5671
-    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912"};
+    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912",
+
+    // These VUIDs cannot be validated beyond making sure the pointer is not null
+    "VUID-VkMemoryToImageCopyEXT-pHostPointer-09061", "VUID-VkImageToMemoryCopyEXT-pHostPointer-09066"};
