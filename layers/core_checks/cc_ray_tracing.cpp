@@ -110,26 +110,27 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         // Validate memory requirements alignment
         if (SafeModulo(info.memoryOffset, as_state->memory_requirements.alignment) != 0) {
             skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03623", info.accelerationStructure,
-                             bind_info_loc,
-                             "vkBindAccelerationStructureMemoryNV(): memoryOffset  0x%" PRIxLEAST64
-                             " must be an integer multiple of the alignment 0x%" PRIxLEAST64
-                             " member of the VkMemoryRequirements structure returned from "
-                             "a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure and type of "
+                             bind_info_loc.dot(Field::memoryOffset),
+                             "(0x%" PRIxLEAST64 ") must be an integer multiple of the alignment (0x%" PRIxLEAST64
+                             ") member of the VkMemoryRequirements structure returned from "
+                             "a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure %s and type of "
                              "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV",
-                             info.memoryOffset, as_state->memory_requirements.alignment);
+                             info.memoryOffset, as_state->memory_requirements.alignment,
+                             FormatHandle(info.accelerationStructure).c_str());
         }
 
         if (mem_info) {
             // Validate memory requirements size
             if (as_state->memory_requirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
-                skip |=
-                    LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-size-03624", info.accelerationStructure, bind_info_loc,
-                             "vkBindAccelerationStructureMemoryNV(): The size 0x%" PRIxLEAST64
-                             " member of the VkMemoryRequirements structure returned from a call to "
-                             "vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure and type of "
-                             "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV must be less than or equal to the size "
-                             "of memory minus memoryOffset 0x%" PRIxLEAST64 ".",
-                             as_state->memory_requirements.size, mem_info->alloc_info.allocationSize - info.memoryOffset);
+                skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-size-03624", info.accelerationStructure,
+                                 bind_info_loc.dot(Field::memory),
+                                 "'s size (0x%" PRIxLEAST64 ") minus %s (0x%" PRIxLEAST64 ") is 0x" PRIxLEAST64
+                                 ", but the size member of the VkMemoryRequirements structure returned from a call to "
+                                 "vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure %s and type of "
+                                 "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV is 0x" PRIxLEAST64 ".",
+                                 as_state->memory_requirements.size, bind_info_loc.dot(Field::memoryOffset).Fields().c_str(),
+                                 info.memoryOffset, mem_info->alloc_info.allocationSize - info.memoryOffset,
+                                 FormatHandle(info.accelerationStructure).c_str(), as_state->memory_requirements.size);
             }
         }
     }
@@ -1136,7 +1137,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03759",
                                  pInfos[i].srcAccelerationStructure, info_loc.dot(Field::mode),
                                  "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                 " but flags (%s) is different then srcAccelerationStructure value (%s).",
+                                 " but flags (%s) is different than srcAccelerationStructure value (%s).",
                                  string_VkBuildAccelerationStructureFlagsKHR(pInfos[i].flags).c_str(),
                                  string_VkBuildAccelerationStructureFlagsKHR(src_as_state->build_info_khr.flags).c_str());
             }
@@ -1144,7 +1145,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkComm
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03760",
                                  pInfos[i].srcAccelerationStructure, info_loc.dot(Field::mode),
                                  "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                 " but type (%s) is different then srcAccelerationStructure value (%s).",
+                                 " but type (%s) is different than srcAccelerationStructure value (%s).",
                                  string_VkAccelerationStructureTypeKHR(pInfos[i].type),
                                  string_VkAccelerationStructureTypeKHR(src_as_state->build_info_khr.type));
             }
@@ -1385,7 +1386,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
         skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419", device,
                          error_obj.location.dot(Field::firstGroup),
                          "(%" PRIu32 ") plus groupCount (%" PRIu32
-                         ") must be less than or equal the number "
+                         ") must be less than or equal to the number "
                          "of shader groups in pipeline (%" PRIu32 ").",
                          firstGroup, groupCount, total_group_count);
     }
