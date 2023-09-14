@@ -1098,9 +1098,11 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
         auto *palette = &pShadingRatePalettes[i];
         if (palette->shadingRatePaletteEntryCount == 0 ||
             palette->shadingRatePaletteEntryCount > phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
-            skip |= LogError(
-                commandBuffer, "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071",
-                "vkCmdSetViewportShadingRatePaletteNV: shadingRatePaletteEntryCount must be between 1 and shadingRatePaletteSize.");
+            skip |=
+                LogError("VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071", commandBuffer,
+                         error_obj.location.dot(Field::pShadingRatePalettes, i).dot(Field::shadingRatePaletteEntryCount),
+                         "(%" PRIu32 ") must be between 1 and shadingRatePaletteSize (%" PRIu32 ").",
+                         palette->shadingRatePaletteEntryCount, phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize);
         }
     }
 
@@ -1132,9 +1134,9 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
     if ((depthBiasClamp != 0.0) && !enabled_features.core.depthBiasClamp) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBias-depthBiasClamp-00790",
-                         "vkCmdSetDepthBias(): the depthBiasClamp device feature is disabled but depthBiasClamp is %f.",
-                         depthBiasClamp);
+        skip |=
+            LogError("VUID-vkCmdSetDepthBias-depthBiasClamp-00790", commandBuffer, error_obj.location.dot(Field::depthBiasClamp),
+                     "is %f, but the depthBiasClamp device feature was not enabled.", depthBiasClamp);
     }
     return skip;
 }
@@ -1174,9 +1176,9 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
     bool skip = false;
 
     if ((pDepthBiasInfo->depthBiasClamp != 0.0) && !enabled_features.core.depthBiasClamp) {
-        skip |= LogError(commandBuffer, "VUID-VkDepthBiasInfoEXT-depthBiasClamp-08950",
-                         "vkCmdSetDepthBias2EXT(): the depthBiasClamp device feature is disabled but depthBiasClamp is %f.",
-                         pDepthBiasInfo->depthBiasClamp);
+        skip |= LogError("VUID-VkDepthBiasInfoEXT-depthBiasClamp-08950", commandBuffer,
+                         error_obj.location.dot(Field::pDepthBiasInfo).dot(Field::depthBiasClamp),
+                         "is %f, but the depthBiasClamp device feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
     }
 
     if (const auto *depth_bias_representation = LvlFindInChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
@@ -1200,17 +1202,17 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
 
     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-minDepthBounds-00600",
-                             "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and minDepthBounds "
-                             "(=%f) is not within the [0.0, 1.0] range.",
-                             minDepthBounds);
+            skip |= LogError(
+                "VUID-vkCmdSetDepthBounds-minDepthBounds-00600", commandBuffer, error_obj.location.dot(Field::minDepthBounds),
+                "is %f which is not within the [0.0, 1.0] range and VK_EXT_depth_range_unrestricted extension was not enabled.",
+                minDepthBounds);
         }
 
         if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-maxDepthBounds-00601",
-                             "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and maxDepthBounds "
-                             "(=%f) is not within the [0.0, 1.0] range.",
-                             maxDepthBounds);
+            skip |= LogError(
+                "VUID-vkCmdSetDepthBounds-maxDepthBounds-00601", commandBuffer, error_obj.location.dot(Field::maxDepthBounds),
+                "is %f which is not within the [0.0, 1.0] range and VK_EXT_depth_range_unrestricted extension was not enabled.",
+                maxDepthBounds);
         }
     }
     return skip;
@@ -1245,21 +1247,21 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
         ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", error_obj.location);
     for (uint32_t i = 0; i < discardRectangleCount; ++i) {
         if (pDiscardRectangles[i].offset.x < 0) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
-                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].x (%" PRId32 ") is negative.", i,
-                             pDiscardRectangles[i].offset.x);
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
+                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::x),
+                             "(%" PRId32 ") is negative.", pDiscardRectangles[i].offset.x);
         }
         if (pDiscardRectangles[i].offset.y < 0) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
-                             "vkCmdSetDiscardRectangleEXT(): pDiscardRectangles[%" PRIu32 "].y (%" PRId32 ") is negative.", i,
-                             pDiscardRectangles[i].offset.y);
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
+                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::y),
+                             "(%" PRId32 ") is negative.", pDiscardRectangles[i].offset.y);
         }
     }
     if (firstDiscardRectangle + discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
         skip |=
-            LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585",
-                     "vkCmdSetDiscardRectangleEXT(): firstDiscardRectangle (%" PRIu32 ") + discardRectangleCount (%" PRIu32
-                     ") is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ").",
+            LogError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585", commandBuffer,
+                     error_obj.location.dot(Field::firstDiscardRectangle),
+                     "(%" PRIu32 ") + discardRectangleCount (%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
                      firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
     }
     return skip;
@@ -1303,10 +1305,11 @@ bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer comm
         "VUID-vkCmdSetPatchControlPointsEXT-None-08574", "extendedDynamicState2PatchControlPoints or shaderObject");
 
     if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874",
-                         "vkCmdSetPatchControlPointsEXT: The value of patchControlPoints (%" PRIu32
+        skip |= LogError("VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874", commandBuffer,
+                         error_obj.location.dot(Field::patchControlPoints),
+                         "(%" PRIu32
                          ") must be less than "
-                         "VkPhysicalDeviceLimits::maxTessellationPatchSize (%" PRIu32 ")",
+                         "maxTessellationPatchSize (%" PRIu32 ")",
                          patchControlPoints, phys_dev_props.limits.maxTessellationPatchSize);
     }
     return skip;
@@ -1561,8 +1564,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer comman
                                          "VUID-vkCmdSetDepthClampEnableEXT-None-08582",
                                          "extendedDynamicState3DepthClampEnable or shaderObject");
     if (depthClampEnable != VK_FALSE && !enabled_features.core.depthClamp) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449",
-                         "vkCmdSetDepthClampEnableEXT(): depthClampEnable is VK_TRUE but the depthClamp feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449", commandBuffer,
+                         error_obj.location.dot(Field::depthClampEnable), "is VK_TRUE but the depthClamp feature was not enabled.");
     }
     return skip;
 }
@@ -1577,14 +1580,15 @@ bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuff
                                          enabled_features.shader_object_features.shaderObject,
                                      "VUID-vkCmdSetPolygonModeEXT-None-08566", "extendedDynamicState3PolygonMode or shaderObject");
     if ((polygonMode == VK_POLYGON_MODE_LINE || polygonMode == VK_POLYGON_MODE_POINT) && !enabled_features.core.fillModeNonSolid) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424",
-                         "vkCmdSetPolygonModeEXT(): polygonMode is %s but the "
-                         "fillModeNonSolid feature is not enabled.",
+        skip |= LogError("VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424", commandBuffer,
+                         error_obj.location.dot(Field::polygonMode),
+                         "is %s but the "
+                         "fillModeNonSolid feature was not enabled.",
                          string_VkPolygonMode(polygonMode));
     } else if (polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV && !IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425",
-                         "vkCmdSetPolygonModeEXT(): polygonMode is VK_POLYGON_MODE_FILL_RECTANGLE_NV but the VK_NV_fill_rectangle "
-                         "extension is not enabled.");
+        skip |= LogError("VUID-vkCmdSetPolygonModeEXT-polygonMode-07425", commandBuffer, error_obj.location.dot(Field::polygonMode),
+                         "is VK_POLYGON_MODE_FILL_RECTANGLE_NV but the VK_NV_fill_rectangle "
+                         "extension was not enabled.");
     }
     return skip;
 }
@@ -1629,8 +1633,8 @@ bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer comman
                                          "VUID-vkCmdSetAlphaToOneEnableEXT-None-08508",
                                          "extendedDynamicState3AlphaToOneEnable or shaderObject");
     if (alphaToOneEnable != VK_FALSE && !enabled_features.core.alphaToOne) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607",
-                         "vkCmdSetAlphaToOneEnableEXT(): alphaToOneEnable is VK_TRUE but the alphaToOne feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607", commandBuffer,
+                         error_obj.location.dot(Field::alphaToOneEnable), "is VK_TRUE but the alphaToOne feature was not enabled.");
     }
     return skip;
 }
@@ -1645,8 +1649,8 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBu
                                          "VUID-vkCmdSetLogicOpEnableEXT-None-08542",
                                          "extendedDynamicState3LogicOpEnable or shaderObject");
     if (logicOpEnable != VK_FALSE && !enabled_features.core.logicOp) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366",
-                         "vkCmdSetLogicOpEnableEXT(): logicOpEnable is VK_TRUE but the logicOp feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366", commandBuffer, error_obj.location.dot(Field::logicOpEnable),
+                         "is VK_TRUE but the logicOp feature was not enabled.");
     }
     return skip;
 }
@@ -1674,54 +1678,51 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
             enabled_features.shader_object_features.shaderObject,
         "VUID-vkCmdSetColorBlendEquationEXT-None-08538", "extendedDynamicState3ColorBlendEquation or shaderObject");
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+        const Location equation_loc = error_obj.location.dot(Field::pColorBlendEquations, attachment);
         VkColorBlendEquationEXT const &equation = pColorBlendEquations[attachment];
         if (!enabled_features.core.dualSrcBlend) {
             if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcColorBlendFactor is %s but the "
-                                 "dualSrcBlend feature is not enabled.",
-                                 attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357", commandBuffer, equation_loc.dot(Field::srcColorBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcColorBlendFactor));
             }
             if (IsSecondaryColorInputBlendFactor(equation.dstColorBlendFactor)) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstColorBlendFactor is %s but the "
-                                 "dualSrcBlend feature is not enabled.",
-                                 attachment, string_VkBlendFactor(equation.dstColorBlendFactor));
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358", commandBuffer, equation_loc.dot(Field::dstColorBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstColorBlendFactor));
             }
             if (IsSecondaryColorInputBlendFactor(equation.srcAlphaBlendFactor)) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcAlphaBlendFactor is %s but the "
-                                 "dualSrcBlend feature is not enabled.",
-                                 attachment, string_VkBlendFactor(equation.srcAlphaBlendFactor));
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359", commandBuffer, equation_loc.dot(Field::srcAlphaBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcAlphaBlendFactor));
             }
             if (IsSecondaryColorInputBlendFactor(equation.dstAlphaBlendFactor)) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstAlphaBlendFactor is %s but the "
-                                 "dualSrcBlend feature is not enabled.",
-                                 attachment, string_VkBlendFactor(equation.dstAlphaBlendFactor));
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360", commandBuffer, equation_loc.dot(Field::dstAlphaBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstAlphaBlendFactor));
             }
         }
         if (IsAdvanceBlendOperation(equation.colorBlendOp) || IsAdvanceBlendOperation(equation.alphaBlendOp)) {
-            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-colorBlendOp-07361",
-                             "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].colorBlendOp and "
-                             "pColorBlendEquations[%u].alphaBlendOp must not be an advanced blending operation.",
-                             attachment, attachment);
+            skip |=
+                LogError("VUID-VkColorBlendEquationEXT-colorBlendOp-07361", commandBuffer, equation_loc.dot(Field::colorBlendOp),
+                         "(%s) and alphaBlendOp (%s) must not be an advanced blending operation.",
+                         string_VkBlendOp(equation.colorBlendOp), string_VkBlendOp(equation.alphaBlendOp));
         }
         if (IsExtEnabled(device_extensions.vk_khr_portability_subset) &&
             !enabled_features.portability_subset_features.constantAlphaColorBlendFactors) {
             if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcColorBlendFactor must not be %s "
-                                 "when constantAlphaColorBlendFactors is not supported.",
-                                 attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
+                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362", commandBuffer,
+                                 equation_loc.dot(Field::srcColorBlendFactor),
+                                 "is %s but the constantAlphaColorBlendFactors feature was not supported.",
+                                 string_VkBlendFactor(equation.srcColorBlendFactor));
             }
             if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
-                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363",
-                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstColorBlendFactor must not be %s "
-                                 "constantAlphaColorBlendFactors is not supported.",
-                                 attachment, string_VkBlendFactor(equation.dstColorBlendFactor));
+                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363", commandBuffer,
+                                 equation_loc.dot(Field::dstColorBlendFactor),
+                                 "is %s but the constantAlphaColorBlendFactors feature was not supported.",
+                                 string_VkBlendFactor(equation.dstColorBlendFactor));
             }
         }
     }
@@ -1749,20 +1750,23 @@ bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer com
             enabled_features.shader_object_features.shaderObject,
         "VUID-vkCmdSetRasterizationStreamEXT-None-08550", "extendedDynamicState3RasterizationStream or shaderObject");
     if (!enabled_features.transform_feedback_features.transformFeedback) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411",
-                         "vkCmdSetRasterizationStreamEXT(): the transformFeedback feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411", commandBuffer, error_obj.location,
+                         "the transformFeedback feature was not enabled.");
     }
     if (rasterizationStream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412",
-                         "vkCmdSetRasterizationStreamEXT(): rasterizationStream (%" PRIu32
-                         ") must be less than maxTransformFeedbackStreams (%" PRIu32 ").",
-                         rasterizationStream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+        skip |= LogError("VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412", commandBuffer,
+                         error_obj.location.dot(Field::rasterizationStream),
+                         "(%" PRIu32 ") must be less than maxTransformFeedbackStreams (%" PRIu32 ").", rasterizationStream,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
     }
     if (rasterizationStream != 0U &&
         phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413",
-                         "vkCmdSetRasterizationStreamEXT(): rasterizationStream is non-zero but "
-                         "transformFeedbackRasterizationStreamSelect is not supported.");
+        skip |= LogError("VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413", commandBuffer,
+                         error_obj.location.dot(Field::rasterizationStream),
+                         "(%" PRIu32
+                         ") is non-zero but "
+                         "the transformFeedbackRasterizationStreamSelect feature was not supported.",
+                         rasterizationStream);
     }
     return skip;
 }
@@ -1793,13 +1797,11 @@ bool CoreChecks::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkComm
     if (extraPrimitiveOverestimationSize < 0.0f ||
         extraPrimitiveOverestimationSize >
             phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
-        skip |=
-            LogError(cb_state->Handle(), "VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428",
-                     "vkCmdSetExtraPrimitiveOverestimationSizeEXT(): extraPrimitiveOverestimationSize (%f) must be less then zero "
-                     "or greater "
-                     "than maxExtraPrimitiveOverestimationSize (%f).",
-                     extraPrimitiveOverestimationSize,
-                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+        skip |= LogError("VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428", commandBuffer,
+                         error_obj.location.dot(Field::extraPrimitiveOverestimationSize),
+                         "(%f) must be less then zero or greater than maxExtraPrimitiveOverestimationSize (%f).",
+                         extraPrimitiveOverestimationSize,
+                         phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
     }
     return skip;
 }
@@ -1814,8 +1816,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer command
                                          "VUID-vkCmdSetDepthClipEnableEXT-None-08584",
                                          "extendedDynamicState3DepthClipEnable or shaderObject");
     if (!enabled_features.depth_clip_enable_features.depthClipEnable) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetDepthClipEnableEXT-depthClipEnable-07451",
-                         "vkCmdSetDepthClipEnableEXT(): the depthClipEnable feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetDepthClipEnableEXT-depthClipEnable-07451", commandBuffer, error_obj.location,
+                         "the depthClipEnable feature was not enabled.");
     }
     return skip;
 }
@@ -1843,26 +1845,24 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
         "VUID-vkCmdSetColorBlendAdvancedEXT-None-08592", "extendedDynamicState3ColorBlendAdvanced or shaderObject");
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         VkColorBlendAdvancedEXT const &advanced = pColorBlendAdvanced[attachment];
-        if (advanced.srcPremultiplied != VK_FALSE &&
+        if (advanced.srcPremultiplied == VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505",
-                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].srcPremultiplied must not be VK_TRUE when "
-                             "advancedBlendNonPremultipliedSrcColor is not supported.",
-                             attachment);
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::srcPremultiplied),
+                             "is VK_TRUE but the advancedBlendNonPremultipliedSrcColor feature was not enabled.");
         }
-        if (advanced.dstPremultiplied != VK_FALSE &&
+        if (advanced.dstPremultiplied == VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
-            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506",
-                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].dstPremultiplied must not be VK_TRUE when "
-                             "advancedBlendNonPremultipliedDstColor is not supported.",
-                             attachment);
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::dstPremultiplied),
+                             "is VK_TRUE but the advancedBlendNonPremultipliedDstColor feature was not enabled.");
         }
         if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
-            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-blendOverlap-07507",
-                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].blendOverlap must be "
-                             "VK_BLEND_OVERLAP_UNCORRELATED_EXT when advancedBlendCorrelatedOverlap is not supported.",
-                             attachment);
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-blendOverlap-07507", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::blendOverlap),
+                             "is %s, but the advancedBlendCorrelatedOverlap feature was not supported.",
+                             string_VkBlendOverlapEXT(advanced.blendOverlap));
         }
     }
     return skip;
@@ -1880,9 +1880,9 @@ bool CoreChecks::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer com
         "VUID-vkCmdSetProvokingVertexModeEXT-None-08580", "extendedDynamicState3ProvokingVertexMode or shaderObject");
     if (provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
         enabled_features.provoking_vertex_features.provokingVertexLast == VK_FALSE) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447",
-                         "vkCmdSetProvokingVertexModeEXT(): provokingVertexMode is VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but "
-                         "the provokingVertexLast feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447", commandBuffer,
+                         error_obj.location.dot(Field::provokingVertexMode),
+                         "is VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but the provokingVertexLast feature was not enabled.");
     }
     return skip;
 }
@@ -1899,19 +1899,22 @@ bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer c
         "VUID-vkCmdSetLineRasterizationModeEXT-None-08558", "extendedDynamicState3LineRasterizationMode or shaderObject");
     if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
         !enabled_features.line_rasterization_features.rectangularLines) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418",
-                         "vkCmdSetLineRasterizationModeEXT(): lineRasterizationMode is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT "
-                         "but the rectangularLines feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418", commandBuffer,
+                         error_obj.location.dot(Field::lineRasterizationMode),
+                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT "
+                         "but the rectangularLines feature was not enabled.");
     } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
                !enabled_features.line_rasterization_features.bresenhamLines) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419",
-                         "vkCmdSetLineRasterizationModeEXT(): lineRasterizationMode is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT "
-                         "but the bresenhamLines feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419", commandBuffer,
+                         error_obj.location.dot(Field::lineRasterizationMode),
+                         "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT "
+                         "but the bresenhamLines feature was not enabled.");
     } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
                !enabled_features.line_rasterization_features.smoothLines) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420",
-                         "vkCmdSetLineRasterizationModeEXT(): lineRasterizationMode is "
-                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420", commandBuffer,
+                         error_obj.location.dot(Field::lineRasterizationMode),
+                         "is "
+                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature was not enabled.");
     }
     return skip;
 }
@@ -1936,8 +1939,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuff
             enabled_features.shader_object_features.shaderObject,
         "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-None-08586", "extendedDynamicState3DepthClipNegativeOneToOne or shaderObject");
     if (enabled_features.depth_clip_control_features.depthClipControl == VK_FALSE) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-depthClipControl-07453",
-                         "vkCmdSetDepthClipNegativeOneToOneEXT(): the depthClipControl feature is not enabled.");
+        skip |= LogError("VUID-vkCmdSetDepthClipNegativeOneToOneEXT-depthClipControl-07453", commandBuffer, error_obj.location,
+                         "the depthClipControl feature was not enabled.");
     }
     return skip;
 }
@@ -2057,8 +2060,8 @@ bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreate
     bool skip = false;
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
         if (VK_FALSE == enabled_features.portability_subset_features.events) {
-            skip |= LogError(device, "VUID-vkCreateEvent-events-04468",
-                             "vkCreateEvent: events are not supported via VK_KHR_portability_subset");
+            skip |= LogError("VUID-vkCreateEvent-events-04468", device, error_obj.location,
+                             "events are not supported via VK_KHR_portability_subset");
         }
     }
     return skip;
@@ -2068,7 +2071,6 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer com
                                                              const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                              const ErrorObject& error_obj) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    const char *cmd_name = "vkCmdSetFragmentShadingRateKHR()";
     bool skip = false;
     skip |=
         ValidateExtendedDynamicState(*cb_state, error_obj.location,
@@ -2079,89 +2081,83 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer com
                                      "pipelineFragmentShadingRate, primitiveFragmentShadingRate, or attachmentFragmentShadingRate");
 
     if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate && pFragmentSize->width != 1) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507",
-                         "vkCmdSetFragmentShadingRateKHR: Pipeline fragment width of %u has been specified in %s, but "
-                         "pipelineFragmentShadingRate is not enabled",
-                         pFragmentSize->width, cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::width),
+                         "is %" PRIu32 " but the pipelineFragmentShadingRate feature was not enabled.", pFragmentSize->width);
     }
 
     if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate && pFragmentSize->height != 1) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508",
-                         "vkCmdSetFragmentShadingRateKHR: Pipeline fragment height of %u has been specified in %s, but "
-                         "pipelineFragmentShadingRate is not enabled",
-                         pFragmentSize->height, cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::height),
+                         "is %" PRIu32 " but the pipelineFragmentShadingRate feature was not enabled.", pFragmentSize->height);
     }
 
     if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
         combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510",
-                         "vkCmdSetFragmentShadingRateKHR: First combiner operation of %s has been specified in %s, but "
-                         "primitiveFragmentShadingRate is not enabled",
-                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]), cmd_name);
+        skip |=
+            LogError("VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510", commandBuffer,
+                     error_obj.location.dot(Field::combinerOps, 0), "is %s but the primitiveFragmentShadingRate was not enabled.",
+                     string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]));
     }
 
     if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
         combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511",
-                         "vkCmdSetFragmentShadingRateKHR: Second combiner operation of %s has been specified in %s, but "
-                         "attachmentFragmentShadingRate is not enabled",
-                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]), cmd_name);
+        skip |=
+            LogError("VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511", commandBuffer,
+                     error_obj.location.dot(Field::combinerOps, 1), "is %s but the attachmentFragmentShadingRate was not enabled.",
+                     string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]));
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
         (combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
          combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512",
-                         "vkCmdSetFragmentShadingRateKHR: First combiner operation of %s has been specified in %s, but "
-                         "fragmentShadingRateNonTrivialCombinerOps is "
-                         "not supported",
-                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]), cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512", commandBuffer,
+                         error_obj.location.dot(Field::combinerOps, 0),
+                         "is %s but the fragmentShadingRateNonTrivialCombinerOps feature was not enabled.",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[0]));
     }
 
     if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
         (combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
          combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512",
-                         "vkCmdSetFragmentShadingRateKHR: Second combiner operation of %s has been specified in %s, but "
-                         "fragmentShadingRateNonTrivialCombinerOps "
-                         "is not supported",
-                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]), cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512", commandBuffer,
+                         error_obj.location.dot(Field::combinerOps, 1),
+                         "is %s but the fragmentShadingRateNonTrivialCombinerOps feature was not enabled.",
+                         string_VkFragmentShadingRateCombinerOpKHR(combinerOps[1]));
     }
 
     if (pFragmentSize->width == 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513",
-                         "vkCmdSetFragmentShadingRateKHR: Fragment width of %u has been specified in %s.", pFragmentSize->width,
-                         cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::width), "is zero");
     }
 
     if (pFragmentSize->height == 0) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514",
-                         "vkCmdSetFragmentShadingRateKHR: Fragment height of %u has been specified in %s.", pFragmentSize->height,
-                         cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::height), "is zero");
     }
 
     if (pFragmentSize->width != 0 && !IsPowerOfTwo(pFragmentSize->width)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515",
-                         "vkCmdSetFragmentShadingRateKHR: Non-power-of-two fragment width of %u has been specified in %s.",
-                         pFragmentSize->width, cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.",
+                         pFragmentSize->width);
     }
 
     if (pFragmentSize->height != 0 && !IsPowerOfTwo(pFragmentSize->height)) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516",
-                         "vkCmdSetFragmentShadingRateKHR: Non-power-of-two fragment height of %u has been specified in %s.",
-                         pFragmentSize->height, cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.",
+                         pFragmentSize->height);
     }
 
     if (pFragmentSize->width > 4) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517",
-                         "vkCmdSetFragmentShadingRateKHR: Fragment width of %u specified in %s is too large.", pFragmentSize->width,
-                         cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::width), "(%" PRIu32 ") is larger than 4.",
+                         pFragmentSize->width);
     }
 
     if (pFragmentSize->height > 4) {
-        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518",
-                         "vkCmdSetFragmentShadingRateKHR: Fragment height of %u specified in %s is too large",
-                         pFragmentSize->height, cmd_name);
+        skip |= LogError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518", commandBuffer,
+                         error_obj.location.dot(Field::pFragmentSize).dot(Field::height), "(%" PRIu32 ") is larger than 4.",
+                         pFragmentSize->height);
     }
     return skip;
 }
@@ -2175,10 +2171,10 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer comman
                                          "VUID-vkCmdSetColorWriteEnableEXT-None-04803", "colorWriteEnable");
 
     if (attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656",
-                         "vkCmdSetColorWriteEnableEXT(): attachmentCount (%" PRIu32
-                         ") is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
-                         attachmentCount, phys_dev_props.limits.maxColorAttachments);
+        skip |= LogError("VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656", commandBuffer,
+                         error_obj.location.dot(Field::attachmentCount),
+                         "(%" PRIu32 ") is greater than the maxColorAttachments limit (%" PRIu32 ").", attachmentCount,
+                         phys_dev_props.limits.maxColorAttachments);
     }
     return skip;
 }
@@ -2245,17 +2241,17 @@ bool CoreChecks::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandB
 
     if (aspectMask != VK_IMAGE_ASPECT_NONE &&
         !enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopLayout-08864",
-                         "vkCmdSetAttachmentFeedbackLoopEnableEXT(): aspestMask is %s but the attachmentFeedbackLoopLayout feature "
-                         "is not enabled.",
+        skip |= LogError("VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopLayout-08864", commandBuffer,
+                         error_obj.location.dot(Field::aspectMask),
+                         "is %s but the attachmentFeedbackLoopLayout feature "
+                         "was not enabled.",
                          string_VkImageAspectFlags(aspectMask).c_str());
     }
 
     if (aspectMask != VK_IMAGE_ASPECT_NONE && aspectMask != VK_IMAGE_ASPECT_COLOR_BIT && aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
         aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
-        skip |=
-            LogError(commandBuffer, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-08863",
-                     "vkCmdSetAttachmentFeedbackLoopEnableEXT(): aspestMask is %s.", string_VkImageAspectFlags(aspectMask).c_str());
+        skip |= LogError("VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-08863", commandBuffer,
+                         error_obj.location.dot(Field::aspectMask), "is %s.", string_VkImageAspectFlags(aspectMask).c_str());
     }
 
     return skip;

@@ -607,15 +607,15 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
                                       const QueueFamilyBarrier& barrier, const VulkanTypedHandle& handle,
                                       VkSharingMode sharing_mode) const;
-    bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& loc,
+    bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
                                                  VkSwapchainCreateInfoKHR const* create_info,
                                                  const SURFACE_STATE* surface_state) const;
-    bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const Location& loc,
+    bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
                                                    const VkSurfaceCapabilitiesKHR* capabilities,
                                                    VkSwapchainCreateInfoKHR const* create_info,
                                                    const SURFACE_STATE* surface_state) const;
     bool ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const* pCreateInfo, const SURFACE_STATE* surface_state,
-                                 const SWAPCHAIN_NODE* old_swapchain_state, const Location& loc) const;
+                                 const SWAPCHAIN_NODE* old_swapchain_state, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline,
                                            const Location& loc) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const Location& loc,
@@ -641,7 +641,7 @@ class CoreChecks : public ValidationStateTracker {
                                   const ErrorObject& error_obj) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
-                    VkImageUsageFlagBits usage_flag, const char* error_code) const;
+                    VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
     bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
                                const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,
                                const Location& attachment_loc, bool& skip) const;
@@ -1073,7 +1073,8 @@ class CoreChecks : public ValidationStateTracker {
                                             const VkImageSubresourceRange& range, const Location& loc) const;
 
     bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, const VkRect2D& render_area,
-                                       uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
+                                       uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects,
+                                       const Location& loc) const;
 
     template <typename HandleT, typename RegionType>
     bool ValidateImageCopyData(const HandleT handle, const uint32_t regionCount, const RegionType* pRegions,
@@ -1295,7 +1296,7 @@ class CoreChecks : public ValidationStateTracker {
                                               const VkImageSubresourceRange& subresourceRange) const;
 
     bool ValidateImageViewFormatFeatures(const IMAGE_STATE& image_state, const VkFormat view_format,
-                                         const VkImageUsageFlags image_usage) const;
+                                         const VkImageUsageFlags image_usage, const Location& create_info_loc) const;
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView,
@@ -1425,11 +1426,11 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
                                             const ErrorObject& error_obj) const override;
 
-    bool ValidateCreateImageANDROID(const VkImageCreateInfo* create_info) const;
-    bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info) const;
+    bool ValidateCreateImageANDROID(const VkImageCreateInfo* create_info, const Location& create_info_loc) const;
+    bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info, const Location& create_info_loc) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,
                                              const char* vuid) const;
-    bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
+    bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* allocate_info, const Location& allocate_info_loc) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties,
@@ -1607,7 +1608,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                    VkImageFormatProperties2* pImageFormatProperties,
                                                                    const ErrorObject& error_obj) const override;
-    bool GetPhysicalDeviceImageFormatProperties(IMAGE_STATE& image_state, const char* vuid_string) const;
+    bool GetPhysicalDeviceImageFormatProperties(IMAGE_STATE& image_state, const char* vuid_string, const Location& loc) const;
     bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
@@ -1925,7 +1926,8 @@ class CoreChecks : public ValidationStateTracker {
                                                   const ErrorObject& error_obj) const override;
     bool MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2* attachments,
                                                         const VkFramebufferCreateInfo* fbci, const VkRenderPassCreateInfo2* rpci,
-                                                        uint32_t subpass, VkSampleCountFlagBits sample_count) const;
+                                                        uint32_t subpass, VkSampleCountFlagBits sample_count,
+                                                        const Location& create_info_loc) const;
     bool ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
     bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
