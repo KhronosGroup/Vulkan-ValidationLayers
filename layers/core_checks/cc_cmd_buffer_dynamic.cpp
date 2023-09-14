@@ -1023,7 +1023,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
     if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT] &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
         const auto fragment_shader_stage = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT);
-        if (!fragment_shader_stage->entrypoint->has_alpha_to_coverage_variable) {
+        if (fragment_shader_stage && fragment_shader_stage->entrypoint &&
+            !fragment_shader_stage->entrypoint->has_alpha_to_coverage_variable) {
             const LogObjectList frag_objlist(cb_state.commandBuffer(), fragment_shader_stage->shader());
             skip |= LogError(vuid.alpha_component_word_08920, frag_objlist, loc,
                              "alphaToCoverageEnable is set, but fragment shader doesn't declare a variable that covers "
