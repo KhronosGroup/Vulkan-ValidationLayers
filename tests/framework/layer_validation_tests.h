@@ -439,6 +439,10 @@ class ImageTest : public VkLayerTest {
 class NegativeImage : public ImageTest {};
 class PositiveImage : public ImageTest {};
 
+class ImageDrmTest : public VkLayerTest {};
+class NegativeImageDrm : public ImageDrmTest {};
+class PositiveImageDrm : public ImageDrmTest {};
+
 class ImagelessFramebufferTest : public VkLayerTest {};
 class NegativeImagelessFramebuffer : public ImagelessFramebufferTest {};
 class PositiveImagelessFramebuffer : public ImagelessFramebufferTest {};
