@@ -1434,7 +1434,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&
                     (create_info.pRasterizationState->lineWidth != 1.0f)) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749", device,
-                                     rasterization_loc.dot(Field::polygonMode),
+                                     rasterization_loc.dot(Field::lineWidth),
                                      "is %f, but the line width state is static (pCreateInfos[%" PRIu32
                                      "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_LINE_WIDTH) and "
                                      "wideLines feature was not enabled.",
