@@ -19,72 +19,11 @@
 
 #include "gpu_validation/gpu_state_tracker.h"
 #include "gpu_validation/gpu_error_message.h"
-#include "gpu_validation/gv_descriptor_sets.h"
+#include "gpu_validation/gpu_descriptor_set.h"
+#include "gpu_validation/gpu_subclasses.h"
 #include "state_tracker/pipeline_state.h"
 
 class GpuAssisted;
-
-struct GpuAssistedDescSetState {
-    std::shared_ptr<gpuav_state::DescriptorSet> set_state;
-    // State that will be used by the GPU-AV shader instrumentation
-    // For update-after-bind, this will be set during queue submission
-    // Otherwise it will be set when the DescriptorSet is bound.
-    std::shared_ptr<gpuav_state::DescriptorSet::State> gpu_state;
-};
-
-struct GpuAssistedDeviceMemoryBlock {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
-
-struct GpuAssistedInputBuffers {
-    VkBuffer address_buffer;
-    VmaAllocation address_buffer_allocation;
-    std::vector<GpuAssistedDescSetState> descriptor_set_buffers;
-};
-
-struct GpuAssistedPreDrawResources {
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VkDeviceSize offset = 0;
-    uint32_t stride = 0;
-    VkDeviceSize buf_size = 0;
-    static const uint32_t push_constant_words = 4;
-};
-
-struct GpuAssistedPreDispatchResources {
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkDescriptorSet desc_set = VK_NULL_HANDLE;
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VkDeviceSize offset = 0;
-    static const uint32_t push_constant_words = 4;
-};
-
-struct GpuAssistedBufferInfo {
-    GpuAssistedDeviceMemoryBlock output_mem_block;
-    GpuAssistedPreDrawResources pre_draw_resources;
-    GpuAssistedPreDispatchResources pre_dispatch_resources;
-    VkDescriptorSet desc_set;
-    VkDescriptorPool desc_pool;
-    VkPipelineBindPoint pipeline_bind_point;
-    bool uses_robustness;
-    vvl::Func command;
-    uint32_t desc_binding_index;
-    GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
-                          GpuAssistedPreDispatchResources pre_dispatch_resources, VkDescriptorSet desc_set,
-                          VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness,
-                          vvl::Func command, uint32_t desc_binding_index)
-        : output_mem_block(output_mem_block),
-          pre_draw_resources(pre_draw_resources),
-          pre_dispatch_resources(pre_dispatch_resources),
-          desc_set(desc_set),
-          desc_pool(desc_pool),
-          pipeline_bind_point(pipeline_bind_point),
-          uses_robustness(uses_robustness),
-          command(command),
-          desc_binding_index(desc_binding_index){};
-};
 
 struct GpuVuid {
     const char* uniform_access_oob = kVUIDUndefined;
@@ -98,21 +37,8 @@ struct GpuVuid {
     const char* group_exceeds_device_limit_z = kVUIDUndefined;
 };
 
-struct GpuAssistedAccelerationStructureBuildValidationBufferInfo {
-    // The acceleration structure that is being built.
-    VkAccelerationStructureNV acceleration_structure = VK_NULL_HANDLE;
-
-    // The descriptor pool and descriptor set being used to validate a given build.
-    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-
-    // The storage buffer used by the validating compute shader whichcontains info about
-    // the valid handles and which is written to communicate found invalid handles.
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VmaAllocation buffer_allocation = VK_NULL_HANDLE;
-};
-
-struct GpuAssistedAccelerationStructureBuildValidationState {
+namespace gpuav_state {
+struct AccelerationStructureBuildValidationState {
     // some resources can be used each time so only to need to create once
     bool initialized = false;
 
@@ -126,7 +52,7 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
     void Destroy(VkDevice device, VmaAllocator& vmaAllocator);
 };
 
-struct GpuAssistedPreDrawValidationState {
+struct PreDrawValidationState {
     // some resources can be used each time so only to need to create once
     bool initialized = false;
 
@@ -139,7 +65,7 @@ struct GpuAssistedPreDrawValidationState {
     void Destroy(VkDevice device);
 };
 
-struct GpuAssistedPreDispatchValidationState {
+struct PreDispatchValidationState {
     // some resources can be used each time so only to need to create once
     bool initialized = false;
 
@@ -153,7 +79,7 @@ struct GpuAssistedPreDispatchValidationState {
 };
 
 // Used for draws/dispatch/traceRays indirect
-struct GpuAssistedCmdIndirectState {
+struct CmdIndirectState {
     VkBuffer buffer;
     VkDeviceSize offset;
     uint32_t draw_count;
@@ -161,34 +87,17 @@ struct GpuAssistedCmdIndirectState {
     VkBuffer count_buffer;
     VkDeviceSize count_buffer_offset;
 };
-
-namespace gpuav_state {
-class CommandBuffer : public gpu_utils_state::CommandBuffer {
-  public:
-    std::vector<GpuAssistedBufferInfo> per_draw_buffer_list;
-    std::vector<GpuAssistedInputBuffers> di_input_buffer_list;
-    std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
-    VkBuffer current_input_buffer = VK_NULL_HANDLE;
-
-    CommandBuffer(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                  const COMMAND_POOL_STATE* pool);
-    ~CommandBuffer();
-
-    bool NeedsProcessing() const final { return !per_draw_buffer_list.empty() || has_build_as_cmd; }
-    void Process(VkQueue queue) final;
-
-    void Destroy() final;
-    void Reset() final;
-
-  private:
-    void ResetCBState();
-    void ProcessAccelerationStructure(VkQueue queue);
-};
-
 }  // namespace gpuav_state
 
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureKHR, gpuav_state::AccelerationStructureKHR,
+                                   ACCELERATION_STRUCTURE_STATE_KHR)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkAccelerationStructureNV, gpuav_state::AccelerationStructureNV, ACCELERATION_STRUCTURE_STATE_NV)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav_state::Buffer, BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav_state::BufferView, BUFFER_VIEW_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav_state::DescriptorSet, cvdescriptorset::DescriptorSet)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav_state::ImageView, IMAGE_VIEW_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav_state::Sampler, SAMPLER_STATE)
 
 class GpuAssisted : public GpuAssistedBase {
     using Func = vvl::Func;
@@ -209,8 +118,23 @@ class GpuAssisted : public GpuAssistedBase {
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                          const RecordObject& record_obj) override;
+    std::shared_ptr<BUFFER_STATE> CreateBufferState(VkBuffer buf, const VkBufferCreateInfo* pCreateInfo) override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
+
+    std::shared_ptr<BUFFER_VIEW_STATE> CreateBufferViewState(const std::shared_ptr<BUFFER_STATE>& bf, VkBufferView bv,
+                                                             const VkBufferViewCreateInfo* ci,
+                                                             VkFormatFeatureFlags2KHR buf_ff) override;
+    std::shared_ptr<IMAGE_VIEW_STATE> CreateImageViewState(
+        const std::shared_ptr<IMAGE_STATE>& image_state, VkImageView iv, const VkImageViewCreateInfo* ci,
+        VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) override;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> CreateAccelerationStructureState(
+        VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV* pCreateInfo) override;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> CreateAccelerationStructureState(
+        VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+        std::shared_ptr<BUFFER_STATE>&& buf_state, VkDeviceAddress address) override;
+    std::shared_ptr<SAMPLER_STATE> CreateSamplerState(VkSampler s, const VkSamplerCreateInfo* ci) override;
+
     void CreateAccelerationStructureBuildValidationState(const VkDeviceCreateInfo* pCreateInfo);
     void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
@@ -227,11 +151,11 @@ class GpuAssisted : public GpuAssistedBase {
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        void* csm_state_data) override;
-    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo& buffer_info,
+    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, gpuav_state::BufferInfo& buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer,
-                                    const std::vector<GpuAssistedDescSetState>& descriptor_sets);
+                                    const std::vector<gpuav_state::DescSetState>& descriptor_sets);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
-    void UpdateBDABuffer(GpuAssistedDeviceMemoryBlock buffer_device_addresses);
+    void UpdateBDABuffer(gpuav_state::DeviceMemoryBlock buffer_device_addresses);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
 
@@ -320,14 +244,13 @@ class GpuAssisted : public GpuAssistedBase {
                                               VkDeviceAddress indirectDeviceAddress) override;
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) override;
     void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, Func command,
-                                     const GpuAssistedCmdIndirectState* indirect_state = nullptr);
-    void AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
-                                            GpuAssistedPreDrawResources& resources, const VkRenderPass render_pass,
-                                            const bool use_shader_objects, VkPipeline* pPipeline,
-                                            const GpuAssistedCmdIndirectState* indirect_state);
-    void AllocatePreDispatchValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
-                                                GpuAssistedPreDispatchResources& resources,
-                                                const GpuAssistedCmdIndirectState* indirect_state, const bool use_shader_objects);
+                                     const gpuav_state::CmdIndirectState* indirect_state = nullptr);
+    void AllocatePreDrawValidationResources(const gpuav_state::DeviceMemoryBlock& output_block,
+                                            gpuav_state::PreDrawResources& resources, const VkRenderPass render_pass,
+                                            const bool use_shader_objects, VkPipeline* pPipeline, const gpuav_state::CmdIndirectState* indirect_state);
+    void AllocatePreDispatchValidationResources(const gpuav_state::DeviceMemoryBlock& output_block,
+                                                gpuav_state::PreDispatchResources& resources,
+                                                const gpuav_state::CmdIndirectState* indirect_state, const bool use_shader_objects);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
                                                    const RecordObject& record_obj) override;
@@ -341,8 +264,8 @@ class GpuAssisted : public GpuAssistedBase {
         VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
         uint32_t variable_count) final;
 
-    void DestroyBuffer(GpuAssistedBufferInfo& buffer_info);
-    void DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationBufferInfo& buffer_info);
+    void DestroyBuffer(gpuav_state::BufferInfo& buffer_info);
+    void DestroyBuffer(gpuav_state::AccelerationStructureBuildValidationBufferInfo& buffer_info);
 
   private:
     void PreRecordCommandBuffer(VkCommandBuffer command_buffer);
@@ -355,13 +278,15 @@ class GpuAssisted : public GpuAssistedBase {
     bool warn_on_robust_oob;
     bool validate_instrumented_shaders;
     std::string instrumented_shader_cache_path;
-    GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
-    GpuAssistedPreDrawValidationState pre_draw_validation_state;
-    GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
-    GpuAssistedDeviceMemoryBlock app_buffer_device_addresses{};
+    gpuav_state::AccelerationStructureBuildValidationState acceleration_structure_validation_state;
+    gpuav_state::PreDrawValidationState pre_draw_validation_state;
+    gpuav_state::PreDispatchValidationState pre_dispatch_validation_state;
+    gpuav_state::DeviceMemoryBlock app_buffer_device_addresses{};
     size_t app_bda_buffer_size{};
     size_t app_bda_max_addresses{};
     uint32_t gpuav_bda_buffer_version = 0;
 
     bool buffer_device_address;
+
+    std::optional<gpuav_state::DescriptorHeap> desc_heap; // optional only to defer construction
 };

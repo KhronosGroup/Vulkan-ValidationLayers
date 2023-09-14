@@ -1004,6 +1004,9 @@ class DescriptorSet : public BASE_NODE {
             assert(iter_ != end_);
             return **iter_;
         }
+        uint32_t CurrentIndex() const {
+            return index_;
+        }
 
         const Descriptor *operator->() const {
             assert(iter_ != end_);
