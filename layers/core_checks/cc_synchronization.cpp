@@ -2384,19 +2384,18 @@ bool CoreChecks::ValidateShaderTimeImageCommon(const LogObjectList &objlist, con
     if (!features_enabled) {
         const auto &feature_error_vuid =
             sync_vuid_maps::GetShaderTileImageVUID(outer_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageFeatureError);
-        skip |= LogError(objlist, feature_error_vuid,
-                         "%s can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
-                         "VK_EXT_shader_tile_image features.",
-                         outer_loc.StringFunc());
+        skip |= LogError(feature_error_vuid, objlist, outer_loc,
+                         "can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
+                         "VK_EXT_shader_tile_image features.");
     }
 
     // Check basic parameter requirements for shader tile image barriers
     if ((dependency_flags & VK_DEPENDENCY_BY_REGION_BIT) != VK_DEPENDENCY_BY_REGION_BIT) {
-        skip |= LogError(objlist, barrier_error_vuid, "%s should contain VK_DEPENDENCY_BY_REGION_BIT.",
-                         outer_loc.dot(Field::dependencyFlags).Message().c_str());
+        skip |= LogError(barrier_error_vuid, objlist, outer_loc.dot(Field::dependencyFlags),
+                         "should contain VK_DEPENDENCY_BY_REGION_BIT.");
     }
     if (buffer_barrier_count != 0 || image_barrier_count != 0) {
-        skip |= LogError(objlist, barrier_error_vuid, "%s can only include memory barriers.", outer_loc.StringFunc());
+        skip |= LogError(barrier_error_vuid, objlist, outer_loc, "can only include memory barriers.");
     }
     return skip;
 }

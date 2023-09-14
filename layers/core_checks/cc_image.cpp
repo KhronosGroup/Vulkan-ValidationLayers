@@ -108,7 +108,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateCreateImageANDROID(pCreateInfo);
+        skip |= ValidateCreateImageANDROID(pCreateInfo, create_info_loc);
     } else {  // These checks are omitted or replaced when Android HW Buffer extension is active
         if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
             return LogError("VUID-VkImageCreateInfo-pNext-01975", device, create_info_loc.dot(Field::format),
@@ -864,28 +864,36 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
+static std::string string_VkRect2D(VkRect2D rect) {
+    std::stringstream ss;
+    ss << "offset.x: " << rect.offset.x << ", offset.y: " << rect.offset.y << ", extent.width: " << rect.extent.width
+       << ", extent.height: " << rect.extent.height;
+    return ss.str();
+}
+
 bool CoreChecks::ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_state, const VkRect2D &render_area,
                                                uint32_t render_pass_layer_count, uint32_t rect_count,
-                                               const VkClearRect *clear_rects) const {
+                                               const VkClearRect *clear_rects, const Location &loc) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < rect_count; i++) {
         if (!ContainsRect(render_area, clear_rects[i].rect)) {
-            skip |= LogError(cb_state.Handle(), "VUID-vkCmdClearAttachments-pRects-00016",
-                             "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
-                             "the current render pass instance.",
-                             i);
+            skip |=
+                LogError("VUID-vkCmdClearAttachments-pRects-00016", cb_state.Handle(), loc.dot(Field::pRects, i).dot(Field::rect),
+                         "(%s) is not contained in the area of "
+                         "the current render pass instance (%s).",
+                         string_VkRect2D(clear_rects[i].rect).c_str(), string_VkRect2D(render_area).c_str());
         }
 
         const uint32_t rect_base_layer = clear_rects[i].baseArrayLayer;
         const uint32_t rect_layer_count = clear_rects[i].layerCount;
         // The layer indices specified by elements of pRects must be inferior to render pass layer count
         if (rect_base_layer + rect_layer_count > render_pass_layer_count) {
-            skip |= LogError(cb_state.Handle(), "VUID-vkCmdClearAttachments-pRects-06937",
-                             "vkCmdClearAttachments():  pRects[%" PRIu32 "].baseArrayLayer + pRects[%" PRIu32
-                             "].layerCount, or %" PRIu32
-                             ", is superior to the number of layers rendered to in the current render pass instance (%" PRIu32 ").",
-                             i, i, rect_base_layer + rect_layer_count, render_pass_layer_count);
+            skip |= LogError(
+                "VUID-vkCmdClearAttachments-pRects-06937", cb_state.Handle(), loc.dot(Field::pRects, i).dot(Field::baseArrayLayer),
+                "(%" PRIu32 ") + layerCount (%" PRIu32 ") (sum: %" PRIu32
+                "), is larger then the number of layers rendered to in the current render pass instance (%" PRIu32 ").",
+                rect_base_layer, rect_layer_count, rect_base_layer + rect_layer_count, render_pass_layer_count);
         }
     }
     return skip;
@@ -916,7 +924,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         } else {
             layer_count = cb_state.activeFramebuffer.get()->createInfo.layers;
         }
-        skip |= ValidateClearAttachmentExtent(cb_state, render_area, layer_count, rectCount, pRects);
+        skip |= ValidateClearAttachmentExtent(cb_state, render_area, layer_count, rectCount, pRects, error_obj.location);
     }
 
     for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
@@ -1098,10 +1106,11 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                                                                  const FRAMEBUFFER_STATE *) {
                     assert(rectCount == clear_rect_copy->size());
                     bool skip = false;
+                    const Location loc(Func::vkCmdClearAttachments);
                     skip = ValidateClearAttachmentExtent(
                         secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
                         prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
-                        clear_rect_copy->data());
+                        clear_rect_copy->data(), loc);
                     return skip;
                 };
                 cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
@@ -1136,8 +1145,9 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                     bool skip = false;
 
                     if (fb) {
+                        const Location loc(Func::vkCmdClearAttachments);
                         skip = ValidateClearAttachmentExtent(secondary, render_area, fb->createInfo.layers, rectCount,
-                                                             clear_rect_copy->data());
+                                                             clear_rect_copy->data(), loc);
                     }
                     return skip;
                 };
@@ -1392,7 +1402,7 @@ bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state, const VkFormat view_format,
-                                                 const VkImageUsageFlags image_usage) const {
+                                                 const VkImageUsageFlags image_usage, const Location &create_info_loc) const {
     // Pass in image_usage here instead of extracting it from image_state in case there's a chained VkImageViewUsageCreateInfo
     bool skip = false;
 
@@ -1431,47 +1441,40 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
     }
 
     if (tiling_features == 0) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-None-02273",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s has no supported format features on this "
+        skip |= LogError("VUID-VkImageViewCreateInfo-None-02273", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s has no supported format features on this "
                          "physical device.",
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
     } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02274",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_SAMPLED_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-02274", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02275",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_STORAGE_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-02275", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV))) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-08931",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-08931", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
                !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02277",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-02277", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                     VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV))) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-08932",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, or "
-                         "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-08932", image_state.image(), create_info_loc.dot(Field::format),
+                         "%s with tiling %s only supports %s.", string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
                !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
-            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-04550",
-                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                             "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
-                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            skip |= LogError("VUID-VkImageViewCreateInfo-usage-04550", image_state.image(), create_info_loc.dot(Field::format),
+                             "%s with tiling %s only supports %s.", string_VkFormat(view_format),
+                             string_VkImageTiling(image_tiling), string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
     }
 
@@ -1832,8 +1835,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             break;
     }
 
-    skip |= ValidateCreateImageViewANDROID(pCreateInfo);
-    skip |= ValidateImageViewFormatFeatures(image_state, view_format, image_usage);
+    skip |= ValidateCreateImageViewANDROID(pCreateInfo, create_info_loc);
+    skip |= ValidateImageViewFormatFeatures(image_state, view_format, image_usage, create_info_loc);
 
     if (enabled_features.shading_rate_image_features.shadingRateImage) {
         if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {

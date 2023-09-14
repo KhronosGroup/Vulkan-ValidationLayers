@@ -78,15 +78,18 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
     return skip;
 }
 
-bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string) const {
+bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string,
+                                                        const Location &loc) const {
     bool skip = false;
     const auto image_create_info = image_state.createInfo;
     VkResult image_properties_result = VK_SUCCESS;
+    Func command = Func::vkGetPhysicalDeviceImageFormatProperties;
     if (image_create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
             physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
             image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
     } else {
+        command = Func::vkGetPhysicalDeviceImageFormatProperties2;
         auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
         image_format_info.type = image_create_info.imageType;
         image_format_info.format = image_create_info.format;
@@ -99,14 +102,14 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
     }
     if (image_properties_result != VK_SUCCESS) {
-        skip |= LogError(device, vuid_string,
-                         "vkGetPhysicalDeviceImageFormatProperties() or vkGetPhysicalDeviceImageFormatProperties2() unexpectedly "
+        skip |= LogError(vuid_string, device, loc,
+                         "internal call to %s unexpectedly "
                          "failed with result = %s, "
                          "when called for validation with following params: "
                          "format: %s, imageType: %s, "
                          "tiling: %s, usage: %s, "
                          "flags: %s.",
-                         string_VkResult(image_properties_result), string_VkFormat(image_create_info.format),
+                         String(command), string_VkResult(image_properties_result), string_VkFormat(image_create_info.format),
                          string_VkImageType(image_create_info.imageType), string_VkImageTiling(image_create_info.tiling),
                          string_VkImageUsageFlags(image_create_info.usage).c_str(),
                          string_VkImageCreateFlags(image_create_info.flags).c_str());
@@ -674,9 +677,9 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     for (uint32_t i = 0; i < srcCacheCount; i++) {
         auto src = CastFromHandle<const ValidationCache *>(pSrcCaches[i]);
         if (src == dst) {
-            skip |= LogError(device, "VUID-vkMergeValidationCachesEXT-dstCache-01536",
-                             "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
-                             HandleToUint64(dstCache));
+            const Location loc(Func::vkMergePipelineCaches, Field::dstCache);
+            skip |= LogError("VUID-vkMergeValidationCachesEXT-dstCache-01536", device, loc,
+                             "(0x%" PRIx64 ") must not appear in pSrcCaches array.", HandleToUint64(dstCache));
             result = VK_ERROR_VALIDATION_FAILED_EXT;
         }
         if (!skip) {

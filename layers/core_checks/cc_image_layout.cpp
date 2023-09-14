@@ -446,7 +446,8 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuff
     bool skip = false;
     const auto image_create_info = image_state->createInfo;
     if (!image_state->image_format_properties.sampleCounts) {
-        skip |= GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
+        skip |= GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
+                                                       rasterization_samples_loc);
     }
     if (!(image_state->image_format_properties.sampleCounts & msrtss_samples)) {
         const LogObjectList objlist(renderpass, framebuffer, image_state->Handle());

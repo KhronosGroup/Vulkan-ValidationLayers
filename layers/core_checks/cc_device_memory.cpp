@@ -200,7 +200,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
+        skip |= ValidateAllocateMemoryANDROID(pAllocateInfo, allocate_info_loc);
     } else {
         if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-07899", device, allocate_info_loc.dot(Field::allocationSize),
