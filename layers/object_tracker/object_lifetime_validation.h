@@ -116,8 +116,8 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const;
     bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const Location &loc) const;
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
-    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_code,
-                                 const char *wrong_device_code, const Location &loc) const;
+    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_vuid,
+                                 const char *wrong_parent_vuid, const Location &loc) const;
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
@@ -133,8 +133,8 @@ class ObjectLifetimes : public ValidationObject {
         return false;
     }
 
-    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_code,
-                             const char *wrong_device_code, const Location &loc) const {
+    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
+                             const char *wrong_parent_vuid, const Location &loc) const {
         constexpr bool skip = false;
 
         // If this instance of lifetime validation tracks the object, report success
@@ -155,12 +155,12 @@ class ObjectLifetimes : public ValidationObject {
         // Report about findings.
         if (!found) {
             // Object was not found anywhere
-            return LogError(invalid_handle_code, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
+            return LogError(invalid_handle_vuid, instance, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
                             object_handle);
-        } else if (wrong_device_code != kVUIDUndefined && object_type != kVulkanObjectTypeSurfaceKHR) {
+        } else if (wrong_parent_vuid != kVUIDUndefined) {
             // Object found on other device and device error code is provided
             const LogObjectList objlist(instance, device, other_device);
-            return LogError(wrong_device_code, objlist, loc,
+            return LogError(wrong_parent_vuid, objlist, loc,
                             "Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
                             ") was created, allocated or retrieved from %s.",
                             FormatHandle(device).c_str(), object_string[object_type], object_handle,
@@ -173,12 +173,12 @@ class ObjectLifetimes : public ValidationObject {
     }
 
     template <typename T1>
-    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
-                        const char *wrong_device_code, const Location &loc) const {
+    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,
+                        const char *wrong_parent_vuid, const Location &loc) const {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
-        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_code, wrong_device_code, loc);
+        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_vuid, wrong_parent_vuid, loc);
     }
 
     template <typename T1>

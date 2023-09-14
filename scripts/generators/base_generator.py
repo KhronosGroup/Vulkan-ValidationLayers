@@ -583,7 +583,7 @@ class BaseGenerator(OutputGenerator):
                 return
             type = typeElem.get('objtypeenum')
             parent = typeElem.get('parent') # will resolve later
-            instance = parent == 'VkInstance'
+            instance = parent == 'VkInstance' or typeName == 'VkInstance'
             device = not instance
             dispatchable = typeElem.find('type').text == 'VK_DEFINE_HANDLE'
 
