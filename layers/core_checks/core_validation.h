@@ -845,7 +845,7 @@ class CoreChecks : public ValidationStateTracker {
                                       std::string& errorMsg) const;
 
     struct DescriptorContext {
-        Func command;
+        const Location& loc;
         const DrawDispatchVuid& vuids;
         const CMD_BUFFER_STATE& cb_state;
         const cvdescriptorset::DescriptorSet& descriptor_set;

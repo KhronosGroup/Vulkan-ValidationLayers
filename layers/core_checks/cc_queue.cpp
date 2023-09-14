@@ -58,10 +58,13 @@ struct CommandBufferSubmitState {
                 std::vector<uint32_t> dynamic_offsets;
                 std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
 
-                CoreChecks::DescriptorContext context{
-                    loc.function,   core->GetDrawDispatchVuid(cmd_info.command), cb_state, *set_node, cmd_info.framebuffer,
-                    false,  // This is submit time not record time...
-                    checked_layouts};
+                CoreChecks::DescriptorContext context{loc,
+                                                      core->GetDrawDispatchVuid(cmd_info.command),
+                                                      cb_state,
+                                                      *set_node,
+                                                      cmd_info.framebuffer,
+                                                      false,  // This is submit time not record time...
+                                                      checked_layouts};
 
                 for (const auto &binding_info : cmd_info.binding_infos) {
                     std::string error;
