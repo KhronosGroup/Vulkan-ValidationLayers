@@ -2386,7 +2386,7 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &ima
             if (buffer_size < max_buffer_copy) {
                 const LogObjectList objlist(cb, buff_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc,
-                                 "is trying to copy  %" PRIu64 " bytes plus %" PRIu64
+                                 "is trying to copy %" PRIu64 " bytes plus %" PRIu64
                                  " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
                                  buffer_copy_size, region.bufferOffset, FormatHandle(buff_state).c_str(), buffer_size);
             }
