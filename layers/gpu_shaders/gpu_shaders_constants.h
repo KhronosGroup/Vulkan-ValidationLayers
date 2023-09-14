@@ -19,6 +19,18 @@
 #ifndef GPU_SHADERS_CONSTANTS_H
 #define GPU_SHADERS_CONSTANTS_H
 
+#ifdef __cplusplus
+namespace gpuav_glsl {
+using uint = unsigned int;
+
+// Upper bound for maxUpdateAfterBindDescriptorsInAllPools. This value needs to
+// be small enough to allow for a table in memory, but some devices set it to 2^32.
+// This value only matters for host code, but it is defined here so it can be used
+// in unit tests.
+const uint kDebugInputBindlessMaxDescriptors = 1024u*1024u;
+
+#endif
+
 // Common Stream Record Offsets
 //
 // The following are offsets to fields which are common to all records written
@@ -153,7 +165,8 @@ const int kInstErrorBuffAddrUnallocRef = 3;
 const int kInstErrorOOB = 4;
 const int kInstErrorPreDrawValidate = 5;
 const int kInstErrorPreDispatchValidate = 6;
-const int kInstErrorMax = 6;
+const int kInstErrorBindlessDestroyed = 7;
+const int kInstErrorMax = 7;
 
 // Direct Input Buffer Offsets
 //
@@ -165,37 +178,22 @@ const int kInstErrorMax = 6;
 // integers. Each validation will have its own formatting of this array.
 const int kDebugInputDataOffset = 0;
 
-// clang-format off
-// Bindless Validation Input Buffer Format
-//
-// An input buffer for bindless validation has this structure:
-// GLSL:
-// layout(buffer_reference, std430, buffer_reference_align = 8) buffer DescriptorSetData {
-//     uint num_bindings;
-//     uint data[];
-// };
-//
-// layout(set = 7, binding = 1, std430) buffer inst_bindless_InputBuffer
-// {
-//     DescriptorSetData desc_sets[32];
-// } inst_bindless_input_buffer;
-//
-//
-// To look up the length of a binding:
-//   uint length = inst_bindless_input_buffer[set].data[binding];
-// Scalar bindings have a length of 1.
-//
-// To look up the initialization state of a descriptor in a binding:
-//   uint num_bindings = inst_bindless_input_buffer[set].num_bindings;
-//   uint binding_state_start = inst_bindless_input_buffer[set].data[num_bindings + binding];
-//   uint init_state = inst_bindless_input_buffer[set].data[binding_state_start + index];
-//
-// For scalar bindings, use 0 for the index.
-// clang-format on
-//
 // The size of the inst_bindless_input_buffer array, regardless of how many
 // descriptor sets the device supports.
 const int kDebugInputBindlessMaxDescSets = 32;
+
+// Special global descriptor id that skips checking.
+const uint kDebugInputBindlessSkipId = 0x00ffffff;
+
+// Top 8 bits of the descriptor id
+const uint kDescBitShift = 24;
+const uint kSamplerDesc = 1;
+const uint kImageSamplerDesc = 2;
+const uint kImageDesc = 3;
+const uint kTexelDesc = 4;
+const uint kBufferDesc = 5;
+const uint kInlineUniformDesc = 6;
+const uint kAccelDesc = 7;
 
 // Buffer Device Address Input Buffer Format
 //
@@ -232,4 +230,7 @@ const int pre_dispatch_count_exceeds_limit_x_error = 1;
 const int pre_dispatch_count_exceeds_limit_y_error = 2;
 const int pre_dispatch_count_exceeds_limit_z_error = 3;
 
+#ifdef __cplusplus
+} // namespace gpuav_glsl
+#endif
 #endif

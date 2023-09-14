@@ -190,15 +190,17 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/vk_safe_struct.h
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
+    gpu_validation/gpu_descriptor_set.cpp
+    gpu_validation/gpu_descriptor_set.h
     gpu_validation/gpu_error_message.cpp
     gpu_validation/gpu_error_message.h
     gpu_validation/gpu_state_tracker.cpp
     gpu_validation/gpu_state_tracker.h
+    gpu_validation/gpu_subclasses.cpp
+    gpu_validation/gpu_subclasses.h
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h
-    gpu_validation/gv_descriptor_sets.cpp
-    gpu_validation/gv_descriptor_sets.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/base_node.cpp

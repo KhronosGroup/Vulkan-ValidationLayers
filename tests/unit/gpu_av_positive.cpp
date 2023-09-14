@@ -17,6 +17,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../../layers/gpu_shaders/gpu_shaders_constants.h"
 
 class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};
 
@@ -519,3 +520,52 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
 
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
+
+TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp) {
+    TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto desc_indexing_props = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
+    auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&desc_indexing_props);
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+
+    ASSERT_GE(gpuav_glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
+}
+
+TEST_F(PositiveGpuAssistedLayer, MaxDescriptorsClamp13) {
+    TEST_DESCRIPTION("Make sure maxUpdateAfterBindDescriptorsInAllPools is clamped");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    auto validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required, skipping test.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vk12_props = vku::InitStruct<VkPhysicalDeviceVulkan12Properties>();
+    auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vk12_props);
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+
+    ASSERT_GE(gpuav_glsl::kDebugInputBindlessMaxDescriptors, vk12_props.maxUpdateAfterBindDescriptorsInAllPools);
+}
+
