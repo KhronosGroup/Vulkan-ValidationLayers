@@ -59,7 +59,7 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
 bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
                                            const Location &loc) const {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    auto instance_object_lifetime_data = GetObjectLifetimeData(instance_data->object_dispatch);
+    auto instance_object_lifetime_data = instance_data->GetValidationObject<ObjectLifetimes>();
     if (instance_object_lifetime_data->object_map[kVulkanObjectTypeDevice].contains(device_typed.handle)) {
         return false;
     }
@@ -334,8 +334,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         auto device_layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-        auto obj_lifetimes_data = reinterpret_cast<ObjectLifetimes *>(
-            device_layer_data->GetValidationObject(device_layer_data->object_dispatch, LayerObjectTypeObjectTracker));
+        auto obj_lifetimes_data = device_layer_data->GetValidationObject<ObjectLifetimes>();
         skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, error_obj.location);
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
@@ -410,8 +409,7 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
 
 void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physical_device), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(instance_data->object_dispatch, LayerObjectTypeObjectTracker);
-    ObjectLifetimes *object_lifetimes = static_cast<ObjectLifetimes *>(validation_data);
+    auto object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
     object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
     DestroyLeakedDeviceObjects();
 
@@ -661,8 +659,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
     CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator);
 
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_data->object_dispatch, LayerObjectTypeObjectTracker);
-    ObjectLifetimes *object_tracking = static_cast<ObjectLifetimes *>(validation_data);
+    auto object_tracking = device_data->GetValidationObject<ObjectLifetimes>();
 
     object_tracking->device_createinfo_pnext = SafePnextCopy(pCreateInfo->pNext);
     const auto *robustness2_features =

@@ -111,8 +111,8 @@ static void InitDeviceObjectDispatch(ValidationObject* instance_interceptor, Val
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
     if (!disables[thread_safety]) {
-        device_interceptor->object_dispatch.emplace_back(new ThreadSafety(static_cast<ThreadSafety*>(
-            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading))));
+        device_interceptor->object_dispatch.emplace_back(
+            new ThreadSafety(instance_interceptor->GetValidationObject<ThreadSafety>()));
     }
     if (!disables[stateless_checks]) {
         device_interceptor->object_dispatch.emplace_back(new StatelessValidation);
@@ -139,6 +139,28 @@ static void InitDeviceObjectDispatch(ValidationObject* instance_interceptor, Val
 
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
+template <typename ValidationObjectType>
+ValidationObjectType* ValidationObject::GetValidationObject() const {
+    LayerObjectTypeId type_id;
+    if constexpr (std::is_same_v<ValidationObjectType, ThreadSafety>) {
+        type_id = LayerObjectTypeThreading;
+    } else if constexpr (std::is_same_v<ValidationObjectType, StatelessValidation>) {
+        type_id = LayerObjectTypeParameterValidation;
+    } else if constexpr (std::is_same_v<ValidationObjectType, ObjectLifetimes>) {
+        type_id = LayerObjectTypeObjectTracker;
+    } else if constexpr (std::is_same_v<ValidationObjectType, CoreChecks>) {
+        type_id = LayerObjectTypeCoreValidation;
+    } else {
+        static_assert(vvl::dependent_false_v<ValidationObjectType>, "unsupported validation object type");
+    }
+    return static_cast<ValidationObjectType*>(GetValidationObject(type_id));
+}
+
+template ThreadSafety* ValidationObject::GetValidationObject<ThreadSafety>() const;
+template StatelessValidation* ValidationObject::GetValidationObject<StatelessValidation>() const;
+template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>() const;
+template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
 namespace vulkan_layer_chassis {
 
@@ -969,51 +991,40 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const V
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkValidationCacheEXT* pValidationCache) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject* validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
     }
-    return result;
+    return VK_SUCCESS;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                      const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    ValidationObject* validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        validation_data->CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        core_checks->CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
     }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                                         const VkValidationCacheEXT* pSrcCaches) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject* validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
     }
-    return result;
+    return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                          void* pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject* validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
     }
-    return result;
+    return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                         VkPhysicalDevice* pPhysicalDevices) {

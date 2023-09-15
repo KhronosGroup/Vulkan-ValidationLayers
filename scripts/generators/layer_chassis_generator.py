@@ -524,7 +524,7 @@ class ValidationObject {
             }
         }
 
-        ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
+        ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
                     return validation_object;
@@ -532,6 +532,9 @@ class ValidationObject {
             }
             return nullptr;
         }
+
+        template <typename ValidationObjectType>
+        ValidationObjectType* GetValidationObject() const;
 
         // Debug Logging Helpers
         // deprecated LogError - moving to use one with Location
@@ -666,7 +669,6 @@ class ValidationObject {
             out.extend(['#endif\n'] if command.protect else [])
 
         out.append('''
-        virtual VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) { return VK_SUCCESS; };
         virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache, const VkAllocationCallbacks* pAllocator) {};
         virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount, const VkValidationCacheEXT* pSrcCaches)  { return VK_SUCCESS; };
         virtual VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData)  { return VK_SUCCESS; };
@@ -837,8 +839,7 @@ static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, Val
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
             constructor = layer['class']
             if layer['class'] == 'ThreadSafety':
-                constructor += ('(static_cast<ThreadSafety *>(\n' +
-                    '            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)))')
+                constructor += '(instance_interceptor->GetValidationObject<ThreadSafety>())'
             out.append(f'''
     if ({layer["enabled"]}) {{
         device_interceptor->object_dispatch.emplace_back(new {constructor});
@@ -849,6 +850,28 @@ static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, Val
         out.append('''
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
+template <typename ValidationObjectType>
+ValidationObjectType* ValidationObject::GetValidationObject() const {
+    LayerObjectTypeId type_id;
+    if constexpr (std::is_same_v<ValidationObjectType, ThreadSafety>) {
+        type_id = LayerObjectTypeThreading;
+    } else if constexpr (std::is_same_v<ValidationObjectType, StatelessValidation>) {
+        type_id = LayerObjectTypeParameterValidation;
+    } else if constexpr (std::is_same_v<ValidationObjectType, ObjectLifetimes>) {
+        type_id = LayerObjectTypeObjectTracker;
+    } else if constexpr (std::is_same_v<ValidationObjectType, CoreChecks>) {
+        type_id = LayerObjectTypeCoreValidation;
+    } else {
+        static_assert(vvl::dependent_false_v<ValidationObjectType>, "unsupported validation object type");
+    }
+    return static_cast<ValidationObjectType*>(GetValidationObject(type_id));
+}
+
+template ThreadSafety* ValidationObject::GetValidationObject<ThreadSafety>() const;
+template StatelessValidation* ValidationObject::GetValidationObject<StatelessValidation>() const;
+template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>() const;
+template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
 namespace vulkan_layer_chassis {
 
@@ -1680,66 +1703,44 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
 
 // ValidationCache APIs do not dispatch
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(
-    VkDevice                                    device,
-    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkValidationCacheEXT* pValidationCache) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
     }
-    return result;
+    return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator) {
+VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
+                                                     const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        validation_data->CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        core_checks->CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        dstCache,
-    uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches) {
+VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+                                                        const VkValidationCacheEXT* pSrcCaches) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
     }
-    return result;
+    return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    size_t*                                     pDataSize,
-    void*                                       pData) {
+VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
+                                                         void* pData) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
-
-    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
-    if (validation_data) {
-        auto lock = validation_data->WriteLock();
-        result = validation_data->CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
+    if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
+        auto lock = core_checks->WriteLock();
+        return core_checks->CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
     }
-    return result;
-
+    return VK_SUCCESS;
 }
 ''')
 

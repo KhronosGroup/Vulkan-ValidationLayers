@@ -822,8 +822,7 @@ class CoreChecks : public ValidationStateTracker {
                                        VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
     bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE& cb_state, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator,
-                                               VkValidationCacheEXT* pValidationCache) override;
+                                               const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
     void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                             const VkAllocationCallbacks* pAllocator) override;
     VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,

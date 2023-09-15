@@ -259,8 +259,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
                                                      const RecordObject &record_obj) {
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     if (record_obj.result != VK_SUCCESS) return;
-    ValidationObject *validation_data = GetValidationObject(device_data->object_dispatch, LayerObjectTypeParameterValidation);
-    StatelessValidation *stateless_validation = static_cast<StatelessValidation *>(validation_data);
+    auto stateless_validation = device_data->GetValidationObject<StatelessValidation>();
 
     // Parmeter validation also uses extension data
     stateless_validation->device_extensions = this->device_extensions;

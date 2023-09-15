@@ -793,6 +793,13 @@ const typename T::value_type *DataOrNull(const T &container) {
     return nullptr;
 }
 
+
+// Workaround for static_assert(false) before C++ 23 arrives
+// https://en.cppreference.com/w/cpp/language/static_assert
+// https://cplusplus.github.io/CWG/issues/2518.html
+template <typename>
+inline constexpr bool dependent_false_v = false;
+
 }  // namespace vvl
 
 #endif

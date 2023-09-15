@@ -661,7 +661,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     // The current object represents the VkInstance, look up / create the object for the device.
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
+    ValidationObject *validation_data = device_object->GetValidationObject(this->container_type);
     ValidationStateTracker *device_state = static_cast<ValidationStateTracker *>(validation_data);
 
     device_state->instance_state = this;
