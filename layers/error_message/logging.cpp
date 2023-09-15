@@ -432,6 +432,12 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
                 }
             };
 
+            // Add period at end if forgotten
+            // This provides better seperation between error message and spec text
+            if (str_plus_spec_text.back() != '.') {
+                str_plus_spec_text.append(".");
+            }
+
             str_plus_spec_text.append(" The Vulkan spec states: ");
             str_plus_spec_text.append(spec_text);
             if (0 == spec_type.compare("default")) {
