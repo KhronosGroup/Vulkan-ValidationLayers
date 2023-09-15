@@ -72,7 +72,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
-    from generators.base_generator import (SetOutputDirectory, SetTargetApiName, SetMergedApiNames)
+    from generators.base_generator import SetOutputDirectory, SetTargetApiName, SetMergedApiNames
     SetOutputDirectory(directory)
     SetTargetApiName(api)
 

@@ -260,15 +260,15 @@ std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {
     const char* name;
-    bool has_type; // always operand 0 if present
-    bool has_result; // always operand 1 if present
+    bool has_type;    // always operand 0 if present
+    bool has_result;  // always operand 1 if present
 
-    uint32_t memory_scope_position; // operand ID position or zero if not present
-    uint32_t execution_scope_position; // operand ID position or zero if not present
-    uint32_t image_operands_position; // operand ID position or zero if not present
+    uint32_t memory_scope_position;     // operand ID position or zero if not present
+    uint32_t execution_scope_position;  // operand ID position or zero if not present
+    uint32_t image_operands_position;   // operand ID position or zero if not present
 
-    uint32_t image_access_operands_position; // operand ID position or zero if not present
-    uint32_t sampled_image_access_operands_position; // operand ID position or zero if not present
+    uint32_t image_access_operands_position;          // operand ID position or zero if not present
+    uint32_t sampled_image_access_operands_position;  // operand ID position or zero if not present
 };
 
 // Static table to replace having many large switch statement functions for looking up each part

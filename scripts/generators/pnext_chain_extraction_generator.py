@@ -126,14 +126,14 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
 
     def generateSource(self):
         out = []
-        out.append(f'''
+        out.append('''
 #include "pnext_chain_extraction.h"
 
 #include "vk_typemap_helper.h"
 
-namespace vvl {{
+namespace vvl {
 
-void* PnextChainAdd(void *chain, void *new_struct) {{
+void* PnextChainAdd(void *chain, void *new_struct) {
     assert(chain);
     assert(new_struct);
     void *chain_end = LvlFindLastInChain(chain);
@@ -141,20 +141,20 @@ void* PnextChainAdd(void *chain, void *new_struct) {{
     assert(!vk_base_struct->pNext);
     vk_base_struct->pNext = static_cast<VkBaseOutStructure*>(new_struct);
     return new_struct;
-}}
+}
 
-void PnextChainRemoveLast(void *chain) {{
-    if (!chain) {{
+void PnextChainRemoveLast(void *chain) {
+    if (!chain) {
         return;
-    }}
+    }
     auto *current = static_cast<VkBaseOutStructure *>(chain);
     auto *prev = current;
-    while (current->pNext) {{
+    while (current->pNext) {
         prev = current;
         current = static_cast<VkBaseOutStructure *>(current->pNext);
-    }}
+    }
     prev->pNext = nullptr;
-}}
+}
 
 ''')
 
@@ -164,24 +164,24 @@ void PnextChainRemoveLast(void *chain) {{
             out.append('\ntemplate <>\n')
             out.append(f'void *PnextChainExtract(const void *in_pnext_chain, PnextChain{struct_name} &out) {{')
 
-            out.append(f'''
-    void *chain_begin = nullptr;
-    void *chain_end = nullptr;\n''')
+            out.append('''
+            void *chain_begin = nullptr;
+            void *chain_end = nullptr;\n''')
 
             # Add extraction logic for each struct extending target struct
             for extending_struct in struct.extendedBy:
                 out.append(f'''
-    if (auto *chain_struct = LvlFindInChain<{extending_struct}>(in_pnext_chain)) {{
-    	auto &out_chain_struct = std::get<{extending_struct}>(out);
-    	out_chain_struct = *chain_struct;
-        out_chain_struct.pNext = nullptr;
-        if (!chain_begin) {{
-            chain_begin = &out_chain_struct;
-            chain_end = chain_begin;
-        }} else {{
-            chain_end = PnextChainAdd(chain_end, &out_chain_struct);
-        }}
-    }}\n''')
+                if (auto *chain_struct = LvlFindInChain<{extending_struct}>(in_pnext_chain)) {{
+                    auto &out_chain_struct = std::get<{extending_struct}>(out);
+                    out_chain_struct = *chain_struct;
+                    out_chain_struct.pNext = nullptr;
+                    if (!chain_begin) {{
+                        chain_begin = &out_chain_struct;
+                        chain_end = chain_begin;
+                    }} else {{
+                        chain_end = PnextChainAdd(chain_end, &out_chain_struct);
+                    }}
+                }}\n''')
             out.append('\n\treturn chain_begin;\n}\n')
 
         out.append('\n}\n')

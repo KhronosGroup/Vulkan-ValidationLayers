@@ -7248,8 +7248,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
-        // No Validation code for VkPhysicalDeviceMeshShaderPropertiesEXT structure members  -- Covers
-        // VUID-VkPhysicalDeviceMeshShaderPropertiesEXT-sType-sType
+            // No Validation code for VkPhysicalDeviceMeshShaderPropertiesEXT structure members  -- Covers
+            // VUID-VkPhysicalDeviceMeshShaderPropertiesEXT-sType-sType
+
         default:
             skip = false;
     }

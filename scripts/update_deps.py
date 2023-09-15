@@ -530,8 +530,7 @@ class GoodRepo(object):
         self.CMakeBuild()
 
     def IsOptional(self, opts):
-        if len(self.optional.intersection(opts)) > 0: return True
-        else: return False
+        return len(self.optional.intersection(opts)) > 0
 
 def GetGoodRepos(args):
     """Returns the latest list of GoodRepo objects.

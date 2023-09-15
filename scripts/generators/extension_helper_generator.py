@@ -189,13 +189,9 @@ Times to NOT use it
       is enabled, then we already validated that extension is enabled.
     - Some variables (ex. viewMask) require the extension to be used if non-zero
 */
-[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
-    return (extension != kNotEnabled);
-}
+[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) { return (extension != kNotEnabled); }
 
-[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
-    return (extension == kEnabledByCreateinfo);
-}
+[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) { return (extension == kEnabledByCreateinfo); }
 ''')
 
         out.append('\nstruct InstanceExtensions {\n')
@@ -205,73 +201,73 @@ Times to NOT use it
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.instance])
 
         out.append('''
-    struct InstanceReq {
-        const ExtEnabled InstanceExtensions::* enabled;
-        const char *name;
-    };
-    typedef std::vector<InstanceReq> InstanceReqVec;
-    struct InstanceInfo {
-       InstanceInfo(ExtEnabled InstanceExtensions::* state_, const InstanceReqVec requirements_): state(state_), requirements(requirements_) {}
-       ExtEnabled InstanceExtensions::* state;
-       InstanceReqVec requirements;
-    };
+            struct InstanceReq {
+                const ExtEnabled InstanceExtensions::*enabled;
+                const char *name;
+            };
+            typedef std::vector<InstanceReq> InstanceReqVec;
+            struct InstanceInfo {
+                InstanceInfo(ExtEnabled InstanceExtensions::*state_, const InstanceReqVec requirements_)
+                    : state(state_), requirements(requirements_) {}
+                ExtEnabled InstanceExtensions::*state;
+                InstanceReqVec requirements;
+            };
 
-    typedef vvl::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
-    static const InstanceInfoMap &get_info_map() {
-        static const InstanceInfoMap info_map = {
-''')
+            typedef vvl::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
+            static const InstanceInfoMap &get_info_map() {
+                static const InstanceInfoMap info_map = {
+            ''')
         for version, name in APISpecific.getVersionFieldNameDict(self.targetApiName).items():
-            out.append(f'            {{"{version}", InstanceInfo(&InstanceExtensions::{name}, {{}})}},\n')
+            out.append(f'{{"{version}", InstanceInfo(&InstanceExtensions::{name}, {{}})}},\n')
 
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
             reqs = ''
             # This is only done to match whitespace from before code we refactored
             if requiredExpression[extension.name]:
-                reqs += '{\n                           '
-                reqs += ',\n                           '.join([f'{{&InstanceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
+                reqs += '{\n'
+                reqs += ',\n'.join([f'{{&InstanceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'            {{{extension.nameString}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{{extension.nameString}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
             out.extend(['#endif\n'] if extension.protect else [])
 
-        out.append('''        };
-
-        return info_map;
-    }
-
-    static const InstanceInfo &get_info(const char *name) {
-        static const InstanceInfo empty_info {nullptr, InstanceReqVec()};
-        const auto &ext_map = InstanceExtensions::get_info_map();
-        const auto info = ext_map.find(name);
-        if ( info != ext_map.cend()) {
-            return info->second;
+        out.append('''};
+            return info_map;
         }
-        return empty_info;
-    }
 
-    APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-''')
+        static const InstanceInfo &get_info(const char *name) {
+            static const InstanceInfo empty_info{nullptr, InstanceReqVec()};
+            const auto &ext_map = InstanceExtensions::get_info_map();
+            const auto info = ext_map.find(name);
+            if (info != ext_map.cend()) {
+                return info->second;
+            }
+            return empty_info;
+        }
+
+        APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
+        ''')
         promoted_var_names = APISpecific.getPromotedExtensionArrayName(self.targetApiName, 'instance')
         for version_name, promoted_var_name in promoted_var_names.items():
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version_name and x.instance]
-            out.append(f'        constexpr std::array<const char*, {len(promoted_ext_list)}> {promoted_var_name} = {{\n')
-            out.extend(['            %s,\n' % ext.nameString for ext in promoted_ext_list])
-            out.append('        };\n')
+            out.append(f'constexpr std::array<const char*, {len(promoted_ext_list)}> {promoted_var_name} = {{\n')
+            out.extend(['    %s,\n' % ext.nameString for ext in promoted_ext_list])
+            out.append('};\n')
 
         out.append('''
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);''')
         for version_name, promoted_var_name in promoted_var_names.items():
             out.append(f'''
-        if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
-            auto info = get_info("{version_name}");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : {promoted_var_name}) {{
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }}
-        }}''')
+            if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
+                auto info = get_info("{version_name}");
+                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                for (auto promoted_ext : {promoted_var_name}) {{
+                    info = get_info(promoted_ext);
+                    assert(info.state);
+                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                }}
+            }}''')
 
         out.append('''
         // CreateInfo takes precedence over promoted
@@ -291,7 +287,7 @@ Times to NOT use it
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
             out.append(f'    {extension.nameString},\n')
-            out.extend([f'#endif\n'] if extension.protect else [])
+            out.extend(['#endif\n'] if extension.protect else [])
         out.append('};\n')
 
         out.append('\nstruct DeviceExtensions : public InstanceExtensions {\n')
@@ -300,33 +296,34 @@ Times to NOT use it
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.device])
 
         out.append('''
-    struct DeviceReq {
-        const ExtEnabled DeviceExtensions::* enabled;
-        const char *name;
-    };
-    typedef std::vector<DeviceReq> DeviceReqVec;
-    struct DeviceInfo {
-       DeviceInfo(ExtEnabled DeviceExtensions::* state_, const DeviceReqVec requirements_): state(state_), requirements(requirements_) {}
-       ExtEnabled DeviceExtensions::* state;
-       DeviceReqVec requirements;
-    };
+            struct DeviceReq {
+                const ExtEnabled DeviceExtensions::*enabled;
+                const char *name;
+            };
+            typedef std::vector<DeviceReq> DeviceReqVec;
+            struct DeviceInfo {
+                DeviceInfo(ExtEnabled DeviceExtensions::*state_, const DeviceReqVec requirements_)
+                    : state(state_), requirements(requirements_) {}
+                ExtEnabled DeviceExtensions::*state;
+                DeviceReqVec requirements;
+            };
 
-    typedef vvl::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
-    static const DeviceInfoMap &get_info_map() {
-        static const DeviceInfoMap info_map = {
-''')
+            typedef vvl::unordered_map<std::string, DeviceInfo> DeviceInfoMap;
+            static const DeviceInfoMap &get_info_map() {
+                static const DeviceInfoMap info_map = {
+            ''')
         for version, field in APISpecific.getVersionFieldNameDict(self.targetApiName).items():
-            out.append(f'            {{"{version}", DeviceInfo(&DeviceExtensions::{field}, {{}})}},\n')
+            out.append(f'{{"{version}", DeviceInfo(&DeviceExtensions::{field}, {{}})}},\n')
 
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
             reqs = ''
             # This is only done to match whitespace from before code we refactored
             if requiredExpression[extension.name]:
-                reqs += '{\n                           '
-                reqs += ',\n                           '.join([f'{{&DeviceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
+                reqs += '{\n'
+                reqs += ',\n'.join([f'{{&DeviceExtensions::{fieldName[feature.name]}, {feature.nameString}}}' for feature in requiredExpression[extension.name]])
                 reqs += '}'
-            out.append(f'            {{{extension.nameString}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
+            out.append(f'{{{extension.nameString}, DeviceInfo(&DeviceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
             out.extend(['#endif\n'] if extension.protect else [])
 
         out.append('''
@@ -336,17 +333,17 @@ Times to NOT use it
     }
 
     static const DeviceInfo &get_info(const char *name) {
-        static const DeviceInfo empty_info {nullptr, DeviceReqVec()};
+        static const DeviceInfo empty_info{nullptr, DeviceReqVec()};
         const auto &ext_map = DeviceExtensions::get_info_map();
         const auto info = ext_map.find(name);
-        if ( info != ext_map.cend()) {
+        if (info != ext_map.cend()) {
             return info->second;
         }
         return empty_info;
     }
 
     DeviceExtensions() = default;
-    DeviceExtensions(const InstanceExtensions& instance_ext) : InstanceExtensions(instance_ext) {}
+    DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
 
     APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
                                         const VkDeviceCreateInfo *pCreateInfo = nullptr) {
@@ -357,24 +354,24 @@ Times to NOT use it
         promoted_var_names = APISpecific.getPromotedExtensionArrayName(self.targetApiName, 'device')
         for version_name, promoted_var_name in promoted_var_names.items():
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version_name and x.device]
-            out.append(f'        constexpr std::array<const char*, {len(promoted_ext_list)}> {promoted_var_name} = {{\n')
-            out.extend(['            %s,\n' % ext.nameString for ext in promoted_ext_list])
-            out.append('        };\n')
+            out.append(f'constexpr std::array<const char*, {len(promoted_ext_list)}> {promoted_var_name} = {{\n')
+            out.extend(['    %s,\n' % ext.nameString for ext in promoted_ext_list])
+            out.append('};\n')
 
         out.append('''
         // Initialize struct data, robust to invalid pCreateInfo
         auto api_version = NormalizeApiVersion(requested_api_version);''')
         for version_name, promoted_var_name in promoted_var_names.items():
             out.append(f'''
-        if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
-            auto info = get_info("{version_name}");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-            for (auto promoted_ext : {promoted_var_name}) {{
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
-            }}
-        }}''')
+            if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
+                auto info = get_info("{version_name}");
+                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                for (auto promoted_ext : {promoted_var_name}) {{
+                    info = get_info(promoted_ext);
+                    assert(info.state);
+                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                }}
+            }}''')
 
         out.append('''
         // CreateInfo takes precedence over promoted
@@ -416,7 +413,7 @@ Times to NOT use it
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
             out.append(f'    {extension.nameString},\n')
-            out.extend([f'#endif\n'] if extension.protect else [])
+            out.extend(['#endif\n'] if extension.protect else [])
         out.append('};\n')
 
         out.append('// NOLINTEND') # Wrap for clang-tidy to ignore

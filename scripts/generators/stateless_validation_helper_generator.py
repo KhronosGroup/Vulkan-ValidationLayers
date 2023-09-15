@@ -20,8 +20,8 @@
 
 import os
 import re
-from generators.generator_utils import (buildListVUID, incIndent, decIndent)
-from generators.vulkan_object import (Member)
+from generators.generator_utils import buildListVUID
+from generators.vulkan_object import Member
 from generators.base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
@@ -347,12 +347,14 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
             pnext_case += f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n'
 
             if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
-                pnext_check += f'''            if (api_version < {struct.version.nameApi}) {{
-                skip |= LogError(
-                           pnext_vuid, instance, loc.dot(Field::pNext),
-                           "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                           "current effective API version is %s.", StringAPIVersion(api_version).c_str());
-            }}\n'''
+                pnext_check += (
+                    f''' if (api_version < {struct.version.nameApi}) {{
+                        skip |= LogError(
+                                pnext_vuid, instance, loc.dot(Field::pNext),
+                                "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
+                                "current effective API version is %s.", StringAPIVersion(api_version).c_str());
+                    }}
+                    ''')
 
             if struct.sType in stype_version_dict.keys():
                 ext_name = stype_version_dict[struct.sType]
@@ -363,7 +365,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                 # may attempt to generate code for extensions which are not supported in the
                 # target API variant, thus this check needs to happen even if any specific
                 # target API variant may not specifically need it
-                if not ext_name in self.vk.extensions:
+                if ext_name not in self.vk.extensions:
                     continue
 
                 # Dependent on enabled extension
@@ -373,44 +375,47 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                     extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, {extension.nameString})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
                 else:
                     extension_check = f'if (!instance_extensions.{extension.name.lower()}) {{'
-                pnext_check += f'''            if (is_const_param) {{
-                {extension_check}
-                        skip |= LogError(
-                               pnext_vuid, instance, loc.dot(Field::pNext),
-                               "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
-                               "{extension.name} has not been enabled.");
-                }}
-            }}\n'''
+                pnext_check += (
+                    f'''if (is_const_param) {{
+                                {extension_check}
+                                skip |= LogError(
+                                    pnext_vuid, instance, loc.dot(Field::pNext),
+                                    "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
+                                    "{extension.name} has not been enabled.");
+                        }}
+                    }}
+                    ''')
 
-            expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', '                ', [])
+            expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
             struct_validation_source = self.ScrubStructCode(expr)
             if struct_validation_source != '':
-                pnext_check += '            if (is_const_param) {\n'
-                pnext_check += f'                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
-                struct_validation_source = f'                {struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
-                struct_validation_source += '            }\n'
+                pnext_check += 'if (is_const_param) {\n'
+                pnext_check += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
+                struct_validation_source = f'{struct.name} *structure = ({struct.name} *) header;\n{struct_validation_source}'
+                struct_validation_source += '}\n'
             pnext_case += f'{pnext_check}{struct_validation_source}'
-            pnext_case += '        } break;\n'
+            pnext_case += '} break;\n'
             # Skip functions containing no validation
             if struct_validation_source or pnext_check != '':
                 out.append(pnext_case)
             else:
                 out.append(f'\n        // No Validation code for {struct.name} structure members  -- Covers VUID-{struct.name}-sType-sType\n')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
-        out.append('''        default:
-            skip = false;
-    }
-    return skip;
-}
+        out.append('''
+                default:
+                    skip = false;
+            }
+            return skip;
+        }
 
-''')
+        ''')
 
         # Generate the command parameter checking code from the captured data
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
-            prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
+            prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool StatelessValidation::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
 
@@ -432,28 +437,27 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                 if len(outExpression) > 1:
                     cExpression = f'({cExpression})'
 
-                out.append(f'    if (!{cExpression}) skip |= OutputExtensionError(loc, "{" || ".join(outExpression)}");\n')
+                out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, "{" || ".join(outExpression)}");\n')
 
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
             lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
 
             if command.instance and command.version:
-                out.append(f'    if (CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
+                out.append(f'if (CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
 
-            indent = incIndent(None)
             for line in lines:
-                if type(line) is list:
+                if isinstance(line, list):
                     for sub in line:
-                        out.append(indent + sub)
+                        out.append(sub)
                 else:
-                    out.append(indent + line)
+                    out.append(line)
             # Insert call to custom-written function if present
             if command.name in self.functions_with_manual_checks:
                 # Generate parameter list for manual fcn and down-chain calls
                 params_text = ', '.join([x.name for x in command.params]) + ', error_obj'
                 out.append(f'    if (!skip) skip |= manual_PreCallValidate{command.name[2:]}({params_text});\n')
-            out.append(f'{indent}return skip;\n')
+            out.append('return skip;\n')
             out.append('}\n')
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
             out.append('\n')
@@ -542,19 +546,16 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                 # Add checks to ensure the validation call does not dereference a NULL pointer to obtain the count
                 count = member.length.count('->')
                 checkedExpr = []
-                localIndent = ''
                 elements = member.length.split('->')
                 # Open the if expression blocks
                 for i in range(0, count):
-                    checkedExpr.append(localIndent + f'if ({"->".join(elements[0:i+1])} != nullptr) {{\n')
-                    localIndent = incIndent(localIndent)
+                    checkedExpr.append(f'if ({"->".join(elements[0:i+1])} != nullptr) {{\n')
                 # Add the validation expression
                 for expr in checkExpr:
-                    checkedExpr.append(localIndent + expr)
+                    checkedExpr.append(expr)
                 # Close the if blocks
                 for i in range(0, count):
-                    localIndent = decIndent(localIndent)
-                    checkedExpr.append(localIndent + '}\n')
+                    checkedExpr.append('}\n')
                 checkExpr = [checkedExpr]
         # This is an individual struct that is not allowed to be NULL
         elif not (member.optional or member.optionalPointer or member.fixedSizeArray):
@@ -585,9 +586,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
         vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
         checkExpr.append(f'if ({valuePrefix}{name} != nullptr)')
         checkExpr.append('{')
-        local_indent = incIndent('')
         # Function pointers need a reinterpret_cast to void*
-        checkExpr.append(f'{local_indent}skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{name}), reinterpret_cast<const void*>({valuePrefix}{complementaryName}), {vuid});\n')
+        checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{name}), reinterpret_cast<const void*>({valuePrefix}{complementaryName}), {vuid});\n')
         checkExpr.append('}\n')
         return checkExpr
 
@@ -636,16 +636,16 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
         return scrubbed_lines
 
     # Process struct validation code for inclusion in function or parent struct validation code
-    def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, indent, output):
+    def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, output):
         lines = self.validatedStructs[item_type]
         for line in lines:
             if output:
                 output[-1] += '\n'
-            if type(line) is list:
+            if isinstance(line, list):
                 for sub in line:
-                    output.append(self.processStructMemberCode(indent + sub, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
+                    output.append(self.processStructMemberCode(sub, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
             else:
-                output.append(self.processStructMemberCode(indent + line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
+                output.append(self.processStructMemberCode(line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
         return output
 
     # Generate the parameter checking code
@@ -812,30 +812,27 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                         expr.append(f'if ({valuePrefix}{member.name} != nullptr)\n')
                         expr.append('{\n')
                         newErrorLoc = f'{member.name}_loc'
-                        indent = incIndent(None)
                         if lengthMember:
                             # Need to process all elements in the array
                             length = member.length.split(',')[0]
                             indexName = length.replace('Count', 'Index')
                             # If the length value is a pointer, de-reference it for the count.
                             deref = '*' if lengthMember.pointer else ''
-                            expr.append(f'{indent}for (uint32_t {indexName} = 0; {indexName} < {deref}{valuePrefix}{length}; ++{indexName})\n')
-                            expr.append(indent + '{\n')
-                            indent = incIndent(indent)
-                            expr.append(f'{indent}[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name}, {indexName});')
+                            expr.append(f'for (uint32_t {indexName} = 0; {indexName} < {deref}{valuePrefix}{length}; ++{indexName})\n')
+                            expr.append('{\n')
+                            expr.append(f'[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name}, {indexName});')
                             # Prefix for value name to display in error message
                             connector = '->' if member.cDeclaration.count('*') == 2 else '.'
                             memberNamePrefix = f'{valuePrefix}{member.name}[{indexName}]{connector}'
                             memberDisplayNamePrefix = (f'{valueDisplayName}[%i]{connector}', indexName)
                         else:
-                            expr.append(f'{indent}[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name});')
+                            expr.append(f'[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name});')
                             memberNamePrefix = f'{valuePrefix}{member.name}->'
                             memberDisplayNamePrefix = f'{valueDisplayName}->'
                         # Expand the struct validation lines
-                        expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, indent, expr)
+                        expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, expr)
                         if lengthMember:
-                            indent = decIndent(indent) # Close if and for scopes
-                            expr.append(indent + '}\n')
+                            expr.append('}\n')
                         expr.append('}\n')
                         usedLines.append(expr)
 
@@ -895,20 +892,17 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                     if member.type in self.validatedStructs:
                         memberNamePrefix = f'{valuePrefix}{member.name}.'
                         memberDisplayNamePrefix = f'{valueDisplayName}.'
-                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, '', []))
+                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, []))
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks
                 if condition:
                     # Generate code to check for a specific condition before executing validation code
                     checkedExpr = []
-                    localIndent = ''
-                    checkedExpr.append(localIndent + f'if ({condition[0]["condition"]}) {{\n')
-                    localIndent = incIndent(localIndent)
+                    checkedExpr.append(f'if ({condition[0]["condition"]}) {{\n')
                     for expr in usedLines:
-                        checkedExpr.append(localIndent + expr)
-                    localIndent = decIndent(localIndent)
-                    checkedExpr.append(localIndent + '}\n')
+                        checkedExpr.append(expr)
+                    checkedExpr.append('}\n')
                     usedLines = [checkedExpr]
 
                 lines += usedLines
@@ -929,7 +923,7 @@ def multi_string_iter(lines):
             def deleter(): del(lines[i])
             yield (setter, deleter, ul)
         else:
-            for j, l in enumerate(lines[i]):
+            for j, k in enumerate(lines[i]):
                 def setter(x): lines[i][j] = x
                 def deleter(): del(lines[i][j])
-                yield (setter, deleter, l)
+                yield (setter, deleter, k)

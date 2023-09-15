@@ -17,7 +17,7 @@
 
 import sys
 import os
-from generators.vulkan_object import (Flag)
+from generators.vulkan_object import Flag
 from generators.base_generator import BaseGenerator
 
 separator = ' |\n        '
@@ -479,7 +479,7 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 
             # Because access_stage_table's elements order might be different sometimes.
             # It causes the generator creates different code. It needs to be sorted.
-            stageToAccessMap[stage].sort();
+            stageToAccessMap[stage].sort()
             for access in stageToAccessMap[stage]:
                 mini_access = access.replace('VK_ACCESS_2_', '').replace('_BIT_KHR', '')
                 mini_access = mini_access.replace('_BIT', '')
