@@ -374,19 +374,19 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         const auto drm_format_mod_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         const auto drm_format_mod_explict = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            if ((drm_format_mod_list != nullptr) && (drm_format_mod_explict != nullptr)) {
+            if ((!drm_format_mod_list) && (!drm_format_mod_explict)) {
                 skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
                                  "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext is missing "
                                  "VkImageDrmFormatModifierListCreateInfoEXT or "
                                  "VkImageDrmFormatModifierExplicitCreateInfoEXT.");
-            } else if ((drm_format_mod_list == nullptr) && (drm_format_mod_explict == nullptr)) {
+            } else if ((drm_format_mod_list) && (drm_format_mod_explict)) {
                 skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
                                  "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext has both "
                                  "VkImageDrmFormatModifierListCreateInfoEXT and "
                                  "VkImageDrmFormatModifierExplicitCreateInfoEXT.");
-            } else if (drm_format_mod_explict != nullptr) {
+            } else if (drm_format_mod_explict) {
                 image_create_drm_format_modifiers.push_back(drm_format_mod_explict->drmFormatModifier);
-            } else if (drm_format_mod_list != nullptr) {
+            } else if (drm_format_mod_list) {
                 for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
                     image_create_drm_format_modifiers.push_back(*drm_format_mod_list->pDrmFormatModifiers);
                 }
@@ -416,7 +416,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              string_VkImageTiling(pCreateInfo->tiling));
         }
 
-        if (drm_format_mod_explict && drm_format_mod_explict->pPlaneLayouts != nullptr) {
+        if (drm_format_mod_explict && drm_format_mod_explict->pPlaneLayouts) {
             for (uint32_t i = 0; i < drm_format_mod_explict->drmFormatModifierPlaneCount; ++i) {
                 const Location drm_loc =
                     create_info_loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::pPlaneLayouts, i);
@@ -440,7 +440,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         const auto compression_control = LvlFindInChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
         if (drm_format_mod_explict && compression_control) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-06746", device, create_info_loc.dot(Field::pNext),
-                             "is has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.");
+                             "has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.");
         }
     }
 

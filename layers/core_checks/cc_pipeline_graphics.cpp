@@ -673,7 +673,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                     vuid_tmp = "VUID-VkGraphicsPipelineCreateInfo-flags-06756";
                                     msg << "represents a library containing pre-raster state, and descriptor set layout (from "
                                            "layout "
-                                        << pre_raster_layout_handle_str << ") at pSetLayouts[" << i << "] is null. "
+                                        << pre_raster_layout_handle_str << ") at pSetLayouts[" << i << "] is NULL. "
                                         << "However, a library with fragment shader state is specified in "
                                            "VkPipelineLibraryCreateInfoKHR::pLibraries with non-null descriptor set layout at the "
                                            "same pSetLayouts index ("
@@ -696,7 +696,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                     msg << "is linking libraries with pre-raster and fragment shader state. The descriptor set "
                                            "layout at index "
                                         << i << " in pSetLayouts from " << pre_raster_layout_handle_str
-                                        << " in the pre-raster state is null. "
+                                        << " in the pre-raster state is NULL. "
                                         << "However, the descriptor set layout at the same index (" << i << ") in "
                                         << fs_layout_handle_str << " is non-null with bindings ("
                                         << string_VkShaderStageFlags(fs_binding.stageFlags)
@@ -742,7 +742,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline,
                                     msg << "is linking libraries with pre-raster and fragment shader state. The descriptor set "
                                            "layout at index "
                                         << i << " in pSetLayouts from " << fs_layout_handle_str
-                                        << " in the fragment shader state is null. "
+                                        << " in the fragment shader state is NULL. "
                                         << "However, the descriptor set layout at the same index (" << i << ") in "
                                         << pre_raster_layout_handle_str << " in the pre-raster state is non-null with bindings ("
                                         << string_VkShaderStageFlags(pre_raster_binding.stageFlags)
