@@ -1004,13 +1004,13 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
         if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
-            skip |= LogError("VUID-VkClearAttachment-aspectMask-00020", objlist, attachment_loc.dot(Field::aspectMask),
-                             "includes VK_IMAGE_ASPECT_METADATA_BIT.");
+            skip |= LogError("VUID-VkClearAttachment-aspectMask-00020", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
+                             string_VkImageAspectFlags(aspect_mask).c_str());
         } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                                   VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
-            skip |= LogError("VUID-VkClearAttachment-aspectMask-02246", objlist, attachment_loc.dot(Field::aspectMask),
-                             "includes VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT bit.");
+            skip |= LogError("VUID-VkClearAttachment-aspectMask-02246", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
+                             string_VkImageAspectFlags(aspect_mask).c_str());
         } else if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
             if (!is_valid_color_attachment_index) {
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->renderPass());
@@ -1277,24 +1277,26 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                                const VkImageSubresourceRange &subresourceRange,
                                                const char *image_layer_count_var_name, const VkImage image,
-                                               const SubresourceRangeErrorCodes &errorCodes, const Location &loc) const {
+                                               const SubresourceRangeErrorCodes &errorCodes,
+                                               const Location &subresource_loc) const {
     bool skip = false;
 
     // Validate mip levels
     if (subresourceRange.baseMipLevel >= image_mip_count) {
-        skip |= LogError(errorCodes.base_mip_err, image, loc.dot(Field::baseMipLevel),
+        skip |= LogError(errorCodes.base_mip_err, image, subresource_loc.dot(Field::baseMipLevel),
                          "(%" PRIu32 ") is greater or equal to the mip level count of the image (%" PRIu32 ").",
                          subresourceRange.baseMipLevel, image_mip_count);
     }
 
     if (subresourceRange.levelCount != VK_REMAINING_MIP_LEVELS) {
         if (subresourceRange.levelCount == 0) {
-            skip |= LogError("VUID-VkImageSubresourceRange-levelCount-01720", image, loc.dot(Field::levelCount), "is zero.");
+            skip |= LogError("VUID-VkImageSubresourceRange-levelCount-01720", image, subresource_loc.dot(Field::levelCount),
+                             "is zero.");
         } else {
             const uint64_t necessary_mip_count = uint64_t{subresourceRange.baseMipLevel} + uint64_t{subresourceRange.levelCount};
 
             if (necessary_mip_count > image_mip_count) {
-                skip |= LogError(errorCodes.mip_count_err, image, loc.dot(Field::baseMipLevel),
+                skip |= LogError(errorCodes.mip_count_err, image, subresource_loc.dot(Field::baseMipLevel),
                                  "(%" PRIu32 ") + levelCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the mip level count of the image (i.e. greater than %" PRIu32 ").",
                                  subresourceRange.baseMipLevel, subresourceRange.levelCount, necessary_mip_count, image_mip_count);
@@ -1304,20 +1306,21 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
     // Validate array layers
     if (subresourceRange.baseArrayLayer >= image_layer_count) {
-        skip |= LogError(errorCodes.base_layer_err, image, loc.dot(Field::baseArrayLayer),
+        skip |= LogError(errorCodes.base_layer_err, image, subresource_loc.dot(Field::baseArrayLayer),
                          "(%" PRIu32 ") is greater or equal to the %s of the image when it was created (%" PRIu32 ").",
                          subresourceRange.baseArrayLayer, image_layer_count_var_name, image_layer_count);
     }
 
     if (subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
         if (subresourceRange.layerCount == 0) {
-            skip |= LogError("VUID-VkImageSubresourceRange-layerCount-01721", image, loc.dot(Field::layerCount), "is zero.");
+            skip |= LogError("VUID-VkImageSubresourceRange-layerCount-01721", image, subresource_loc.dot(Field::layerCount),
+                             "is zero.");
         } else {
             const uint64_t necessary_layer_count =
                 uint64_t{subresourceRange.baseArrayLayer} + uint64_t{subresourceRange.layerCount};
 
             if (necessary_layer_count > image_layer_count) {
-                skip |= LogError(errorCodes.layer_count_err, image, loc.dot(Field::baseArrayLayer),
+                skip |= LogError(errorCodes.layer_count_err, image, subresource_loc.dot(Field::baseArrayLayer),
                                  "(%" PRIu32 ") + layerCount (%" PRIu32 ") is (%" PRIu64
                                  ") which is greater than the %s of the image when it was created (%" PRIu32 ").",
                                  subresourceRange.baseArrayLayer, subresourceRange.layerCount, necessary_layer_count,
@@ -1329,9 +1332,16 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     if (subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
         if (subresourceRange.aspectMask &
             (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-            skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-01670", image, loc.dot(Field::aspectMask), "is %s.",
-                             string_VkImageAspectFlags(subresourceRange.aspectMask).c_str());
+            skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-01670", image, subresource_loc.dot(Field::aspectMask),
+                             "is %s.", string_VkImageAspectFlags(subresourceRange.aspectMask).c_str());
         }
+    }
+
+    // aspectMask must not contain VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT
+    if (subresourceRange.aspectMask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+                                       VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+        skip |= LogError("VUID-VkImageSubresourceRange-aspectMask-02278", image, subresource_loc.dot(Field::aspectMask), "is %s.",
+                         string_VkImageAspectFlags(subresourceRange.aspectMask).c_str());
     }
 
     return skip;
@@ -1380,7 +1390,8 @@ bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE &image_
     subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearColorImage-pRanges-01693";
 
     return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.image(), subresource_range_error_codes, loc);
+                                         "arrayLayers", image_state.image(), subresource_range_error_codes,
+                                         loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE &image_state,
@@ -1392,13 +1403,15 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE &image_
     subresource_range_error_codes.layer_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01695";
 
     return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.image(), subresource_range_error_codes, loc);
+                                         "arrayLayers", image_state.image(), subresource_range_error_codes,
+                                         loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const Location &loc, const IMAGE_STATE &image_state,
                                                       const VkImageSubresourceRange &subresourceRange) const {
     return ValidateImageSubresourceRange(image_state.createInfo.mipLevels, image_state.createInfo.arrayLayers, subresourceRange,
-                                         "arrayLayers", image_state.image(), sync_vuid_maps::GetSubResourceVUIDs(loc), loc);
+                                         "arrayLayers", image_state.image(), sync_vuid_maps::GetSubResourceVUIDs(loc),
+                                         loc.dot(Field::subresourceRange));
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state, const VkFormat view_format,
@@ -2208,12 +2221,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
                 const char *vuid =
                     is_2 ? "VUID-vkGetImageSubresourceLayout2KHR-tiling-02271" : "VUID-vkGetImageSubresourceLayout-tiling-02271";
                 skip |= LogError(vuid, image_state.image(), subresource_loc.dot(Field::aspectMask),
-                                 "= %s\n"
-                                 "tiling of image = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT\n"
-                                 "image's format = %s\n"
-                                 "drmFormatModifierPlaneCount = %" PRIu32
-                                 "\n"
-                                 "drmFormatModifier = %" PRIu64 ".",
+                                 "is %s for image format %s, but drmFormatModifierPlaneCount is %" PRIu32 " (drmFormatModifier = %" PRIu64 ").",
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_state.createInfo.format),
                                  max_plane_count, drm_format_properties.drmFormatModifier);
             }
@@ -2265,6 +2273,21 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
                                                               VkSubresourceLayout2EXT *pLayout,
                                                               const ErrorObject &error_obj) const {
     return PreCallValidateGetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout, error_obj);
+}
+
+bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
+                                                                       VkImageDrmFormatModifierPropertiesEXT *pProperties,
+                                                                       const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto image_state = Get<IMAGE_STATE>(image);
+    if (image_state) {
+        if (image_state->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            skip |=
+                LogError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272", image, error_obj.location.dot(Field::image),
+                         "was created with tiling %s.", string_VkImageTiling(image_state->createInfo.tiling));
+        }
+    }
+    return skip;
 }
 
 static const SubresourceRangeErrorCodes TransitionImageLayoutVUIDs{

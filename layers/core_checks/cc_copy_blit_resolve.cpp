@@ -1096,27 +1096,27 @@ template <typename HandleT>
 bool CoreChecks::ValidateImageSubresourceLayers(HandleT handle, const VkImageSubresourceLayers *subresource_layers,
                                                 const Location &subresource_loc) const {
     bool skip = false;
-    const VkImageAspectFlags apsect_mask = subresource_layers->aspectMask;
+    const VkImageAspectFlags aspect_mask = subresource_layers->aspectMask;
     // layerCount must not be zero
     if (subresource_layers->layerCount == 0) {
         skip |=
             LogError("VUID-VkImageSubresourceLayers-layerCount-01700", handle, subresource_loc.dot(Field::layerCount), "is zero.");
     }
     // aspectMask must not contain VK_IMAGE_ASPECT_METADATA_BIT
-    if (apsect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
-        skip |= LogError("VUID-VkImageSubresourceLayers-aspectMask-00168", handle, subresource_loc.dot(Field::aspectMask),
-                         "includes VK_IMAGE_ASPECT_METADATA_BIT (%s).", string_VkImageAspectFlags(apsect_mask).c_str());
+    if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
+        skip |= LogError("VUID-VkImageSubresourceLayers-aspectMask-00168", handle, subresource_loc.dot(Field::aspectMask), "is %s.",
+                         string_VkImageAspectFlags(aspect_mask).c_str());
     }
     // if aspectMask contains COLOR, it must not contain either DEPTH or STENCIL
-    if ((apsect_mask & VK_IMAGE_ASPECT_COLOR_BIT) && (apsect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+    if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) && (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
         skip |= LogError("VUID-VkImageSubresourceLayers-aspectMask-00167", handle, subresource_loc.dot(Field::aspectMask), "is %s.",
-                         string_VkImageAspectFlags(apsect_mask).c_str());
+                         string_VkImageAspectFlags(aspect_mask).c_str());
     }
     // aspectMask must not contain VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT
-    if (apsect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
+    if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                        VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-        skip |= LogError("VUID-VkImageSubresourceLayers-aspectMask-02247", handle, subresource_loc.dot(Field::aspectMask),
-                         "includes VK_IMAGE_ASPECT_MEMORY_PLANE_*_BIT_EXT (%s).", string_VkImageAspectFlags(apsect_mask).c_str());
+        skip |= LogError("VUID-VkImageSubresourceLayers-aspectMask-02247", handle, subresource_loc.dot(Field::aspectMask), "is %s.",
+                         string_VkImageAspectFlags(aspect_mask).c_str());
     }
     return skip;
 }

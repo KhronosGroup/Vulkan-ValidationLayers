@@ -367,22 +367,41 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
+    const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+
     std::vector<uint64_t> image_create_drm_format_modifiers;
     if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
         const auto drm_format_mod_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         const auto drm_format_mod_explict = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            if (((drm_format_mod_list != nullptr) && (drm_format_mod_explict != nullptr)) ||
-                ((drm_format_mod_list == nullptr) && (drm_format_mod_explict == nullptr))) {
+            if ((drm_format_mod_list != nullptr) && (drm_format_mod_explict != nullptr)) {
                 skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
-                                 "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext must have "
-                                 "either VkImageDrmFormatModifierListCreateInfoEXT or "
-                                 "VkImageDrmFormatModifierExplicitCreateInfoEXT in the pNext chain");
+                                 "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext is missing "
+                                 "VkImageDrmFormatModifierListCreateInfoEXT or "
+                                 "VkImageDrmFormatModifierExplicitCreateInfoEXT.");
+            } else if ((drm_format_mod_list == nullptr) && (drm_format_mod_explict == nullptr)) {
+                skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
+                                 "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext has both "
+                                 "VkImageDrmFormatModifierListCreateInfoEXT and "
+                                 "VkImageDrmFormatModifierExplicitCreateInfoEXT.");
             } else if (drm_format_mod_explict != nullptr) {
                 image_create_drm_format_modifiers.push_back(drm_format_mod_explict->drmFormatModifier);
             } else if (drm_format_mod_list != nullptr) {
                 for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
                     image_create_drm_format_modifiers.push_back(*drm_format_mod_list->pDrmFormatModifiers);
+                }
+            }
+
+            if (pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
+                if (!format_list_info) {
+                    skip |= LogError("VUID-VkImageCreateInfo-tiling-02353", device, create_info_loc.dot(Field::tiling),
+                                     "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, flags includes "
+                                     "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, but pNext is missing VkImageFormatListCreateInfo.");
+                } else if (format_list_info->viewFormatCount == 0) {
+                    skip |=
+                        LogError("VUID-VkImageCreateInfo-tiling-02353", device, create_info_loc.dot(Field::tiling),
+                                 "is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, flags includes VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, "
+                                 "but pNext<VkImageFormatListCreateInfo>.viewFormatCount is zero.");
                 }
             }
         } else if (drm_format_mod_list) {
@@ -416,6 +435,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                      drm_format_mod_explict->pPlaneLayouts[i].depthPitch);
                 }
             }
+        }
+
+        const auto compression_control = LvlFindInChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+        if (drm_format_mod_explict && compression_control) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-06746", device, create_info_loc.dot(Field::pNext),
+                             "is has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.");
         }
     }
 
@@ -553,7 +578,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkFormat(image_format), pCreateInfo->extent.height);
     }
 
-    const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
     if (format_list_info) {
         const uint32_t viewFormatCount = format_list_info->viewFormatCount;
         if (((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) && (viewFormatCount > 1)) {

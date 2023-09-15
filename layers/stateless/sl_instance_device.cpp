@@ -737,11 +737,43 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                                  "(%s) but no VkPhysicalDeviceImageDrmFormatModifierInfoEXT in pNext chain.",
                                  string_VkImageTiling(pImageFormatInfo->tiling));
             }
-            if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT && image_drm_format->queueFamilyIndexCount <= 1) {
-                skip |= LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
+            if (image_drm_format->sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                if (image_drm_format->queueFamilyIndexCount <= 1) {
+                    skip |=
+                        LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
                                  format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
                                  "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32 ".",
                                  image_drm_format->queueFamilyIndexCount);
+                } else if (!image_drm_format->pQueueFamilyIndices) {
+                    skip |= LogError(
+                        "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314", physicalDevice,
+                        format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
+                        "is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount is %" PRIu32 ", but pQueueFamilyIndices is null.",
+                        image_drm_format->queueFamilyIndexCount);
+                } else {
+                    uint32_t queue_family_property_count = 0;
+                    DispatchGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queue_family_property_count, nullptr);
+                    vvl::unordered_set<uint32_t> queue_family_indices_set;
+                    for (uint32_t i = 0; i < image_drm_format->queueFamilyIndexCount; i++) {
+                        const uint32_t indices = image_drm_format->pQueueFamilyIndices[i];
+                        if (queue_family_indices_set.find(indices) != queue_family_indices_set.end()) {
+                            skip |= LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316", physicalDevice,
+                                             format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
+                                                                   Field::pQueueFamilyIndices, i),
+                                             "is %" PRIu32 ", but is duplicated in pQueueFamilyIndices.", indices);
+                            break;
+                        } else if (indices >= queue_family_property_count) {
+                            skip |= LogError(
+                                "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316", physicalDevice,
+                                format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
+                                                      Field::pQueueFamilyIndices, i),
+                                "is %" PRIu32
+                                ", but vkGetPhysicalDeviceQueueFamilyProperties2::pQueueFamilyPropertyCount returned %" PRIu32 ".",
+                                indices, queue_family_property_count);
+                        }
+                        queue_family_indices_set.emplace(indices);
+                    }
+                }
             }
         } else {
             if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
