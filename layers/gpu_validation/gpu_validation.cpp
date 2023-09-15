@@ -1089,18 +1089,49 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     return true;
 }
 
+bool GpuAssisted::CheckForCachedInstrumentedShader(uint32_t shader_hash, create_shader_module_api_state *csm_state) {
+    auto it = instrumented_shaders.find(shader_hash);
+    if (it != instrumented_shaders.end()) {
+        csm_state->instrumented_create_info.codeSize = it->second.first * sizeof(uint32_t);
+        csm_state->instrumented_create_info.pCode = it->second.second.data();
+        csm_state->instrumented_spirv = it->second.second;
+        csm_state->unique_shader_id = shader_hash;
+        return true;
+    }
+    return false;
+}
+
+bool GpuAssisted::CheckForCachedInstrumentedShader(uint32_t index, uint32_t shader_hash,
+                                                   create_shader_object_api_state *cso_state) {
+    auto it = instrumented_shaders.find(shader_hash);
+    if (it != instrumented_shaders.end()) {
+        cso_state->instrumented_create_info[index].codeSize = it->second.first * sizeof(uint32_t);
+        cso_state->instrumented_create_info[index].pCode = it->second.second.data();
+        return true;
+    }
+    return false;
+}
+
 // Create the instrumented shader data to provide to the driver.
 void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
-    csm_state->unique_shader_id = unique_shader_module_id++;
+    const uint32_t shader_hash = ValidationCache::MakeShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
+    if (cache_instrumented_shaders && CheckForCachedInstrumentedShader(shader_hash, csm_state)) {
+        return;
+    }
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, shader_hash);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
+        csm_state->unique_shader_id = shader_hash;
+        if (cache_instrumented_shaders) {
+            instrumented_shaders.emplace(shader_hash,
+                                         std::make_pair(csm_state->instrumented_spirv.size(), csm_state->instrumented_spirv));
+        }
     }
 }
 
@@ -1112,13 +1143,19 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     GpuAssistedBase::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, csm_state_data);
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        csm_state->unique_shader_ids[i] = unique_shader_module_id++;
+        csm_state->unique_shader_ids[i] = ValidationCache::MakeShaderHash(pCreateInfos[i].pCode, pCreateInfos[i].codeSize);
+        if (cache_instrumented_shaders && CheckForCachedInstrumentedShader(i, csm_state->unique_shader_ids[i], csm_state)) continue;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
             csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i]);
         if (pass) {
             csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
             csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
+            if (cache_instrumented_shaders) {
+                instrumented_shaders.emplace(
+                    csm_state->unique_shader_ids[i],
+                    std::make_pair(csm_state->instrumented_spirv[i].size(), csm_state->instrumented_spirv[i]));
+            }
         }
     }
 }

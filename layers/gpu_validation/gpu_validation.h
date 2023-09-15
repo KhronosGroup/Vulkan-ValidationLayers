@@ -217,6 +217,8 @@ class GpuAssisted : public GpuAssistedBase {
                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                       VkBuffer scratch, VkDeviceSize scratchOffset) override;
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) override;
+    bool CheckForCachedInstrumentedShader(const uint32_t shader_hash, create_shader_module_api_state* csm_state);
+    bool CheckForCachedInstrumentedShader(const uint32_t index, const uint32_t shader_hash, create_shader_object_api_state* cso_state);
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
                           uint32_t unique_shader_id) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -347,10 +349,12 @@ class GpuAssisted : public GpuAssistedBase {
     bool validate_dispatch_indirect;
     bool warn_on_robust_oob;
     bool validate_instrumented_shaders;
+    bool cache_instrumented_shaders;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
     GpuAssistedDeviceMemoryBlock app_buffer_device_addresses{};
+    std::unordered_map<uint32_t, std::pair<size_t, std::vector<uint32_t>>> instrumented_shaders;
     size_t app_bda_buffer_size{};
     size_t app_bda_max_addresses{};
     uint32_t gpuav_bda_buffer_version = 0;
