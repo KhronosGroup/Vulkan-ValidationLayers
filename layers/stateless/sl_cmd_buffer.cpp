@@ -1014,9 +1014,8 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
                                                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
                                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
-        skip |= ValidateStructPnext(inheritance_loc, "VkCommandBufferInheritanceConditionalRenderingInfoEXT", info->pNext,
-                                    allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
-                                    "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
+        skip |= ValidateStructPnext(inheritance_loc, info->pNext, allowed_structs.size(), allowed_structs.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
                                     "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
         skip |= ValidateBool32(inheritance_loc.dot(Field::occlusionQueryEnable), info->occlusionQueryEnable);

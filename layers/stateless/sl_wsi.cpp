@@ -171,8 +171,8 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
                                  error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
                                  pPresentInfo->swapchainCount);
             }
-            skip |= ValidateStructPnext(error_obj.location.pNext(Struct::VkPresentRegionsKHR), nullptr, present_regions->pNext, 0,
-                                        nullptr, GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
+            skip |= ValidateStructPnext(error_obj.location.pNext(Struct::VkPresentRegionsKHR), present_regions->pNext, 0, nullptr,
+                                        GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
                                         "VUID-VkPresentInfoKHR-sType-unique");
         }
     }
@@ -358,10 +358,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
                                                 VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
 
-        skip |= ValidateStructPnext(error_obj.location.dot(Field::pSurfaceInfo),
-                                    "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
-                                    pSurfaceInfo->pNext, allowed_structs.size(), allowed_structs.data(),
-                                    GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
+        skip |= ValidateStructPnext(error_obj.location.dot(Field::pSurfaceInfo), pSurfaceInfo->pNext, allowed_structs.size(),
+                                    allowed_structs.data(), GeneratedVulkanHeaderVersion,
+                                    "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
                                     "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
         if (pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {

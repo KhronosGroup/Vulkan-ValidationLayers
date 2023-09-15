@@ -370,9 +370,9 @@ class StatelessValidation : public ValidationObject {
     bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                      bool is_physdev_api = false, bool is_const_param = true) const;
 
-    bool ValidateStructPnext(const Location &loc, const char *allowed_struct_names, const void *next, size_t allowed_type_count,
-                             const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
-                             const char *stype_vuid, const bool is_physdev_api = false, const bool is_const_param = true) const;
+    bool ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
+                             uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
+                             const bool is_physdev_api = false, const bool is_const_param = true) const;
 
     bool ValidateBool32(const Location &loc, VkBool32 value) const;
 

@@ -917,7 +917,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                &(pInfos[i].pGeometries[j].geometry.triangles),
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
-                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles), nullptr,
+                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles),
                                                 pInfos[i].pGeometries[j].geometry.triangles.pNext, allowed_structs.size(),
                                                 allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                                 "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
@@ -958,7 +958,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                &(pInfos[i].pGeometries[j].geometry.instances),
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
-                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::instances), nullptr,
+                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::instances),
                                                 pInfos[i].pGeometries[j].geometry.instances.pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion,
                                                 "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined);
@@ -978,7 +978,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
                     skip |=
-                        ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::aabbs), nullptr,
+                        ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::aabbs),
                                             pInfos[i].pGeometries[j].geometry.aabbs.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);
                     if (pInfos[i].pGeometries[j].geometry.aabbs.stride % 8) {
@@ -1036,7 +1036,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                &(pInfos[i].ppGeometries[j]->geometry.triangles),
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
-                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles), nullptr,
+                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::triangles),
                                                 pInfos[i].ppGeometries[j]->geometry.triangles.pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion,
                                                 "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
@@ -1071,7 +1071,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                &(pInfos[i].ppGeometries[j]->geometry.instances),
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
-                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::instances), nullptr,
+                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::instances),
                                                 pInfos[i].ppGeometries[j]->geometry.instances.pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion,
                                                 "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined);
@@ -1089,7 +1089,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                &(pInfos[i].ppGeometries[j]->geometry.aabbs),
                                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false,
                                                kVUIDUndefined, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
-                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::aabbs), nullptr,
+                    skip |= ValidateStructPnext(geometry_loc.dot(Field::geometry).dot(Field::aabbs),
                                                 pInfos[i].ppGeometries[j]->geometry.aabbs.pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion,
                                                 "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);

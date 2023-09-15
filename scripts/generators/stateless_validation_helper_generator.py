@@ -791,7 +791,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
                         extStructCount = 0
-                        extStructNames = 'nullptr'
                         extStructData = 'nullptr'
                         pNextVuid = self.GetVuid(structTypeName, "pNext-pNext")
                         sTypeVuid = self.GetVuid(structTypeName, "sType-unique")
@@ -801,11 +800,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                             extStructCount = f'{extStructVar}.size()'
                             extStructData = f'{extStructVar}.data()'
                             extraStype = ', VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
-                            extraStruct = ', VkLayerSettingsCreateInfoEXT' if structTypeName == 'VkInstanceCreateInfo' else ''
-                            extStructNames = '"' + ', '.join(struct.extendedBy) + extraStruct + '"'
                             extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
                             usedLines.append(f'constexpr std::array {extStructVar} = {{ {extendedBy}{extraStype} }};\n')
-                        usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {extStructNames}, {valuePrefix}{member.name}, {extStructCount}, {extStructData}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
+                        usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {extStructCount}, {extStructData}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName)
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
