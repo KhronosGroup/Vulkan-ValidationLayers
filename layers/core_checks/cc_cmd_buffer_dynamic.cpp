@@ -649,7 +649,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
         }
         if (enabled_features.exclusive_scissor_features.exclusiveScissor) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV,
-                                              objlist, loc, kVUID_Core_DrawState_ExclusiveScissorEnableNV);
+                                              objlist, loc, vuid.set_exclusive_scissor_enable_09235);
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV] &&
                 !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV]) {
                 bool exclusiveScissorEnabled = false;
@@ -812,15 +812,24 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             if (enabled_features.shading_rate_image_features.shadingRateImage) {
                 skip |=
                     ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV,
-                                              objlist, loc, kVUID_Core_DrawState_ViewportCoarseSampleOrder);
+                                              objlist, loc, vuid.set_viewport_coarse_sample_order_09233);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV,
                                                   objlist, loc, vuid.set_shading_rate_image_enable_08681);
                 if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV] &&
                     cb_state.dynamic_state_value.shading_rate_image_enable) {
                     skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
                                                       CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, objlist, loc,
-                                                      kVUID_Core_DrawState_ViewportShadingRatePalette);
+                                                      vuid.set_viewport_shading_rate_palette_09234);
                 }
+            }
+            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE] &&
+                cb_state.dynamic_state_value.stencil_test_enable) {
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, objlist,
+                                                  loc, vuid.set_stencil_compare_mask_08623);
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, objlist,
+                                                  loc, vuid.set_stencil_write_mask_08624);
+                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, objlist,
+                                                  loc, vuid.set_stencil_reference_08625);
             }
         }
         if (enabled_features.depth_clip_enable_features.depthClipEnable) {
@@ -850,7 +859,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV] &&
                 cb_state.dynamic_state_value.viewport_w_scaling_enable) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, objlist,
-                                                  loc, kVUID_Core_DrawState_ViewportWScaling);
+                                                  loc, vuid.set_clip_space_w_scaling_09232);
             }
         }
         if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
@@ -860,15 +869,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
         if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                               vuid.set_line_width_08617);
-        }
-        if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE] &&
-            cb_state.dynamic_state_value.stencil_test_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK, objlist, loc,
-                                              vuid.set_stencil_compare_mask_08623);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_WRITE_MASK, objlist, loc,
-                                              vuid.set_stencil_write_mask_08624);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, objlist, loc,
-                                              vuid.set_stencil_reference_08625);
         }
     }
     VkPrimitiveTopology line_topologies[] = {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
@@ -897,7 +897,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, objlist, loc,
                                           vuid.set_patch_control_points_08883);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT,
-                                          objlist, loc, kVUID_Core_DrawState_TessellationDomainOrigin);
+                                          objlist, loc, vuid.set_tessellation_domain_origin_09237);
     }
     if ((tessev_shader_bound &&
          std::find(std::begin(line_topologies), std::end(line_topologies),
@@ -966,7 +966,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                               vuid.set_color_write_mask_08659);
             if (enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR,
-                                                  objlist, loc, kVUID_Core_DrawState_FragmentShadingRate);
+                                                  objlist, loc, vuid.set_fragment_shading_rate_09238);
             }
             if (enabled_features.attachment_feedback_loop_dynamic_features.attachmentFeedbackLoopDynamicState) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
@@ -1010,7 +1010,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT,
                                               objlist, loc, vuid.set_discard_rectangles_mode_08649);
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, objlist,
-                                              loc, kVUID_Core_DrawState_DiscardRectangle);
+                                              loc, vuid.set_discard_rectangle_09236);
         }
     }
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
