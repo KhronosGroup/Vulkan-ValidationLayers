@@ -2458,7 +2458,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                         skip |= LogError(objlist, "VUID-vkCmdBindVertexBuffers2-pStrides-06209",
                                          "The pStrides[%" PRIu32 "] (%" PRIu32
                                          ") parameter in the last call to %s is not 0 "
-                                         "and less than the extent of the binding for attribute  %" PRIu32 " (%" PRIu32 ").",
+                                         "and less than the extent of the binding for attribute %" PRIu32 " (%" PRIu32 ").",
                                          vertex_binding, vertex_buffer_stride, loc.StringFunc(), i, attribute_binding_extent);
                     }
                 }
