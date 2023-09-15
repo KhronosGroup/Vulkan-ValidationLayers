@@ -292,6 +292,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_format_08936 = kVUIDUndefined;
     const char* vertex_input_format_08937 = kVUIDUndefined;
     const char* vertex_input_format_09203 = kVUIDUndefined;
+    const char* vertex_input_format_07939 = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {

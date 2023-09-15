@@ -269,17 +269,22 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
         }
     }
     if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) && entrypoint) {
-        for (uint32_t i = 0; i < cb_state.dynamic_state_value.vertex_attribute_descriptions.size(); ++i) {
-            const auto& description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
-            bool format64 = vkuFormatIs64bit(description.format);
-            for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
-                if (variable_ptr->decorations.location == description.location &&
-                    variable_ptr->storage_class == spv::StorageClass::StorageClassInput) {
+        for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
+            // Validate only input locations
+            if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
+                continue;
+            }
+            bool location_provided = false;
+            for (uint32_t i = 0; i < cb_state.dynamic_state_value.vertex_attribute_descriptions.size(); ++i) {
+                const auto& description = cb_state.dynamic_state_value.vertex_attribute_descriptions[i];
+                if (variable_ptr->decorations.location == description.location) {
+                    location_provided = true;
                     const auto base_type_instruction = spirv_state->GetBaseTypeInstruction(variable_ptr->type_id);
                     const auto opcode = base_type_instruction->Opcode();
                     if (opcode != spv::Op::OpTypeFloat && opcode != spv::Op::OpTypeInt && opcode != spv::Op::OpTypeBool) {
                         continue;
                     }
+                    const bool format64 = vkuFormatIs64bit(description.format);
                     const bool shader64 = base_type_instruction->GetBitWidth() == 64;
                     if (format64 && !shader64) {
                         skip |= LogError(vuid.vertex_input_format_08936, spirv_state->handle(), loc,
@@ -306,6 +311,12 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
                         }
                     }
                 }
+            }
+            if (!location_provided) {
+                skip |=
+                    LogError(vuid.vertex_input_format_07939, spirv_state->handle(), loc,
+                             "Shader uses input at location %" PRIu32 ", but it was not provided with vkCmdSetVertexInputEXT().",
+                             variable_ptr->decorations.location);
             }
         }
     }

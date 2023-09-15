@@ -269,6 +269,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDraw-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDraw-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDraw-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDraw-Input-07939";
     }
 };
 
@@ -520,6 +521,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawMultiEXT-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawMultiEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawMultiEXT-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawMultiEXT-Input-07939";
     }
 };
 
@@ -772,6 +774,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndexed-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexed-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexed-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndexed-Input-07939";
     }
 };
 
@@ -1024,6 +1027,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawMultiIndexedEXT-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawMultiIndexedEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawMultiIndexedEXT-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawMultiIndexedEXT-Input-07939";
     }
 };
 
@@ -1277,6 +1281,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndirect-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirect-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirect-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndirect-Input-07939";
     }
 };
 
@@ -1531,6 +1536,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndexedIndirect-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexedIndirect-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexedIndirect-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndexedIndirect-Input-07939";
     }
 };
 
@@ -1873,6 +1879,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndirectCount-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirectCount-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirectCount-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndirectCount-Input-07939";
     }
 };
 
@@ -2130,6 +2137,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndexedIndirectCount-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexedIndirectCount-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexedIndirectCount-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndexedIndirectCount-Input-07939";
     }
 };
 
@@ -3977,6 +3985,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_format_08936                = "VUID-vkCmdDrawIndirectByteCountEXT-format-08936";
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirectByteCountEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirectByteCountEXT-None-09203";
+        vertex_input_format_07939                = "VUID-vkCmdDrawIndirectByteCountEXT-Input-07939";
     }
 };
 
