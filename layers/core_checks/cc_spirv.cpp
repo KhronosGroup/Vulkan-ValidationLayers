@@ -2355,7 +2355,7 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
     return false;
 }
 
-uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
+uint32_t ValidationCache::MakeShaderHash(const void *pCode, const size_t codeSize) { return XXH32(pCode, codeSize, 0); }
 
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
     const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
@@ -2408,7 +2408,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         // If app isn't using a shader validation cache, use the default one from CoreChecks
         if (!cache) cache = CastFromHandle<ValidationCache *>(core_validation_cache);
         if (cache) {
-            hash = ValidationCache::MakeShaderHash(pCreateInfo);
+            hash = ValidationCache::MakeShaderHash(pCreateInfo->pCode, pCreateInfo->codeSize);
             if (cache->Contains(hash)) return false;
         }
 
