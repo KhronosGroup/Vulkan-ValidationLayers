@@ -249,3 +249,6 @@ class RayTracingPipelineHelper {
         ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
     }
 };
+
+// Set all dynamic states needed when using shader objects
+void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer);
