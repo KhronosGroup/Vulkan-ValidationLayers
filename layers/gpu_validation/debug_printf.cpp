@@ -40,7 +40,7 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
     vvl::ToLower(stdout_string);
     use_stdout = !stdout_string.compare("true");
-    if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
+    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) use_stdout = true;
 
     // GpuAssistedBase::CreateDevice will set up bindings
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
