@@ -168,3 +168,6 @@ aae202333dda8a6ca1422a773d02c4d7853f71b7
 
 # Improve nesting by returning back sooner
 4f847fc3374fb9c4b7a2f67cff5b4fd819210226
+
+# Run Clang-Format on generated files
+6b021099c39224d4d97573a5d3b879ca03889b50
