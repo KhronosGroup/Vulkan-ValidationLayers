@@ -748,30 +748,30 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                     skip |= LogError(
                         "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314", physicalDevice,
                         format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
-                        "is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount is %" PRIu32 ", but pQueueFamilyIndices is null.",
+                        "is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount is %" PRIu32 ", but pQueueFamilyIndices is NULL.",
                         image_drm_format->queueFamilyIndexCount);
                 } else {
                     uint32_t queue_family_property_count = 0;
                     DispatchGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queue_family_property_count, nullptr);
                     vvl::unordered_set<uint32_t> queue_family_indices_set;
                     for (uint32_t i = 0; i < image_drm_format->queueFamilyIndexCount; i++) {
-                        const uint32_t indices = image_drm_format->pQueueFamilyIndices[i];
-                        if (queue_family_indices_set.find(indices) != queue_family_indices_set.end()) {
+                        const uint32_t queue_index = image_drm_format->pQueueFamilyIndices[i];
+                        if (queue_family_indices_set.find(queue_index) != queue_family_indices_set.end()) {
                             skip |= LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316", physicalDevice,
                                              format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
                                                                    Field::pQueueFamilyIndices, i),
-                                             "is %" PRIu32 ", but is duplicated in pQueueFamilyIndices.", indices);
+                                             "is %" PRIu32 ", but is duplicated in pQueueFamilyIndices.", queue_index);
                             break;
-                        } else if (indices >= queue_family_property_count) {
+                        } else if (queue_index >= queue_family_property_count) {
                             skip |= LogError(
                                 "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316", physicalDevice,
                                 format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
                                                       Field::pQueueFamilyIndices, i),
                                 "is %" PRIu32
                                 ", but vkGetPhysicalDeviceQueueFamilyProperties2::pQueueFamilyPropertyCount returned %" PRIu32 ".",
-                                indices, queue_family_property_count);
+                                queue_index, queue_family_property_count);
                         }
-                        queue_family_indices_set.emplace(indices);
+                        queue_family_indices_set.emplace(queue_index);
                     }
                 }
             }

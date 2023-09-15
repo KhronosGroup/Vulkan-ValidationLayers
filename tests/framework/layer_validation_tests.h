@@ -439,7 +439,11 @@ class ImageTest : public VkLayerTest {
 class NegativeImage : public ImageTest {};
 class PositiveImage : public ImageTest {};
 
-class ImageDrmTest : public VkLayerTest {};
+class ImageDrmTest : public VkLayerTest {
+  public:
+    void InitBasicImageDrm(void *pNextFeatures = nullptr);
+    std::vector<uint64_t> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count = 1);
+};
 class NegativeImageDrm : public ImageDrmTest {};
 class PositiveImageDrm : public ImageDrmTest {};
 

@@ -187,6 +187,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 image_format_info_pnext_chain{};
     image_format_info.pNext = vvl::PnextChainExtract(pCreateInfo->pNext, image_format_info_pnext_chain);
 
+    // Exit early if any thing is not succesful
     VkResult result = VK_SUCCESS;
     if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
@@ -196,6 +197,33 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                                                     pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
                                                                     &image_format_properties.imageFormatProperties);
         }
+
+        // 1. vkGetPhysicalDeviceImageFormatProperties[2] only success code is VK_SUCCESS
+        // 2. If call returns an error, then "imageCreateImageFormatPropertiesList" is defined to be the empty list
+        // 3. All values in 02251 are undefined if "imageCreateImageFormatPropertiesList" is empty.
+        if (result != VK_SUCCESS) {
+            // External memory will always have a "imageCreateImageFormatPropertiesList" so skip
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+            if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+                Func command = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
+                                   ? Func::vkGetPhysicalDeviceImageFormatProperties2
+                                   : Func::vkGetPhysicalDeviceImageFormatProperties;
+                skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
+                                 "The following parameters -\n"
+                                 "format (%s)\n"
+                                 "type (%s)\n"
+                                 "tiling (%s)\n"
+                                 "usage (%s)\n"
+                                 "flags (%s)\n"
+                                 "returned (%s) when calling %s.",
+                                 string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
+                                 string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
+                                 string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result), String(command));
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+            }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+        }
     } else {
         auto *modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         auto *explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
@@ -204,6 +232,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
+        uint32_t bad_index = 0;
 
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
@@ -211,28 +240,21 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 result =
                     DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
 
-                /* The application gives a list of modifier and the driver
-                 * selects one. If one is wrong, stop there.
-                 */
-                if (result != VK_SUCCESS) break;
+                // The application gives a list of modifier and the driver selects one. If one is wrong, stop there.
+                if (result != VK_SUCCESS) {
+                    bad_index = i;
+                    break;
+                }
             }
         } else if (explicit_modifier) {
             drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
             result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
         }
-    }
 
-    // 1. vkGetPhysicalDeviceImageFormatProperties[2] only success code is VK_SUCCESS
-    // 2. If call returns an error, then "imageCreateImageFormatPropertiesList" is defined to be the empty list
-    // 3. All values in 02251 are undefined if "imageCreateImageFormatPropertiesList" is empty.
-    if (result != VK_SUCCESS) {
-        // External memory will always have a "imageCreateImageFormatPropertiesList" so skip
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-        if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-            const char *dispatchFunction = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
-                                               ? "VkGetPhysicalDeviceImageFormatProperties2"
-                                               : "VkGetPhysicalDeviceImageFormatProperties";
+        if (result != VK_SUCCESS) {
+            // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
+            std::string drm_source = modifier_list ? ("pDrmFormatModifiers[" + std::to_string(bad_index) + "]")
+                                                   : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
             skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
                              "The following parameters -\n"
                              "format (%s)\n"
@@ -240,14 +262,18 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "tiling (%s)\n"
                              "usage (%s)\n"
                              "flags (%s)\n"
-                             "returned (%s) when calling %s.",
+                             "drmFormatModifier (%" PRIu64
+                             ") from %s\n"
+                             "returned (%s) when calling VkGetPhysicalDeviceImageFormatProperties2.",
                              string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
                              string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
-                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result), dispatchFunction);
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
+                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), drm_format_modifier.drmFormatModifier,
+                             drm_source.c_str(), string_VkResult(result));
         }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-    } else {
+    }
+
+    // only check if we got valid image format info back
+    if (result == VK_SUCCESS) {
         const auto format_limits = image_format_properties.imageFormatProperties;
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
             skip |= LogError("VUID-VkImageCreateInfo-mipLevels-02255", device, create_info_loc.dot(Field::mipLevels),
