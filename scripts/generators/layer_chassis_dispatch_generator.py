@@ -19,8 +19,7 @@
 
 import sys
 import os
-from generators.generator_utils import (incIndent, decIndent, addIndent)
-from generators.vulkan_object import (Member)
+from generators.vulkan_object import Member
 from generators.base_generator import BaseGenerator
 
 class LayerChassisDispatchOutputGenerator(BaseGenerator):
@@ -182,9 +181,6 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-''')
-
-        out.append('''
 // Unique Objects pNext extension handling function
 void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
     void *cur_pnext = const_cast<void *>(pNext);
@@ -195,28 +191,27 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
 ''')
 
         for struct in [self.vk.structs[x] for x in self.ndo_extension_structs]:
-            indent = '                '
-            (api_decls, api_pre, api_post) = self.uniquifyMembers(struct.members, indent, 'safe_struct->', 0, False, False, False)
+            (api_decls, api_pre, api_post) = self.uniquifyMembers(struct.members, 'safe_struct->', 0, False, False, False)
             # Only process extension structs containing handles
             if not api_pre:
                 continue
             out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
-            out.append(f'            case {struct.sType}: {{\n')
-            out.append(f'                    safe_{struct.name} *safe_struct = reinterpret_cast<safe_{struct.name} *>(cur_pnext);\n')
+            out.append(f'case {struct.sType}: {{\n')
+            out.append(f'    safe_{struct.name} *safe_struct = reinterpret_cast<safe_{struct.name} *>(cur_pnext);\n')
             out.append(api_pre)
-            out.append('                } break;\n')
+            out.append('} break;\n')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
             out.append('\n')
 
-        out.append('''            default:
-                break;
-        }
+        out.append('''default:
+                        break;
+                }
 
-        // Process the next structure in the chain
-        cur_pnext = header->pNext;
-    }
-}
-''')
+                // Process the next structure in the chain
+                cur_pnext = header->pNext;
+            }
+        }
+        ''')
 
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
@@ -224,7 +219,6 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
             # Generate NDO wrapping/unwrapping code for all parameters
             isCreate = any(x in command.name for x in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'GetDrmDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
             isDestroy = any(x in command.name for x in ['Destroy', 'Free'])
-            indent = '    '
 
             # Handle ndo create/allocate operations
             create_ndo_code = ''
@@ -234,19 +228,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                 if self.isNonDispatchable(handle_type):
                     # Check for special case where multiple handles are returned
                     ndo_array = lastParam.length is not None
-                    create_ndo_code += f'{indent}if (VK_SUCCESS == result) {{\n'
-                    indent = incIndent(indent)
+                    create_ndo_code += 'if (VK_SUCCESS == result) {\n'
                     ndo_dest = f'*{lastParam.name}'
                     if ndo_array:
-                        create_ndo_code += f'{indent}for (uint32_t index0 = 0; index0 < {lastParam.length}; index0++) {{\n'
-                        indent = incIndent(indent)
+                        create_ndo_code += f'for (uint32_t index0 = 0; index0 < {lastParam.length}; index0++) {{\n'
                         ndo_dest = f'{lastParam.name}[index0]'
-                    create_ndo_code += f'{indent}{ndo_dest} = layer_data->WrapNew({ndo_dest});\n'
+                    create_ndo_code += f'{ndo_dest} = layer_data->WrapNew({ndo_dest});\n'
                     if ndo_array:
-                        indent = decIndent(indent)
-                        create_ndo_code += f'{indent}}}\n'
-                    indent = decIndent(indent)
-                    create_ndo_code += f'{indent}}}\n'
+                        create_ndo_code += '}\n'
+                    create_ndo_code += '}\n'
 
             # Handle ndo destroy/free operations
             destroy_ndo_code = ''
@@ -254,20 +244,20 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                 param = command.params[-2] # Last param is always VkAllocationCallbacks
                 if self.isNonDispatchable(param.type):
                     # Remove a single handle from the map
-                    destroy_ndo_code += addIndent(indent,
-f'''uint64_t {param.name}_id = CastToUint64({param.name});
-auto iter = unique_id_mapping.pop({param.name}_id);
-if (iter != unique_id_mapping.end()) {{
-    {param.name} = ({param.type})iter->second;
-}} else {{
-    {param.name} = ({param.type})0;
-}}''')
-            (api_decls, api_pre, api_post) = self.uniquifyMembers(command.params, indent, '', 0, isCreate, isDestroy, True)
+                    destroy_ndo_code += (
+                    f'''uint64_t {param.name}_id = CastToUint64({param.name});
+                        auto iter = unique_id_mapping.pop({param.name}_id);
+                        if (iter != unique_id_mapping.end()) {{
+                            {param.name} = ({param.type})iter->second;
+                        }} else {{
+                            {param.name} = ({param.type})0;
+                        }}''')
+            (api_decls, api_pre, api_post) = self.uniquifyMembers(command.params, '', 0, isCreate, isDestroy, True)
             api_post += create_ndo_code
             if isDestroy:
                 api_pre += destroy_ndo_code
             elif api_pre:
-                api_pre = f'    {{\n{api_pre}{indent}}}\n'
+                api_pre = f'{{\n{api_pre}}}\n'
 
             # If API doesn't contain NDO's, we still need to make a down-chain call
             down_chain_call_only = False
@@ -300,10 +290,10 @@ if (iter != unique_id_mapping.end()) {{
             dispatch_table = 'instance_dispatch_table' if command.instance else 'device_dispatch_table'
 
             # first parameter is always dispatchable
-            out.append(f'    auto layer_data = GetLayerDataPtr(get_dispatch_key({command.params[0].name}), layer_data_map);\n')
+            out.append(f'auto layer_data = GetLayerDataPtr(get_dispatch_key({command.params[0].name}), layer_data_map);\n')
             # Put all this together for the final down-chain call
             if not down_chain_call_only:
-                out.append(f'    if (!wrap_handles) return layer_data->{dispatch_table}.{command.name[2:]}({paramstext});\n')
+                out.append(f'if (!wrap_handles) return layer_data->{dispatch_table}.{command.name[2:]}({paramstext});\n')
 
             # Handle return values, if any
             assignResult = f'{command.returnType} result = ' if command.returnType != 'void' else ''
@@ -315,13 +305,13 @@ if (iter != unique_id_mapping.end()) {{
                 out.append("\n".join(str(api_pre).rstrip().split("\n")))
             out.append('\n')
             # Generate the wrapped dispatch call
-            out.append(f'    {assignResult}layer_data->{dispatch_table}.{command.name[2:]}({wrapped_paramstext});\n')
+            out.append(f'{assignResult}layer_data->{dispatch_table}.{command.name[2:]}({wrapped_paramstext});\n')
 
             out.append("\n".join(str(api_post).rstrip().split("\n")))
             out.append('\n')
             # Handle the return result variable, if any
             if assignResult != '':
-                out.append('    return result;\n')
+                out.append('return result;\n')
             out.append('}\n')
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
 
@@ -329,7 +319,7 @@ if (iter != unique_id_mapping.end()) {{
 
     #
     # Clean up local declarations
-    def cleanUpLocalDeclarations(self, indent, prefix, name, len, deferred_name):
+    def cleanUpLocalDeclarations(self, prefix, name, len, deferred_name):
         cleanup = ''
         if len is not None or deferred_name is not None:
             delete_var = f'local_{prefix}{name}'
@@ -337,27 +327,28 @@ if (iter != unique_id_mapping.end()) {{
                 delete_code = f'delete {delete_var}'
             else:
                 delete_code = f'delete[] {delete_var}'
-            cleanup = f'{indent}if ({delete_var}) {{\n'
+            cleanup = f'if ({delete_var}) {{\n'
             if deferred_name is not None:
-                cleanup += f'{indent}    // Fix check for deferred ray tracing pipeline creation\n'
-                cleanup += f'{indent}    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817\n'
-                cleanup += f'{indent}    const bool is_operation_deferred = ({deferred_name} != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);\n'
-                cleanup += f'{indent}    if (is_operation_deferred) {{\n'
-                cleanup += f'{indent}        std::vector<std::function<void()>> cleanup{{[{delete_var}](){{ {delete_code}; }}}};\n'
-                cleanup += f'{indent}        layer_data->deferred_operation_post_completion.insert({deferred_name}, cleanup);\n'
-                cleanup += f'{indent}    }} else {{\n'
-                cleanup += f'{indent}        {delete_code};\n'
-                cleanup += f'{indent}    }}\n'
+                cleanup += f'''
+                    // Fix check for deferred ray tracing pipeline creation
+                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+                    const bool is_operation_deferred = ({deferred_name} != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+                    if (is_operation_deferred) {{
+                        std::vector<std::function<void()>> cleanup{{[{delete_var}](){{ {delete_code}; }}}};
+                        layer_data->deferred_operation_post_completion.insert({deferred_name}, cleanup);
+                    }} else {{
+                        {delete_code};
+                    }}'''
             else:
-                cleanup += f'{indent}    {delete_code};\n'
-            cleanup += f'{indent}}}\n'
+                cleanup += f'{delete_code};\n'
+            cleanup += '}\n'
         return cleanup
 
     #
     # topLevel indicates if elements are passed directly into the function else they're below a ptr/struct
     # isCreate means that this is API creates or allocates NDOs
     # isDestroy indicates that this API destroys or frees NDOs
-    def uniquifyMembers(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, isCreate: bool, isDestroy: bool, topLevel: bool):
+    def uniquifyMembers(self, members: list[Member], prefix: str, arrayIndex: int, isCreate: bool, isDestroy: bool, topLevel: bool):
         decls = ''
         pre_code = ''
         post_code = ''
@@ -374,41 +365,34 @@ if (iter != unique_id_mapping.end()) {{
                 if (not topLevel) or (not isCreate) or (not member.pointer):
                     if count_name is not None:
                         if topLevel:
-                            decls += f'{indent}{member.type} var_local_{prefix}{member.name}[DISPATCH_MAX_STACK_ALLOCATIONS];\n'
-                            decls += f'{indent}{member.type} *local_{prefix}{member.name} = nullptr;\n'
-                        pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
-                        indent = incIndent(indent)
+                            decls += f'{member.type} var_local_{prefix}{member.name}[DISPATCH_MAX_STACK_ALLOCATIONS];\n'
+                            decls += f'{member.type} *local_{prefix}{member.name} = nullptr;\n'
+                        pre_code += f' if ({prefix}{member.name}) {{\n'
                         if topLevel:
-                            pre_code += f'{indent}    local_{prefix}{member.name} = {count_name} > DISPATCH_MAX_STACK_ALLOCATIONS ? new {member.type}[{count_name}] : var_local_{prefix}{member.name};\n'
-                            pre_code += f'{indent}    for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{\n'
-                            indent = incIndent(indent)
-                            pre_code += f'{indent}    local_{prefix}{member.name}[{index}] = layer_data->Unwrap({member.name}[{index}]);\n'
+                            pre_code += f'''
+                                local_{prefix}{member.name} = {count_name} > DISPATCH_MAX_STACK_ALLOCATIONS ? new {member.type}[{count_name}] : var_local_{prefix}{member.name};
+                                for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{
+                                    local_{prefix}{member.name}[{index}] = layer_data->Unwrap({member.name}[{index}]);'''
                         else:
-                            pre_code += f'{indent}    for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{\n'
-                            indent = incIndent(indent)
-                            pre_code += f'{indent}    {prefix}{member.name}[{index}] = layer_data->Unwrap({prefix}{member.name}[{index}]);\n'
-                        indent = decIndent(indent)
-                        pre_code += f'{indent}    }}\n'
-                        indent = decIndent(indent)
-                        pre_code += f'{indent}    }}\n'
+                            pre_code += f'''
+                                for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{
+                                    {prefix}{member.name}[{index}] = layer_data->Unwrap({prefix}{member.name}[{index}]);'''
+                        pre_code += '}\n'
+                        pre_code += '}\n'
                         if topLevel:
-                            post_code += f'{indent}if (local_{prefix}{member.name} != var_local_{prefix}{member.name})\n'
-                            indent = incIndent(indent)
-                            post_code += f'{indent}delete[] local_{member.name};\n'
-                            indent = decIndent(indent)
+                            post_code += f'if (local_{prefix}{member.name} != var_local_{prefix}{member.name}) delete[] local_{member.name};'
                     else:
                         if topLevel:
                             if not isDestroy:
-                                pre_code += f'{indent}    {member.name} = layer_data->Unwrap({member.name});\n'
+                                pre_code += f'{member.name} = layer_data->Unwrap({member.name});\n'
                         else:
                             # Make temp copy of this var with the 'local' removed. It may be better to not pass in 'local_'
                             # as part of the string and explicitly print it
                             fix = str(prefix).strip('local_')
-                            pre_code += f'{indent}    if ({fix}{member.name}) {{\n'
-                            indent = incIndent(indent)
-                            pre_code += f'{indent}    {prefix}{member.name} = layer_data->Unwrap({fix}{member.name});\n'
-                            indent = decIndent(indent)
-                            pre_code += f'{indent}    }}\n'
+                            pre_code += (
+                            f'''if ({fix}{member.name}) {{
+                                {prefix}{member.name} = layer_data->Unwrap({fix}{member.name});
+                            }}''')
             # Handle Structs that contain NDOs at some level
             elif member.type in self.vk.structs:
                 struct = self.vk.structs[member.type]
@@ -424,38 +408,34 @@ if (iter != unique_id_mapping.end()) {{
                         if topLevel:
                             new_prefix = f'local_{member.name}'
                             # Declare safe_VarType for struct
-                            decls += f'{indent}{safe_type} *{new_prefix} = nullptr;\n'
+                            decls += f'{safe_type} *{new_prefix} = nullptr;\n'
                         else:
                             new_prefix = f'{prefix}{member.name}'
-                        pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
-                        indent = incIndent(indent)
+                        pre_code += f'if ({prefix}{member.name}) {{\n'
                         if topLevel:
-                            pre_code += f'{indent}    {new_prefix} = new {safe_type}[{member.length}];\n'
-                        pre_code += f'{indent}    for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
-                        indent = incIndent(indent)
+                            pre_code += f'{new_prefix} = new {safe_type}[{member.length}];\n'
+                        pre_code += f'for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         if topLevel:
                             if 'safe_' in safe_type:
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR
                                 if member.type == "VkAccelerationStructureBuildGeometryInfoKHR":
-                                    pre_code += f'{indent}    {new_prefix}[{index}].initialize(&{member.name}[{index}], false, nullptr);\n'
+                                    pre_code += f'{new_prefix}[{index}].initialize(&{member.name}[{index}], false, nullptr);\n'
                                 else:
-                                    pre_code += f'{indent}    {new_prefix}[{index}].initialize(&{member.name}[{index}]);\n'
+                                    pre_code += f'{new_prefix}[{index}].initialize(&{member.name}[{index}]);\n'
                             else:
-                                pre_code += f'{indent}    {new_prefix}[{index}] = {member.name}[{index}];\n'
+                                pre_code += f'{new_prefix}[{index}] = {member.name}[{index}];\n'
                             if process_pnext:
-                                pre_code += f'{indent}    WrapPnextChainHandles(layer_data, {new_prefix}[{index}].pNext);\n'
+                                pre_code += f'WrapPnextChainHandles(layer_data, {new_prefix}[{index}].pNext);\n'
                         local_prefix = f'{new_prefix}[{index}].'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, local_prefix, arrayIndex, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, local_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
-                        indent = decIndent(indent)
-                        pre_code += f'{indent}    }}\n'
-                        indent = decIndent(indent)
-                        pre_code += f'{indent}    }}\n'
+                        pre_code += '}\n'
+                        pre_code += '}\n'
                         if topLevel:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.length, deferred_name)
+                            post_code += self.cleanUpLocalDeclarations(prefix, member.name, member.length, deferred_name)
                     # Single Struct
                     elif member.pointer:
                         # Check if this function can be deferred.
@@ -464,37 +444,35 @@ if (iter != unique_id_mapping.end()) {{
                         if topLevel:
                             new_prefix = f'local_{member.name}->'
                             if deferred_name is None:
-                                decls += f'{indent}{safe_type} var_local_{prefix}{member.name};\n'
-                            decls +=  f'{indent}{safe_type} *local_{prefix}{member.name} = nullptr;\n'
+                                decls += f'{safe_type} var_local_{prefix}{member.name};\n'
+                            decls +=  f'{safe_type} *local_{prefix}{member.name} = nullptr;\n'
                         else:
                             new_prefix = f'{prefix}{member.name}->'
                         # Declare safe_VarType for struct
-                        pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
-                        indent = incIndent(indent)
+                        pre_code += f'if ({prefix}{member.name}) {{\n'
                         if topLevel:
                             if deferred_name is None:
-                                pre_code += f'{indent}    local_{prefix}{member.name} = &var_local_{prefix}{member.name};\n'
+                                pre_code += f'local_{prefix}{member.name} = &var_local_{prefix}{member.name};\n'
                             else:
-                                pre_code += f'{indent}    local_{member.name} = new {safe_type};\n'
+                                pre_code += f'local_{member.name} = new {safe_type};\n'
                             if 'safe_' in safe_type:
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR
                                 if member.type == "VkAccelerationStructureBuildGeometryInfoKHR":
-                                    pre_code += f'{indent}    local_{prefix}{member.name}->initialize({member.name}, false, nullptr);\n'
+                                    pre_code += f'local_{prefix}{member.name}->initialize({member.name}, false, nullptr);\n'
                                 else:
-                                    pre_code += f'{indent}    local_{prefix}{member.name}->initialize({member.name});\n'
+                                    pre_code += f'local_{prefix}{member.name}->initialize({member.name});\n'
                             else:
-                                pre_code += f'{indent}    *local_{prefix}{member.name} = *{member.name};\n'
+                                pre_code += f'*local_{prefix}{member.name} = *{member.name};\n'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, arrayIndex, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, new_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += f'{indent}    WrapPnextChainHandles(layer_data, {new_prefix}pNext);\n'
-                        indent = decIndent(indent)
-                        pre_code += f'{indent}    }}\n'
+                            pre_code += f'WrapPnextChainHandles(layer_data, {new_prefix}pNext);\n'
+                        pre_code += '}\n'
                         if topLevel:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.length, deferred_name)
+                            post_code += self.cleanUpLocalDeclarations(prefix, member.name, member.length, deferred_name)
                     else:
                         # Update struct prefix
                         if topLevel:
@@ -502,10 +480,10 @@ if (iter != unique_id_mapping.end()) {{
                         else:
                             new_prefix = f'{prefix}{member.name}.'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, arrayIndex, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, new_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += f'{indent}    WrapPnextChainHandles(layer_data, {prefix}{member.name}.pNext);\n'
+                            pre_code += f'WrapPnextChainHandles(layer_data, {prefix}{member.name}.pNext);\n'
         return decls, pre_code, post_code

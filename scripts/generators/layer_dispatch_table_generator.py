@@ -55,8 +55,7 @@ class LayerDispatchTableOutputGenerator(BaseGenerator):
 #pragma once
 
 typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);
-''')
-        out.append('''
+
 // Instance function pointer dispatch table
 typedef struct VkLayerInstanceDispatchTable_ {
     PFN_GetPhysicalDeviceProcAddr GetPhysicalDeviceProcAddr;

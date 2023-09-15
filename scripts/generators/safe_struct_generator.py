@@ -20,7 +20,7 @@
 
 import os
 import re
-from generators.vulkan_object import (Struct, Member)
+from generators.vulkan_object import Struct, Member
 from generators.base_generator import BaseGenerator
 
 # Determine if a structure needs a safe_struct helper function
@@ -146,9 +146,9 @@ char *SafeStringCopy(const char *in_string);
                         if member.pointer:
                             pointer = '*' * member.cDeclaration.count('*')
                             brackets = '' if struct.union else '{}'
-                            out.append(f'    safe_{member.type}{pointer} {member.name}{brackets};\n')
+                            out.append(f'safe_{member.type}{pointer} {member.name}{brackets};\n')
                         else:
-                            out.append(f'    safe_{member.type} {member.name};\n')
+                            out.append(f'safe_{member.type} {member.name};\n')
                         continue
 
                 explicitInitialize = member.pointer  and 'PFN_' not in member.type and canInitialize
@@ -162,32 +162,32 @@ char *SafeStringCopy(const char *in_string);
                     out.append(f'{member.cDeclaration}{initialize};\n')
 
             if (struct.name == 'VkDescriptorDataEXT'):
-                out.append('    char type_at_end[sizeof(VkDescriptorDataEXT)+sizeof(VkDescriptorGetInfoEXT::type)];')
+                out.append('char type_at_end[sizeof(VkDescriptorDataEXT)+sizeof(VkDescriptorGetInfoEXT::type)];')
 
             constructParam = self.custom_construct_params.get(struct.name, '')
             out.append(f'''
-    safe_{struct.name}(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}});
-    safe_{struct.name}(const safe_{struct.name}& copy_src);
-    safe_{struct.name}& operator=(const safe_{struct.name}& copy_src);
-    safe_{struct.name}();
-    ~safe_{struct.name}();
-    void initialize(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}});
-    void initialize(const safe_{struct.name}* copy_src, PNextCopyState* copy_state = {{}});
-    {struct.name} *ptr() {{ return reinterpret_cast<{struct.name} *>(this); }}
-    {struct.name} const *ptr() const {{ return reinterpret_cast<{struct.name} const *>(this); }}
-''')
+                safe_{struct.name}(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}});
+                safe_{struct.name}(const safe_{struct.name}& copy_src);
+                safe_{struct.name}& operator=(const safe_{struct.name}& copy_src);
+                safe_{struct.name}();
+                ~safe_{struct.name}();
+                void initialize(const {struct.name}* in_struct{constructParam}, PNextCopyState* copy_state = {{}});
+                void initialize(const safe_{struct.name}* copy_src, PNextCopyState* copy_state = {{}});
+                {struct.name} *ptr() {{ return reinterpret_cast<{struct.name} *>(this); }}
+                {struct.name} const *ptr() const {{ return reinterpret_cast<{struct.name} const *>(this); }}
+                ''')
 
             if struct.name == 'VkShaderModuleCreateInfo':
                 out.append('''
-    // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
-    template<typename Container>
-    void SetCode(const Container &code) {
-        delete[] pCode;
-        codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
-        pCode = new uint32_t[code.size()];
-        std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));
-    }
-''')
+                    // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
+                    template<typename Container>
+                    void SetCode(const Container &code) {
+                        delete[] pCode;
+                        codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
+                        pCode = new uint32_t[code.size()];
+                        std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));
+                    }
+                    ''')
             out.append('};\n')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
         self.write("".join(out))
@@ -916,52 +916,60 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                             if m_type == 'char':
                                 # Create deep copies of strings
                                 if member.length:
-                                    copy_strings += f'    char **tmp_{member.name} = new char *[in_struct->{member.length}];\n'
-                                    copy_strings += f'    for (uint32_t i = 0; i < {member.length}; ++i) {{\n'
-                                    copy_strings += f'        tmp_{member.name}[i] = SafeStringCopy(in_struct->{member.name}[i]);\n'
-                                    copy_strings += '    }\n'
-                                    copy_strings += f'    {member.name} = tmp_{member.name};\n'
+                                    copy_strings += (
+                                        f'''char **tmp_{member.name} = new char *[in_struct->{member.length}];
+                                            for (uint32_t i = 0; i < {member.length}; ++i) {{
+                                                tmp_{member.name}[i] = SafeStringCopy(in_struct->{member.name}[i]);
+                                            }}
+                                            {member.name} = tmp_{member.name};''')
 
-                                    destruct_txt += f'    if ({member.name}) {{\n'
-                                    destruct_txt += f'        for (uint32_t i = 0; i < {member.length}; ++i) {{\n'
-                                    destruct_txt += f'            delete [] {member.name}[i];\n'
-                                    destruct_txt += '        }\n'
-                                    destruct_txt += f'        delete [] {member.name};\n'
-                                    destruct_txt += '    }\n'
+                                    destruct_txt += (
+                                        f'''if ({member.name}) {{
+                                               for (uint32_t i = 0; i < {member.length}; ++i) {{
+                                                 delete [] {member.name}[i];
+                                               }}
+                                               delete [] {member.name};
+                                             }}''')
                                 else:
-                                    copy_strings += f'    {member.name} = SafeStringCopy(in_struct->{member.name});\n'
-                                    destruct_txt += f'    if ({member.name}) delete [] {member.name};\n'
+                                    copy_strings += f'{member.name} = SafeStringCopy(in_struct->{member.name});\n'
+                                    destruct_txt += f'if ({member.name}) delete [] {member.name};\n'
                             else:
                                 # We need a deep copy of pData / dataSize combos
                                 if member.name == 'pData':
                                     init_list += f'\n    {member.name}(nullptr),'
-                                    construct_txt += '    if (in_struct->pData != nullptr) {\n'
-                                    construct_txt += '        auto temp = new std::byte[in_struct->dataSize];\n'
-                                    construct_txt += '        std::memcpy(temp, in_struct->pData, in_struct->dataSize);\n'
-                                    construct_txt += '        pData = temp;\n'
-                                    construct_txt += '    }\n'
+                                    construct_txt += (
+                                        '''if (in_struct->pData != nullptr) {
+                                             auto temp = new std::byte[in_struct->dataSize];
+                                             std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+                                             pData = temp;
+                                           }
+                                           ''')
 
-                                    destruct_txt  += '    if (pData != nullptr) {\n'
-                                    destruct_txt  += '        auto temp = reinterpret_cast<const std::byte*>(pData);\n'
-                                    destruct_txt  += '        delete [] temp;\n'
-                                    destruct_txt  += '    }\n'
+                                    destruct_txt  += (
+                                        '''if (pData != nullptr) {
+                                             auto temp = reinterpret_cast<const std::byte*>(pData);
+                                             delete [] temp;
+                                            }
+                                            ''')
                                 else:
-                                    init_list += f'\n    {member.name}(in_struct->{member.name}),'
-                                    init_func_txt += f'    {member.name} = in_struct->{member.name};\n'
-                        default_init_list += f'\n    {member.name}(nullptr),'
+                                    init_list += f'\n{member.name}(in_struct->{member.name}),'
+                                    init_func_txt += f'{member.name} = in_struct->{member.name};\n'
+                        default_init_list += f'\n{member.name}(nullptr),'
                     else:
-                        default_init_list += f'\n    {member.name}(nullptr),'
-                        init_list += f'\n    {member.name}(nullptr),'
+                        default_init_list += f'\n{member.name}(nullptr),'
+                        init_list += f'\n{member.name}(nullptr),'
                         if m_type in abstractTypes:
-                            construct_txt += f'    {member.name} = in_struct->{member.name};\n'
+                            construct_txt += f'{member.name} = in_struct->{member.name};\n'
                         else:
-                            init_func_txt += f'    {member.name} = nullptr;\n'
+                            init_func_txt += f'{member.name} = nullptr;\n'
                             if not member.fixedSizeArray and (member.length is None or '/' in member.length):
-                                construct_txt += f'    if (in_struct->{member.name}) {{\n'
-                                construct_txt += f'        {member.name} = new {m_type}(*in_struct->{member.name});\n'
-                                construct_txt += '    }\n'
-                                destruct_txt += f'    if ({member.name})\n'
-                                destruct_txt += f'        delete {member.name};\n'
+                                construct_txt += (
+                                    f'''if (in_struct->{member.name}) {{
+                                            {member.name} = new {m_type}(*in_struct->{member.name});
+                                        }}
+                                    ''')
+                                destruct_txt += f'if ({member.name})\n'
+                                destruct_txt += f'    delete {member.name};\n'
                             else:
                                 # Prepend struct members with struct name
                                 decorated_length = member.length
@@ -971,65 +979,67 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                     concurrent_clause = member_construct_conditions[member.name](struct, member)
                                 except:
                                     concurrent_clause = (f'in_struct->{member.name}', lambda x: '')
-                                construct_txt += f'    if ({concurrent_clause[0]}) {{' + '\n'
-                                construct_txt += f'        {member.name} = new {m_type}[{decorated_length}];\n'
-                                construct_txt += f'        memcpy ((void *){member.name}, (void *)in_struct->{member.name}, sizeof({m_type})*{decorated_length});\n'
-                                construct_txt += concurrent_clause[1]('        ')
+                                construct_txt += f'''if ({concurrent_clause[0]}) {{
+                                                       {member.name} = new {m_type}[{decorated_length}];
+                                                       memcpy ((void *){member.name}, (void *)in_struct->{member.name}, sizeof({m_type})*{decorated_length});
+                                                       {concurrent_clause[1]('        ')}'''
                                 if len(concurrent_clause) > 2:
-                                    construct_txt += '    } else {\n'
+                                    construct_txt += '} else {\n'
                                     construct_txt += concurrent_clause[2]('        ')
-                                construct_txt += '    }\n'
-                                destruct_txt += f'    if ({member.name})\n'
-                                destruct_txt += f'        delete[] {member.name};\n'
+                                construct_txt += '}\n'
+                                destruct_txt += f'if ({member.name})\n'
+                                destruct_txt += f'    delete[] {member.name};\n'
                 elif member.fixedSizeArray or member.length is not None:
                     if member.fixedSizeArray:
-                        construct_txt += f'    for (uint32_t i = 0; i < {member.fixedSizeArray[0]}; ++i) {{\n'
-                        construct_txt += f'        {member.name}[i] = in_struct->{member.name}[i];\n'
-                        construct_txt += '    }\n'
+                        construct_txt += (
+                            f'''for (uint32_t i = 0; i < {member.fixedSizeArray[0]}; ++i) {{
+                                    {member.name}[i] = in_struct->{member.name}[i];
+                                }}
+                            ''')
                     else:
                         # Init array ptr to NULL
-                        default_init_list += f'\n    {member.name}(nullptr),'
-                        init_list += f'\n    {member.name}(nullptr),'
-                        init_func_txt += f'    {member.name} = nullptr;\n'
+                        default_init_list += f'\n{member.name}(nullptr),'
+                        init_list += f'\n{member.name}(nullptr),'
+                        init_func_txt += f'{member.name} = nullptr;\n'
                         array_element = f'in_struct->{member.name}[i]'
                         if member.type in self.vk.structs and needSafeStruct(self.vk.structs[member.type]):
                             array_element = f'{member.type}(&in_struct->safe_{member.name}[i])'
-                        construct_txt += f'    if ({member.length} && in_struct->{member.name}) {{\n'
-                        construct_txt += f'        {member.name} = new {m_type}[{member.length}];\n'
-                        destruct_txt += f'    if ({member.name})\n'
-                        destruct_txt += f'        delete[] {member.name};\n'
-                        construct_txt += f'        for (uint32_t i = 0; i < {member.length}; ++i) {{\n'
+                        construct_txt += f'if ({member.length} && in_struct->{member.name}) {{\n'
+                        construct_txt += f'    {member.name} = new {m_type}[{member.length}];\n'
+                        destruct_txt += f'if ({member.name})\n'
+                        destruct_txt += f'    delete[] {member.name};\n'
+                        construct_txt += f'for (uint32_t i = 0; i < {member.length}; ++i) {{\n'
                         if 'safe_' in m_type:
-                            construct_txt += f'            {member.name}[i].initialize(&in_struct->{member.name}[i]);\n'
+                            construct_txt += f'{member.name}[i].initialize(&in_struct->{member.name}[i]);\n'
                         else:
-                            construct_txt += f'            {member.name}[i] = {array_element};\n'
-                        construct_txt += '        }\n'
-                        construct_txt += '    }\n'
+                            construct_txt += f'{member.name}[i] = {array_element};\n'
+                        construct_txt += '}\n'
+                        construct_txt += '}\n'
                 elif member.pointer and 'PFN_' not in member.type:
-                    default_init_list += f'\n    {member.name}(nullptr),'
-                    init_list += f'\n    {member.name}(nullptr),'
-                    init_func_txt += f'    {member.name} = nullptr;\n'
-                    construct_txt += f'    if (in_struct->{member.name})\n'
-                    construct_txt += f'        {member.name} = new {m_type}(in_struct->{member.name});\n'
-                    destruct_txt += f'    if ({member.name})\n'
-                    destruct_txt += f'        delete {member.name};\n'
+                    default_init_list += f'\n{member.name}(nullptr),'
+                    init_list += f'\n{member.name}(nullptr),'
+                    init_func_txt += f'{member.name} = nullptr;\n'
+                    construct_txt += f'if (in_struct->{member.name})\n'
+                    construct_txt += f'    {member.name} = new {m_type}(in_struct->{member.name});\n'
+                    destruct_txt += f'if ({member.name})\n'
+                    destruct_txt += f'    delete {member.name};\n'
                 elif 'safe_' in m_type and member.type == 'VkDescriptorDataEXT':
-                    init_list += f'\n    {member.name}(&in_struct->{member.name}, in_struct->type),'
-                    init_func_txt += f'    {member.name}.initialize(&in_struct->{member.name}, in_struct->type);\n'
+                    init_list += f'\n{member.name}(&in_struct->{member.name}, in_struct->type),'
+                    init_func_txt += f'{member.name}.initialize(&in_struct->{member.name}, in_struct->type);\n'
                 elif 'safe_' in m_type:
-                    init_list += f'\n    {member.name}(&in_struct->{member.name}),'
-                    init_func_txt += f'    {member.name}.initialize(&in_struct->{member.name});\n'
+                    init_list += f'\n{member.name}(&in_struct->{member.name}),'
+                    init_func_txt += f'{member.name}.initialize(&in_struct->{member.name});\n'
                 else:
                     try:
-                        init_list += f'\n    {member_init_transforms[member.name](member)},'
+                        init_list += f'\n{member_init_transforms[member.name](member)},'
                     except:
-                        init_list += f'\n    {member.name}(in_struct->{member.name}),'
-                        init_func_txt += f'    {member.name} = in_struct->{member.name};\n'
+                        init_list += f'\n{member.name}(in_struct->{member.name}),'
+                        init_func_txt += f'{member.name} = in_struct->{member.name};\n'
                     if not struct.union:
                         if member.name == 'sType' and struct.sType:
-                            default_init_list += f'\n    {member.name}({struct.sType}),'
+                            default_init_list += f'\n{member.name}({struct.sType}),'
                         else:
-                            default_init_list += f'\n    {member.name}(),'
+                            default_init_list += f'\n{member.name}(),'
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
 
@@ -1045,8 +1055,8 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                 destruct_txt = custom_destruct_txt[struct.name]
 
             if copy_pnext:
-                destruct_txt += '    if (pNext)\n'
-                destruct_txt += '        FreePnextChain(pNext);\n'
+                destruct_txt += 'if (pNext)\n'
+                destruct_txt += '    FreePnextChain(pNext);\n'
 
             if struct.union:
                 if (struct.name == 'VkDescriptorDataEXT'):

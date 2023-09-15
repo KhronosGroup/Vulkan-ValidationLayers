@@ -16,8 +16,8 @@
 
 import os
 import sys
-from generators.generator_utils import (buildListVUID, getVUID)
-from generators.vulkan_object import (Queues, CommandScope)
+from generators.generator_utils import buildListVUID, getVUID
+from generators.vulkan_object import Queues, CommandScope
 from generators.base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
@@ -64,11 +64,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
 #include "error_message/logging.h"
 #include "core_checks/core_validation.h"
 
-enum CMD_SCOPE_TYPE {
-    CMD_SCOPE_INSIDE,
-    CMD_SCOPE_OUTSIDE,
-    CMD_SCOPE_BOTH
-};
+enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
 
 struct CommandValidationInfo {
     const char* recording_vuid;

@@ -20,7 +20,6 @@ import os
 import sys
 import subprocess
 import platform
-import shutil
 import argparse
 
 # Use Ninja for all platforms for performance/simplicity

@@ -16,7 +16,7 @@
 
 import sys
 import os
-from generators.vulkan_object import (SpirvEnables)
+from generators.vulkan_object import SpirvEnables
 from generators.base_generator import BaseGenerator
 
 #

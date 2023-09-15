@@ -68,9 +68,9 @@ typedef enum CBDynamicState {
 ''')
         for index, field in enumerate(self.vk.enums['VkDynamicState'].fields, start=1):
             # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
-            out.append(f'    CB_DYNAMIC_{field.name[11:]} = {index},\n')
+            out.append(f'CB_DYNAMIC_{field.name[11:]} = {index},\n')
 
-        out.append(f'    CB_DYNAMIC_STATE_STATUS_NUM = {len(self.vk.enums["VkDynamicState"].fields) + 1}')
+        out.append(f'CB_DYNAMIC_STATE_STATUS_NUM = {len(self.vk.enums["VkDynamicState"].fields) + 1}')
         out.append('''
 } CBDynamicState;
 
@@ -91,10 +91,10 @@ static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
 ''')
         for field in self.vk.enums['VkDynamicState'].fields:
             # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
-            out.append(f'        case CB_DYNAMIC_{field.name[11:]}:\n')
-            out.append(f'            return {field.name};\n')
+            out.append(f'case CB_DYNAMIC_{field.name[11:]}:\n')
+            out.append(f'    return {field.name};\n')
 
-        out.append('''        default:
+        out.append('''default:
             return VK_DYNAMIC_STATE_MAX_ENUM;
     }
 }
@@ -107,9 +107,9 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
 
         for field in self.vk.enums['VkDynamicState'].fields:
             # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
-            out.append(f'        case {field.name}:\n')
-            out.append(f'            return CB_DYNAMIC_{field.name[11:]};\n')
-        out.append('''        default:
+            out.append(f'case {field.name}:\n')
+            out.append(f'    return CB_DYNAMIC_{field.name[11:]};\n')
+        out.append('''default:
             return CB_DYNAMIC_STATE_STATUS_NUM;
     }
 }
@@ -120,7 +120,7 @@ const char* DynamicStateToString(CBDynamicState dynamic_state) {
     return string_VkDynamicState(ConvertToDynamicState(dynamic_state));
 }
 
-std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states) {
+std::string DynamicStatesToString(CBDynamicFlags const& dynamic_states) {
     std::string ret;
     // enum is not zero based
     for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {

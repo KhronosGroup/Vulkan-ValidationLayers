@@ -91,11 +91,10 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 //   o  Determine if the API has an associated extension
 //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
 //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
-static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {
+static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
     auto has_ext = api_extension_map.find(api_name);
     // Is this API part of an extension or feature group?
     if (has_ext != api_extension_map.end()) {
-
         // Was the extension for this API enabled in the CreateDevice call?
         for (const auto& ext : has_ext->second) {
             auto info = device_extension_info->get_info(ext.c_str());
@@ -114,7 +113,7 @@ static inline bool ApiParentExtensionEnabled(const std::string api_name, const D
             if (inst_info.state) {
                 if (instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo ||
                     instance_extension_info->*(inst_info.state) == kEnabledByInteraction) {
-                   return true;
+                    return true;
                 }
             }
         }
@@ -124,7 +123,7 @@ static inline bool ApiParentExtensionEnabled(const std::string api_name, const D
 }
 ''')
         out.append('''
-static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {
+static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa) {
     memset(table, 0, sizeof(*table));
     // Device function pointers
     table->GetDeviceProcAddr = gpa;

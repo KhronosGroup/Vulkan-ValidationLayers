@@ -67,19 +67,3 @@ def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
         print(f'Warning: Could not find {vuid} in validusage.json')
         vuid = vuid.replace('VUID-', 'UNASSIGNED-')
     return vuid if not quotes else f'"{vuid}"'
-
-INDENT_SPACES = 4
-def incIndent(indent: str) -> str:
-    inc = ' ' * INDENT_SPACES
-    return indent + inc if indent else inc
-
-def decIndent(indent: str) -> str:
-    return indent[:-INDENT_SPACES] if indent and (len(indent) > INDENT_SPACES) else ''
-
-# Add the indent to each line of the input
-def addIndent(indent: str, input: str) -> str:
-    out = ''
-    lines = input.split('\n')
-    for line in lines:
-        out += f'{indent}{line}\n'
-    return out

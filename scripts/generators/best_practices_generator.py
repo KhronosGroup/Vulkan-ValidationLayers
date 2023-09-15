@@ -126,10 +126,10 @@ class BestPracticesOutputGenerator(BaseGenerator):
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void PostCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ',\n    const RecordObject&                         record_obj) {\n')
+            prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             prototype = prototype.replace(') {', ') override;\n')
             if command.name in self.extra_parameter_list:
-                prototype = prototype.replace(')', ',\n    void*                                       state_data)')
+                prototype = prototype.replace(')', ', void* state_data)')
             out.append(prototype)
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
 
@@ -176,25 +176,27 @@ class BestPracticesOutputGenerator(BaseGenerator):
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void BestPractices::PostCallRecord{prototype[2:]}'
-            prototype = prototype.replace(');', ',\n    const RecordObject&                         record_obj) {\n')
+            prototype = prototype.replace(');', ', const RecordObject& record_obj) {\n')
             if command.name in self.extra_parameter_list:
-                prototype = prototype.replace(')', ',\n    void*                                       state_data)')
+                prototype = prototype.replace(')', ', void* state_data)')
             out.append(prototype)
 
-            out.append(f'    ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
+            out.append(f'ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
             if command.name in self.manual_postcallrecord_list:
-                out.append(f'    ManualPostCallRecord{command.name[2:]}({params});\n')
+                out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
 
             if hasNonVkSuccess(command.successCodes):
-                out.append('    if (record_obj.result > VK_SUCCESS) {\n')
-                out.append('        LogPositiveSuccessCode(record_obj);\n')
-                out.append('        return;\n')
-                out.append('    }\n')
+                out.append(
+                    '''if (record_obj.result > VK_SUCCESS) {
+                        LogPositiveSuccessCode(record_obj);
+                        return;
+                    }''')
 
             if command.errorCodes is not None:
-                out.append('    if (record_obj.result < VK_SUCCESS) {\n')
-                out.append('        LogErrorCode(record_obj);\n')
-                out.append('    }\n')
+                out.append(
+                    '''if (record_obj.result < VK_SUCCESS) {
+                        LogErrorCode(record_obj);
+                    }''')
 
             out.append('}\n')
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])

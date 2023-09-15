@@ -22,7 +22,7 @@
 # layers and interceptors.
 
 import os
-from generators.vulkan_object import (Command)
+from generators.vulkan_object import Command
 from generators.base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
@@ -316,7 +316,7 @@ extern std::atomic<uint64_t> global_unique_id;
 // hash's LSBs in the high 24 bits.
 struct HashedUint64 {
     static const int HASHED_UINT64_SHIFT = 40;
-    size_t operator()(const uint64_t &t) const { return t >> HASHED_UINT64_SHIFT; }
+    size_t operator()(const uint64_t& t) const { return t >> HASHED_UINT64_SHIFT; }
 
     static uint64_t hash(uint64_t id) {
         uint64_t h = (uint64_t)vvl::hash<uint64_t>()(id);
@@ -327,9 +327,7 @@ struct HashedUint64 {
 
 extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(
-    VkInstance                                  instance,
-    const char*                                 funcName);\n
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName);\n
 ''')
 
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions]:
@@ -340,17 +338,17 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(
         out.append('''
 // Layer object type identifiers
 enum LayerObjectTypeId {
-    LayerObjectTypeInstance,                    // Container for an instance dispatch object
-    LayerObjectTypeDevice,                      // Container for a device dispatch object
-    LayerObjectTypeThreading,                   // Instance or device threading layer object
-    LayerObjectTypeParameterValidation,         // Instance or device parameter validation layer object
-    LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
-    LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
-    LayerObjectTypeBestPractices,               // Instance or device best practices layer object
-    LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
-    LayerObjectTypeDebugPrintf,                 // Instance or device shader debug printf layer object
-    LayerObjectTypeSyncValidation,              // Instance or device synchronization validation layer object
-    LayerObjectTypeMaxEnum,                     // Max enum count
+    LayerObjectTypeInstance,             // Container for an instance dispatch object
+    LayerObjectTypeDevice,               // Container for a device dispatch object
+    LayerObjectTypeThreading,            // Instance or device threading layer object
+    LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
+    LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
+    LayerObjectTypeCoreValidation,       // Instance or device core validation layer object
+    LayerObjectTypeBestPractices,        // Instance or device best practices layer object
+    LayerObjectTypeGpuAssisted,          // Instance or device gpu assisted validation layer object
+    LayerObjectTypeDebugPrintf,          // Instance or device shader debug printf layer object
+    LayerObjectTypeSyncValidation,       // Instance or device synchronization validation layer object
+    LayerObjectTypeMaxEnum,              // Max enum count
 };
 
 struct TEMPLATE_STATE {
@@ -358,12 +356,12 @@ struct TEMPLATE_STATE {
     safe_VkDescriptorUpdateTemplateCreateInfo create_info;
     bool destroyed;
 
-    TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, safe_VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
+    TEMPLATE_STATE(VkDescriptorUpdateTemplate update_template, safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
         : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
 };
 
 class LAYER_PHYS_DEV_PROPERTIES {
-public:
+  public:
     VkPhysicalDeviceProperties properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
@@ -426,234 +424,229 @@ typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
 typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
 #if defined(__clang__)
-#define DECORATE_PRINTF(_fmt_argnum, _first_param_num)  __attribute__((format (printf, _fmt_argnum, _first_param_num)))
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(printf, _fmt_argnum, _first_param_num)))
 #elif defined(__GNUC__)
-#define DECORATE_PRINTF(_fmt_argnum, _first_param_num)  __attribute__((format (gnu_printf, _fmt_argnum, _first_param_num)))
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(gnu_printf, _fmt_argnum, _first_param_num)))
 #else
 #define DECORATE_PRINTF(_fmt_num, _first_param_num)
 #endif
 // Layer chassis validation object base class definition
 class ValidationObject {
-    public:
-        APIVersion api_version;
-        debug_report_data* report_data = nullptr;
-        template <typename T>
-        std::string FormatHandle(T&& h) const { return report_data->FormatHandle(std::forward<T>(h)); }
+  public:
+    APIVersion api_version;
+    debug_report_data* report_data = nullptr;
+    template <typename T>
+    std::string FormatHandle(T&& h) const {
+        return report_data->FormatHandle(std::forward<T>(h));
+    }
 
-        std::vector<std::vector<ValidationObject*>> intercept_vectors;
+    std::vector<std::vector<ValidationObject*>> intercept_vectors;
 
-        VkLayerInstanceDispatchTable instance_dispatch_table;
-        VkLayerDispatchTable device_dispatch_table;
+    VkLayerInstanceDispatchTable instance_dispatch_table;
+    VkLayerDispatchTable device_dispatch_table;
 
-        InstanceExtensions instance_extensions;
-        DeviceExtensions device_extensions = {};
-        CHECK_DISABLED disabled = {};
-        CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{true};
+    InstanceExtensions instance_extensions;
+    DeviceExtensions device_extensions = {};
+    CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
+    bool fine_grained_locking{true};
 
-        VkInstance instance = VK_NULL_HANDLE;
-        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-        VkDevice device = VK_NULL_HANDLE;
-        LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
 
-        std::vector<ValidationObject*> object_dispatch;
-        LayerObjectTypeId container_type;
+    std::vector<ValidationObject*> object_dispatch;
+    LayerObjectTypeId container_type;
 
-        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0> deferred_operation_post_check;
-        vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
+    vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
+    vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+        deferred_operation_post_check;
+    vl_concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
-        std::string layer_name = "CHASSIS";
+    std::string layer_name = "CHASSIS";
 
-        // Constructor
-        ValidationObject(){};
-        // Destructor
-        virtual ~ValidationObject() {};
+    // Constructor
+    ValidationObject(){};
+    // Destructor
+    virtual ~ValidationObject(){};
 
-        void InitObjectDispatchVectors();
+    void InitObjectDispatchVectors();
 
-        mutable std::shared_mutex validation_object_mutex;
-        virtual ReadLockGuard ReadLock() const {
-            return ReadLockGuard(validation_object_mutex);
+    mutable std::shared_mutex validation_object_mutex;
+    virtual ReadLockGuard ReadLock() const { return ReadLockGuard(validation_object_mutex); }
+    virtual WriteLockGuard WriteLock() { return WriteLockGuard(validation_object_mutex); }
+
+    // If the Record phase calls a function that blocks, we might need to release
+    // the lock that protects Record itself in order to avoid mutual waiting.
+    static thread_local WriteLockGuard* record_guard;
+
+    // Should be used instead of WriteLock() if the Record phase wants to release
+    // its lock during the blocking operation.
+    struct BlockingOperationGuard {
+        WriteLockGuard lock;
+        ValidationObject* validation_object = nullptr;
+
+        BlockingOperationGuard(ValidationObject* validation_object) : validation_object(validation_object) {
+            // This assert detects recursive calls. It is here mostly for documentation purposes
+            // because WriteLock() also triggers errors during recursion.
+            // Recursion is not allowed since record_guard is a thread-local variable and it can
+            // reference only one frame of the callstack.
+            assert(validation_object->record_guard == nullptr);
+
+            lock = validation_object->WriteLock();
+
+            // Initialize record_guard only when Record is actually protected by the
+            // mutex. It's not the case when fine grained locking is enabled.
+            record_guard = lock.owns_lock() ? &lock : nullptr;
         }
-        virtual WriteLockGuard WriteLock() {
-            return WriteLockGuard(validation_object_mutex);
+
+        ~BlockingOperationGuard() { validation_object->record_guard = nullptr; }
+    };
+
+    // The following Begin/End methods should be called during the Record phase
+    // around blocking operation that causes mutual waiting (deadlock).
+    void BeginBlockingOperation() {
+        if (record_guard) {
+            record_guard->unlock();
         }
+    }
+    void EndBlockingOperation() {
+        if (record_guard) {
+            record_guard->lock();
+        }
+    }
 
-        // If the Record phase calls a function that blocks, we might need to release
-        // the lock that protects Record itself in order to avoid mutual waiting.
-        static thread_local WriteLockGuard* record_guard;
-
-        // Should be used instead of WriteLock() if the Record phase wants to release
-        // its lock during the blocking operation.
-        struct BlockingOperationGuard {
-            WriteLockGuard lock;
-            ValidationObject* validation_object = nullptr;
-
-            BlockingOperationGuard(ValidationObject* validation_object)
-                : validation_object(validation_object)
-            {
-                // This assert detects recursive calls. It is here mostly for documentation purposes
-                // because WriteLock() also triggers errors during recursion.
-                // Recursion is not allowed since record_guard is a thread-local variable and it can
-                // reference only one frame of the callstack.
-                assert(validation_object->record_guard == nullptr);
-
-                lock = validation_object->WriteLock();
-
-                // Initialize record_guard only when Record is actually protected by the
-                // mutex. It's not the case when fine grained locking is enabled.
-                record_guard = lock.owns_lock() ? &lock : nullptr;
+    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const {
+        for (auto validation_object : object_dispatch) {
+            if (validation_object->container_type == object_type) {
+                return validation_object;
             }
-
-            ~BlockingOperationGuard() {
-                validation_object->record_guard = nullptr;
-            }
-        };
-
-        // The following Begin/End methods should be called during the Record phase
-        // around blocking operation that causes mutual waiting (deadlock).
-        void BeginBlockingOperation() {
-            if (record_guard) {
-                record_guard->unlock();
-            }
         }
-        void EndBlockingOperation() {
-            if (record_guard) {
-                record_guard->lock();
-            }
-        }
+        return nullptr;
+    }
 
-        ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const {
-            for (auto validation_object : object_dispatch) {
-                if (validation_object->container_type == object_type) {
-                    return validation_object;
-                }
-            }
-            return nullptr;
-        }
+    template <typename ValidationObjectType>
+    ValidationObjectType* GetValidationObject() const;
 
-        template <typename ValidationObjectType>
-        ValidationObjectType* GetValidationObject() const;
+    // Debug Logging Helpers
+    // deprecated LogError - moving to use one with Location
+    bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kErrorBit, objlist, nullptr, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        // Debug Logging Helpers
-        // deprecated LogError - moving to use one with Location
-        bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kErrorBit, objlist, nullptr, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    bool DECORATE_PRINTF(5, 6)
+        LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kErrorBit, objlist, &loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        bool DECORATE_PRINTF(5, 6) LogError(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kErrorBit, objlist, &loc, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kWarningBit, objlist, nullptr, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kWarningBit, objlist, nullptr, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    bool DECORATE_PRINTF(4, 5)
+        LogPerformanceWarning(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, nullptr, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, nullptr, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kInformationBit, objlist, nullptr, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kInformationBit, objlist, nullptr, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    bool DECORATE_PRINTF(4, 5) LogVerbose(const LogObjectList& objlist, std::string_view vuid_text, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = LogMsg(report_data, kVerboseBit, objlist, nullptr, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        bool DECORATE_PRINTF(4, 5) LogVerbose(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
-            va_list argptr;
-            va_start(argptr, format);
-            const bool result = LogMsg(report_data, kVerboseBit, objlist, nullptr, vuid_text, format, argptr);
-            va_end(argptr);
-            return result;
-        }
+    void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, std::string_view entrypoint,
+                          VkResult err) const {
+        const std::string_view err_string = string_VkResult(err);
+        std::string vuid = "INTERNAL-ERROR-";
+        vuid += entrypoint;
+        LogError(obj_list, vuid, "In %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                 failure_location.data(), entrypoint.data(), err_string.data());
+    }
 
-        void LogInternalError(std::string_view failure_location, const LogObjectList &obj_list,
-                              std::string_view entrypoint, VkResult err) const {
-            const std::string_view err_string = string_VkResult(err);
-            std::string vuid = "INTERNAL-ERROR-";
-            vuid += entrypoint;
-            LogError(obj_list, vuid, "In %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
-                     failure_location.data(), entrypoint.data(), err_string.data());
-        }
+    // Handle Wrapping Data
+    // Reverse map display handles
+    vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+    // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+    vvl::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
+    struct SubpassesUsageStates {
+        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+    };
+    // Uses unwrapped handles
+    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
-        // Handle Wrapping Data
-        // Reverse map display handles
-        vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
-        // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-        vvl::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
-        struct SubpassesUsageStates {
-            vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
-            vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-        };
-        // Uses unwrapped handles
-        vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-        // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
-        // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-        vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
-        // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-        vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+    // Unwrap a handle.
+    template <typename HandleType>
+    HandleType Unwrap(HandleType wrappedHandle) {
+        if (wrappedHandle == (HandleType)VK_NULL_HANDLE) return wrappedHandle;
+        auto iter = unique_id_mapping.find(CastToUint64(wrappedHandle));
+        if (iter == unique_id_mapping.end()) return (HandleType)0;
+        return (HandleType)iter->second;
+    }
 
+    // Wrap a newly created handle with a new unique ID, and return the new ID.
+    template <typename HandleType>
+    HandleType WrapNew(HandleType newlyCreatedHandle) {
+        if (newlyCreatedHandle == (HandleType)VK_NULL_HANDLE) return newlyCreatedHandle;
+        auto unique_id = global_unique_id++;
+        unique_id = HashedUint64::hash(unique_id);
+        assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
+        unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
+        return (HandleType)unique_id;
+    }
 
-        // Unwrap a handle.
-        template <typename HandleType>
-        HandleType Unwrap(HandleType wrappedHandle) {
-            if (wrappedHandle == (HandleType)VK_NULL_HANDLE) return wrappedHandle;
-            auto iter = unique_id_mapping.find(CastToUint64(wrappedHandle));
-            if (iter == unique_id_mapping.end())
-                return (HandleType)0;
-            return (HandleType)iter->second;
-        }
+    // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
+    VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject* map_data) {
+        auto unique_id = global_unique_id++;
+        unique_id = HashedUint64::hash(unique_id);
+        unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
+        map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
+        return (VkDisplayKHR)unique_id;
+    }
 
-        // Wrap a newly created handle with a new unique ID, and return the new ID.
-        template <typename HandleType>
-        HandleType WrapNew(HandleType newlyCreatedHandle) {
-            if (newlyCreatedHandle == (HandleType)VK_NULL_HANDLE) return newlyCreatedHandle;
-            auto unique_id = global_unique_id++;
-            unique_id = HashedUint64::hash(unique_id);
-            assert(unique_id != 0); // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
-            unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
-            return (HandleType)unique_id;
-        }
+    // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
+    // creating another.
+    VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject* map_data) {
+        // See if this display is already known
+        auto it = map_data->display_id_reverse_mapping.find(handle);
+        if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+        // Unknown, so wrap
+        return WrapDisplay(handle, map_data);
+    }
 
-        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
-        VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
-            auto unique_id = global_unique_id++;
-            unique_id = HashedUint64::hash(unique_id);
-            unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
-            map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
-            return (VkDisplayKHR)unique_id;
-        }
-
-        // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
-        // creating another.
-        VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject *map_data) {
-            // See if this display is already known
-            auto it = map_data->display_id_reverse_mapping.find(handle);
-            if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
-            // Unknown, so wrap
-            return WrapDisplay(handle, map_data);
-        }
-
-        // clang-format off
+    // clang-format off
         // Pre/post hook point declarations
 ''')
 
@@ -876,14 +869,13 @@ template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 namespace vulkan_layer_chassis {
 
 static const VkLayerProperties global_layer = {
-    OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
+    OBJECT_LAYER_NAME,
+    VK_LAYER_API_VERSION,
+    1,
+    "LunarG validation Layer",
 };
 
-typedef enum ApiFunctionType {
-    kFuncTypeInst = 0,
-    kFuncTypePdev = 1,
-    kFuncTypeDev = 2
-} ApiFunctionType;
+typedef enum ApiFunctionType { kFuncTypeInst = 0, kFuncTypePdev = 1, kFuncTypeDev = 2 } ApiFunctionType;
 
 typedef struct {
     ApiFunctionType function_type;
@@ -897,32 +889,34 @@ extern const vvl::unordered_map<std::string, function_data> name_to_funcptr_map;
 // Manually written functions
 
 // Check enabled instance extensions against supported instance extension whitelist
-static void InstanceExtensionWhitelist(ValidationObject *layer_data, const VkInstanceCreateInfo *pCreateInfo, VkInstance instance) {
+static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
-            layer_data->LogWarning(layer_data->instance, kVUIDUndefined,
-                    "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                    "results and/or produce undefined behavior.",
-                    pCreateInfo->ppEnabledExtensionNames[i]);
+            layer_data->LogWarning(
+                layer_data->instance, kVUIDUndefined,
+                "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
+                "results and/or produce undefined behavior.",
+                pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
 
 // Check enabled device extensions against supported device extension whitelist
-static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
+static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
-            layer_data->LogWarning(layer_data->device, kVUIDUndefined,
-                    "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
-                    "results and/or produce undefined behavior.",
-                    pCreateInfo->ppEnabledExtensionNames[i]);
+            layer_data->LogWarning(
+                layer_data->device, kVUIDUndefined,
+                "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
+                "results and/or produce undefined behavior.",
+                pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
 
-void OutputLayerStatusInfo(ValidationObject *context) {
+void OutputLayerStatusInfo(ValidationObject* context) {
     std::string list_of_enables;
     std::string list_of_disables;
     for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
@@ -961,7 +955,7 @@ void OutputLayerStatusInfo(ValidationObject *context) {
             case kVkConfig:
                 settings_status.append("VkConfig application override.");
                 break;
-            case kLocal:    // Intentionally fall through
+            case kLocal:  // Intentionally fall through
             default:
                 settings_status.append("default location (current working directory).");
                 break;
@@ -975,23 +969,25 @@ void OutputLayerStatusInfo(ValidationObject *context) {
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
-    context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-debug-warning",
+    context->LogPerformanceWarning(
+        context->instance, "UNASSIGNED-CreateInstance-debug-warning",
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
     if (!context->fine_grained_locking) {
-        context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-locking-warning",
-                                       "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
+        context->LogPerformanceWarning(
+            context->instance, "UNASSIGNED-CreateInstance-locking-warning",
+            "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }
 
 // Non-code-generated chassis API functions
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
         return nullptr;
     }
-    const auto &item = name_to_funcptr_map.find(funcName);
+    const auto& item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         if (item->second.function_type != kFuncTypeDev) {
             return nullptr;
@@ -999,24 +995,24 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
             return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
         }
     }
-    auto &table = layer_data->device_dispatch_table;
+    auto& table = layer_data->device_dispatch_table;
     if (!table.GetDeviceProcAddr) return nullptr;
     return table.GetDeviceProcAddr(device, funcName);
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
-    const auto &item = name_to_funcptr_map.find(funcName);
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName) {
+    const auto& item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
     }
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    auto &table = layer_data->instance_dispatch_table;
+    auto& table = layer_data->instance_dispatch_table;
     if (!table.GetInstanceProcAddr) return nullptr;
     return table.GetInstanceProcAddr(instance, funcName);
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
-    const auto &item = name_to_funcptr_map.find(funcName);
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char* funcName) {
+    const auto& item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         if (item->second.function_type != kFuncTypePdev) {
             return nullptr;
@@ -1025,33 +1021,35 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
         }
     }
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    auto &table = layer_data->instance_dispatch_table;
+    auto& table = layer_data->instance_dispatch_table;
     if (!table.GetPhysicalDeviceProcAddr) return nullptr;
     return table.GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
     return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pCount,
-                                                              VkLayerProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pCount,
+                                                              VkLayerProperties* pProperties) {
     return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
-                                                                    VkExtensionProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pCount,
+                                                                    VkExtensionProperties* pProperties) {
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
-        return util_GetExtensionProperties(static_cast<uint32_t>(kInstanceExtensions.size()), kInstanceExtensions.data(), pCount, pProperties);
+        return util_GetExtensionProperties(static_cast<uint32_t>(kInstanceExtensions.size()), kInstanceExtensions.data(), pCount,
+                                           pProperties);
     }
 
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
-                                                                  uint32_t *pCount, VkExtensionProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
+                                                                  uint32_t* pCount, VkExtensionProperties* pProperties) {
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
-        return util_GetExtensionProperties(static_cast<uint32_t>(kDeviceExtensions.size()), kDeviceExtensions.data(), pCount, pProperties);
+        return util_GetExtensionProperties(static_cast<uint32_t>(kDeviceExtensions.size()), kDeviceExtensions.data(), pCount,
+                                           pProperties);
     }
 
     assert(physicalDevice);
@@ -1059,8 +1057,8 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                              VkInstance *pInstance) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                              VkInstance* pInstance) {
     VkLayerInstanceCreateInfo* chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
 
     assert(chain_info->u.pLayerInfo);
@@ -1069,18 +1067,24 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (fpCreateInstance == nullptr) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version), VK_API_VERSION_MINOR(specified_version), 0);
+    APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
+                                                 VK_API_VERSION_MINOR(specified_version), 0);
 
     auto report_data = new debug_report_data{};
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
 
     // Set up enable and disable features flags
-    CHECK_ENABLED local_enables {};
-    CHECK_DISABLED local_disables {};
+    CHECK_ENABLED local_enables{};
+    CHECK_DISABLED local_disables{};
     bool lock_setting;
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo, local_enables, local_disables,
-        report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
+    ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
+                                                      pCreateInfo,
+                                                      local_enables,
+                                                      local_disables,
+                                                      report_data->filter_message_ids,
+                                                      &report_data->duplicate_message_limit,
+                                                      &lock_setting};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
 
@@ -1099,7 +1103,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
 
     // Define logic to cleanup everything in case of an error
-    auto cleanup_allocations = [report_data, &local_object_dispatch](){
+    auto cleanup_allocations = [report_data, &local_object_dispatch]() {
         DeactivateInstanceDebugCallbacks(report_data);
         FreePnextChain(report_data->instance_pnext_chain);
         LayerDebugUtilsDestroyInstance(report_data);
@@ -1168,7 +1172,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {
     dispatch_key key = get_dispatch_key(instance);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     ActivateInstanceDebugCallbacks(layer_data->report_data);
@@ -1202,9 +1206,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     FreeLayerDataPtr(key, layer_data_map);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
-    VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
+VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
+    VkLayerDeviceCreateInfo* chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
 
     auto instance_interceptor = GetLayerDataPtr(get_dispatch_key(gpu), layer_data_map);
 
@@ -1243,7 +1247,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         intercept->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, &modified_create_info);
     }
 
-    VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo *>(&modified_create_info), pAllocator, pDevice);
+    VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
     if (result != VK_SUCCESS) {
         return result;
     }
@@ -1269,7 +1273,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
 
     // Initialize all of the objects with the appropriate data
-    for(auto* object : device_interceptor->object_dispatch) {
+    for (auto* object : device_interceptor->object_dispatch) {
         object->device = device_interceptor->device;
         object->physical_device = device_interceptor->physical_device;
         object->instance = instance_interceptor->instance;
@@ -1301,7 +1305,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 //       the loader will destroy the device, and know nothing about future references to this device making it
 //       impossible for the caller to use this device handle further. IOW, this is our _only_ chance to (potentially)
 //       dispatch the driver's DestroyDevice function.
-VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
     dispatch_key key = get_dispatch_key(device);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1333,13 +1337,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
 // Special-case APIs for which core_validation needs custom parameter lists and/or modifies parameters
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkGraphicsPipelineCreateInfo*         pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateGraphicsPipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1349,35 +1349,36 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         cgpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj, &(cgpl_state[intercept->container_type]));
+        skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                                  pPipelines, error_obj, &(cgpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
+        intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                        pPipelines, &(cgpl_state[intercept->container_type]));
     }
 
-    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
+    auto usepCreateInfos =
+        (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
     if (cgpl_state[LayerObjectTypeDebugPrintf].pCreateInfos) usepCreateInfos = cgpl_state[LayerObjectTypeDebugPrintf].pCreateInfos;
 
-    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
+    VkResult result =
+        DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
     RecordObject record_obj(vvl::Func::vkCreateGraphicsPipelines, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, &(cgpl_state[intercept->container_type]));
+        intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                         pPipelines, record_obj, &(cgpl_state[intercept->container_type]));
     }
     return result;
 }
 
 // This API saves some core_validation pipeline state state on the stack for performance purposes
-VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkComputePipelineCreateInfo*          pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                      const VkComputePipelineCreateInfo* pCreateInfos,
+                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateComputePipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1387,34 +1388,35 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         ccpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj, &(ccpl_state[intercept->container_type]));
+        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                                 pPipelines, error_obj, &(ccpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(ccpl_state[intercept->container_type]));
+        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
+                                                       &(ccpl_state[intercept->container_type]));
     }
 
-    auto usepCreateInfos = (!ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
+    auto usepCreateInfos =
+        (!ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
     if (ccpl_state[LayerObjectTypeDebugPrintf].pCreateInfos) usepCreateInfos = ccpl_state[LayerObjectTypeDebugPrintf].pCreateInfos;
 
-    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
+    VkResult result =
+        DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
     RecordObject record_obj(vvl::Func::vkCreateComputePipelines, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, &(ccpl_state[intercept->container_type]));
+        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                        pPipelines, record_obj, &(ccpl_state[intercept->container_type]));
     }
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoNV*     pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1424,8 +1426,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos,
-                                                                      pAllocator, pPipelines, error_obj, &(crtpl_state[intercept->container_type]));
+        skip |=
+            intercept->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                                  pPipelines, error_obj, &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1434,7 +1437,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
                                                             pPipelines, &(crtpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result =
+        DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 
     RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesNV, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1445,14 +1449,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
-    VkDevice                                    device,
-    VkDeferredOperationKHR                      deferredOperation,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                            const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1462,33 +1462,34 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                                       pAllocator, pPipelines, error_obj, &(crtpl_state[intercept->container_type]));
+        skip |= intercept->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                       pCreateInfos, pAllocator, pPipelines, error_obj,
+                                                                       &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                            pPipelines, &(crtpl_state[intercept->container_type]));
+        intercept->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                             pCreateInfos, pAllocator, pPipelines,
+                                                             &(crtpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                           pAllocator, pPipelines);
 
     RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                             pPipelines, record_obj, &(crtpl_state[intercept->container_type]));
+        intercept->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                              pCreateInfos, pAllocator, pPipelines, record_obj,
+                                                              &(crtpl_state[intercept->container_type]));
     }
     return result;
 }
 
 // This API needs the ability to modify a down-chain parameter
-VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
-    VkDevice                                    device,
-    const VkPipelineLayoutCreateInfo*           pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipelineLayout*                           pPipelineLayout) {
+VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreatePipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1515,11 +1516,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
 }
 
 // This API needs some local stack data for performance reasons and also may modify a parameter
-VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
-    VkDevice                                    device,
-    const VkShaderModuleCreateInfo*             pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkShaderModule*                             pShaderModule) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1549,12 +1547,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
-    VkDevice                                    device,
-    uint32_t                                    createInfoCount,
-    const VkShaderCreateInfoEXT*                pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkShaderEXT*                                pShaders) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                                VkShaderEXT* pShaders) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateShadersEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1578,15 +1573,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
     RecordObject record_obj(vvl::Func::vkCreateShadersEXT, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj, &csm_state);
+        intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                                  &csm_state);
     }
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
-    VkDevice                                    device,
-    const VkDescriptorSetAllocateInfo*          pAllocateInfo,
-    VkDescriptorSet*                            pDescriptorSets) {
+VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                      VkDescriptorSet* pDescriptorSets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1596,7 +1590,8 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         ads_state[intercept->container_type].Init(pAllocateInfo->descriptorSetCount);
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, &(ads_state[intercept->container_type]));
+        skip |= intercept->PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj,
+                                                                 &(ads_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1607,18 +1602,15 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets,
-            record_obj, &(ads_state[intercept->container_type]));
+        intercept->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj,
+                                                        &(ads_state[intercept->container_type]));
     }
     return result;
 }
 
 // This API needs the ability to modify a down-chain parameter
-VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
-    VkDevice                                    device,
-    const VkBufferCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
@@ -1644,29 +1636,26 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
     return result;
 }
 
-
 // Handle tooling queries manually as this is a request for layer information
 
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t*                                   pToolCount,
-    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+                                                                  VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT, VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
 
     static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
         nullptr,
         "Khronos Validation Layer",
         STRINGIFY(VK_HEADER_VERSION),
-        VK_TOOL_PURPOSE_VALIDATION_BIT_EXT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT | VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
+        VK_TOOL_PURPOSE_VALIDATION_BIT_EXT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT | VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT |
+            VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT,
         "Khronos Validation Layer",
-        OBJECT_LAYER_NAME
-    };
+        OBJECT_LAYER_NAME};
 
     auto original_pToolProperties = pToolProperties;
-
 
     if (pToolProperties != nullptr) {
         *pToolProperties = khronos_layer_tool_props;
@@ -1676,7 +1665,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
 
     for (const ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, error_obj);
+        skip |=
+            intercept->PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -1699,7 +1689,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
     }
     return result;
 }
-
 
 // ValidationCache APIs do not dispatch
 
@@ -1752,7 +1741,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
             paramsList = ', '.join([param.name for param in command.params])
 
             # Setup common to call wrappers. First parameter is always dispatchable
-            out.append(f'    auto layer_data = GetLayerDataPtr(get_dispatch_key({command.params[0].name}), layer_data_map);\n')
+            out.append(f'auto layer_data = GetLayerDataPtr(get_dispatch_key({command.params[0].name}), layer_data_map);\n')
 
             # Declare result variable, if any.
             return_map = {
@@ -1767,28 +1756,28 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
             }
 
             # Set up skip and locking
-            out.append('    bool skip = false;\n')
+            out.append('bool skip = false;\n')
 
-            out.append(f'    ErrorObject error_obj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
+            out.append(f'ErrorObject error_obj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
 
             # Generate pre-call validation source code
             if not command.instance:
-                out.append(f'    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
+                out.append(f'for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
             else:
-                out.append('    for (const ValidationObject* intercept : layer_data->object_dispatch) {\n')
-            out.append('        auto lock = intercept->ReadLock();\n')
-            out.append(f'        skip |= intercept->PreCallValidate{command.name[2:]}({paramsList}, error_obj);\n')
-            out.append(f'        if (skip) {return_map[command.returnType]}\n')
-            out.append('    }\n')
+                out.append('for (const ValidationObject* intercept : layer_data->object_dispatch) {\n')
+            out.append(f'''auto lock = intercept->ReadLock();
+                           skip |= intercept->PreCallValidate{command.name[2:]}({paramsList}, error_obj);
+                           if (skip) {return_map[command.returnType]}
+                        }}\n''')
 
             # Generate pre-call state recording source code
             if not command.instance:
-                out.append(f'    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
             else:
-                out.append('    for (ValidationObject* intercept : layer_data->object_dispatch) {\n')
-            out.append('        auto lock = intercept->WriteLock();\n')
-            out.append(f'        intercept->PreCallRecord{command.name[2:]}({paramsList});\n')
-            out.append('    }\n')
+                out.append('for (ValidationObject* intercept : layer_data->object_dispatch) {\n')
+            out.append(f'''auto lock = intercept->WriteLock();
+                           intercept->PreCallRecord{command.name[2:]}({paramsList});
+                        }}\n''')
 
             # Insert pre-dispatch debug utils function call
             pre_dispatch_debug_utils_functions = {
@@ -1818,11 +1807,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
 
             # Generate post-call object processing source code
             recordObj = ', result' if command.returnType == 'VkResult' or command.returnType == 'VkDeviceAddress' else ''
-            out.append(f'    RecordObject record_obj(vvl::Func::{command.name}{recordObj});\n')
+            out.append(f'RecordObject record_obj(vvl::Func::{command.name}{recordObj});\n')
             if not command.instance:
-                out.append(f'    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
             else:
-                out.append('    for (ValidationObject* intercept : layer_data->object_dispatch) {\n')
+                out.append('for (ValidationObject* intercept : layer_data->object_dispatch) {\n')
 
             # These commands perform blocking operations during PostRecord phase. We might need to
             # release ValidationObject's lock for the period of blocking operation to avoid deadlocks.
@@ -1839,11 +1828,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
             ]
 
             if command.name not in commands_with_blocking_operations:
-                out.append('        auto lock = intercept->WriteLock();\n')
+                out.append('auto lock = intercept->WriteLock();\n')
             else:
-                out.append('        ValidationObject::BlockingOperationGuard lock(intercept);\n')
-            out.append(f'        intercept->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
-            out.append('    }\n')
+                out.append('ValidationObject::BlockingOperationGuard lock(intercept);\n')
+            out.append(f'intercept->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
+            out.append('}\n')
             # Return result variable, if any.
             if command.returnType != 'void':
                 out.append('    return result;\n')

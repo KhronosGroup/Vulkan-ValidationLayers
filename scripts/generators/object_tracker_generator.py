@@ -19,8 +19,8 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import (buildListVUID, getVUID, incIndent, decIndent, addIndent)
-from generators.vulkan_object import (Handle, Command, Struct, Member, Param)
+from generators.generator_utils import buildListVUID, getVUID
+from generators.vulkan_object import Handle, Command, Struct, Member, Param
 from generators.base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
@@ -230,14 +230,14 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             terminator = ';\n' if 'ValidationCache' in command.name else ' override;\n'
 
             if pre_call_validate:
-                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
+                prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
             if pre_call_record:
                 out.append(f'void PreCallRecord{prototype}{terminator}')
 
             if post_call_record:
-                prototype = prototype.replace(')', ',\n    const RecordObject&                         record_obj)')
+                prototype = prototype.replace(')', ', const RecordObject& record_obj)')
                 out.append(f'void PostCallRecord{prototype}{terminator}')
 
             out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
@@ -324,26 +324,28 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
             # Output PreCallValidateAPI function if necessary
             if pre_call_validate:
-                prePrototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
-                out.append('\n')
-                out.append(f'bool ObjectLifetimes::PreCallValidate{prePrototype} const {{\n')
-                out.append('    bool skip = false;\n')
-                out.append(f'{pre_call_validate}\n')
-                out.append('    return skip;\n')
-                out.append('}\n')
+                prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+                out.append(f'''
+                    bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
+                        bool skip = false;
+                        {pre_call_validate}
+                        return skip;
+                    }}
+                    ''')
 
             # Output PreCallRecordAPI function if necessary
             if pre_call_record:
-                out.append('\n')
-                out.append(f'void ObjectLifetimes::PreCallRecord{prototype} {{\n')
-                out.append(f'{pre_call_record}\n')
-                out.append('}\n')
+                out.append(f'''
+                    void ObjectLifetimes::PreCallRecord{prototype} {{
+                        {pre_call_record}
+                    }}
+                    ''')
 
             # Output PosCallRecordAPI function if necessary
             if post_call_record:
                 out.append('\n')
                 postPrototype = f'void ObjectLifetimes::PostCallRecord{prototype} {{\n'
-                postPrototype = postPrototype.replace(')', ',\n    const RecordObject&                         record_obj)')
+                postPrototype = postPrototype.replace(')', ', const RecordObject& record_obj)')
                 if command.returnType == 'VkResult':
                     failureCondition = 'record_obj.result != VK_SUCCESS'
                     # VK_INCOMPLETE is considered a success
@@ -391,7 +393,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
     # recursively walks struct members (and command params)
     # parentName == Struct or Command calling into this
     # topCommand == The command called from (when in a struct)
-    def validateObjects(self, members: list[Member], indent: str, prefix: str, arrayIndex: int, parentName: str, topCommand: str, errorLoc: str, isTopLevelCreate: bool) -> str:
+    def validateObjects(self, members: list[Member], prefix: str, arrayIndex: int, parentName: str, topCommand: str, errorLoc: str, isTopLevelCreate: bool) -> str:
         pre_call_validate = ''
         index = f'index{str(arrayIndex)}'
         arrayIndex += 1
@@ -450,20 +452,20 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 if member.length:
                     location = f'{errorLoc}.dot(Field::{member.name}, {index})'
                     countName = f'{prefix}{member.length}'
-                    pre_call_validate += addIndent(indent,
-f'''if (({countName} > 0) && ({prefix}{member.name})) {{
-    for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
-        skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});
-    }}
-}}''')
+                    pre_call_validate += (
+                        f'''if (({countName} > 0) && ({prefix}{member.name})) {{
+                            for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
+                                skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});
+                            }}
+                        }}\n''')
                 elif 'basePipelineHandle' in member.name:
-                    pre_call_validate += f'{indent}if (({prefix}flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && ({prefix}basePipelineIndex == -1))\n'
+                    pre_call_validate += f'if (({prefix}flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && ({prefix}basePipelineIndex == -1))\n'
                     manual_vuid_index = parentName + '-' + member.name
                     paramVUID = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-                    pre_call_validate += f'{indent}    skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {paramVUID}, {parentVUID}, error_obj.location);\n'
+                    pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, false, {paramVUID}, {parentVUID}, error_obj.location);\n'
                 else:
                     location = f'{errorLoc}.dot(Field::{member.name})'
-                    pre_call_validate += f'{indent}skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});\n'
+                    pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {paramVUID}, {parentVUID}, {location});\n'
 
             # Handle Structs that contain objects at some level
             elif member.type in self.vk.structs:
@@ -476,32 +478,29 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                 # Struct Array
                 if member.length is not None:
                     # Update struct prefix
-                    nested_struct.append(f'{indent}if ({prefix}{member.name}) {{\n')
-                    indent = incIndent(indent)
-                    nested_struct.append(f'{indent}for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n')
-                    indent = incIndent(indent)
+                    nested_struct.append(f'if ({prefix}{member.name}) {{\n')
+                    nested_struct.append(f'    for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n')
                     new_error_loc = f'{index}_loc'
-                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n')
+                    nested_struct.append(f'[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n')
                     new_prefix = f'{prefix}{member.name}[{index}].'
                 # Single Struct Pointer
                 elif member.pointer:
                     # Update struct prefix
                     new_prefix = f'{prefix}{member.name}->'
                     # Declare safe_VarType for struct
-                    nested_struct.append(f'{indent}if ({prefix}{member.name}) {{\n')
-                    indent = incIndent(indent)
+                    nested_struct.append(f'if ({prefix}{member.name}) {{\n')
                     new_error_loc = f'{member.name}_loc'
-                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
+                    nested_struct.append(f'    [[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
                 # Single Nested Struct
                 else:
                     # Update struct prefix
                     new_prefix = f'{prefix}{member.name}.'
                     new_error_loc = f'{member.name}_loc'
-                    nested_struct.append(f'{indent}[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
+                    nested_struct.append(f'[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name});\n')
                     # Process sub-structs
 
                 if contains_object:
-                    nested_struct.append(self.validateObjects(struct.members, indent, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False))
+                    nested_struct.append(self.validateObjects(struct.members, new_prefix, arrayIndex, member.type, topCommand, new_error_loc, False))
 
                 contains_pNext = False
                 if struct.extendedBy:
@@ -512,23 +511,18 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
                             continue
                         contains_pNext = True
                         nested_struct.extend([f'#ifdef {extended_struct.protect}\n'] if extended_struct.protect else [])
-                        nested_struct.append(f'{indent}if (auto pNext = LvlFindInChain<{extendedBy}>({new_prefix}pNext)) {{\n')
-                        indent = incIndent(indent)
-                        nested_struct.append(f'{indent}const Location pNext_loc = {new_error_loc}.pNext(Struct::{extendedBy});\n')
-                        nested_struct.append(self.validateObjects(extended_members, indent, 'pNext->', arrayIndex + 1, extendedBy, topCommand, 'pNext_loc', False))
-                        indent = decIndent(indent)
-                        nested_struct.append(f'{indent}}}\n')
+                        nested_struct.append(f'if (auto pNext = LvlFindInChain<{extendedBy}>({new_prefix}pNext)) {{\n')
+                        nested_struct.append(f'    const Location pNext_loc = {new_error_loc}.pNext(Struct::{extendedBy});\n')
+                        nested_struct.append(self.validateObjects(extended_members, 'pNext->', arrayIndex + 1, extendedBy, topCommand, 'pNext_loc', False))
+                        nested_struct.append('}\n')
                         nested_struct.extend([f'#endif // {extended_struct.protect}\n'] if extended_struct.protect else [])
 
                 # Close indentation
                 if member.length is not None:
-                    indent = decIndent(indent)
-                    nested_struct.append(f'{indent}}}\n')
-                    indent = decIndent(indent)
-                    nested_struct.append(f'{indent}}}\n')
+                    nested_struct.append('}\n')
+                    nested_struct.append('}\n')
                 elif member.pointer:
-                    indent = decIndent(indent)
-                    nested_struct.append('%s}\n' % indent)
+                    nested_struct.append('}\n')
 
                 # Only print if called into validateObjects
                 if contains_object or contains_pNext:
@@ -538,7 +532,6 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
     #
     # For a particular API, generate the object handling code
     def generateFunctionBody(self, command: Command):
-        indent = '    '
         pre_call_validate = ''
         pre_call_record = ''
         post_call_record = ''
@@ -546,7 +539,7 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
         isCreate = any(x in command.name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']) or ('vkGet' in command.name and command.params[-1].pointer)
         isDestroy = any(x in command.name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
 
-        pre_call_validate += self.validateObjects(command.params, indent, '', 0, command.name, command.name, 'error_obj.location', isCreate)
+        pre_call_validate += self.validateObjects(command.params, '', 0, command.name, command.name, 'error_obj.location', isCreate)
 
         # Handle object create operations if last parameter is created by this call
         if isCreate:
@@ -560,35 +553,32 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
 
                 if objectArray:
                     if isCreatePipelines:
-                        post_call_record += f'{indent}if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;\n'
+                        post_call_record += 'if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;\n'
 
-                    post_call_record += f'{indent}if ({command.params[-1].name}) {{\n'
-                    indent = incIndent(indent)
+                    post_call_record += f'if ({command.params[-1].name}) {{\n'
                     countIsPointer = '*' if command.params[-2].type == 'uint32_t' and command.params[-2].pointer else ''
-                    post_call_record += f'{indent}for (uint32_t index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
-                    indent = incIndent(indent)
+                    post_call_record += f'for (uint32_t index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
 
                 if isCreatePipelines:
-                    post_call_record += f'{indent}if (!pPipelines[index]) continue;\n'
+                    post_call_record += 'if (!pPipelines[index]) continue;\n'
                 elif isCreateShaders:
-                    post_call_record += f'{indent}if (!pShaders[index]) break;\n'
+                    post_call_record += 'if (!pShaders[index]) break;\n'
 
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
                 objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'
-                post_call_record += f'{indent}CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator});\n'
+                post_call_record += f'CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator});\n'
                 if objectArray:
-                    indent = decIndent(indent)
-                    post_call_record += f'{indent}}}\n'
-                    indent = decIndent(indent)
-                    post_call_record += f'{indent}}}\n'
+                    post_call_record += '}\n'
+                    post_call_record += '}\n'
             # Physical device groups are not handles, but a set of handles, they need to be tracked as well
             elif handle_type == 'VkPhysicalDeviceGroupProperties':
-                post_call_record += f'''{indent}if ({command.params[-1].name}) {{
-{indent}{indent}const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
-{indent}{indent}for (uint32_t device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
-{indent}{indent}{indent}PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, record_obj);
-{indent}{indent}}}
-{indent}}}\n'''
+                post_call_record += (
+                    f'''if ({command.params[-1].name}) {{
+                    const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
+                    for (uint32_t device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
+                        PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, record_obj);
+                    }}
+                    }}\n''')
         # Handle object destroy operations
         if isDestroy:
             # Check for special case where multiple handles are returned
@@ -599,8 +589,8 @@ f'''if (({countName} > 0) && ({prefix}{member.name})) {{
             nullallocVUID = self.getAllocVUID(handle_param, "nullalloc")
             if handle_param.type in self.vk.handles:
                 # Call Destroy a single time
-                pre_call_validate += f'{indent}skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, error_obj.location);\n'
-                pre_call_record += f'{indent}RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]});\n'
+                pre_call_validate += f'skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, error_obj.location);\n'
+                pre_call_record += f'RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]});\n'
 
         return pre_call_validate, pre_call_record, post_call_record
 

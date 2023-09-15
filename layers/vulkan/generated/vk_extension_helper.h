@@ -259,7 +259,6 @@ struct InstanceExtensions {
             {VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
              InstanceInfo(&InstanceExtensions::vk_lunarg_direct_driver_loading, {})},
         };
-
         return info_map;
     }
 
