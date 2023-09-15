@@ -800,10 +800,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
 void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                                                   VkDescriptorType descriptor_type, const char *fragment_shader,
-                                                  const char *expected_error) {
+                                                  const char *expected_error, bool shader_objects) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    if (shader_objects) {
+        AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
@@ -814,11 +818,25 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
-    VkPhysicalDeviceFeatures features = {};  // Make sure robust buffer access is not enabled
-    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    auto shader_object_features = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    shader_object_features.shaderObject = VK_TRUE;
+    auto features = LvlInitStruct<VkPhysicalDeviceFeatures2>();  // Make sure robust buffer access is not enabled
+    if (shader_objects) {
+        features.pNext = &shader_object_features;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (shader_objects) {
+        ASSERT_NO_FATAL_FAILURE(InitDynamicRenderTarget());
+    } else {
+        ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    }
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, expected_error);
 
@@ -860,6 +878,15 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         "      gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
         "}\n";
 
+    vk_testing::Shader *vso = nullptr;
+    vk_testing::Shader *fso = nullptr;
+    if (shader_objects) {
+        vso = new vk_testing::Shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource),
+                                     &ds.layout_.handle());
+        fso = new vk_testing::Shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                     GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader), &ds.layout_.handle());
+    }
+
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -871,9 +898,22 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    if (shader_objects) {
+        m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
+    } else {
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    }
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    if (shader_objects) {
+        const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                VK_SHADER_STAGE_FRAGMENT_BIT};
+        const VkShaderEXT shaders[] = {vso->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fso->handle()};
+        vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
+        SetDefaultDynamicStates(m_commandBuffer->handle());
+    } else {
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    }
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_,
                               0, nullptr);
 
@@ -882,11 +922,19 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     VkRect2D scissor = {{0, 0}, {16, 16}};
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    if (shader_objects) {
+        m_commandBuffer->EndRendering();
+    } else {
+        m_commandBuffer->EndRenderPass();
+    }
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(true);
     m_errorMonitor->VerifyFound();
     DestroyRenderTarget();
+    if (shader_objects) {
+        delete vso;
+        delete fso;
+    }
 }
 
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
@@ -906,6 +954,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
                          "Descriptor size is 4 and highest byte accessed was 7");
 }
+
 TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderStorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
@@ -2575,4 +2624,22 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         }
         vk::QueueWaitIdle(m_device->m_queue);
     }
+}
+
+TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderObjectUniformBufferTooSmall) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7",
+                         true);
 }
