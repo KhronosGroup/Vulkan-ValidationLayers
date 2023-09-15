@@ -122,15 +122,6 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
-    ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) const {
-        for (auto *layer_object : object_dispatch) {
-            if (layer_object->container_type == LayerObjectTypeObjectTracker) {
-                return (reinterpret_cast<ObjectLifetimes *>(layer_object));
-            }
-        }
-        return nullptr;
-    }
-
     bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const {
         // Look for object in object map
         if (object_map[object_type].contains(object_handle)) {
@@ -151,30 +142,17 @@ class ObjectLifetimes : public ValidationObject {
         if (TracksObject(object_handle, object_type)) {
             return skip;
         }
-
         // Object not found, look for it in other device object maps
         bool found = false;
         VkDevice other_device = VK_NULL_HANDLE;
         for (const auto &other_device_data : layer_data_map) {
-            for (auto *layer_object_data : other_device_data.second->object_dispatch) {
-                if (layer_object_data->container_type != LayerObjectTypeObjectTracker) {
-                    continue;
-                }
-                auto *object_lifetime_data = static_cast<ObjectLifetimes *>(layer_object_data);
-                if (!object_lifetime_data || object_lifetime_data == this) {
-                    continue;
-                }
-                if (object_lifetime_data->TracksObject(object_handle, object_type)) {
-                    other_device = layer_object_data->device;
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
+            const auto other_lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
+            if (other_lifetimes && other_lifetimes != this && other_lifetimes->TracksObject(object_handle, object_type)) {
+                other_device = other_lifetimes->device;
+                found = true;
                 break;
             }
         }
-
         // Report about findings.
         if (!found) {
             // Object was not found anywhere
