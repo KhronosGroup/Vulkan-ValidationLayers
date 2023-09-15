@@ -242,12 +242,10 @@ bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice d
         VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT,
         VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT,
     };
-    skip |= ValidateStructPnext(error_obj.location.dot(Field::pMetalObjectsInfo),
-                                "VkExportMetalBufferInfoEXT, VkExportMetalCommandQueueInfoEXT, VkExportMetalDeviceInfoEXT, "
-                                "VkExportMetalIOSurfaceInfoEXT, VkExportMetalSharedEventInfoEXT, VkExportMetalTextureInfoEXT",
-                                pMetalObjectsInfo->pNext, allowed_structs.size(), allowed_structs.data(),
-                                GeneratedVulkanHeaderVersion, "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext",
-                                "VUID-VkExportMetalObjectsInfoEXT-sType-unique", false, true);
+    skip |=
+        ValidateStructPnext(error_obj.location.dot(Field::pMetalObjectsInfo), pMetalObjectsInfo->pNext, allowed_structs.size(),
+                            allowed_structs.data(), GeneratedVulkanHeaderVersion, "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext",
+                            "VUID-VkExportMetalObjectsInfoEXT-sType-unique", false, true);
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT

@@ -344,16 +344,13 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&bogus_struct);
 
     // Should get the first three errors just fine
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
-    // VUID-VkPhysicalDeviceProperties2-pNext-pNext produces a massive ~3600 character log message, which hits a
-    // complex string buffer reallocation path inside of the logging code. Make sure it successfully prints out
-    // the very end of the message.
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "is undefined and may not work correctly with validation enabled");
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 

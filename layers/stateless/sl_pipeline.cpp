@@ -126,8 +126,7 @@ bool StatelessValidation::ValidatePipelineTessellationStateCreateInfo(const VkPi
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO};
 
-    skip |= ValidateStructPnext(loc, "VkPipelineTessellationDomainOriginStateCreateInfo", info.pNext, allowed_structs.size(),
-                                allowed_structs.data(), GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext",
                                 "VUID-VkPipelineTessellationStateCreateInfo-sType-unique");
 
@@ -143,8 +142,7 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
     bool skip = false;
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
-    skip |= ValidateStructPnext(loc, "VkPipelineVertexInputDivisorStateCreateInfoEXT", info.pNext, allowed_structs.size(),
-                                allowed_structs.data(), GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
                                 "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
     skip |= ValidateStructType(loc, "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", &info,
@@ -212,13 +210,9 @@ bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipeli
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
     };
-    skip |= ValidateStructPnext(
-        loc,
-        "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV, "
-        "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, "
-        "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV, VkPipelineViewportDepthClipControlCreateInfoEXT",
-        info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
-        "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext", "VUID-VkPipelineViewportStateCreateInfo-sType-unique");
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext",
+                                "VUID-VkPipelineViewportStateCreateInfo-sType-unique");
 
     skip |= ValidateReservedFlags(loc.dot(Field::flags), info.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
 
@@ -238,10 +232,7 @@ bool StatelessValidation::ValidatePipelineMultisampleStateCreateInfo(const VkPip
                                             VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV,
                                             VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV,
                                             VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT};
-    skip |= ValidateStructPnext(loc,
-                                "VkPipelineCoverageModulationStateCreateInfoNV, VkPipelineCoverageReductionStateCreateInfoNV, "
-                                "VkPipelineCoverageToColorStateCreateInfoNV, VkPipelineSampleLocationsStateCreateInfoEXT",
-                                info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
                                 "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
@@ -308,8 +299,7 @@ bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipe
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT,
                                             VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT};
 
-    skip |= ValidateStructPnext(loc, "VkPipelineColorBlendAdvancedStateCreateInfoEXT, VkPipelineColorWriteCreateInfoEXT",
-                                info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",
                                 "VUID-VkPipelineColorBlendStateCreateInfo-sType-unique");
 
@@ -331,7 +321,7 @@ bool StatelessValidation::ValidatePipelineDepthStencilStateCreateInfo(const VkPi
                                VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, false, kVUIDUndefined,
                                "VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType");
 
-    skip |= ValidateStructPnext(loc, nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", nullptr);
 
     skip |= ValidateFlags(loc.dot(Field::flags), "VkPipelineDepthStencilStateCreateFlagBits",
@@ -385,7 +375,7 @@ bool StatelessValidation::ValidatePipelineInputAssemblyStateCreateInfo(const VkP
                                VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, false, kVUIDUndefined,
                                "VUID-VkPipelineInputAssemblyStateCreateInfo-sType-sType");
 
-    skip |= ValidateStructPnext(loc, nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                 "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext", nullptr);
 
     skip |=

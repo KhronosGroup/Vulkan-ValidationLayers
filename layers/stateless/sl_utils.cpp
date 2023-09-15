@@ -154,17 +154,15 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
  * verify that pNext is null.
  *
  * @param loc Name of API call being validated.
- * @param allowed_struct_names Names of allowed structs.
  * @param next Pointer to validate.
  * @param allowed_type_count Total number of allowed structure types.
  * @param allowed_types Array of structure types allowed for pNext.
  * @param header_version Version of header defining the pNext validation rules.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateStructPnext(const Location &loc, const char *allowed_struct_names, const void *next,
-                                              size_t allowed_type_count, const VkStructureType *allowed_types,
-                                              uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
-                                              const bool is_physdev_api, const bool is_const_param) const {
+bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
+                                              const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
+                                              const char *stype_vuid, const bool is_physdev_api, const bool is_const_param) const {
     bool skip = false;
     const Location pNext_loc = loc.dot(Field::pNext);
     const char *api_name = loc.StringFunc();
@@ -212,19 +210,15 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const char *a
                     if (!custom) {
                         if (std::find(start, end, current->sType) == end) {
                             if (type_name.compare(UnsupportedStructureTypeString) == 0) {
-                                std::string message = "chain includes a structure with unknown VkStructureType (%" PRIu32
-                                                      "); Allowed structures "
-                                                      "are [%s]. ";
+                                std::string message = "chain includes a structure with unknown VkStructureType (%" PRIu32 "). ";
                                 message += disclaimer;
-                                skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), current->sType,
-                                                 allowed_struct_names, header_version, pNext_loc.Fields().c_str());
+                                skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), current->sType, header_version,
+                                                 pNext_loc.Fields().c_str());
                             } else {
-                                std::string message =
-                                    "chain includes a structure with unexpected VkStructureType %s; Allowed structures "
-                                    "are [%s]. ";
+                                std::string message = "chain includes a structure with unexpected VkStructureType %s. ";
                                 message += disclaimer;
-                                skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), type_name.c_str(),
-                                                 allowed_struct_names, header_version, pNext_loc.Fields().c_str());
+                                skip |= LogError(pnext_vuid, device, pNext_loc, message.c_str(), type_name.c_str(), header_version,
+                                                 pNext_loc.Fields().c_str());
                             }
                         }
                         // Send Location without pNext field so the pNext() connector can be used
