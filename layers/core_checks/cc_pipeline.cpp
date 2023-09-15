@@ -495,7 +495,7 @@ bool CoreChecks::ValidateSpecializations(const safe_VkSpecializationInfo *spec, 
         const Location map_loc = loc.dot(Field::pMapEntries, i);
         if (spec->pMapEntries[i].offset >= spec->dataSize) {
             skip |= LogError("VUID-VkSpecializationInfo-offset-00773", device, map_loc.dot(Field::offset),
-                             "is %" PRIu32 " but dataSize is %zu (for constantID  %" PRIu32 ").", spec->pMapEntries[i].offset,
+                             "is %" PRIu32 " but dataSize is %zu (for constantID %" PRIu32 ").", spec->pMapEntries[i].offset,
                              spec->dataSize, spec->pMapEntries[i].constantID);
 
             continue;

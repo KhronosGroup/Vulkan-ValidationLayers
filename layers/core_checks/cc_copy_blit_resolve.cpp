@@ -3667,7 +3667,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 const LogObjectList objlist(commandBuffer, dstImage);
                 vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04447" : "VUID-vkCmdResolveImage-srcImage-04447";
                 skip |= LogError(vuid, objlist, dst_subresource_loc.dot(Field::baseArrayLayer),
-                                 "is %" PRIu32 " and layerCount is  %" PRIu32 " but dstImage 3D.", dst_subresource.baseArrayLayer,
+                                 "is %" PRIu32 " and layerCount is %" PRIu32 " but dstImage 3D.", dst_subresource.baseArrayLayer,
                                  dst_subresource.layerCount);
             }
         }
