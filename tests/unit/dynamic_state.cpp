@@ -4980,3 +4980,66 @@ TEST_F(NegativeDynamicState, ColorBlendStateIgnored) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
+    TEST_DESCRIPTION("Shader uses a location not provided with dynamic vertex input");
+
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto vertex_input_dsf = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dsf);
+    if (!vertex_input_dsf.vertexInputDynamicState) {
+        GTEST_SKIP() << "vertexInputDynamicState not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in vec4 x;
+        layout(location = 1) in vec4 y;
+        layout(location = 0) out vec4 c;
+        void main() {
+           c = x * y;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-Input-07939");
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &buffer.handle(), &offset);
+
+    auto vertexInputBindingDescription = LvlInitStruct<VkVertexInputBindingDescription2EXT>();
+    vertexInputBindingDescription.binding = 0u;
+    vertexInputBindingDescription.stride = sizeof(float) * 4;
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vertexInputBindingDescription.divisor = 1u;
+    auto vertexAttributeDescription = LvlInitStruct<VkVertexInputAttributeDescription2EXT>();
+    vertexAttributeDescription.location = 0u;
+    vertexAttributeDescription.binding = 0u;
+    vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vertexAttributeDescription.offset = 0u;
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1u, &vertexInputBindingDescription, 1u, &vertexAttributeDescription);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyFound();
+}
