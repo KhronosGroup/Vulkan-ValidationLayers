@@ -1802,7 +1802,7 @@ TEST_F(NegativeShaderObject, InvalidShadingRatePaletteViewportCount) {
 TEST_F(NegativeShaderObject, MissingCmdSetExclusiveScissorEnableNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetExclusiveScissorEnableNV.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-ExclusiveScissorEnableNV");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-exclusiveScissor-09235");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     auto exclusiveScissorFeatures = LvlInitStruct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
@@ -2198,7 +2198,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDiscardRectangleEXT().");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-DiscardRectangle");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     InitBasicShaderObject();
@@ -2511,7 +2511,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendAdvancedEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetFragmentShadingRateKHR) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetFragmentShadingRateKHR.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-FragmentShadingRate");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pipelineFragmentShadingRate-09238");
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
@@ -2931,7 +2931,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingEnableNV) {
 TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportWScalingNV.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-ViewportWScaling");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09232");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
     InitBasicShaderObject();
@@ -3150,7 +3150,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetShadingRateImageEnableNV) {
 TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportShadingRatePaletteNV.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-ViewportShadingRatePalette");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09234");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     auto shadingRateImageFeatures = LvlInitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
@@ -3182,7 +3182,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportShadingRatePaletteNV) {
 TEST_F(NegativeShaderObject, MissingCmdSetCoarseSampleOrderNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetCoarseSampleOrderNV.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-ViewportCoarseSampleOrder");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-shadingRateImage-09233");
 
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     auto shadingRateImageFeatures = LvlInitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
@@ -4042,7 +4042,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetTessellationDomainOriginEXT.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-TessellationDomainOrigin");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-09237");
 
     InitBasicShaderObject();
     if (::testing::Test::IsSkipped()) return;
