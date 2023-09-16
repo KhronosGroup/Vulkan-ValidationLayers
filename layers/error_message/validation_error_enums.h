@@ -32,6 +32,10 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 [[maybe_unused]] static const char *kVUID_Core_QueryPool_NotReset = "UNASSIGNED-CoreValidation-QueryPool-NotReset";
+[[maybe_unused]] static const char *kVUID_Core_DrawState_BlendOperationAdvanced = "UNASSIGNED-CoreValidation-DrawState-BlendOperationAdvanced";
+
+[[maybe_unused]] static const char *kVUID_Core_Shader_AllowVaryingSubgroupSize = "UNASSIGNED-CoreValidation-Shader-AllowVaryingSubgroupSize";
+[[maybe_unused]] static const char *kVUID_Core_Shader_RequireFullSubgroups = "UNASSIGNED-CoreValidation-Shader-RequireFullSubgroups";
 
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 

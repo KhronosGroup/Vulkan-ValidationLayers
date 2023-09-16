@@ -213,6 +213,19 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                              "is VK_SHADER_STAGE_MESH_BIT_EXT, but nextStage is %s.",
                              string_VkShaderStageFlags(createInfo.nextStage).c_str());
         }
+
+        if ((createInfo.flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
+            enabled_features.core13.subgroupSizeControl == VK_FALSE) {
+            skip |= LogError(
+                kVUID_Core_Shader_AllowVaryingSubgroupSize, device, create_info_loc.dot(Field::flags),
+                "contains VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, but subgroupSizeControl feature is not enabled.");
+        }
+        if ((createInfo.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
+            enabled_features.core13.computeFullSubgroups == VK_FALSE) {
+            skip |= LogError(
+                kVUID_Core_Shader_RequireFullSubgroups, device, create_info_loc.dot(Field::flags),
+                "contains VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but computeFullSubgroups feature is not enabled.");
+        }
     }
 
     if (linked_stage != invalid && non_linked_graphics_stage != invalid) {
