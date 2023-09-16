@@ -2184,14 +2184,21 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
     if (last_bound.pipeline_layout) {
         pipeline_layout_handle = last_bound.pipeline_layout;
-    } else if (!pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
+    } else if (pipeline_state && !pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
         pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->layout();
     }
-    if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && pipeline_layout_handle != VK_NULL_HANDLE) {
+    if ((pipeline_layout && pipeline_layout->set_layouts.size() <= desc_set_bind_index) &&
+        pipeline_layout_handle != VK_NULL_HANDLE) {
         DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(), 0,
                                       nullptr);
+    } else {
+        // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
+        // layout
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, debug_pipeline_layout, desc_set_bind_index, 1, desc_sets.data(), 0,
+                                      nullptr);
     }
-    if (pipeline_layout_handle == VK_NULL_HANDLE) {
+
+    if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
         ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         aborted = true;
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
