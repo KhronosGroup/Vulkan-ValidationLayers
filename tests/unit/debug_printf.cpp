@@ -1393,12 +1393,17 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
 TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     TEST_DESCRIPTION("Test debug printf in mesh and task shader objects.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     InitDebugPrintfFramework();
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
@@ -1409,9 +1414,10 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     }
 
     // Create a device that enables mesh_shader
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto maintenance_4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&maintenance_4_features);
     auto shader_object_features = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>(&shader_object_features);
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&shader_object_features);
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
     if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
@@ -1421,81 +1427,49 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitDynamicRenderTarget());
 
-    static const char taskShaderText[] =
-        "#version 460\n"
-        "#extension GL_NV_mesh_shader : enable\n"
-        "#extension GL_EXT_debug_printf : enable\n"
-        "layout(local_size_x = 32) in;\n"
-        "uint invocationID = gl_LocalInvocationID.x;\n"
-        "void main() {\n"
-        "    if (invocationID == 0) {\n"
-        "        gl_TaskCountNV = 1;\n"
-        "        debugPrintfEXT(\"hello from task shader\");\n"
-        "    }\n"
-        "}\n";
+    static const char *taskShaderText = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #extension GL_EXT_debug_printf : enable
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main() {
+            debugPrintfEXT("hello from task shader");
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
 
-    static const char meshShaderText[] =
-        "#version 450\n"
-        "#extension GL_NV_mesh_shader : require\n"
-        "#extension GL_EXT_debug_printf : enable\n"
-        "layout(local_size_x = 1) in;\n"
-        "layout(max_vertices = 3) out;\n"
-        "layout(max_primitives = 1) out;\n"
-        "layout(triangles) out;\n"
-        "uint invocationID = gl_LocalInvocationID.x;\n"
-        "void main() {\n"
-        "    if (invocationID == 0) {\n"
-        "        debugPrintfEXT(\"hello from mesh shader\");\n"
-        "    }\n"
-        "}\n";
+    static const char *meshShaderText = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+        #extension GL_EXT_debug_printf : enable
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        void main() {
+            debugPrintfEXT("hello from mesh shader");
+        }
+    )glsl";
 
-    const vk_testing::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_NV, GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_NV, taskShaderText));
-    const vk_testing::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_NV, GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_NV, meshShaderText));
-
-    //
-    VkShaderObj tsa(this, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV);
-    VkShaderObj msa(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
-    VkPipelineLayoutObj pipeline_layout(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&tsa);
-    pipe.AddShader(&msa);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    VkViewport viewport{};
-    viewport.width = static_cast<float>(m_width);
-    viewport.height = static_cast<float>(m_height);
-    pipe.SetViewport({viewport});
-    VkRect2D rect{};
-    rect.extent.width = m_width;
-    rect.extent.height = m_height;
-    pipe.SetScissor({rect});
-    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(err);
-    //
+    const vk_testing::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
+                                GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vk_testing::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
+                                GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
 
-    if (0)
-    {
-        const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_TASK_BIT_EXT,
-                                                VK_SHADER_STAGE_MESH_BIT_EXT,
-                                                VK_SHADER_STAGE_VERTEX_BIT,
-                                                VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                                VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-                                                VK_SHADER_STAGE_GEOMETRY_BIT,
-                                                VK_SHADER_STAGE_FRAGMENT_BIT};
-        const VkShaderEXT shaders[] = {ts.handle(),    ms.handle(),    VK_NULL_HANDLE, VK_NULL_HANDLE,
-                                       VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
-        vk::CmdBindShadersEXT(m_commandBuffer->handle(), 7u, stages, shaders);
-        SetDefaultDynamicStates(m_commandBuffer->handle());
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0u, 1u, &viewport);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0u, 1u, &rect);
-        vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    } else {
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    }
-    vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                                            VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                                            VK_SHADER_STAGE_TASK_BIT_EXT,
+                                            VK_SHADER_STAGE_MESH_BIT_EXT};
+    const VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
+                                   VK_NULL_HANDLE, ts.handle(),    ms.handle()};
+    SetDefaultDynamicStates(m_commandBuffer->handle());
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 7u, stages, shaders);
+    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
