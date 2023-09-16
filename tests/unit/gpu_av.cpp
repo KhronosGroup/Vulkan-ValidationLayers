@@ -2643,3 +2643,112 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderObjectUniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, "Descriptor size is 4 and highest byte accessed was 7",
                          true);
 }
+
+TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
+    TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
+    }
+    if (IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxComputeWorkGroupCount[0] = 2;
+    props.limits.maxComputeWorkGroupCount[1] = 2;
+    props.limits.maxComputeWorkGroupCount[2] = 2;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+
+    VkBufferObj indirect_buffer(*m_device, buffer_create_info,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.memory().map());
+    // VkDispatchIndirectCommand[0]
+    ptr->x = 4;  // over
+    ptr->y = 2;
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[1]
+    ptr++;
+    ptr->x = 2;
+    ptr->y = 3;  // over
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[2] - valid inbetween
+    ptr++;
+    ptr->x = 1;
+    ptr->y = 1;
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[3]
+    ptr++;
+    ptr->x = 0;  // allowed
+    ptr->y = 2;
+    ptr->z = 3;  // over
+    // VkDispatchIndirectCommand[4]
+    ptr++;
+    ptr->x = 3;  // over
+    ptr->y = 2;
+    ptr->z = 3;  // over
+    indirect_buffer.memory().unmap();
+
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    vk_testing::Shader shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));
+
+    m_commandBuffer->begin();
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &shader.handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-y-00418");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), sizeof(VkDispatchIndirectCommand));
+
+    // valid
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 2 * sizeof(VkDispatchIndirectCommand));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-z-00419");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 3 * sizeof(VkDispatchIndirectCommand));
+
+    // Only expect to have the first error return
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+
+    // Check again in a 2nd submitted command buffer
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &shader.handle());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 2 * sizeof(VkDispatchIndirectCommand));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    m_errorMonitor->VerifyFound();
+}
