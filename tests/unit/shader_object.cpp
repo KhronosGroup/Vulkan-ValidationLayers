@@ -2382,6 +2382,13 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendAdvancedEXT) {
     SetDefaultDynamicStates({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
     VkBool32 colorBlendEnable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendEnable);
+    VkColorBlendAdvancedEXT colorBlendAdvanced;
+    colorBlendAdvanced.advancedBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAdvanced.srcPremultiplied = VK_FALSE;
+    colorBlendAdvanced.dstPremultiplied = VK_FALSE;
+    colorBlendAdvanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
+    colorBlendAdvanced.clampResults = VK_FALSE;
+    vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendAdvanced);
     BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
@@ -3747,7 +3754,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAttachmentFeedbackLoopEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveTopologyEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPrimitiveTopologyEXT.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08881");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07842");
 
     RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
@@ -3793,7 +3800,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetVertexInputEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPatchControlPointsEXT.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08883");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04875");
 
     RETURN_IF_SKIP(InitBasicShaderObject())
     VkPhysicalDeviceFeatures features;
@@ -3865,7 +3872,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetPrimitiveRestartEnableEXT.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizerDiscardEnable-08884");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04879");
 
     RETURN_IF_SKIP(InitBasicShaderObject())
     InitDynamicRenderTarget();
@@ -6273,7 +6280,12 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08416");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject())
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_features = vku::InitStructHelper();
+    RETURN_IF_SKIP(InitBasicShaderObject(&subgroup_size_features));
+    if (::testing::Test::IsSkipped()) return;
+    if (!subgroup_size_features.subgroupSizeControl || !subgroup_size_features.computeFullSubgroups) {
+        GTEST_SKIP() << "subgroupSizeControl or computeFullSubgroups not supported.";
+    }
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_size_control_properties);
@@ -6308,7 +6320,11 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderCreateInfoEXT-flags-08417");
 
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject(nullptr, VK_API_VERSION_1_2))
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup_size_features = vku::InitStructHelper();
+    RETURN_IF_SKIP(InitBasicShaderObject(&subgroup_size_features, VK_API_VERSION_1_2));
+    if (!subgroup_size_features.computeFullSubgroups) {
+        GTEST_SKIP() << "computeFullSubgroups not supported.";
+    }
 
     VkPhysicalDeviceVulkan11Properties properties11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(properties11);
@@ -7516,6 +7532,60 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOutputPatchSize) {
 
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
+    TEST_DESCRIPTION("Create shader with invalid flags when subgroupSizeControl is not enabled.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-AllowVaryingSubgroupSize");
+
+    InitBasicShaderObject();
+    if (::testing::Test::IsSkipped()) return;
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.flags = VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
+    TEST_DESCRIPTION("Create shader with invalid flags when computeFullSubgroups is not enabled.");
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-RequireFullSubgroups");
+
+    InitBasicShaderObject();
+    if (::testing::Test::IsSkipped()) return;
+
+    static const char comp_source[] = R"glsl(
+        #version 460
+        layout(local_size_x = 32) in;
+        void main() {}
+    )glsl";
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_source);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+    createInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = spv.size() * sizeof(spv[0]);
+    createInfo.pCode = spv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
