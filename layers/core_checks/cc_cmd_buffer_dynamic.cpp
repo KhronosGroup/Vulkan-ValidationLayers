@@ -275,7 +275,10 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
             entrypoint = vertex_state->entrypoint;
         }
     }
-    if ((!pipeline_state || pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) && entrypoint) {
+    bool vertex_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
+    if (((pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) ||
+         (!pipeline_state && vertex_shader_bound)) &&
+        entrypoint) {
         for (const auto* variable_ptr : entrypoint->user_defined_interface_variables) {
             // Validate only input locations
             if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
@@ -668,6 +671,18 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
     bool geom_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
     bool fragment_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
 
+    const auto isLineTopology = [](VkPrimitiveTopology topology) {
+        return IsValueIn(topology,
+                         {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+                          VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY});
+    };
+
+    bool tess_shader_line_topology =
+        tessev_shader_bound &&
+        isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
+    bool geom_shader_line_topology =
+        geom_shader_bound && isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
+
     if (graphics_shader_bound) {
         if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT] ||
             !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT]) {
@@ -682,6 +697,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                          cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
         }
         if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling) &&
+            cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV] &&
+            cb_state.dynamic_state_value.viewport_w_scaling_enable &&
             cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV] &&
             cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
             skip |=
@@ -689,16 +706,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                          "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
                          " and viewportCount set with vkCmdSetViewportWScalingNV() was %" PRIu32 ".",
                          cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
-        }
-        if (enabled_features.shading_rate_image_features.shadingRateImage == VK_TRUE) {
-            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV] &&
-                cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
-                skip |= LogError(
-                    vuid.shading_rate_palette_08637, cb_state.commandBuffer(), loc,
-                    "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                    " and viewportCount set with vkCmdSetViewportShadingRatePaletteNV() was %" PRIu32 ".",
-                    cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
-            }
         }
         if (enabled_features.exclusive_scissor_features.exclusiveScissor) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV,
@@ -834,7 +841,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_OP, objlist, loc,
                                                   vuid.set_stencil_op_08634);
             }
-            if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex)) {
+            if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex) && vertex_shader_bound) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT,
                                                   objlist, loc, vuid.set_provoking_vertex_mode_08665);
             }
@@ -874,6 +881,14 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                     skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
                                                       CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, objlist, loc,
                                                       vuid.set_viewport_shading_rate_palette_09234);
+                    if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV] &&
+                        cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
+                        skip |= LogError(
+                            vuid.shading_rate_palette_08637, cb_state.commandBuffer(), loc,
+                            "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
+                            " and viewportCount set with vkCmdSetViewportShadingRatePaletteNV() was %" PRIu32 ".",
+                            cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
+                    }
                 }
             }
             if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE] &&
@@ -885,24 +900,49 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_STENCIL_REFERENCE, objlist,
                                                   loc, vuid.set_stencil_reference_08625);
             }
+            if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) &&
+                !cb_state.dynamic_state_value.rasterizer_discard_enable) {
+                if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
+                    skip |=
+                        ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                                  objlist, loc, vuid.set_line_rasterization_mode_08666);
+                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                                      objlist, loc, vuid.set_line_stipple_enable_08669);
+                }
+                if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT] &&
+                    cb_state.dynamic_state_value.stippled_line_enable) {
+                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_EXT, objlist,
+                                                      loc, vuid.set_line_stipple_08672);
+                }
+            }
+            if (vertex_shader_bound) {
+                if (isLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
+                    if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
+                        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb,
+                                                          CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, objlist, loc,
+                                                          vuid.set_line_rasterization_mode_08667);
+                        skip |=
+                            ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                                      objlist, loc, vuid.set_line_stipple_enable_08670);
+                    }
+                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
+                                                      vuid.set_line_width_08618);
+                }
+            }
+
+            if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
+                if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
+                    skip |=
+                        ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                                  objlist, loc, vuid.set_line_rasterization_mode_08668);
+                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                                      objlist, loc, vuid.set_line_stipple_enable_08671);
+                }
+            }
         }
         if (enabled_features.depth_clip_enable_features.depthClipEnable) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT, objlist,
                                               loc, vuid.set_depth_clip_enable_08663);
-        }
-        if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_POLYGON_MODE_EXT] &&
-                cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  objlist, loc, vuid.set_line_rasterization_mode_08666);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                  objlist, loc, vuid.set_line_stipple_enable_08669);
-            }
-            if (cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT] &&
-                cb_state.dynamic_state_value.stippled_line_enable) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_EXT, objlist, loc,
-                                                  vuid.set_line_stipple_08672);
-            }
         }
         if (enabled_features.depth_clip_control_features.depthClipControl) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT,
@@ -927,49 +967,23 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                               vuid.set_line_width_08617);
         }
     }
-    VkPrimitiveTopology line_topologies[] = {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                                             VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-                                             VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY};
     if (vertex_shader_bound) {
-        if (std::find(std::begin(line_topologies), std::end(line_topologies), cb_state.dynamic_state_value.primitive_topology) !=
-            std::end(line_topologies)) {
-            if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  objlist, loc, vuid.set_line_rasterization_mode_08667);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                  objlist, loc, vuid.set_line_stipple_enable_08670);
-            }
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
-                                              vuid.set_line_width_08618);
-        }
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, objlist, loc,
-                                          vuid.set_primitive_topology_08881);
+                                          vuid.dynamic_primitive_topology_07842);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, objlist, loc,
                                           vuid.set_vertex_input_08882);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, objlist, loc,
-                                          vuid.set_primitive_restart_enable_08884);
+                                          vuid.primitive_restart_enable_04879);
     }
     if (tessev_shader_bound) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, objlist, loc,
-                                          vuid.set_patch_control_points_08883);
+                                          vuid.patch_control_points_04875);
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT,
                                           objlist, loc, vuid.set_tessellation_domain_origin_09237);
     }
-    if ((tessev_shader_bound &&
-         std::find(std::begin(line_topologies), std::end(line_topologies),
-                   last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology()) !=
-             std::end(line_topologies)) ||
-        (geom_shader_bound &&
-         std::find(std::begin(line_topologies), std::end(line_topologies),
-                   last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology()) != std::end(line_topologies))) {
+    if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                           vuid.set_line_width_08619);
-        if (IsExtEnabled(device_extensions.vk_ext_line_rasterization)) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                              objlist, loc, vuid.set_line_rasterization_mode_08668);
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, objlist,
-                                              loc, vuid.set_line_stipple_enable_08671);
-        }
     }
     if (geom_shader_bound) {
         if (enabled_features.transform_feedback_features.geometryStreams) {
@@ -997,12 +1011,10 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT), i);
                 } else if (cb_state.dynamic_state_value.color_blend_enabled[i]) {
-                    if (!cb_state.dynamic_state_value.color_blend_equation_attachments[i] &&
-                        !cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
+                    if (!cb_state.dynamic_state_value.color_blend_equation_attachments[i]) {
                         skip |= LogError(vuid.set_color_blend_equation_08658, objlist, loc,
-                                         "Neither %s or %s state not set for this command buffer for attachment %" PRIu32 ".",
-                                         DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT),
-                                         DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT), i);
+                                         "%s state not set for this command buffer for attachment %" PRIu32 ".",
+                                         DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT), i);
                     } else if (cb_state.dynamic_state_value.color_blend_equation_attachments[i]) {
                         const auto& eq = cb_state.dynamic_state_value.color_blend_equations[i];
                         if (std::find(const_factors.begin(), const_factors.end(), eq.srcColorBlendFactor) != const_factors.end() ||
@@ -1016,6 +1028,15 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LAST_BOUND_STATE& la
                             }
                         }
                     }
+                }
+            }
+            if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
+                if (!cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT] &&
+                    !cb_state.dynamic_state_status.cb[CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT]) {
+                    skip |= LogError(kVUID_Core_DrawState_BlendOperationAdvanced, objlist, loc,
+                                     "Neither %s nor %s state were set for this command buffer.",
+                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT),
+                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT));
                 }
             }
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, objlist, loc,

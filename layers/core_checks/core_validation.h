@@ -264,10 +264,7 @@ struct DrawDispatchVuid {
     const char* shaders_push_constants_08878 = kVUIDUndefined;
     const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
     const char* set_attachment_feedback_loop_enable_08880 = kVUIDUndefined;
-    const char* set_primitive_topology_08881 = kVUIDUndefined;
     const char* set_vertex_input_08882 = kVUIDUndefined;
-    const char* set_patch_control_points_08883 = kVUIDUndefined;
-    const char* set_primitive_restart_enable_08884 = kVUIDUndefined;
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_line_width_08618 = kVUIDUndefined;
