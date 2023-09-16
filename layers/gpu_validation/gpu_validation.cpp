@@ -210,6 +210,10 @@ void GpuAssistedPreDrawValidationState::Destroy(VkDevice device) {
         DispatchDestroyPipeline(device, entry.second, nullptr);
         renderpass_to_pipeline.erase(entry.first);
     }
+    if (shader_object != VK_NULL_HANDLE) {
+        DispatchDestroyShaderEXT(device, shader_object, nullptr);
+        shader_object = VK_NULL_HANDLE;
+    }
     initialized = false;
 }
 
@@ -229,6 +233,10 @@ void GpuAssistedPreDispatchValidationState::Destroy(VkDevice device) {
     if (pipeline != VK_NULL_HANDLE) {
         DispatchDestroyPipeline(device, pipeline, nullptr);
         pipeline = VK_NULL_HANDLE;
+    }
+    if (shader_object != VK_NULL_HANDLE) {
+        DispatchDestroyShaderEXT(device, shader_object, nullptr);
+        shader_object = VK_NULL_HANDLE;
     }
     initialized = false;
 }
@@ -1757,19 +1765,10 @@ VkPipeline GpuAssisted::GetValidationPipeline(VkRenderPass render_pass) {
 
 void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock &output_block,
                                                      GpuAssistedPreDrawResources &resources, const VkRenderPass render_pass,
-                                                     VkPipeline *pPipeline, const GpuAssistedCmdIndirectState *indirect_state) {
+                                                     const bool use_shader_objects, VkPipeline *pPipeline,
+                                                     const GpuAssistedCmdIndirectState *indirect_state) {
     VkResult result;
     if (!pre_draw_validation_state.initialized) {
-        auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
-        shader_module_ci.codeSize = sizeof(gpu_pre_draw_vert);
-        shader_module_ci.pCode = gpu_pre_draw_vert;
-        result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.shader_module);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader module.  Aborting GPU-AV");
-            aborted = true;
-            return;
-        }
-
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // output buffer
             {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},  // count/draws buffer
@@ -1801,14 +1800,45 @@ void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemo
             return;
         }
 
+        if (use_shader_objects) {
+            auto shader_ci = LvlInitStruct<VkShaderCreateInfoEXT>();
+            shader_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+            shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+            shader_ci.codeSize = sizeof(gpu_pre_draw_vert);
+            shader_ci.pCode = gpu_pre_draw_vert;
+            shader_ci.pName = "main";
+            shader_ci.setLayoutCount = 1u;
+            shader_ci.pSetLayouts = &pre_draw_validation_state.ds_layout;
+            shader_ci.pushConstantRangeCount = 1u;
+            shader_ci.pPushConstantRanges = &push_constant_range;
+            result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &pre_draw_validation_state.shader_object);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to create shader object.  Aborting GPU-AV");
+                aborted = true;
+                return;
+            }
+        } else {
+            auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+            shader_module_ci.codeSize = sizeof(gpu_pre_draw_vert);
+            shader_module_ci.pCode = gpu_pre_draw_vert;
+            result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_draw_validation_state.shader_module);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to create shader module.  Aborting GPU-AV");
+                aborted = true;
+                return;
+            }
+        }
+
         pre_draw_validation_state.initialized = true;
     }
 
-    *pPipeline = GetValidationPipeline(render_pass);
-    if (*pPipeline == VK_NULL_HANDLE) {
-        ReportSetupProblem(device, "Could not find or create a pipeline.  Aborting GPU-AV");
-        aborted = true;
-        return;
+    if (!use_shader_objects) {
+        *pPipeline = GetValidationPipeline(render_pass);
+        if (*pPipeline == VK_NULL_HANDLE) {
+            ReportSetupProblem(device, "Could not find or create a pipeline.  Aborting GPU-AV");
+            aborted = true;
+            return;
+        }
     }
 
     result = desc_set_manager->GetDescriptorSet(&resources.desc_pool, pre_draw_validation_state.ds_layout, &resources.desc_set);
@@ -1848,19 +1878,10 @@ void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemo
 
 void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDeviceMemoryBlock &output_block,
                                                          GpuAssistedPreDispatchResources &resources,
-                                                         const GpuAssistedCmdIndirectState *indirect_state) {
+                                                         const GpuAssistedCmdIndirectState *indirect_state,
+                                                         const bool use_shader_objects) {
     VkResult result;
     if (!pre_dispatch_validation_state.initialized) {
-        auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
-        shader_module_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
-        shader_module_ci.pCode = gpu_pre_dispatch_comp;
-        result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_dispatch_validation_state.shader_module);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Unable to create shader module.  Aborting GPU-AV");
-            aborted = true;
-            return;
-        }
-
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // output buffer
             {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // indirect buffer
@@ -1892,20 +1913,49 @@ void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDevice
             return;
         }
 
-        // Create pipeline
-        auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
-        pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        pipeline_stage_ci.module = pre_dispatch_validation_state.shader_module;
-        pipeline_stage_ci.pName = "main";
+        if (use_shader_objects) {
+            auto shader_ci = LvlInitStruct<VkShaderCreateInfoEXT>();
+            shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+            shader_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
+            shader_ci.pCode = gpu_pre_dispatch_comp;
+            shader_ci.pName = "main";
+            shader_ci.setLayoutCount = 1u;
+            shader_ci.pSetLayouts = &pre_dispatch_validation_state.ds_layout;
+            shader_ci.pushConstantRangeCount = 1u;
+            shader_ci.pPushConstantRanges = &push_constant_range;
+            result = DispatchCreateShadersEXT(device, 1u, &shader_ci, nullptr, &pre_dispatch_validation_state.shader_object);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to create shader object.  Aborting GPU-AV");
+                aborted = true;
+                return;
+            }
+        } else {
+            auto shader_module_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+            shader_module_ci.codeSize = sizeof(gpu_pre_dispatch_comp);
+            shader_module_ci.pCode = gpu_pre_dispatch_comp;
+            result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &pre_dispatch_validation_state.shader_module);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to create shader module.  Aborting GPU-AV");
+                aborted = true;
+                return;
+            }
 
-        auto pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
-        pipeline_ci.stage = pipeline_stage_ci;
-        pipeline_ci.layout = pre_dispatch_validation_state.pipeline_layout;
+            // Create pipeline
+            auto pipeline_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+            pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            pipeline_stage_ci.module = pre_dispatch_validation_state.shader_module;
+            pipeline_stage_ci.pName = "main";
 
-        result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr,
-                                                &pre_dispatch_validation_state.pipeline);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device, "Failed to create compute pipeline for pre dispatch validation.");
+            auto pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
+            pipeline_ci.stage = pipeline_stage_ci;
+            pipeline_ci.layout = pre_dispatch_validation_state.pipeline_layout;
+
+            result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr,
+                                                    &pre_dispatch_validation_state.pipeline);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Failed to create compute pipeline for pre dispatch validation.");
+            }
         }
 
         pre_dispatch_validation_state.initialized = true;
@@ -1960,6 +2010,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto const &last_bound = cb_node->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
     bool uses_robustness = false;
+    const bool use_shader_objects = pipeline_state == nullptr;
 
     if (!pipeline_state && !last_bound.HasShaderObjects()) {
         ReportSetupProblem(device, "Neither pipeline state nor shader object states were found, aborting GPU-AV");
@@ -2027,9 +2078,9 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
         assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
         assert(indirect_state != NULL);
-        VkPipeline validation_pipeline;
+        VkPipeline validation_pipeline = VK_NULL_HANDLE;
         AllocatePreDrawValidationResources(output_block, pre_draw_resources, cb_node->activeRenderPass.get()->renderPass(),
-                                           &validation_pipeline, indirect_state);
+                                           use_shader_objects, &validation_pipeline, indirect_state);
         if (aborted) return;
 
         // Save current graphics pipeline state
@@ -2091,7 +2142,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         }
 
         // Insert diagnostic draw
-        DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
+        if (use_shader_objects) {
+            VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
+            DispatchCmdBindShadersEXT(cmd_buffer, 1u, &stage, &pre_draw_validation_state.shader_object);
+        } else {
+            DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
+        }
         DispatchCmdPushConstants(cmd_buffer, pre_draw_validation_state.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                                  sizeof(push_constants), push_constants);
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pre_draw_validation_state.pipeline_layout, 0, 1,
@@ -2106,7 +2162,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         // NOTE that this validation does not attempt to abort invalid api calls as most other validation does.  A crash
         // or DEVICE_LOST resulting from the invalid call will prevent preceeding validation errors from being reported.
 
-        AllocatePreDispatchValidationResources(output_block, pre_dispatch_resources, indirect_state);
+        AllocatePreDispatchValidationResources(output_block, pre_dispatch_resources, indirect_state, use_shader_objects);
         if (aborted) return;
 
         // Save current graphics pipeline state
@@ -2124,7 +2180,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         push_constants[3] = static_cast<uint32_t>((indirect_state->offset / sizeof(uint32_t)));
 
         // Insert diagnostic dispatch
-        DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pre_dispatch_validation_state.pipeline);
+        if (use_shader_objects) {
+            VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            DispatchCmdBindShadersEXT(cmd_buffer, 1u, &stage, &pre_dispatch_validation_state.shader_object);
+        } else {
+            DispatchCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pre_dispatch_validation_state.pipeline);
+        }
         DispatchCmdPushConstants(cmd_buffer, pre_dispatch_validation_state.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                  sizeof(push_constants), push_constants);
         DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pre_dispatch_validation_state.pipeline_layout, 0,
