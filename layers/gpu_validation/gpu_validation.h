@@ -134,6 +134,7 @@ struct GpuAssistedPreDrawValidationState {
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     vl_concurrent_unordered_map<VkRenderPass, VkPipeline> renderpass_to_pipeline;
+    VkShaderEXT shader_object = VK_NULL_HANDLE;
 
     void Destroy(VkDevice device);
 };
@@ -146,6 +147,7 @@ struct GpuAssistedPreDispatchValidationState {
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
+    VkShaderEXT shader_object = VK_NULL_HANDLE;
 
     void Destroy(VkDevice device);
 };
@@ -314,10 +316,11 @@ class GpuAssisted : public GpuAssistedBase {
                                      const GpuAssistedCmdIndirectState* indirect_state = nullptr);
     void AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
                                             GpuAssistedPreDrawResources& resources, const VkRenderPass render_pass,
-                                            VkPipeline* pPipeline, const GpuAssistedCmdIndirectState* indirect_state);
+                                            const bool use_shader_objects, VkPipeline* pPipeline,
+                                            const GpuAssistedCmdIndirectState* indirect_state);
     void AllocatePreDispatchValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
                                                 GpuAssistedPreDispatchResources& resources,
-                                                const GpuAssistedCmdIndirectState* indirect_state);
+                                                const GpuAssistedCmdIndirectState* indirect_state, const bool use_shader_objects);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
                                                    const RecordObject& record_obj) override;
