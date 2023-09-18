@@ -111,26 +111,26 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
     # Now that the data is all collected and complete, generate and output the wrapping/unwrapping routines
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'layer_chassis_dispatch.h':
@@ -145,14 +145,14 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append('''
-#pragma once
+            #pragma once
 
-extern bool wrap_handles;
+            extern bool wrap_handles;
 
-class ValidationObject;
-void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
+            class ValidationObject;
+            void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
 
-''')
+            ''')
         for command in self.vk.commands.values():
             prototype = command.cPrototype
             prototype = prototype.replace("VKAPI_ATTR ", "")
@@ -173,22 +173,22 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
 
         out = []
         out.append('''
-#include "utils/cast_utils.h"
-#include "chassis.h"
-#include "layer_chassis_dispatch.h"
-#include "vk_safe_struct.h"
-#include "state_tracker/pipeline_state.h"
+            #include "utils/cast_utils.h"
+            #include "chassis.h"
+            #include "layer_chassis_dispatch.h"
+            #include "vk_safe_struct.h"
+            #include "state_tracker/pipeline_state.h"
 
-#define DISPATCH_MAX_STACK_ALLOCATIONS 32
+            #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-// Unique Objects pNext extension handling function
-void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
-    void *cur_pnext = const_cast<void *>(pNext);
-    while (cur_pnext != nullptr) {
-        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);
+            // Unique Objects pNext extension handling function
+            void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
+                void *cur_pnext = const_cast<void *>(pNext);
+                while (cur_pnext != nullptr) {
+                    VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);
 
-        switch (header->sType) {
-''')
+                    switch (header->sType) {
+            ''')
 
         for struct in [self.vk.structs[x] for x in self.ndo_extension_structs]:
             (api_decls, api_pre, api_post) = self.uniquifyMembers(struct.members, 'safe_struct->', 0, False, False, False)
@@ -203,15 +203,16 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
             out.append('\n')
 
-        out.append('''default:
+        out.append('''
+                    default:
                         break;
                 }
 
                 // Process the next structure in the chain
                 cur_pnext = header->pNext;
             }
-        }
-        ''')
+            }
+            ''')
 
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
@@ -244,14 +245,14 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                 param = command.params[-2] # Last param is always VkAllocationCallbacks
                 if self.isNonDispatchable(param.type):
                     # Remove a single handle from the map
-                    destroy_ndo_code += (
-                    f'''uint64_t {param.name}_id = CastToUint64({param.name});
+                    destroy_ndo_code += f'''
+                        uint64_t {param.name}_id = CastToUint64({param.name});
                         auto iter = unique_id_mapping.pop({param.name}_id);
                         if (iter != unique_id_mapping.end()) {{
                             {param.name} = ({param.type})iter->second;
                         }} else {{
                             {param.name} = ({param.type})0;
-                        }}''')
+                        }}'''
             (api_decls, api_pre, api_post) = self.uniquifyMembers(command.params, '', 0, isCreate, isDestroy, True)
             api_post += create_ndo_code
             if isDestroy:
@@ -389,10 +390,10 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                             # Make temp copy of this var with the 'local' removed. It may be better to not pass in 'local_'
                             # as part of the string and explicitly print it
                             fix = str(prefix).strip('local_')
-                            pre_code += (
-                            f'''if ({fix}{member.name}) {{
-                                {prefix}{member.name} = layer_data->Unwrap({fix}{member.name});
-                            }}''')
+                            pre_code += f'''
+                                if ({fix}{member.name}) {{
+                                    {prefix}{member.name} = layer_data->Unwrap({fix}{member.name});
+                                }}'''
             # Handle Structs that contain NDOs at some level
             elif member.type in self.vk.structs:
                 struct = self.vk.structs[member.type]

@@ -240,6 +240,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
     if (pSubmits) {
         for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pSubmits, index0);
+
             if ((pSubmits[index0].waitSemaphoreCount > 0) && (pSubmits[index0].pWaitSemaphores)) {
                 for (uint32_t index1 = 0; index1 < pSubmits[index0].waitSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -247,6 +248,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                            index0_loc.dot(Field::pWaitSemaphores, index1));
                 }
             }
+
             if ((pSubmits[index0].commandBufferCount > 0) && (pSubmits[index0].pCommandBuffers)) {
                 for (uint32_t index1 = 0; index1 < pSubmits[index0].commandBufferCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pCommandBuffers[index1], kVulkanObjectTypeCommandBuffer, false,
@@ -254,6 +256,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                            index0_loc.dot(Field::pCommandBuffers, index1));
                 }
             }
+
             if ((pSubmits[index0].signalSemaphoreCount > 0) && (pSubmits[index0].pSignalSemaphores)) {
                 for (uint32_t index1 = 0; index1 < pSubmits[index0].signalSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pSignalSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -263,6 +266,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
             }
             if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
+
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
                     for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
@@ -270,6 +274,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                                pNext_loc.dot(Field::pImages, index2));
                     }
                 }
+
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
                     for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
@@ -281,6 +286,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -288,6 +294,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                                kVUIDUndefined, pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -301,6 +308,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -308,6 +316,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                                pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -556,6 +565,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
     if (pBindInfo) {
         for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfo, index0);
+
             if ((pBindInfo[index0].waitSemaphoreCount > 0) && (pBindInfo[index0].pWaitSemaphores)) {
                 for (uint32_t index1 = 0; index1 < pBindInfo[index0].waitSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pBindInfo[index0].pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -611,6 +621,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                     }
                 }
             }
+
             if ((pBindInfo[index0].signalSemaphoreCount > 0) && (pBindInfo[index0].pSignalSemaphores)) {
                 for (uint32_t index1 = 0; index1 < pBindInfo[index0].signalSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pBindInfo[index0].pSignalSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -620,6 +631,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
             }
             if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pBindInfo[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
+
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
                     for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
@@ -627,6 +639,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                                                pNext_loc.dot(Field::pImages, index2));
                     }
                 }
+
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
                     for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
@@ -682,6 +695,7 @@ bool ObjectLifetimes::PreCallValidateResetFences(VkDevice device, uint32_t fence
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkResetFences-device-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::device));
+
     if ((fenceCount > 0) && (pFences)) {
         for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
             skip |= ValidateObject(pFences[index0], kVulkanObjectTypeFence, false, "VUID-vkResetFences-pFences-parameter",
@@ -707,6 +721,7 @@ bool ObjectLifetimes::PreCallValidateWaitForFences(VkDevice device, uint32_t fen
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkWaitForFences-device-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::device));
+
     if ((fenceCount > 0) && (pFences)) {
         for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
             skip |= ValidateObject(pFences[index0], kVulkanObjectTypeFence, false, "VUID-vkWaitForFences-pFences-parameter",
@@ -1161,6 +1176,7 @@ bool ObjectLifetimes::PreCallValidateMergePipelineCaches(VkDevice device, VkPipe
                            error_obj.location.dot(Field::device));
     skip |= ValidateObject(dstCache, kVulkanObjectTypePipelineCache, false, "VUID-vkMergePipelineCaches-dstCache-parameter",
                            "VUID-vkMergePipelineCaches-dstCache-parent", error_obj.location.dot(Field::dstCache));
+
     if ((srcCacheCount > 0) && (pSrcCaches)) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             skip |= ValidateObject(
@@ -1211,6 +1227,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                                        "VUID-VkGraphicsPipelineCreateInfo-commonparent", error_obj.location);
             if (auto pNext = LvlFindInChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkGraphicsPipelineShaderGroupsCreateInfoNV);
+
                 if ((pNext->pipelineCount > 0) && (pNext->pPipelines)) {
                     for (uint32_t index2 = 0; index2 < pNext->pipelineCount; ++index2) {
                         skip |= ValidateObject(pNext->pPipelines[index2], kVulkanObjectTypePipeline, false,
@@ -1221,6 +1238,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
             }
             if (auto pNext = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR);
+
                 if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
                     for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         skip |= ValidateObject(pNext->pLibraries[index2], kVulkanObjectTypePipeline, false,
@@ -1329,6 +1347,7 @@ bool ObjectLifetimes::PreCallValidateCreatePipelineLayout(VkDevice device, const
                            error_obj.location.dot(Field::device));
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
+
         if ((pCreateInfo->setLayoutCount > 0) && (pCreateInfo->pSetLayouts)) {
             for (uint32_t index1 = 0; index1 < pCreateInfo->setLayoutCount; ++index1) {
                 skip |= ValidateObject(pCreateInfo->pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, true,
@@ -1671,6 +1690,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer comma
                        kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
     skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdBindDescriptorSets-layout-parameter",
                            "VUID-vkCmdBindDescriptorSets-commonparent", error_obj.location.dot(Field::layout));
+
     if ((descriptorSetCount > 0) && (pDescriptorSets)) {
         for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
             skip |=
@@ -1702,6 +1722,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer comman
     skip |=
         ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindVertexBuffers-commandBuffer-parameter",
                        kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((bindingCount > 0) && (pBuffers)) {
         for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
             skip |=
@@ -1956,6 +1977,7 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents(
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWaitEvents-commandBuffer-parameter",
                            kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((eventCount > 0) && (pEvents)) {
         for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
             skip |= ValidateObject(pEvents[index0], kVulkanObjectTypeEvent, false, "VUID-vkCmdWaitEvents-pEvents-parameter",
@@ -2096,6 +2118,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandB
                                pRenderPassBegin_loc.dot(Field::framebuffer));
         if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
+
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
                 for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
                     skip |= ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
@@ -2133,6 +2156,7 @@ bool ObjectLifetimes::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandB
     skip |=
         ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdExecuteCommands-commandBuffer-parameter",
                        kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((commandBufferCount > 0) && (pCommandBuffers)) {
         for (uint32_t index0 = 0; index0 < commandBufferCount; ++index0) {
             skip |= ValidateObject(pCommandBuffers[index0], kVulkanObjectTypeCommandBuffer, false,
@@ -2234,6 +2258,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance ins
                                                                   VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                                   const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && record_obj.result != VK_INCOMPLETE) return;
+
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
         for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
@@ -2553,6 +2578,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer command
                                pRenderPassBegin_loc.dot(Field::framebuffer));
         if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
+
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
                 for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
                     skip |= ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
@@ -2613,6 +2639,7 @@ bool ObjectLifetimes::PreCallValidateWaitSemaphores(VkDevice device, const VkSem
                            error_obj.location.dot(Field::device));
     if (pWaitInfo) {
         [[maybe_unused]] const Location pWaitInfo_loc = error_obj.location.dot(Field::pWaitInfo);
+
         if ((pWaitInfo->semaphoreCount > 0) && (pWaitInfo->pSemaphores)) {
             for (uint32_t index1 = 0; index1 < pWaitInfo->semaphoreCount; ++index1) {
                 skip |= ValidateObject(pWaitInfo->pSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -2788,6 +2815,7 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWaitEvents2-commandBuffer-parameter",
                            kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((eventCount > 0) && (pEvents)) {
         for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
             skip |= ValidateObject(pEvents[index0], kVulkanObjectTypeEvent, false, "VUID-vkCmdWaitEvents2-pEvents-parameter",
@@ -2894,6 +2922,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
             }
             if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
+
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
                     for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
@@ -2901,6 +2930,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                                                pNext_loc.dot(Field::pImages, index2));
                     }
                 }
+
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
                     for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
@@ -2912,6 +2942,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -2919,6 +2950,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                                                kVUIDUndefined, pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -2932,6 +2964,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -2939,6 +2972,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                                                pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -3184,6 +3218,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer comma
     skip |=
         ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindVertexBuffers2-commandBuffer-parameter",
                        kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((bindingCount > 0) && (pBuffers)) {
         for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
             skip |=
@@ -3442,6 +3477,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
                            error_obj.location.dot(Field::queue));
     if (pPresentInfo) {
         [[maybe_unused]] const Location pPresentInfo_loc = error_obj.location.dot(Field::pPresentInfo);
+
         if ((pPresentInfo->waitSemaphoreCount > 0) && (pPresentInfo->pWaitSemaphores)) {
             for (uint32_t index1 = 0; index1 < pPresentInfo->waitSemaphoreCount; ++index1) {
                 skip |= ValidateObject(pPresentInfo->pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -3449,6 +3485,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
                                        pPresentInfo_loc.dot(Field::pWaitSemaphores, index1));
             }
         }
+
         if ((pPresentInfo->swapchainCount > 0) && (pPresentInfo->pSwapchains)) {
             for (uint32_t index1 = 0; index1 < pPresentInfo->swapchainCount; ++index1) {
                 skip |= ValidateObject(pPresentInfo->pSwapchains[index1], kVulkanObjectTypeSwapchainKHR, false,
@@ -3458,6 +3495,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
         }
         if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pPresentInfo->pNext)) {
             const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkFrameBoundaryEXT);
+
             if ((pNext->imageCount > 0) && (pNext->pImages)) {
                 for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
                     skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
@@ -3465,6 +3503,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
                                            pNext_loc.dot(Field::pImages, index2));
                 }
             }
+
             if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
                 for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
                     skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
@@ -3475,6 +3514,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
         }
         if (auto pNext = LvlFindInChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
             const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT);
+
             if ((pNext->swapchainCount > 0) && (pNext->pFences)) {
                 for (uint32_t index2 = 0; index2 < pNext->swapchainCount; ++index2) {
                     skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, false,
@@ -4270,6 +4310,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
     const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && record_obj.result != VK_INCOMPLETE) return;
+
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
         for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
@@ -4518,6 +4559,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comm
                                pRenderPassBegin_loc.dot(Field::framebuffer));
         if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
+
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
                 for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
                     skip |= ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
@@ -4930,6 +4972,7 @@ bool ObjectLifetimes::PreCallValidateWaitSemaphoresKHR(VkDevice device, const Vk
                            error_obj.location.dot(Field::device));
     if (pWaitInfo) {
         [[maybe_unused]] const Location pWaitInfo_loc = error_obj.location.dot(Field::pWaitInfo);
+
         if ((pWaitInfo->semaphoreCount > 0) && (pWaitInfo->pSemaphores)) {
             for (uint32_t index1 = 0; index1 < pWaitInfo->semaphoreCount; ++index1) {
                 skip |= ValidateObject(pWaitInfo->pSemaphores[index1], kVulkanObjectTypeSemaphore, false,
@@ -5293,6 +5336,7 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBu
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdWaitEvents2-commandBuffer-parameter",
                            kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((eventCount > 0) && (pEvents)) {
         for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
             skip |= ValidateObject(pEvents[index0], kVulkanObjectTypeEvent, false, "VUID-vkCmdWaitEvents2-pEvents-parameter",
@@ -5400,6 +5444,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
             }
             if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
+
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
                     for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
@@ -5407,6 +5452,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
                                                pNext_loc.dot(Field::pImages, index2));
                     }
                 }
+
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
                     for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
@@ -5418,6 +5464,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -5425,6 +5472,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
                                                kVUIDUndefined, pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -5438,6 +5486,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
+
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -5445,6 +5494,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
                                                pNext_loc.dot(Field::pAcquireSyncs, index2));
                     }
                 }
+
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
                     for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
@@ -5805,6 +5855,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkComman
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((bindingCount > 0) && (pBuffers)) {
         for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
             skip |= ValidateObject(
@@ -5824,6 +5875,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffe
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
         for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
             skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true, kVUIDUndefined,
@@ -5843,6 +5895,7 @@ bool ObjectLifetimes::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer 
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
         for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
             skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true, kVUIDUndefined,
@@ -6341,6 +6394,7 @@ bool ObjectLifetimes::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSetHdrMetadataEXT-device-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::device));
+
     if ((swapchainCount > 0) && (pSwapchains)) {
         for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
             skip |= ValidateObject(pSwapchains[index0], kVulkanObjectTypeSwapchainKHR, false,
@@ -6564,6 +6618,7 @@ bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice 
             }
             if (pCreateInfos[index0].pLibraryInfo) {
                 [[maybe_unused]] const Location pLibraryInfo_loc = index0_loc.dot(Field::pLibraryInfo);
+
                 if ((pCreateInfos[index0].pLibraryInfo->libraryCount > 0) && (pCreateInfos[index0].pLibraryInfo->pLibraries)) {
                     for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
                         skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline,
@@ -6764,6 +6819,7 @@ bool ObjectLifetimes::PreCallValidateMergeValidationCachesEXT(VkDevice device, V
     skip |=
         ValidateObject(dstCache, kVulkanObjectTypeValidationCacheEXT, false, "VUID-vkMergeValidationCachesEXT-dstCache-parameter",
                        "VUID-vkMergeValidationCachesEXT-dstCache-parent", error_obj.location.dot(Field::dstCache));
+
     if ((srcCacheCount > 0) && (pSrcCaches)) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             skip |= ValidateObject(pSrcCaches[index0], kVulkanObjectTypeValidationCacheEXT, false,
@@ -7125,6 +7181,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
         for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureNV, false,
@@ -7650,6 +7707,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer co
     skip |=
         ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindVertexBuffers2-commandBuffer-parameter",
                        kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((bindingCount > 0) && (pBuffers)) {
         for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
             skip |=
@@ -8837,6 +8895,7 @@ bool ObjectLifetimes::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkWriteMicromapsPropertiesEXT-device-parameter",
                            kVUIDUndefined, error_obj.location.dot(Field::device));
+
     if ((micromapCount > 0) && (pMicromaps)) {
         for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
             skip |= ValidateObject(
@@ -8905,6 +8964,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuf
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdWriteMicromapsPropertiesEXT-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((micromapCount > 0) && (pMicromaps)) {
         for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
             skip |= ValidateObject(pMicromaps[index0], kVulkanObjectTypeMicromapEXT, false,
@@ -9573,6 +9633,7 @@ bool ObjectLifetimes::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t 
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
+
             if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
                 for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
                     skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, false,
@@ -9633,6 +9694,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBu
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindShadersEXT-commandBuffer-parameter",
                            kVUIDUndefined, error_obj.location.dot(Field::commandBuffer));
+
     if ((stageCount > 0) && (pShaders)) {
         for (uint32_t index0 = 0; index0 < stageCount; ++index0) {
             skip |=
@@ -9857,6 +9919,7 @@ bool ObjectLifetimes::PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     skip |=
         ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkWriteAccelerationStructuresPropertiesKHR-device-parameter",
                        kVUIDUndefined, error_obj.location.dot(Field::device));
+
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
         for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureKHR, false,
@@ -9938,6 +10001,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false,
                            "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commandBuffer-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::commandBuffer));
+
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
         for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureKHR, false,

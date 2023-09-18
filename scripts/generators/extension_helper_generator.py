@@ -124,75 +124,75 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
         out = []
         out.append(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-* Copyright (c) 2015-2023 Google Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            * Copyright (c) 2015-2023 Google Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         out.append('''
-#pragma once
+            #pragma once
 
-#include <string>
-#include <utility>
-#include <set>
-#include <array>
-#include <vector>
-#include <cassert>
+            #include <string>
+            #include <utility>
+            #include <set>
+            #include <array>
+            #include <vector>
+            #include <cassert>
 
-#include <vulkan/vulkan.h>
-#include "containers/custom_containers.h"
-#include "generated/vk_api_version.h"
+            #include <vulkan/vulkan.h>
+            #include "containers/custom_containers.h"
+            #include "generated/vk_api_version.h"
 
-enum ExtEnabled : unsigned char {
-    kNotEnabled,
-    kEnabledByCreateinfo,
-    kEnabledByApiLevel,
-    kEnabledByInteraction,
-};
+            enum ExtEnabled : unsigned char {
+                kNotEnabled,
+                kEnabledByCreateinfo,
+                kEnabledByApiLevel,
+                kEnabledByInteraction,
+            };
 
-/*
-This function is a helper to know if the extension is enabled.
+            /*
+            This function is a helper to know if the extension is enabled.
 
-Times to use it
-- To determine the VUID
-- The VU mentions the use of the extension
-- Extension exposes property limits being validated
-- Checking not enabled
-    - if (!IsExtEnabled(...)) { }
-- Special extensions that being EXPOSED alters the VUs
-    - IsExtEnabled(device_extensions.vk_khr_portability_subset)
-- Special extensions that alter behaviour of enabled
-    - IsExtEnabled(device_extensions.vk_khr_maintenance*)
+            Times to use it
+            - To determine the VUID
+            - The VU mentions the use of the extension
+            - Extension exposes property limits being validated
+            - Checking not enabled
+                - if (!IsExtEnabled(...)) { }
+            - Special extensions that being EXPOSED alters the VUs
+                - IsExtEnabled(device_extensions.vk_khr_portability_subset)
+            - Special extensions that alter behaviour of enabled
+                - IsExtEnabled(device_extensions.vk_khr_maintenance*)
 
-Times to NOT use it
-    - If checking if a struct or enum is being used. There are a stateless checks
-      to make sure the new Structs/Enums are not being used without this enabled.
-    - If checking if the extension's feature enable status, because if the feature
-      is enabled, then we already validated that extension is enabled.
-    - Some variables (ex. viewMask) require the extension to be used if non-zero
-*/
-[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) { return (extension != kNotEnabled); }
+            Times to NOT use it
+                - If checking if a struct or enum is being used. There are a stateless checks
+                  to make sure the new Structs/Enums are not being used without this enabled.
+                - If checking if the extension's feature enable status, because if the feature
+                  is enabled, then we already validated that extension is enabled.
+                - Some variables (ex. viewMask) require the extension to be used if non-zero
+            */
+            [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) { return (extension != kNotEnabled); }
 
-[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) { return (extension == kEnabledByCreateinfo); }
-''')
+            [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) { return (extension == kEnabledByCreateinfo); }
+            ''')
 
         out.append('\nstruct InstanceExtensions {\n')
         for name in APISpecific.getVersionFieldNameDict(self.targetApiName).values():
@@ -231,22 +231,23 @@ Times to NOT use it
             out.append(f'{{{extension.nameString}, InstanceInfo(&InstanceExtensions::{extension.name.lower()}, {{{reqs}}})}},\n')
             out.extend(['#endif\n'] if extension.protect else [])
 
-        out.append('''};
-            return info_map;
-        }
-
-        static const InstanceInfo &get_info(const char *name) {
-            static const InstanceInfo empty_info{nullptr, InstanceReqVec()};
-            const auto &ext_map = InstanceExtensions::get_info_map();
-            const auto info = ext_map.find(name);
-            if (info != ext_map.cend()) {
-                return info->second;
+        out.append('''
+                };
+                return info_map;
             }
-            return empty_info;
-        }
 
-        APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-        ''')
+            static const InstanceInfo &get_info(const char *name) {
+                static const InstanceInfo empty_info{nullptr, InstanceReqVec()};
+                const auto &ext_map = InstanceExtensions::get_info_map();
+                const auto info = ext_map.find(name);
+                if (info != ext_map.cend()) {
+                    return info->second;
+                }
+                return empty_info;
+            }
+
+            APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
+            ''')
         promoted_var_names = APISpecific.getPromotedExtensionArrayName(self.targetApiName, 'instance')
         for version_name, promoted_var_name in promoted_var_names.items():
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version_name and x.instance]
@@ -255,33 +256,33 @@ Times to NOT use it
             out.append('};\n')
 
         out.append('''
-        // Initialize struct data, robust to invalid pCreateInfo
-        auto api_version = NormalizeApiVersion(requested_api_version);''')
+            // Initialize struct data, robust to invalid pCreateInfo
+            auto api_version = NormalizeApiVersion(requested_api_version);''')
         for version_name, promoted_var_name in promoted_var_names.items():
             out.append(f'''
-            if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
-                auto info = get_info("{version_name}");
-                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-                for (auto promoted_ext : {promoted_var_name}) {{
-                    info = get_info(promoted_ext);
-                    assert(info.state);
-                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
-                }}
-            }}''')
+                if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
+                    auto info = get_info("{version_name}");
+                    if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                    for (auto promoted_ext : {promoted_var_name}) {{
+                        info = get_info(promoted_ext);
+                        assert(info.state);
+                        if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                    }}
+                }}''')
 
         out.append('''
-        // CreateInfo takes precedence over promoted
-        if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
-                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
-                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            // CreateInfo takes precedence over promoted
+            if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
+                for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                    if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
+                    auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
+                    if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                }
             }
-        }
-        return api_version;
-    }
-};
-''')
+            return api_version;
+            }
+            };
+            ''')
 
         out.append('static const std::set<std::string> kInstanceExtensionNames = {\n')
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
@@ -327,30 +328,30 @@ Times to NOT use it
             out.extend(['#endif\n'] if extension.protect else [])
 
         out.append('''
-        };
+                };
 
-        return info_map;
-    }
+                return info_map;
+            }
 
-    static const DeviceInfo &get_info(const char *name) {
-        static const DeviceInfo empty_info{nullptr, DeviceReqVec()};
-        const auto &ext_map = DeviceExtensions::get_info_map();
-        const auto info = ext_map.find(name);
-        if (info != ext_map.cend()) {
-            return info->second;
-        }
-        return empty_info;
-    }
+            static const DeviceInfo &get_info(const char *name) {
+                static const DeviceInfo empty_info{nullptr, DeviceReqVec()};
+                const auto &ext_map = DeviceExtensions::get_info_map();
+                const auto info = ext_map.find(name);
+                if (info != ext_map.cend()) {
+                    return info->second;
+                }
+                return empty_info;
+            }
 
-    DeviceExtensions() = default;
-    DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
+            DeviceExtensions() = default;
+            DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
 
-    APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
-                                        const VkDeviceCreateInfo *pCreateInfo = nullptr) {
-        // Initialize: this to defaults,  base class fields to input.
-        assert(instance_extensions);
-        *this = DeviceExtensions(*instance_extensions);
-''')
+            APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
+                                                const VkDeviceCreateInfo *pCreateInfo = nullptr) {
+                // Initialize: this to defaults,  base class fields to input.
+                assert(instance_extensions);
+                *this = DeviceExtensions(*instance_extensions);
+            ''')
         promoted_var_names = APISpecific.getPromotedExtensionArrayName(self.targetApiName, 'device')
         for version_name, promoted_var_name in promoted_var_names.items():
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version_name and x.device]
@@ -359,56 +360,56 @@ Times to NOT use it
             out.append('};\n')
 
         out.append('''
-        // Initialize struct data, robust to invalid pCreateInfo
-        auto api_version = NormalizeApiVersion(requested_api_version);''')
+            // Initialize struct data, robust to invalid pCreateInfo
+            auto api_version = NormalizeApiVersion(requested_api_version);''')
         for version_name, promoted_var_name in promoted_var_names.items():
             out.append(f'''
-            if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
-                auto info = get_info("{version_name}");
-                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
-                for (auto promoted_ext : {promoted_var_name}) {{
-                    info = get_info(promoted_ext);
-                    assert(info.state);
-                    if (info.state) this->*(info.state) = kEnabledByApiLevel;
-                }}
-            }}''')
+                if (api_version >= {version_name.replace('_VERSION_', '_API_VERSION_')}) {{
+                    auto info = get_info("{version_name}");
+                    if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                    for (auto promoted_ext : {promoted_var_name}) {{
+                        info = get_info(promoted_ext);
+                        assert(info.state);
+                        if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                    }}
+                }}''')
 
         out.append('''
-        // CreateInfo takes precedence over promoted
-        if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
-                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
-                if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            // CreateInfo takes precedence over promoted
+            if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
+                for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                    if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
+                    auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
+                    if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                }
             }
-        }
-        // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
-        // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
-        {
-            constexpr std::array shader_object_interactions = {
-                VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
-                VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
-                VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
-                VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
-            };
-            auto info = get_info(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-            if (info.state) {
-                if (this->*(info.state) != kNotEnabled) {
-                    for (auto interaction_ext : shader_object_interactions) {
-                        info = get_info(interaction_ext);
-                        assert(info.state);
-                        if (this->*(info.state) != kEnabledByCreateinfo) {
-                            this->*(info.state) = kEnabledByInteraction;
+            // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
+            // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
+            {
+                constexpr std::array shader_object_interactions = {
+                    VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+                    VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+                    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+                    VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
+                };
+                auto info = get_info(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+                if (info.state) {
+                    if (this->*(info.state) != kNotEnabled) {
+                        for (auto interaction_ext : shader_object_interactions) {
+                            info = get_info(interaction_ext);
+                            assert(info.state);
+                            if (this->*(info.state) != kEnabledByCreateinfo) {
+                                this->*(info.state) = kEnabledByInteraction;
+                            }
                         }
                     }
                 }
             }
-        }
-        return api_version;
-    }
-};
+            return api_version;
+            }
+            };
 
-''')
+            ''')
         out.append('static const std::set<std::string> kDeviceExtensionNames = {\n')
         for extension in [x for x in self.vk.extensions.values() if x.device]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])

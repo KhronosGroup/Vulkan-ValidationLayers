@@ -216,26 +216,26 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'stateless_validation_helper.h':
@@ -315,19 +315,19 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out = []
 
         out.append('''
-#include "chassis.h"
+            #include "chassis.h"
 
-#include "stateless/stateless_validation.h"
-#include "enum_flag_bits.h"
+            #include "stateless/stateless_validation.h"
+            #include "enum_flag_bits.h"
 
-#include <vulkan/layer/vk_layer_settings_ext.h>
+            #include <vulkan/layer/vk_layer_settings_ext.h>
 
-bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
-                                                      const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                      bool is_physdev_api, bool is_const_param) const {
-    bool skip = false;
-    switch(header->sType) {
-''')
+            bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
+                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                                bool is_physdev_api, bool is_const_param) const {
+                bool skip = false;
+                switch(header->sType) {
+            ''')
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
@@ -347,14 +347,14 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
             pnext_case += f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n'
 
             if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
-                pnext_check += (
-                    f''' if (api_version < {struct.version.nameApi}) {{
+                pnext_check += f'''
+                    if (api_version < {struct.version.nameApi}) {{
                         skip |= LogError(
                                 pnext_vuid, instance, loc.dot(Field::pNext),
                                 "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
                                 "current effective API version is %s.", StringAPIVersion(api_version).c_str());
                     }}
-                    ''')
+                    '''
 
             if struct.sType in stype_version_dict.keys():
                 ext_name = stype_version_dict[struct.sType]
@@ -375,8 +375,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                     extension_check = f'if ((is_physdev_api && !SupportedByPdev(physical_device, {extension.nameString})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{'
                 else:
                     extension_check = f'if (!instance_extensions.{extension.name.lower()}) {{'
-                pnext_check += (
-                    f'''if (is_const_param) {{
+                pnext_check += f'''
+                    if (is_const_param) {{
                                 {extension_check}
                                 skip |= LogError(
                                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -384,7 +384,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                                     "{extension.name} has not been enabled.");
                         }}
                     }}
-                    ''')
+                    '''
 
             expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
             struct_validation_source = self.ScrubStructCode(expr)
@@ -402,13 +402,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                 out.append(f'\n        // No Validation code for {struct.name} structure members  -- Covers VUID-{struct.name}-sType-sType\n')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
         out.append('''
-                default:
-                    skip = false;
+                    default:
+                        skip = false;
+                }
+                return skip;
             }
-            return skip;
-        }
 
-        ''')
+            ''')
 
         # Generate the command parameter checking code from the captured data
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:

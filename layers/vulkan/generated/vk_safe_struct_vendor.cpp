@@ -41,6 +41,7 @@ safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const V
       pColorAttachmentSamples(nullptr),
       depthStencilAttachmentSamples(in_struct->depthStencilAttachmentSamples) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorAttachmentSamples) {
         pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachmentSamples, (void*)in_struct->pColorAttachmentSamples,
@@ -61,6 +62,7 @@ safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const s
     pColorAttachmentSamples = nullptr;
     depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorAttachmentSamples) {
         pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachmentSamples, (void*)copy_src.pColorAttachmentSamples,
@@ -80,6 +82,7 @@ safe_VkAttachmentSampleCountInfoAMD& safe_VkAttachmentSampleCountInfoAMD::operat
     pColorAttachmentSamples = nullptr;
     depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorAttachmentSamples) {
         pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachmentSamples, (void*)copy_src.pColorAttachmentSamples,
@@ -103,6 +106,7 @@ void safe_VkAttachmentSampleCountInfoAMD::initialize(const VkAttachmentSampleCou
     pColorAttachmentSamples = nullptr;
     depthStencilAttachmentSamples = in_struct->depthStencilAttachmentSamples;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorAttachmentSamples) {
         pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachmentSamples, (void*)in_struct->pColorAttachmentSamples,
@@ -117,6 +121,7 @@ void safe_VkAttachmentSampleCountInfoAMD::initialize(const safe_VkAttachmentSamp
     pColorAttachmentSamples = nullptr;
     depthStencilAttachmentSamples = copy_src->depthStencilAttachmentSamples;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pColorAttachmentSamples) {
         pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src->colorAttachmentCount];
         memcpy((void*)pColorAttachmentSamples, (void*)copy_src->pColorAttachmentSamples,
@@ -477,6 +482,7 @@ safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreat
                                                            [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), dataSize(in_struct->dataSize), pData(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -491,6 +497,7 @@ safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const safe_VkCuModule
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -510,6 +517,7 @@ safe_VkCuModuleCreateInfoNVX& safe_VkCuModuleCreateInfoNVX::operator=(const safe
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -537,6 +545,7 @@ void safe_VkCuModuleCreateInfoNVX::initialize(const VkCuModuleCreateInfoNVX* in_
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -549,6 +558,7 @@ void safe_VkCuModuleCreateInfoNVX::initialize(const safe_VkCuModuleCreateInfoNVX
     sType = copy_src->sType;
     dataSize = copy_src->dataSize;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pData != nullptr) {
         auto temp = new std::byte[copy_src->dataSize];
         std::memcpy(temp, copy_src->pData, copy_src->dataSize);
@@ -1132,6 +1142,7 @@ safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const
                                                                            [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pAttributes(nullptr), dwAccess(in_struct->dwAccess) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttributes) {
         pAttributes = new SECURITY_ATTRIBUTES(*in_struct->pAttributes);
     }
@@ -1145,6 +1156,7 @@ safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const
     pAttributes = nullptr;
     dwAccess = copy_src.dwAccess;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttributes) {
         pAttributes = new SECURITY_ATTRIBUTES(*copy_src.pAttributes);
     }
@@ -1161,6 +1173,7 @@ safe_VkExportMemoryWin32HandleInfoNV& safe_VkExportMemoryWin32HandleInfoNV::oper
     pAttributes = nullptr;
     dwAccess = copy_src.dwAccess;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttributes) {
         pAttributes = new SECURITY_ATTRIBUTES(*copy_src.pAttributes);
     }
@@ -1181,6 +1194,7 @@ void safe_VkExportMemoryWin32HandleInfoNV::initialize(const VkExportMemoryWin32H
     pAttributes = nullptr;
     dwAccess = in_struct->dwAccess;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttributes) {
         pAttributes = new SECURITY_ATTRIBUTES(*in_struct->pAttributes);
     }
@@ -1192,6 +1206,7 @@ void safe_VkExportMemoryWin32HandleInfoNV::initialize(const safe_VkExportMemoryW
     pAttributes = nullptr;
     dwAccess = copy_src->dwAccess;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pAttributes) {
         pAttributes = new SECURITY_ATTRIBUTES(*copy_src->pAttributes);
     }
@@ -1216,10 +1231,12 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
             pAcquireSyncs[i] = in_struct->pAcquireSyncs[i];
         }
     }
+
     if (in_struct->pAcquireKeys) {
         pAcquireKeys = new uint64_t[in_struct->acquireCount];
         memcpy((void*)pAcquireKeys, (void*)in_struct->pAcquireKeys, sizeof(uint64_t) * in_struct->acquireCount);
     }
+
     if (in_struct->pAcquireTimeoutMilliseconds) {
         pAcquireTimeoutMilliseconds = new uint32_t[in_struct->acquireCount];
         memcpy((void*)pAcquireTimeoutMilliseconds, (void*)in_struct->pAcquireTimeoutMilliseconds,
@@ -1231,6 +1248,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
             pReleaseSyncs[i] = in_struct->pReleaseSyncs[i];
         }
     }
+
     if (in_struct->pReleaseKeys) {
         pReleaseKeys = new uint64_t[in_struct->releaseCount];
         memcpy((void*)pReleaseKeys, (void*)in_struct->pReleaseKeys, sizeof(uint64_t) * in_struct->releaseCount);
@@ -1265,10 +1283,12 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
             pAcquireSyncs[i] = copy_src.pAcquireSyncs[i];
         }
     }
+
     if (copy_src.pAcquireKeys) {
         pAcquireKeys = new uint64_t[copy_src.acquireCount];
         memcpy((void*)pAcquireKeys, (void*)copy_src.pAcquireKeys, sizeof(uint64_t) * copy_src.acquireCount);
     }
+
     if (copy_src.pAcquireTimeoutMilliseconds) {
         pAcquireTimeoutMilliseconds = new uint32_t[copy_src.acquireCount];
         memcpy((void*)pAcquireTimeoutMilliseconds, (void*)copy_src.pAcquireTimeoutMilliseconds,
@@ -1280,6 +1300,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
             pReleaseSyncs[i] = copy_src.pReleaseSyncs[i];
         }
     }
+
     if (copy_src.pReleaseKeys) {
         pReleaseKeys = new uint64_t[copy_src.releaseCount];
         memcpy((void*)pReleaseKeys, (void*)copy_src.pReleaseKeys, sizeof(uint64_t) * copy_src.releaseCount);
@@ -1312,10 +1333,12 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV& safe_VkWin32KeyedMutexAcquireRelease
             pAcquireSyncs[i] = copy_src.pAcquireSyncs[i];
         }
     }
+
     if (copy_src.pAcquireKeys) {
         pAcquireKeys = new uint64_t[copy_src.acquireCount];
         memcpy((void*)pAcquireKeys, (void*)copy_src.pAcquireKeys, sizeof(uint64_t) * copy_src.acquireCount);
     }
+
     if (copy_src.pAcquireTimeoutMilliseconds) {
         pAcquireTimeoutMilliseconds = new uint32_t[copy_src.acquireCount];
         memcpy((void*)pAcquireTimeoutMilliseconds, (void*)copy_src.pAcquireTimeoutMilliseconds,
@@ -1327,6 +1350,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV& safe_VkWin32KeyedMutexAcquireRelease
             pReleaseSyncs[i] = copy_src.pReleaseSyncs[i];
         }
     }
+
     if (copy_src.pReleaseKeys) {
         pReleaseKeys = new uint64_t[copy_src.releaseCount];
         memcpy((void*)pReleaseKeys, (void*)copy_src.pReleaseKeys, sizeof(uint64_t) * copy_src.releaseCount);
@@ -1367,10 +1391,12 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const VkWin32KeyedMu
             pAcquireSyncs[i] = in_struct->pAcquireSyncs[i];
         }
     }
+
     if (in_struct->pAcquireKeys) {
         pAcquireKeys = new uint64_t[in_struct->acquireCount];
         memcpy((void*)pAcquireKeys, (void*)in_struct->pAcquireKeys, sizeof(uint64_t) * in_struct->acquireCount);
     }
+
     if (in_struct->pAcquireTimeoutMilliseconds) {
         pAcquireTimeoutMilliseconds = new uint32_t[in_struct->acquireCount];
         memcpy((void*)pAcquireTimeoutMilliseconds, (void*)in_struct->pAcquireTimeoutMilliseconds,
@@ -1382,6 +1408,7 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const VkWin32KeyedMu
             pReleaseSyncs[i] = in_struct->pReleaseSyncs[i];
         }
     }
+
     if (in_struct->pReleaseKeys) {
         pReleaseKeys = new uint64_t[in_struct->releaseCount];
         memcpy((void*)pReleaseKeys, (void*)in_struct->pReleaseKeys, sizeof(uint64_t) * in_struct->releaseCount);
@@ -1405,10 +1432,12 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const safe_VkWin32Ke
             pAcquireSyncs[i] = copy_src->pAcquireSyncs[i];
         }
     }
+
     if (copy_src->pAcquireKeys) {
         pAcquireKeys = new uint64_t[copy_src->acquireCount];
         memcpy((void*)pAcquireKeys, (void*)copy_src->pAcquireKeys, sizeof(uint64_t) * copy_src->acquireCount);
     }
+
     if (copy_src->pAcquireTimeoutMilliseconds) {
         pAcquireTimeoutMilliseconds = new uint32_t[copy_src->acquireCount];
         memcpy((void*)pAcquireTimeoutMilliseconds, (void*)copy_src->pAcquireTimeoutMilliseconds,
@@ -1420,6 +1449,7 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const safe_VkWin32Ke
             pReleaseSyncs[i] = copy_src->pReleaseSyncs[i];
         }
     }
+
     if (copy_src->pReleaseKeys) {
         pReleaseKeys = new uint64_t[copy_src->releaseCount];
         memcpy((void*)pReleaseKeys, (void*)copy_src->pReleaseKeys, sizeof(uint64_t) * copy_src->releaseCount);
@@ -1486,6 +1516,7 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalin
       viewportCount(in_struct->viewportCount),
       pViewportWScalings(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportWScalings) {
         pViewportWScalings = new VkViewportWScalingNV[in_struct->viewportCount];
         memcpy((void*)pViewportWScalings, (void*)in_struct->pViewportWScalings,
@@ -1507,6 +1538,7 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalin
     viewportCount = copy_src.viewportCount;
     pViewportWScalings = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportWScalings) {
         pViewportWScalings = new VkViewportWScalingNV[copy_src.viewportCount];
         memcpy((void*)pViewportWScalings, (void*)copy_src.pViewportWScalings,
@@ -1526,6 +1558,7 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV& safe_VkPipelineViewportWScalin
     viewportCount = copy_src.viewportCount;
     pViewportWScalings = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportWScalings) {
         pViewportWScalings = new VkViewportWScalingNV[copy_src.viewportCount];
         memcpy((void*)pViewportWScalings, (void*)copy_src.pViewportWScalings,
@@ -1549,6 +1582,7 @@ void safe_VkPipelineViewportWScalingStateCreateInfoNV::initialize(const VkPipeli
     viewportCount = in_struct->viewportCount;
     pViewportWScalings = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportWScalings) {
         pViewportWScalings = new VkViewportWScalingNV[in_struct->viewportCount];
         memcpy((void*)pViewportWScalings, (void*)in_struct->pViewportWScalings,
@@ -1563,6 +1597,7 @@ void safe_VkPipelineViewportWScalingStateCreateInfoNV::initialize(const safe_VkP
     viewportCount = copy_src->viewportCount;
     pViewportWScalings = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewportWScalings) {
         pViewportWScalings = new VkViewportWScalingNV[copy_src->viewportCount];
         memcpy((void*)pViewportWScalings, (void*)copy_src->pViewportWScalings,
@@ -1574,6 +1609,7 @@ safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const VkPresentTime
                                                              [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), swapchainCount(in_struct->swapchainCount), pTimes(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pTimes) {
         pTimes = new VkPresentTimeGOOGLE[in_struct->swapchainCount];
         memcpy((void*)pTimes, (void*)in_struct->pTimes, sizeof(VkPresentTimeGOOGLE) * in_struct->swapchainCount);
@@ -1588,6 +1624,7 @@ safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const safe_VkPresen
     swapchainCount = copy_src.swapchainCount;
     pTimes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pTimes) {
         pTimes = new VkPresentTimeGOOGLE[copy_src.swapchainCount];
         memcpy((void*)pTimes, (void*)copy_src.pTimes, sizeof(VkPresentTimeGOOGLE) * copy_src.swapchainCount);
@@ -1604,6 +1641,7 @@ safe_VkPresentTimesInfoGOOGLE& safe_VkPresentTimesInfoGOOGLE::operator=(const sa
     swapchainCount = copy_src.swapchainCount;
     pTimes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pTimes) {
         pTimes = new VkPresentTimeGOOGLE[copy_src.swapchainCount];
         memcpy((void*)pTimes, (void*)copy_src.pTimes, sizeof(VkPresentTimeGOOGLE) * copy_src.swapchainCount);
@@ -1625,6 +1663,7 @@ void safe_VkPresentTimesInfoGOOGLE::initialize(const VkPresentTimesInfoGOOGLE* i
     swapchainCount = in_struct->swapchainCount;
     pTimes = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pTimes) {
         pTimes = new VkPresentTimeGOOGLE[in_struct->swapchainCount];
         memcpy((void*)pTimes, (void*)in_struct->pTimes, sizeof(VkPresentTimeGOOGLE) * in_struct->swapchainCount);
@@ -1637,6 +1676,7 @@ void safe_VkPresentTimesInfoGOOGLE::initialize(const safe_VkPresentTimesInfoGOOG
     swapchainCount = copy_src->swapchainCount;
     pTimes = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pTimes) {
         pTimes = new VkPresentTimeGOOGLE[copy_src->swapchainCount];
         memcpy((void*)pTimes, (void*)copy_src->pTimes, sizeof(VkPresentTimeGOOGLE) * copy_src->swapchainCount);
@@ -1698,6 +1738,7 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleS
     const VkPipelineViewportSwizzleStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), flags(in_struct->flags), viewportCount(in_struct->viewportCount), pViewportSwizzles(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportSwizzles) {
         pViewportSwizzles = new VkViewportSwizzleNV[in_struct->viewportCount];
         memcpy((void*)pViewportSwizzles, (void*)in_struct->pViewportSwizzles,
@@ -1719,6 +1760,7 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleS
     viewportCount = copy_src.viewportCount;
     pViewportSwizzles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportSwizzles) {
         pViewportSwizzles = new VkViewportSwizzleNV[copy_src.viewportCount];
         memcpy((void*)pViewportSwizzles, (void*)copy_src.pViewportSwizzles, sizeof(VkViewportSwizzleNV) * copy_src.viewportCount);
@@ -1737,6 +1779,7 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV& safe_VkPipelineViewportSwizzleS
     viewportCount = copy_src.viewportCount;
     pViewportSwizzles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportSwizzles) {
         pViewportSwizzles = new VkViewportSwizzleNV[copy_src.viewportCount];
         memcpy((void*)pViewportSwizzles, (void*)copy_src.pViewportSwizzles, sizeof(VkViewportSwizzleNV) * copy_src.viewportCount);
@@ -1759,6 +1802,7 @@ void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const VkPipelin
     viewportCount = in_struct->viewportCount;
     pViewportSwizzles = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportSwizzles) {
         pViewportSwizzles = new VkViewportSwizzleNV[in_struct->viewportCount];
         memcpy((void*)pViewportSwizzles, (void*)in_struct->pViewportSwizzles,
@@ -1773,6 +1817,7 @@ void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const safe_VkPi
     viewportCount = copy_src->viewportCount;
     pViewportSwizzles = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewportSwizzles) {
         pViewportSwizzles = new VkViewportSwizzleNV[copy_src->viewportCount];
         memcpy((void*)pViewportSwizzles, (void*)copy_src->pViewportSwizzles, sizeof(VkViewportSwizzleNV) * copy_src->viewportCount);
@@ -2697,6 +2742,7 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModul
       coverageModulationTableCount(in_struct->coverageModulationTableCount),
       pCoverageModulationTable(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pCoverageModulationTable) {
         pCoverageModulationTable = new float[in_struct->coverageModulationTableCount];
         memcpy((void*)pCoverageModulationTable, (void*)in_struct->pCoverageModulationTable,
@@ -2722,6 +2768,7 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModul
     coverageModulationTableCount = copy_src.coverageModulationTableCount;
     pCoverageModulationTable = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCoverageModulationTable) {
         pCoverageModulationTable = new float[copy_src.coverageModulationTableCount];
         memcpy((void*)pCoverageModulationTable, (void*)copy_src.pCoverageModulationTable,
@@ -2743,6 +2790,7 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV& safe_VkPipelineCoverageModul
     coverageModulationTableCount = copy_src.coverageModulationTableCount;
     pCoverageModulationTable = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCoverageModulationTable) {
         pCoverageModulationTable = new float[copy_src.coverageModulationTableCount];
         memcpy((void*)pCoverageModulationTable, (void*)copy_src.pCoverageModulationTable,
@@ -2768,6 +2816,7 @@ void safe_VkPipelineCoverageModulationStateCreateInfoNV::initialize(const VkPipe
     coverageModulationTableCount = in_struct->coverageModulationTableCount;
     pCoverageModulationTable = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pCoverageModulationTable) {
         pCoverageModulationTable = new float[in_struct->coverageModulationTableCount];
         memcpy((void*)pCoverageModulationTable, (void*)in_struct->pCoverageModulationTable,
@@ -2784,6 +2833,7 @@ void safe_VkPipelineCoverageModulationStateCreateInfoNV::initialize(
     coverageModulationTableCount = copy_src->coverageModulationTableCount;
     pCoverageModulationTable = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pCoverageModulationTable) {
         pCoverageModulationTable = new float[copy_src->coverageModulationTableCount];
         memcpy((void*)pCoverageModulationTable, (void*)copy_src->pCoverageModulationTable,
@@ -2909,6 +2959,7 @@ safe_VkShadingRatePaletteNV::safe_VkShadingRatePaletteNV() : shadingRatePaletteE
 safe_VkShadingRatePaletteNV::safe_VkShadingRatePaletteNV(const safe_VkShadingRatePaletteNV& copy_src) {
     shadingRatePaletteEntryCount = copy_src.shadingRatePaletteEntryCount;
     pShadingRatePaletteEntries = nullptr;
+
     if (copy_src.pShadingRatePaletteEntries) {
         pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src.shadingRatePaletteEntryCount];
         memcpy((void*)pShadingRatePaletteEntries, (void*)copy_src.pShadingRatePaletteEntries,
@@ -2923,6 +2974,7 @@ safe_VkShadingRatePaletteNV& safe_VkShadingRatePaletteNV::operator=(const safe_V
 
     shadingRatePaletteEntryCount = copy_src.shadingRatePaletteEntryCount;
     pShadingRatePaletteEntries = nullptr;
+
     if (copy_src.pShadingRatePaletteEntries) {
         pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src.shadingRatePaletteEntryCount];
         memcpy((void*)pShadingRatePaletteEntries, (void*)copy_src.pShadingRatePaletteEntries,
@@ -2940,6 +2992,7 @@ void safe_VkShadingRatePaletteNV::initialize(const VkShadingRatePaletteNV* in_st
     if (pShadingRatePaletteEntries) delete[] pShadingRatePaletteEntries;
     shadingRatePaletteEntryCount = in_struct->shadingRatePaletteEntryCount;
     pShadingRatePaletteEntries = nullptr;
+
     if (in_struct->pShadingRatePaletteEntries) {
         pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[in_struct->shadingRatePaletteEntryCount];
         memcpy((void*)pShadingRatePaletteEntries, (void*)in_struct->pShadingRatePaletteEntries,
@@ -2951,6 +3004,7 @@ void safe_VkShadingRatePaletteNV::initialize(const safe_VkShadingRatePaletteNV* 
                                              [[maybe_unused]] PNextCopyState* copy_state) {
     shadingRatePaletteEntryCount = copy_src->shadingRatePaletteEntryCount;
     pShadingRatePaletteEntries = nullptr;
+
     if (copy_src->pShadingRatePaletteEntries) {
         pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src->shadingRatePaletteEntryCount];
         memcpy((void*)pShadingRatePaletteEntries, (void*)copy_src->pShadingRatePaletteEntries,
@@ -3195,6 +3249,7 @@ safe_VkCoarseSampleOrderCustomNV::safe_VkCoarseSampleOrderCustomNV(const safe_Vk
     sampleCount = copy_src.sampleCount;
     sampleLocationCount = copy_src.sampleLocationCount;
     pSampleLocations = nullptr;
+
     if (copy_src.pSampleLocations) {
         pSampleLocations = new VkCoarseSampleLocationNV[copy_src.sampleLocationCount];
         memcpy((void*)pSampleLocations, (void*)copy_src.pSampleLocations,
@@ -3211,6 +3266,7 @@ safe_VkCoarseSampleOrderCustomNV& safe_VkCoarseSampleOrderCustomNV::operator=(co
     sampleCount = copy_src.sampleCount;
     sampleLocationCount = copy_src.sampleLocationCount;
     pSampleLocations = nullptr;
+
     if (copy_src.pSampleLocations) {
         pSampleLocations = new VkCoarseSampleLocationNV[copy_src.sampleLocationCount];
         memcpy((void*)pSampleLocations, (void*)copy_src.pSampleLocations,
@@ -3231,6 +3287,7 @@ void safe_VkCoarseSampleOrderCustomNV::initialize(const VkCoarseSampleOrderCusto
     sampleCount = in_struct->sampleCount;
     sampleLocationCount = in_struct->sampleLocationCount;
     pSampleLocations = nullptr;
+
     if (in_struct->pSampleLocations) {
         pSampleLocations = new VkCoarseSampleLocationNV[in_struct->sampleLocationCount];
         memcpy((void*)pSampleLocations, (void*)in_struct->pSampleLocations,
@@ -3244,6 +3301,7 @@ void safe_VkCoarseSampleOrderCustomNV::initialize(const safe_VkCoarseSampleOrder
     sampleCount = copy_src->sampleCount;
     sampleLocationCount = copy_src->sampleLocationCount;
     pSampleLocations = nullptr;
+
     if (copy_src->pSampleLocations) {
         pSampleLocations = new VkCoarseSampleLocationNV[copy_src->sampleLocationCount];
         memcpy((void*)pSampleLocations, (void*)copy_src->pSampleLocations,
@@ -3973,6 +4031,7 @@ safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMe
       deviceIndexCount(in_struct->deviceIndexCount),
       pDeviceIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
@@ -3997,6 +4056,7 @@ safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMe
     deviceIndexCount = copy_src.deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
@@ -4017,6 +4077,7 @@ safe_VkBindAccelerationStructureMemoryInfoNV& safe_VkBindAccelerationStructureMe
     deviceIndexCount = copy_src.deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
@@ -4041,6 +4102,7 @@ void safe_VkBindAccelerationStructureMemoryInfoNV::initialize(const VkBindAccele
     deviceIndexCount = in_struct->deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
@@ -4056,6 +4118,7 @@ void safe_VkBindAccelerationStructureMemoryInfoNV::initialize(const safe_VkBindA
     deviceIndexCount = copy_src->deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src->pDeviceIndices, sizeof(uint32_t) * copy_src->deviceIndexCount);
@@ -4794,9 +4857,11 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderProp
       meshOutputPerVertexGranularity(in_struct->meshOutputPerVertexGranularity),
       meshOutputPerPrimitiveGranularity(in_struct->meshOutputPerPrimitiveGranularity) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
     }
@@ -4832,9 +4897,11 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderProp
     meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
     meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
     }
@@ -4859,9 +4926,11 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV& safe_VkPhysicalDeviceMeshShaderProp
     meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
     meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
     }
@@ -4889,9 +4958,11 @@ void safe_VkPhysicalDeviceMeshShaderPropertiesNV::initialize(const VkPhysicalDev
     meshOutputPerVertexGranularity = in_struct->meshOutputPerVertexGranularity;
     meshOutputPerPrimitiveGranularity = in_struct->meshOutputPerPrimitiveGranularity;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
     }
@@ -4912,9 +4983,11 @@ void safe_VkPhysicalDeviceMeshShaderPropertiesNV::initialize(const safe_VkPhysic
     meshOutputPerVertexGranularity = copy_src->meshOutputPerVertexGranularity;
     meshOutputPerPrimitiveGranularity = copy_src->meshOutputPerPrimitiveGranularity;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src->maxMeshWorkGroupSize[i];
     }
@@ -4972,6 +5045,7 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewpor
     const VkPipelineViewportExclusiveScissorStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), exclusiveScissorCount(in_struct->exclusiveScissorCount), pExclusiveScissors(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pExclusiveScissors) {
         pExclusiveScissors = new VkRect2D[in_struct->exclusiveScissorCount];
         memcpy((void*)pExclusiveScissors, (void*)in_struct->pExclusiveScissors,
@@ -4991,6 +5065,7 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewpor
     exclusiveScissorCount = copy_src.exclusiveScissorCount;
     pExclusiveScissors = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pExclusiveScissors) {
         pExclusiveScissors = new VkRect2D[copy_src.exclusiveScissorCount];
         memcpy((void*)pExclusiveScissors, (void*)copy_src.pExclusiveScissors, sizeof(VkRect2D) * copy_src.exclusiveScissorCount);
@@ -5008,6 +5083,7 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& safe_VkPipelineViewpor
     exclusiveScissorCount = copy_src.exclusiveScissorCount;
     pExclusiveScissors = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pExclusiveScissors) {
         pExclusiveScissors = new VkRect2D[copy_src.exclusiveScissorCount];
         memcpy((void*)pExclusiveScissors, (void*)copy_src.pExclusiveScissors, sizeof(VkRect2D) * copy_src.exclusiveScissorCount);
@@ -5029,6 +5105,7 @@ void safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::initialize(
     exclusiveScissorCount = in_struct->exclusiveScissorCount;
     pExclusiveScissors = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pExclusiveScissors) {
         pExclusiveScissors = new VkRect2D[in_struct->exclusiveScissorCount];
         memcpy((void*)pExclusiveScissors, (void*)in_struct->pExclusiveScissors,
@@ -5042,6 +5119,7 @@ void safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::initialize(
     exclusiveScissorCount = copy_src->exclusiveScissorCount;
     pExclusiveScissors = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pExclusiveScissors) {
         pExclusiveScissors = new VkRect2D[copy_src->exclusiveScissorCount];
         memcpy((void*)pExclusiveScissors, (void*)copy_src->pExclusiveScissors, sizeof(VkRect2D) * copy_src->exclusiveScissorCount);
@@ -6685,10 +6763,12 @@ safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV(const
       pIndexTypes(nullptr),
       pIndexTypeValues(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pIndexTypes) {
         pIndexTypes = new VkIndexType[in_struct->indexTypeCount];
         memcpy((void*)pIndexTypes, (void*)in_struct->pIndexTypes, sizeof(VkIndexType) * in_struct->indexTypeCount);
     }
+
     if (in_struct->pIndexTypeValues) {
         pIndexTypeValues = new uint32_t[in_struct->indexTypeCount];
         memcpy((void*)pIndexTypeValues, (void*)in_struct->pIndexTypeValues, sizeof(uint32_t) * in_struct->indexTypeCount);
@@ -6728,10 +6808,12 @@ safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV(const
     pIndexTypes = nullptr;
     pIndexTypeValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pIndexTypes) {
         pIndexTypes = new VkIndexType[copy_src.indexTypeCount];
         memcpy((void*)pIndexTypes, (void*)copy_src.pIndexTypes, sizeof(VkIndexType) * copy_src.indexTypeCount);
     }
+
     if (copy_src.pIndexTypeValues) {
         pIndexTypeValues = new uint32_t[copy_src.indexTypeCount];
         memcpy((void*)pIndexTypeValues, (void*)copy_src.pIndexTypeValues, sizeof(uint32_t) * copy_src.indexTypeCount);
@@ -6761,10 +6843,12 @@ safe_VkIndirectCommandsLayoutTokenNV& safe_VkIndirectCommandsLayoutTokenNV::oper
     pIndexTypes = nullptr;
     pIndexTypeValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pIndexTypes) {
         pIndexTypes = new VkIndexType[copy_src.indexTypeCount];
         memcpy((void*)pIndexTypes, (void*)copy_src.pIndexTypes, sizeof(VkIndexType) * copy_src.indexTypeCount);
     }
+
     if (copy_src.pIndexTypeValues) {
         pIndexTypeValues = new uint32_t[copy_src.indexTypeCount];
         memcpy((void*)pIndexTypeValues, (void*)copy_src.pIndexTypeValues, sizeof(uint32_t) * copy_src.indexTypeCount);
@@ -6799,10 +6883,12 @@ void safe_VkIndirectCommandsLayoutTokenNV::initialize(const VkIndirectCommandsLa
     pIndexTypes = nullptr;
     pIndexTypeValues = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pIndexTypes) {
         pIndexTypes = new VkIndexType[in_struct->indexTypeCount];
         memcpy((void*)pIndexTypes, (void*)in_struct->pIndexTypes, sizeof(VkIndexType) * in_struct->indexTypeCount);
     }
+
     if (in_struct->pIndexTypeValues) {
         pIndexTypeValues = new uint32_t[in_struct->indexTypeCount];
         memcpy((void*)pIndexTypeValues, (void*)in_struct->pIndexTypeValues, sizeof(uint32_t) * in_struct->indexTypeCount);
@@ -6826,10 +6912,12 @@ void safe_VkIndirectCommandsLayoutTokenNV::initialize(const safe_VkIndirectComma
     pIndexTypes = nullptr;
     pIndexTypeValues = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pIndexTypes) {
         pIndexTypes = new VkIndexType[copy_src->indexTypeCount];
         memcpy((void*)pIndexTypes, (void*)copy_src->pIndexTypes, sizeof(VkIndexType) * copy_src->indexTypeCount);
     }
+
     if (copy_src->pIndexTypeValues) {
         pIndexTypeValues = new uint32_t[copy_src->indexTypeCount];
         memcpy((void*)pIndexTypeValues, (void*)copy_src->pIndexTypeValues, sizeof(uint32_t) * copy_src->indexTypeCount);
@@ -6852,6 +6940,7 @@ safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateIn
             pTokens[i].initialize(&in_struct->pTokens[i]);
         }
     }
+
     if (in_struct->pStreamStrides) {
         pStreamStrides = new uint32_t[in_struct->streamCount];
         memcpy((void*)pStreamStrides, (void*)in_struct->pStreamStrides, sizeof(uint32_t) * in_struct->streamCount);
@@ -6884,6 +6973,7 @@ safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateIn
             pTokens[i].initialize(&copy_src.pTokens[i]);
         }
     }
+
     if (copy_src.pStreamStrides) {
         pStreamStrides = new uint32_t[copy_src.streamCount];
         memcpy((void*)pStreamStrides, (void*)copy_src.pStreamStrides, sizeof(uint32_t) * copy_src.streamCount);
@@ -6912,6 +7002,7 @@ safe_VkIndirectCommandsLayoutCreateInfoNV& safe_VkIndirectCommandsLayoutCreateIn
             pTokens[i].initialize(&copy_src.pTokens[i]);
         }
     }
+
     if (copy_src.pStreamStrides) {
         pStreamStrides = new uint32_t[copy_src.streamCount];
         memcpy((void*)pStreamStrides, (void*)copy_src.pStreamStrides, sizeof(uint32_t) * copy_src.streamCount);
@@ -6945,6 +7036,7 @@ void safe_VkIndirectCommandsLayoutCreateInfoNV::initialize(const VkIndirectComma
             pTokens[i].initialize(&in_struct->pTokens[i]);
         }
     }
+
     if (in_struct->pStreamStrides) {
         pStreamStrides = new uint32_t[in_struct->streamCount];
         memcpy((void*)pStreamStrides, (void*)in_struct->pStreamStrides, sizeof(uint32_t) * in_struct->streamCount);
@@ -6967,6 +7059,7 @@ void safe_VkIndirectCommandsLayoutCreateInfoNV::initialize(const safe_VkIndirect
             pTokens[i].initialize(&copy_src->pTokens[i]);
         }
     }
+
     if (copy_src->pStreamStrides) {
         pStreamStrides = new uint32_t[copy_src->streamCount];
         memcpy((void*)pStreamStrides, (void*)copy_src->pStreamStrides, sizeof(uint32_t) * copy_src->streamCount);
@@ -7253,6 +7346,7 @@ safe_VkCommandBufferInheritanceViewportScissorInfoNV::safe_VkCommandBufferInheri
       viewportDepthCount(in_struct->viewportDepthCount),
       pViewportDepths(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportDepths) {
         pViewportDepths = new VkViewport(*in_struct->pViewportDepths);
     }
@@ -7272,6 +7366,7 @@ safe_VkCommandBufferInheritanceViewportScissorInfoNV::safe_VkCommandBufferInheri
     viewportDepthCount = copy_src.viewportDepthCount;
     pViewportDepths = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportDepths) {
         pViewportDepths = new VkViewport(*copy_src.pViewportDepths);
     }
@@ -7289,6 +7384,7 @@ safe_VkCommandBufferInheritanceViewportScissorInfoNV& safe_VkCommandBufferInheri
     viewportDepthCount = copy_src.viewportDepthCount;
     pViewportDepths = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewportDepths) {
         pViewportDepths = new VkViewport(*copy_src.pViewportDepths);
     }
@@ -7310,6 +7406,7 @@ void safe_VkCommandBufferInheritanceViewportScissorInfoNV::initialize(
     viewportDepthCount = in_struct->viewportDepthCount;
     pViewportDepths = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewportDepths) {
         pViewportDepths = new VkViewport(*in_struct->pViewportDepths);
     }
@@ -7322,6 +7419,7 @@ void safe_VkCommandBufferInheritanceViewportScissorInfoNV::initialize(
     viewportDepthCount = copy_src->viewportDepthCount;
     pViewportDepths = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewportDepths) {
         pViewportDepths = new VkViewport(*copy_src->pViewportDepths);
     }
@@ -7885,6 +7983,7 @@ safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragment
     const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), shadingRateType(in_struct->shadingRateType), shadingRate(in_struct->shadingRate) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         combinerOps[i] = in_struct->combinerOps[i];
     }
@@ -7902,6 +8001,7 @@ safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragment
     shadingRateType = copy_src.shadingRateType;
     shadingRate = copy_src.shadingRate;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         combinerOps[i] = copy_src.combinerOps[i];
     }
@@ -7917,6 +8017,7 @@ safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& safe_VkPipelineFragment
     shadingRateType = copy_src.shadingRateType;
     shadingRate = copy_src.shadingRate;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         combinerOps[i] = copy_src.combinerOps[i];
     }
@@ -7935,6 +8036,7 @@ void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(
     shadingRateType = in_struct->shadingRateType;
     shadingRate = in_struct->shadingRate;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         combinerOps[i] = in_struct->combinerOps[i];
     }
@@ -7946,6 +8048,7 @@ void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(
     shadingRateType = copy_src->shadingRateType;
     shadingRate = copy_src->shadingRate;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         combinerOps[i] = copy_src->combinerOps[i];
     }
@@ -9466,9 +9569,11 @@ safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const VkScr
                                                                      [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), flags(in_struct->flags), context(nullptr), window(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->context) {
         context = new _screen_context(*in_struct->context);
     }
+
     if (in_struct->window) {
         window = new _screen_window(*in_struct->window);
     }
@@ -9483,9 +9588,11 @@ safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const safe_
     context = nullptr;
     window = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.context) {
         context = new _screen_context(*copy_src.context);
     }
+
     if (copy_src.window) {
         window = new _screen_window(*copy_src.window);
     }
@@ -9503,9 +9610,11 @@ safe_VkScreenSurfaceCreateInfoQNX& safe_VkScreenSurfaceCreateInfoQNX::operator=(
     context = nullptr;
     window = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.context) {
         context = new _screen_context(*copy_src.context);
     }
+
     if (copy_src.window) {
         window = new _screen_window(*copy_src.window);
     }
@@ -9529,9 +9638,11 @@ void safe_VkScreenSurfaceCreateInfoQNX::initialize(const VkScreenSurfaceCreateIn
     context = nullptr;
     window = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->context) {
         context = new _screen_context(*in_struct->context);
     }
+
     if (in_struct->window) {
         window = new _screen_window(*in_struct->window);
     }
@@ -9544,9 +9655,11 @@ void safe_VkScreenSurfaceCreateInfoQNX::initialize(const safe_VkScreenSurfaceCre
     context = nullptr;
     window = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->context) {
         context = new _screen_context(*copy_src->context);
     }
+
     if (copy_src->window) {
         window = new _screen_window(*copy_src->window);
     }
@@ -9933,9 +10046,11 @@ safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::safe_VkPhysicalDevice
       maxOutputClusterCount(in_struct->maxOutputClusterCount),
       indirectBufferOffsetAlignment(in_struct->indirectBufferOffsetAlignment) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupCount[i] = in_struct->maxWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupSize[i] = in_struct->maxWorkGroupSize[i];
     }
@@ -9953,9 +10068,11 @@ safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::safe_VkPhysicalDevice
     maxOutputClusterCount = copy_src.maxOutputClusterCount;
     indirectBufferOffsetAlignment = copy_src.indirectBufferOffsetAlignment;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupCount[i] = copy_src.maxWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupSize[i] = copy_src.maxWorkGroupSize[i];
     }
@@ -9971,9 +10088,11 @@ safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& safe_VkPhysicalDevice
     maxOutputClusterCount = copy_src.maxOutputClusterCount;
     indirectBufferOffsetAlignment = copy_src.indirectBufferOffsetAlignment;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupCount[i] = copy_src.maxWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupSize[i] = copy_src.maxWorkGroupSize[i];
     }
@@ -9992,9 +10111,11 @@ void safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::initialize(
     maxOutputClusterCount = in_struct->maxOutputClusterCount;
     indirectBufferOffsetAlignment = in_struct->indirectBufferOffsetAlignment;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupCount[i] = in_struct->maxWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupSize[i] = in_struct->maxWorkGroupSize[i];
     }
@@ -10006,9 +10127,11 @@ void safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::initialize(
     maxOutputClusterCount = copy_src->maxOutputClusterCount;
     indirectBufferOffsetAlignment = copy_src->indirectBufferOffsetAlignment;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupCount[i] = copy_src->maxWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxWorkGroupSize[i] = copy_src->maxWorkGroupSize[i];
     }
@@ -10331,6 +10454,7 @@ safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensity
     const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), fragmentDensityOffsetCount(in_struct->fragmentDensityOffsetCount), pFragmentDensityOffsets(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pFragmentDensityOffsets) {
         pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
         memcpy((void*)pFragmentDensityOffsets, (void*)in_struct->pFragmentDensityOffsets,
@@ -10350,6 +10474,7 @@ safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensity
     fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
     pFragmentDensityOffsets = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pFragmentDensityOffsets) {
         pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
         memcpy((void*)pFragmentDensityOffsets, (void*)copy_src.pFragmentDensityOffsets,
@@ -10368,6 +10493,7 @@ safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& safe_VkSubpassFragmentDensity
     fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
     pFragmentDensityOffsets = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pFragmentDensityOffsets) {
         pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
         memcpy((void*)pFragmentDensityOffsets, (void*)copy_src.pFragmentDensityOffsets,
@@ -10390,6 +10516,7 @@ void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const VkSubpa
     fragmentDensityOffsetCount = in_struct->fragmentDensityOffsetCount;
     pFragmentDensityOffsets = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pFragmentDensityOffsets) {
         pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
         memcpy((void*)pFragmentDensityOffsets, (void*)in_struct->pFragmentDensityOffsets,
@@ -10403,6 +10530,7 @@ void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(
     fragmentDensityOffsetCount = copy_src->fragmentDensityOffsetCount;
     pFragmentDensityOffsets = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pFragmentDensityOffsets) {
         pFragmentDensityOffsets = new VkOffset2D[copy_src->fragmentDensityOffsetCount];
         memcpy((void*)pFragmentDensityOffsets, (void*)copy_src->pFragmentDensityOffsets,
@@ -11589,6 +11717,7 @@ safe_VkOpticalFlowExecuteInfoNV::safe_VkOpticalFlowExecuteInfoNV(const VkOptical
                                                                  [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), flags(in_struct->flags), regionCount(in_struct->regionCount), pRegions(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pRegions) {
         pRegions = new VkRect2D[in_struct->regionCount];
         memcpy((void*)pRegions, (void*)in_struct->pRegions, sizeof(VkRect2D) * in_struct->regionCount);
@@ -11604,6 +11733,7 @@ safe_VkOpticalFlowExecuteInfoNV::safe_VkOpticalFlowExecuteInfoNV(const safe_VkOp
     regionCount = copy_src.regionCount;
     pRegions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pRegions) {
         pRegions = new VkRect2D[copy_src.regionCount];
         memcpy((void*)pRegions, (void*)copy_src.pRegions, sizeof(VkRect2D) * copy_src.regionCount);
@@ -11621,6 +11751,7 @@ safe_VkOpticalFlowExecuteInfoNV& safe_VkOpticalFlowExecuteInfoNV::operator=(cons
     regionCount = copy_src.regionCount;
     pRegions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pRegions) {
         pRegions = new VkRect2D[copy_src.regionCount];
         memcpy((void*)pRegions, (void*)copy_src.pRegions, sizeof(VkRect2D) * copy_src.regionCount);
@@ -11643,6 +11774,7 @@ void safe_VkOpticalFlowExecuteInfoNV::initialize(const VkOpticalFlowExecuteInfoN
     regionCount = in_struct->regionCount;
     pRegions = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pRegions) {
         pRegions = new VkRect2D[in_struct->regionCount];
         memcpy((void*)pRegions, (void*)in_struct->pRegions, sizeof(VkRect2D) * in_struct->regionCount);
@@ -11656,6 +11788,7 @@ void safe_VkOpticalFlowExecuteInfoNV::initialize(const safe_VkOpticalFlowExecute
     regionCount = copy_src->regionCount;
     pRegions = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pRegions) {
         pRegions = new VkRect2D[copy_src->regionCount];
         memcpy((void*)pRegions, (void*)copy_src->pRegions, sizeof(VkRect2D) * copy_src->regionCount);
@@ -12180,6 +12313,7 @@ safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerVi
     const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), perViewRenderAreaCount(in_struct->perViewRenderAreaCount), pPerViewRenderAreas(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPerViewRenderAreas) {
         pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
         memcpy((void*)pPerViewRenderAreas, (void*)in_struct->pPerViewRenderAreas,
@@ -12199,6 +12333,7 @@ safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerVi
     perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
     pPerViewRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPerViewRenderAreas) {
         pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
         memcpy((void*)pPerViewRenderAreas, (void*)copy_src.pPerViewRenderAreas, sizeof(VkRect2D) * copy_src.perViewRenderAreaCount);
@@ -12216,6 +12351,7 @@ safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& safe_VkMultiviewPerVi
     perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
     pPerViewRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPerViewRenderAreas) {
         pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
         memcpy((void*)pPerViewRenderAreas, (void*)copy_src.pPerViewRenderAreas, sizeof(VkRect2D) * copy_src.perViewRenderAreaCount);
@@ -12237,6 +12373,7 @@ void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(
     perViewRenderAreaCount = in_struct->perViewRenderAreaCount;
     pPerViewRenderAreas = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPerViewRenderAreas) {
         pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
         memcpy((void*)pPerViewRenderAreas, (void*)in_struct->pPerViewRenderAreas,
@@ -12250,6 +12387,7 @@ void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(
     perViewRenderAreaCount = copy_src->perViewRenderAreaCount;
     pPerViewRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPerViewRenderAreas) {
         pPerViewRenderAreas = new VkRect2D[copy_src->perViewRenderAreaCount];
         memcpy((void*)pPerViewRenderAreas, (void*)copy_src->pPerViewRenderAreas,
@@ -12857,6 +12995,7 @@ safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const VkImpor
                                                                    [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), buffer(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->buffer) {
         buffer = new _screen_buffer(*in_struct->buffer);
     }
@@ -12869,6 +13008,7 @@ safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const safe_Vk
     sType = copy_src.sType;
     buffer = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.buffer) {
         buffer = new _screen_buffer(*copy_src.buffer);
     }
@@ -12883,6 +13023,7 @@ safe_VkImportScreenBufferInfoQNX& safe_VkImportScreenBufferInfoQNX::operator=(co
     sType = copy_src.sType;
     buffer = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.buffer) {
         buffer = new _screen_buffer(*copy_src.buffer);
     }
@@ -12902,6 +13043,7 @@ void safe_VkImportScreenBufferInfoQNX::initialize(const VkImportScreenBufferInfo
     sType = in_struct->sType;
     buffer = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->buffer) {
         buffer = new _screen_buffer(*in_struct->buffer);
     }
@@ -12912,6 +13054,7 @@ void safe_VkImportScreenBufferInfoQNX::initialize(const safe_VkImportScreenBuffe
     sType = copy_src->sType;
     buffer = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->buffer) {
         buffer = new _screen_buffer(*copy_src->buffer);
     }
