@@ -171,3 +171,6 @@ aae202333dda8a6ca1422a773d02c4d7853f71b7
 
 # Run Clang-Format on generated files
 6b021099c39224d4d97573a5d3b879ca03889b50
+
+# Outdent all clang-formatted strings in scripts
+f661d4b3eb04e0dce562ef2da08aca257e3afa69
