@@ -174,13 +174,11 @@ bool CoreChecks::ValidatePushConstantUsage(const StageCreateInfo &create_info, c
     return skip;
 }
 
-// TODO (jbolz): Can this return a const reference?
-static std::set<uint32_t> TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &module_state, uint32_t type_id,
-                                                  uint32_t &descriptor_count, bool is_khr) {
+static void TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &module_state, uint32_t type_id, uint32_t &descriptor_count,
+                                    vvl::unordered_set<uint32_t> &descriptor_type_set, bool is_khr) {
     const Instruction *type = module_state.FindDef(type_id);
     bool is_storage_buffer = false;
     descriptor_count = 1;
-    std::set<uint32_t> ret;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
@@ -204,31 +202,27 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &modu
                 if (insn->Word(1) == type->Word(1)) {
                     if (insn->Word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
-                            ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-                            ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
-                            return ret;
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                         } else {
-                            ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-                            ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-                            ret.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT);
-                            return ret;
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT);
                         }
                     } else if (insn->Word(2) == spv::DecorationBufferBlock) {
-                        ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-                        ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
-                        return ret;
+                        descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+                        descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                     }
+                    break;
                 }
             }
-
-            // Invalid
-            return ret;
+            return;
         }
 
         case spv::OpTypeSampler:
-            ret.insert(VK_DESCRIPTOR_TYPE_SAMPLER);
-            ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            return ret;
+            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_SAMPLER);
+            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            return;
 
         case spv::OpTypeSampledImage: {
             // Slight relaxation for some GLSL historical madness: samplerBuffer doesn't really have a sampler, and a texel
@@ -237,13 +231,12 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &modu
             auto dim = image_type->Word(3);
             auto sampled = image_type->Word(7);
             if (dim == spv::DimBuffer && sampled == 1) {
-                ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-                return ret;
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+            } else {
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             }
+            return;
         }
-            ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-            return ret;
-
         case spv::OpTypeImage: {
             // Many descriptor types backing image types-- depends on dimension and whether the image will be used with a sampler.
             // SPIRV for Vulkan requires that sampled be 1 or 2 -- leaving the decision to runtime is unacceptable.
@@ -251,37 +244,33 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SPIRV_MODULE_STATE &modu
             auto sampled = type->Word(7);
 
             if (dim == spv::DimSubpassData) {
-                ret.insert(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-                return ret;
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
             } else if (dim == spv::DimBuffer) {
                 if (sampled == 1) {
-                    ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-                    return ret;
+                    descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
                 } else {
-                    ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-                    return ret;
+                    descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
                 }
             } else if (sampled == 1) {
-                ret.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-                ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-                return ret;
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             } else {
-                ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-                return ret;
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
             }
+            return;
         }
         case spv::OpTypeAccelerationStructureNV:
-            is_khr ? ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
-                   : ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-            return ret;
+            is_khr ? descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+                   : descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+            return;
 
-            // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
         default:
-            return ret;  // Matches nothing
+            // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
+            return;  // Matches nothing
     }
 }
 
-static std::string string_descriptorTypeSet(const std::set<uint32_t> &descriptor_type_set) {
+static std::string string_DescriptorTypeSet(const vvl::unordered_set<uint32_t> &descriptor_type_set) {
     std::stringstream ss;
     for (auto it = descriptor_type_set.begin(); it != descriptor_type_set.end(); ++it) {
         if (ss.tellp()) ss << " or ";
@@ -1701,9 +1690,10 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE &modu
     for (const auto &variable : entrypoint.resource_interface_variables) {
         const auto &binding =
             GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
-        uint32_t required_descriptor_count;
+        uint32_t required_descriptor_count = 1;
         const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        const auto descriptor_type_set = TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, is_khr);
+        vvl::unordered_set<uint32_t> descriptor_type_set;
+        TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, descriptor_type_set, is_khr);
 
         if (!binding) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->layout());
@@ -1711,23 +1701,23 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SPIRV_MODULE_STATE &modu
                              "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32
                              "] (type `%s`) but was not declared in the pipeline layout.",
                              string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
-                             string_descriptorTypeSet(descriptor_type_set).c_str());
+                             string_DescriptorTypeSet(descriptor_type_set).c_str());
         } else if (~binding->stageFlags & variable.stage) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(vuid_07988, objlist, loc,
                              "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32
                              "] (type `%s`) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
                              string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
-                             string_descriptorTypeSet(descriptor_type_set).c_str(),
+                             string_DescriptorTypeSet(descriptor_type_set).c_str(),
                              string_VkShaderStageFlags(binding->stageFlags).c_str());
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->layout());
             skip |=
                 LogError(vuid_07990, objlist, loc,
-                         "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32 "] of type type %s but expected %s.",
+                         "SPIR-V (%s) uses descriptor slot [Set %" PRIu32 " Binding %" PRIu32 "] of type %s but expected %s.",
                          string_VkShaderStageFlagBits(variable.stage), variable.decorations.set, variable.decorations.binding,
-                         string_VkDescriptorType(binding->descriptorType), string_descriptorTypeSet(descriptor_type_set).c_str());
+                         string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(vuid_07991, objlist, loc,
