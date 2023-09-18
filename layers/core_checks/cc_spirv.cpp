@@ -359,7 +359,7 @@ bool CoreChecks::ValidateMemoryScope(const SPIRV_MODULE_STATE &module_state, con
         const uint32_t scope_id = insn.Word(entry);
         const Instruction *scope_def = module_state.GetConstantDef(scope_id);
         if (scope_def) {
-            const auto scope_type = scope_def->GetConstantValue();
+            const spv::Scope scope_type = spv::Scope(scope_def->GetConstantValue());
             if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope &&
                 scope_type == spv::Scope::ScopeDevice) {
                 skip |=
@@ -1805,81 +1805,87 @@ bool CoreChecks::ValidateTexelOffsetLimits(const SPIRV_MODULE_STATE &module_stat
     bool skip = false;
 
     const uint32_t opcode = insn.Opcode();
-    if (ImageGatherOperation(opcode) || ImageSampleOperation(opcode) || ImageFetchOperation(opcode)) {
-        uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
-        // Image operands can be optional
-        if (image_operand_position != 0 && insn.Length() > image_operand_position) {
-            auto image_operand = insn.Word(image_operand_position);
-            // Bits we are validating (sample/fetch only check ConstOffset)
-            uint32_t offset_bits =
-                ImageGatherOperation(opcode)
-                    ? (spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask)
-                    : (spv::ImageOperandsConstOffsetMask);
-            if (image_operand & (offset_bits)) {
-                // Operand values follow
-                uint32_t index = image_operand_position + 1;
-                // Each bit has it's own operand, starts with the smallest set bit and loop to the highest bit among
-                // ImageOperandsOffsetMask, ImageOperandsConstOffsetMask and ImageOperandsConstOffsetsMask
-                for (uint32_t i = 1; i < spv::ImageOperandsConstOffsetsMask; i <<= 1) {
-                    if (image_operand & i) {  // If the bit is set, consume operand
-                        if (insn.Length() > index && (i & offset_bits)) {
-                            uint32_t constant_id = insn.Word(index);
-                            const Instruction *constant = module_state.FindDef(constant_id);
-                            const bool is_dynamic_offset = constant == nullptr;
-                            if (!is_dynamic_offset && constant->Opcode() == spv::OpConstantComposite) {
-                                for (uint32_t j = 3; j < constant->Length(); ++j) {
-                                    uint32_t comp_id = constant->Word(j);
-                                    const Instruction *comp = module_state.FindDef(comp_id);
-                                    const Instruction *comp_type = module_state.FindDef(comp->Word(1));
-                                    // Get operand value
-                                    const uint32_t offset = comp->Word(3);
-                                    // spec requires minTexelGatherOffset/minTexelOffset to be -8 or less so never can compare if
-                                    // unsigned spec requires maxTexelGatherOffset/maxTexelOffset to be 7 or greater so never can
-                                    // compare if signed is less then zero
-                                    const int32_t signed_offset = static_cast<int32_t>(offset);
-                                    const bool use_signed = (comp_type->Opcode() == spv::OpTypeInt && comp_type->Word(3) != 0);
+    if (!ImageGatherOperation(opcode) && !ImageSampleOperation(opcode) && !ImageFetchOperation(opcode)) {
+        return false;
+    }
 
-                                    // There are 2 sets of VU being covered where the only main difference is the opcode
-                                    if (ImageGatherOperation(opcode)) {
-                                        // min/maxTexelGatherOffset
-                                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
-                                            skip |= LogError(
-                                                "VUID-RuntimeSpirv-OpImage-06376", module_state.handle(), loc,
-                                                "SPIR-V uses\n%s\nwith offset (%" PRId32
-                                                ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRId32 ").",
-                                                insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelGatherOffset);
-                                        } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
-                                                   (!use_signed || (use_signed && signed_offset > 0))) {
-                                            skip |= LogError(
-                                                "VUID-RuntimeSpirv-OpImage-06377", module_state.handle(), loc,
-                                                "SPIR-V uses\n%s\nwith offset (%" PRIu32
-                                                ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
-                                                insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelGatherOffset);
-                                        }
-                                    } else {
-                                        // min/maxTexelOffset
-                                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
-                                            skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06435", module_state.handle(), loc,
-                                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
-                                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRId32 ").",
-                                                             insn.Describe().c_str(), signed_offset,
-                                                             phys_dev_props.limits.minTexelOffset);
-                                        } else if ((offset > phys_dev_props.limits.maxTexelOffset) &&
-                                                   (!use_signed || (use_signed && signed_offset > 0))) {
-                                            skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06436", module_state.handle(), loc,
-                                                             "SPIR-V uses\n%s\nwith offset (%" PRIu32
-                                                             ") greater than VkPhysicalDeviceLimits::maxTexelOffset (%" PRIu32 ").",
-                                                             insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelOffset);
-                                        }
-                                    }
-                                }
-                            }
+    uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
+    // Image operands can be optional
+    if (image_operand_position == 0 || insn.Length() <= image_operand_position) {
+        return false;
+    }
+
+    auto image_operand = insn.Word(image_operand_position);
+    // Bits we are validating (sample/fetch only check ConstOffset)
+    uint32_t offset_bits =
+        ImageGatherOperation(opcode)
+            ? (spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask)
+            : (spv::ImageOperandsConstOffsetMask);
+    if ((image_operand & offset_bits) == 0) {
+        return false;
+    }
+
+    // Operand values follow
+    uint32_t index = image_operand_position + 1;
+    // Each bit has it's own operand, starts with the smallest set bit and loop to the highest bit among
+    // ImageOperandsOffsetMask, ImageOperandsConstOffsetMask and ImageOperandsConstOffsetsMask
+    for (uint32_t i = 1; i < spv::ImageOperandsConstOffsetsMask; i <<= 1) {
+        if ((image_operand & i) == 0) {
+            continue;
+        }
+
+        // If the bit is set, consume operand
+        if (insn.Length() > index && (i & offset_bits)) {
+            uint32_t constant_id = insn.Word(index);
+            const Instruction *constant = module_state.FindDef(constant_id);
+            const bool is_dynamic_offset = constant == nullptr;
+            if (!is_dynamic_offset && constant->Opcode() == spv::OpConstantComposite) {
+                for (uint32_t j = 3; j < constant->Length(); ++j) {
+                    uint32_t comp_id = constant->Word(j);
+                    const Instruction *comp = module_state.FindDef(comp_id);
+                    const Instruction *comp_type = module_state.FindDef(comp->Word(1));
+                    // Get operand value
+                    const uint32_t offset = comp->Word(3);
+                    // spec requires minTexelGatherOffset/minTexelOffset to be -8 or less so never can compare if
+                    // unsigned spec requires maxTexelGatherOffset/maxTexelOffset to be 7 or greater so never can
+                    // compare if signed is less then zero
+                    const int32_t signed_offset = static_cast<int32_t>(offset);
+                    const bool use_signed = (comp_type->Opcode() == spv::OpTypeInt && comp_type->Word(3) != 0);
+
+                    // There are 2 sets of VU being covered where the only main difference is the opcode
+                    if (ImageGatherOperation(opcode)) {
+                        // min/maxTexelGatherOffset
+                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpImage-06376", module_state.handle(), loc,
+                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
+                                             ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRId32 ").",
+                                             insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelGatherOffset);
+                        } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
+                                   (!use_signed || (use_signed && signed_offset > 0))) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpImage-06377", module_state.handle(), loc,
+                                             "SPIR-V uses\n%s\nwith offset (%" PRIu32
+                                             ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
+                                             insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelGatherOffset);
                         }
-                        index += ImageOperandsParamCount(i);
+                    } else {
+                        // min/maxTexelOffset
+                        if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06435", module_state.handle(), loc,
+                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
+                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRId32 ").",
+                                             insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelOffset);
+                        } else if ((offset > phys_dev_props.limits.maxTexelOffset) &&
+                                   (!use_signed || (use_signed && signed_offset > 0))) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06436", module_state.handle(), loc,
+                                             "SPIR-V uses\n%s\nwith offset (%" PRIu32
+                                             ") greater than VkPhysicalDeviceLimits::maxTexelOffset (%" PRIu32 ").",
+                                             insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelOffset);
+                        }
                     }
                 }
             }
         }
+        index += ImageOperandsParamCount(i);
     }
 
     return skip;
@@ -2097,7 +2103,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
             auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
             std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;  // note: this must be std:: to work with spvtools
             id_value_map.reserve(specialization_info->mapEntryCount);
-            for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
+            for (uint32_t i = 0; i < specialization_info->mapEntryCount; ++i) {
                 auto const &map_entry = specialization_info->pMapEntries[i];
                 const auto itr = module_state.static_data_.spec_const_map.find(map_entry.constantID);
                 // "If a constantID value is not a specialization constant ID used in the shader, that map entry does not affect the

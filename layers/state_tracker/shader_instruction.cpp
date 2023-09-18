@@ -65,7 +65,12 @@ std::string Instruction::Describe() const {
     return ss.str();
 }
 
-// While simple, function name provides a more human readable description why Word(3) is used
+// While simple, function name provides a more human readable description why Word(3) is used.
+//
+// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge making sure they
+// are scalar ints. It is also not valid for any of these use cases to have a negative value. While it is valid SPIR-V to use 64-bit
+// int, found writting test there is no way to create something valid that also calls this function. So until a use-case is found,
+// we can safely assume returning a uint32_t is ok.
 uint32_t Instruction::GetConstantValue() const {
     // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
     // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers

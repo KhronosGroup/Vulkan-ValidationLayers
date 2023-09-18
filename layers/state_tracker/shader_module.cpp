@@ -1122,7 +1122,7 @@ uint32_t SPIRV_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
     return total_size;
 }
 
-// If the instruction at |id| is a constant or copy of a constant, returns the instruction
+// If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
 const Instruction* SPIRV_MODULE_STATE::GetConstantDef(uint32_t id) const {
     const Instruction* value = FindDef(id);
