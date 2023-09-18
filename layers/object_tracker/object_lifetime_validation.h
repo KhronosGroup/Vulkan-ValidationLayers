@@ -111,7 +111,6 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
     void DestroyLeakedInstanceObjects();
     void DestroyLeakedDeviceObjects();
-    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code, const Location &loc) const;
     void DestroyQueueDataStructures();
     bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer, const Location &loc) const;
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set, const Location &loc) const;
@@ -179,11 +178,6 @@ class ObjectLifetimes : public ValidationObject {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
-
-        if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, loc);
-        }
-
         return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_code, wrong_device_code, loc);
     }
 
