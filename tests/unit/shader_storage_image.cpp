@@ -193,8 +193,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
 
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
 
@@ -290,7 +290,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         image_info.imageView = image.targetView(format);
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = ds.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -302,7 +302,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         m_commandBuffer->begin();
 
         {
-            VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+            VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
             img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -356,8 +356,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
 
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
 
@@ -449,7 +449,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         image_info.imageView = image.targetView(format);
         image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = ds.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -461,7 +461,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         m_commandBuffer->begin();
 
         {
-            VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+            VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
             img_barrier.srcAccessMask = VK_ACCESS_HOST_READ_BIT;
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -821,7 +821,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -909,7 +909,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;

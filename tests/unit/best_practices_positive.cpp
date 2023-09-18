@@ -145,7 +145,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
         // Several drivers have been observed to crash on the legal null pAttachments - restrict to MockICD for now
         GTEST_SKIP() << "This test only runs on MockICD";
     }
-    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto extended_dynamic_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||
@@ -158,7 +158,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     // pAttachments should be ignored with these four states set
     VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT,
                                         VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 4;
 

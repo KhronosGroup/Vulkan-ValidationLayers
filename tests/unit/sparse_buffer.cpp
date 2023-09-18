@@ -53,7 +53,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
@@ -103,7 +103,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
@@ -153,7 +153,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
@@ -203,7 +203,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
@@ -265,7 +265,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     buffer_memory_bind_infos[1].bindCount = 1;
     buffer_memory_bind_infos[1].pBinds = &buffer_memory_bind;
 
-    auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
     bind_info.bufferBindCount = 2;
     bind_info.pBufferBinds = buffer_memory_bind_infos;
     bind_info.signalSemaphoreCount = 1;
@@ -285,7 +285,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -357,7 +357,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     buffer_memory_bind_infos[0].bindCount = 1;
     buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind_1;
 
-    auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
     bind_info.bufferBindCount = size32(buffer_memory_bind_infos);
     bind_info.pBufferBinds = buffer_memory_bind_infos.data();
     bind_info.signalSemaphoreCount = 1;
@@ -376,7 +376,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -443,7 +443,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
 
-    auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
     bind_info.signalSemaphoreCount = 1;
@@ -466,7 +466,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
@@ -493,7 +493,7 @@ TEST_F(NegativeSparseBuffer, BufferFlagsFeature) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
-    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 64;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
@@ -514,7 +514,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
     buffer_create_info.queueFamilyIndexCount = 0;
@@ -540,7 +540,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 
@@ -554,7 +554,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
     buffer_create_info.queueFamilyIndexCount = 0;
@@ -587,7 +587,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
 

@@ -364,7 +364,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
 class Semaphore : public internal::NonDispHandle<VkSemaphore> {
   public:
     Semaphore() = default;
-    Semaphore(const Device &dev) { init(dev, LvlInitStruct<VkSemaphoreCreateInfo>()); }
+    Semaphore(const Device &dev) { init(dev, vku::InitStruct<VkSemaphoreCreateInfo>()); }
     Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
     ~Semaphore() noexcept;
     void destroy() noexcept;
@@ -386,7 +386,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
     Event() = default;
-    Event(const Device &dev) { init(dev, LvlInitStruct<VkEventCreateInfo>()); }
+    Event(const Device &dev) { init(dev, vku::InitStruct<VkEventCreateInfo>()); }
     Event(const Device &dev, const VkEventCreateInfo &info) { init(dev, info); }
     ~Event() noexcept;
     void destroy() noexcept;
@@ -430,7 +430,7 @@ static constexpr NoMemT no_mem{};
 
 class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
-    explicit Buffer() : NonDispHandle(), create_info_(LvlInitStruct<decltype(create_info_)>()) {}
+    explicit Buffer() : NonDispHandle(), create_info_(vku::InitStruct<decltype(create_info_)>()) {}
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
                     void *alloc_info_pnext = nullptr) {
         init(dev, info, mem_props, alloc_info_pnext);
@@ -488,7 +488,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
     VkBufferMemoryBarrier buffer_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
                                                 VkDeviceSize size) const {
-        VkBufferMemoryBarrier barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+        VkBufferMemoryBarrier barrier = vku::InitStructHelper();
         barrier.buffer = handle();
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
@@ -504,7 +504,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     VkBufferMemoryBarrier2KHR buffer_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
                                                     VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
                                                     VkDeviceSize size) const {
-        VkBufferMemoryBarrier2KHR barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
+        VkBufferMemoryBarrier2KHR barrier = vku::InitStructHelper();
         barrier.buffer = handle();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
@@ -540,7 +540,7 @@ class BufferView : public internal::NonDispHandle<VkBufferView> {
 };
 
 inline VkBufferViewCreateInfo BufferView::createInfo(VkBuffer buffer, VkFormat format, VkDeviceSize offset, VkDeviceSize range) {
-    VkBufferViewCreateInfo info = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo info = vku::InitStructHelper();
     info.flags = VkFlags(0);
     info.buffer = buffer;
     info.format = format;
@@ -599,7 +599,7 @@ class Image : public internal::NonDispHandle<VkImage> {
                                               VkImageLayout new_layout, const VkImageSubresourceRange &range,
                                               uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                                               uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
-        VkImageMemoryBarrier barrier = LvlInitStruct<VkImageMemoryBarrier>();
+        VkImageMemoryBarrier barrier = vku::InitStructHelper();
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
         barrier.oldLayout = old_layout;
@@ -617,7 +617,7 @@ class Image : public internal::NonDispHandle<VkImage> {
                                                   const VkImageSubresourceRange &range,
                                                   uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                                                   uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
-        VkImageMemoryBarrier2KHR barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
+        VkImageMemoryBarrier2KHR barrier = vku::InitStructHelper();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
         barrier.srcAccessMask = src_access;
@@ -849,7 +849,7 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
 template <typename PoolSizes>
 inline VkDescriptorPoolCreateInfo DescriptorPool::create_info(VkDescriptorPoolCreateFlags flags, uint32_t max_sets,
                                                               const PoolSizes &pool_sizes) {
-    VkDescriptorPoolCreateInfo info = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    VkDescriptorPoolCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     info.maxSets = max_sets;
     info.poolSizeCount = pool_sizes.size();
@@ -885,7 +885,7 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
 };
 
 inline VkCommandPoolCreateInfo CommandPool::create_info(uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
-    VkCommandPoolCreateInfo info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo info = vku::InitStructHelper();
     info.queueFamilyIndex = queue_family_index;
     info.flags = flags;
     return info;
@@ -969,7 +969,7 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
 
 inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
                                               void *create_info_pnext) {
-    VkBufferCreateInfo info = LvlInitStruct<VkBufferCreateInfo>(create_info_pnext);
+    VkBufferCreateInfo info = vku::InitStructHelper(create_info_pnext);
     info.size = size;
     info.usage = usage;
 
@@ -983,37 +983,37 @@ inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, 
 }
 
 inline VkFenceCreateInfo Fence::create_info(VkFenceCreateFlags flags) {
-    VkFenceCreateInfo info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     return info;
 }
 
 inline VkFenceCreateInfo Fence::create_info() {
-    VkFenceCreateInfo info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo info = vku::InitStructHelper();
     return info;
 }
 
 inline VkSemaphoreCreateInfo Semaphore::create_info(VkFlags flags) {
-    VkSemaphoreCreateInfo info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphoreCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     return info;
 }
 
 inline VkEventCreateInfo Event::create_info(VkFlags flags) {
-    VkEventCreateInfo info = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     return info;
 }
 
 inline VkQueryPoolCreateInfo QueryPool::create_info(VkQueryType type, uint32_t slot_count) {
-    VkQueryPoolCreateInfo info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo info = vku::InitStructHelper();
     info.queryType = type;
     info.queryCount = slot_count;
     return info;
 }
 
 inline VkImageCreateInfo Image::create_info() {
-    VkImageCreateInfo info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo info = vku::InitStructHelper();
     info.extent.width = 1;
     info.extent.height = 1;
     info.extent.depth = 1;
@@ -1103,7 +1103,7 @@ inline VkExtent3D Image::extent(int32_t width, int32_t height, int32_t depth) {
 }
 
 inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, const uint32_t *code, VkFlags flags) {
-    VkShaderModuleCreateInfo info = LvlInitStruct<VkShaderModuleCreateInfo>();
+    VkShaderModuleCreateInfo info = vku::InitStructHelper();
     info.codeSize = code_size;
     info.pCode = code;
     info.flags = flags;
@@ -1113,7 +1113,7 @@ inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, cons
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type, uint32_t count,
                                                          const VkDescriptorImageInfo *image_info) {
-    VkWriteDescriptorSet write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
@@ -1126,7 +1126,7 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type, uint32_t count,
                                                          const VkDescriptorBufferInfo *buffer_info) {
-    VkWriteDescriptorSet write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
@@ -1138,7 +1138,7 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
 
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views) {
-    VkWriteDescriptorSet write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
     write.dstArrayElement = array_element;
@@ -1168,7 +1168,7 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
 inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_set, uint32_t src_binding,
                                                        uint32_t src_array_element, const DescriptorSet &dst_set,
                                                        uint32_t dst_binding, uint32_t dst_array_element, uint32_t count) {
-    VkCopyDescriptorSet copy = LvlInitStruct<VkCopyDescriptorSet>();
+    VkCopyDescriptorSet copy = vku::InitStructHelper();
     copy.srcSet = src_set.handle();
     copy.srcBinding = src_binding;
     copy.srcArrayElement = src_array_element;
@@ -1181,7 +1181,7 @@ inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_
 }
 
 inline VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool const &pool) {
-    VkCommandBufferAllocateInfo info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo info = vku::InitStructHelper();
     info.commandPool = pool;
     info.commandBufferCount = 1;
     return info;
@@ -1193,11 +1193,11 @@ struct GraphicsPipelineLibraryStage {
     VkPipelineShaderStageCreateInfo stage_ci;
 
     GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage, const char *name = "main") : spv(spv) {
-        shader_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        shader_ci = vku::InitStructHelper();
         shader_ci.codeSize = spv.size() * sizeof(uint32_t);
         shader_ci.pCode = spv.data();
 
-        stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&shader_ci);
+        stage_ci = vku::InitStructHelper(&shader_ci);
         stage_ci.stage = stage;
         stage_ci.module = VK_NULL_HANDLE;
         stage_ci.pName = name;
@@ -1211,7 +1211,7 @@ struct GraphicsPipelineFromLibraries {
 
     GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkPipelineLayout layout)
         : GraphicsPipelineFromLibraries(libs) {
-        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = layout;
         pipe.init(dev, exe_pipe_ci);
         pipe.initialized();
@@ -1230,7 +1230,7 @@ struct GraphicsPipelineFromLibraries {
 
   private:
     GraphicsPipelineFromLibraries(vvl::span<VkPipeline> libs) : libs(libs) {
-        link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info = vku::InitStructHelper();
         link_info.libraryCount = static_cast<uint32_t>(libs.size());
         link_info.pLibraries = libs.data();
     }

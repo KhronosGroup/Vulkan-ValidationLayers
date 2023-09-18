@@ -217,7 +217,7 @@ bool StatelessValidation::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice 
 bool StatelessValidation::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
                                                       const char *sType, const void *pNext) const {
     bool skip = false;
-    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pNext);
     while (export_metal_object_info) {
         if (export_metal_object_info->exportObjectType != bit) {
             skip |= LogError(vuid, device, loc,
@@ -225,7 +225,7 @@ bool StatelessValidation::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFla
                              "VkExportMetalObjectCreateInfoEXT structs with exportObjectType of %s are allowed.",
                              string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType), sType);
         }
-        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
     return skip;
 }

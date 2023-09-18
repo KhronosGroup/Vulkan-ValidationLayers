@@ -60,12 +60,12 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     const char *vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     VkBool32 separate_depth_stencil_layouts = false;
-    const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
+    const auto *vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
     if (vulkan_12_features) {
         separate_depth_stencil_layouts = vulkan_12_features->separateDepthStencilLayouts;
     } else {
         const auto *separate_depth_stencil_layouts_features =
-            LvlFindInChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
         if (separate_depth_stencil_layouts_features) {
             separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
         }
@@ -73,17 +73,17 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 
     VkBool32 attachment_feedback_loop_layout = false;
     const auto *attachment_feedback_loop_layout_features =
-        LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
     if (attachment_feedback_loop_layout_features) {
         attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
     }
 
     VkBool32 synchronization2 = false;
-    const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
+    const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
     if (vulkan_13_features) {
         synchronization2 = vulkan_13_features->synchronization2;
     } else {
-        const auto *synchronization2_features = LvlFindInChain<VkPhysicalDeviceSynchronization2Features>(device_createinfo_pnext);
+        const auto *synchronization2_features = vku::FindStructInPNextChain<VkPhysicalDeviceSynchronization2Features>(device_createinfo_pnext);
         if (synchronization2_features) {
             synchronization2 = synchronization2_features->synchronization2;
         }
@@ -92,7 +92,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         // if not null, also confirms rp2 is being used
         const auto *attachment_description_stencil_layout =
-            (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(
+            (use_rp2) ? vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(
                             reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext)
                       : nullptr;
 
@@ -345,7 +345,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 
         VkPipelineStageFlags2 srcStageMask = dependency.srcStageMask;
         VkPipelineStageFlags2 dstStageMask = dependency.dstStageMask;
-        if (const auto barrier = LvlFindInChain<VkMemoryBarrier2KHR>(pCreateInfo->pDependencies[i].pNext); barrier) {
+        if (const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(pCreateInfo->pDependencies[i].pNext); barrier) {
             srcStageMask = barrier->srcStageMask;
             dstStageMask = barrier->dstStageMask;
         }

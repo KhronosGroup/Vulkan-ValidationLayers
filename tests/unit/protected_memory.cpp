@@ -30,7 +30,7 @@ TEST_F(NegativeProtectedMemory, Queue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto protected_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     GetPhysicalDeviceFeatures2(protected_features);
 
     if (protected_features.protectedMemory == VK_FALSE) {
@@ -59,14 +59,14 @@ TEST_F(NegativeProtectedMemory, Queue) {
     }
 
     float queue_priority = 1.0;
-    VkDeviceQueueCreateInfo queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo queue_create_info = vku::InitStructHelper();
     queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
     queue_create_info.queueFamilyIndex = queue_family_index;
     queue_create_info.queueCount = 1;
     queue_create_info.pQueuePriorities = &queue_priority;
 
     VkDevice test_device = VK_NULL_HANDLE;
-    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protected_features);
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&protected_features);
     device_create_info.flags = 0;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.queueCreateInfoCount = 1;
@@ -97,21 +97,21 @@ TEST_F(NegativeProtectedMemory, Submit) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkCommandPool command_pool;
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandPoolCreateInfo-flags-02860");
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
     m_errorMonitor->VerifyFound();
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-01887");
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_create_info.extent = {64, 64, 1};
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -125,7 +125,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
 
     // Try to find memory with protected bit in it at all
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 4096;
 
     VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -144,10 +144,10 @@ TEST_F(NegativeProtectedMemory, Submit) {
         m_errorMonitor->VerifyFound();
     }
 
-    VkProtectedSubmitInfo protected_submit_info = LvlInitStruct<VkProtectedSubmitInfo>();
+    VkProtectedSubmitInfo protected_submit_info = vku::InitStructHelper();
     protected_submit_info.protectedSubmit = VK_TRUE;
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&protected_submit_info);
+    VkSubmitInfo submit_info = vku::InitStructHelper(&protected_submit_info);
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -171,7 +171,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
@@ -189,7 +189,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
 
     VkBuffer buffer_protected = VK_NULL_HANDLE;
     VkBuffer buffer_unprotected = VK_NULL_HANDLE;
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -207,7 +207,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
 
     VkImage image_protected = VK_NULL_HANDLE;
     VkImage image_unprotected = VK_NULL_HANDLE;
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.extent = {8, 8, 1};
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -232,7 +232,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
     VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 0;
 
     // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
@@ -322,7 +322,7 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto protected_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto protected_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     GetPhysicalDeviceFeatures2(protected_features);
 
     if (protected_features.protectedMemory == VK_FALSE) {
@@ -355,7 +355,7 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     float queue_priority = 1.0;
 
     VkDeviceQueueCreateInfo queue_create_info[2];
-    queue_create_info[0] = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info[0] = vku::InitStructHelper();
     queue_create_info[0].flags = 0;
     queue_create_info[0].queueFamilyIndex = queue_family_index;
     queue_create_info[0].queueCount = 1;
@@ -365,7 +365,7 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     queue_create_info[1] = queue_create_info[0];
 
     VkDevice test_device = VK_NULL_HANDLE;
-    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protected_features);
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&protected_features);
     device_create_info.flags = 0;
     device_create_info.pQueueCreateInfos = queue_create_info;
     device_create_info.queueCreateInfoCount = 2;
@@ -405,7 +405,7 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
         GTEST_SKIP() << "This test should not be run on the RADV driver.";
     }
 
-    VkDeviceQueueInfo2 queue_info_2 = LvlInitStruct<VkDeviceQueueInfo2>();
+    VkDeviceQueueInfo2 queue_info_2 = vku::InitStructHelper();
     VkDevice test_device = VK_NULL_HANDLE;
     VkQueue test_queue = VK_NULL_HANDLE;
     VkResult result;
@@ -418,16 +418,16 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, &queue_properties);
 
     float queue_priority = 1.0;
-    VkDeviceQueueCreateInfo queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo queue_create_info = vku::InitStructHelper();
     queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
     queue_create_info.queueFamilyIndex = queue_family_index;
     queue_create_info.queueCount = 1;
     queue_create_info.pQueuePriorities = &queue_priority;
 
-    VkPhysicalDeviceProtectedMemoryFeatures protect_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    VkPhysicalDeviceProtectedMemoryFeatures protect_features = vku::InitStructHelper();
     protect_features.protectedMemory = VK_FALSE;  // Starting with it off
 
-    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&protect_features);
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&protect_features);
     device_create_info.flags = 0;
     device_create_info.pQueueCreateInfos = &queue_create_info;
     device_create_info.queueCreateInfoCount = 1;
@@ -530,11 +530,11 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     const bool pipeline_libraries = IsExtensionsEnabled(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     if (pipeline_libraries) protected_memory_features.pNext = &gpl_features;
     auto pipeline_protected_access_features =
-        LvlInitStruct<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(&protected_memory_features);
+        vku::InitStruct<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(&protected_memory_features);
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_protected_access_features);
     pipeline_protected_access_features.pipelineProtectedAccess = VK_TRUE;
 
@@ -576,11 +576,11 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     if (pipeline_libraries) {
         CreatePipelineHelper pre_raster_lib(*this);
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        auto vs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
         vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
         vs_ci.pCode = vs_spv.data();
 
-        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
         stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
         stage_ci.module = VK_NULL_HANDLE;
         stage_ci.pName = "main";
@@ -593,12 +593,12 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         VkPipeline libraries[1] = {
             pre_raster_lib.pipeline_,
         };
-        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = size(libraries);
         link_info.pLibraries = libraries;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
-        auto lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         lib_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         vk_testing::Pipeline lib(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
@@ -615,7 +615,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
         ASSERT_VK_SUCCESS(protected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = protected_pre_raster_lib.pipeline_;
-        auto protected_lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        auto protected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
         lib_ci.flags = 0;
         vk_testing::Pipeline lib3(*m_device, protected_lib_ci);
@@ -628,7 +628,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
         ASSERT_VK_SUCCESS(unprotected_pre_raster_lib.CreateGraphicsPipeline());
         libraries[0] = unprotected_pre_raster_lib.pipeline_;
-        auto unprotected_lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        auto unprotected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
         vk_testing::Pipeline lib4(*m_device, unprotected_lib_ci);
         m_errorMonitor->VerifyFound();
@@ -667,7 +667,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
@@ -694,7 +694,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 1;
     vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
@@ -747,14 +747,14 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    auto protected_memory_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
         GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
-    auto protected_memory_properties = LvlInitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
+    auto protected_memory_properties = vku::InitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
     GetPhysicalDeviceProperties2(protected_memory_properties);
 
     // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
@@ -770,7 +770,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     // Create actual protected and unprotected buffers
     VkBuffer buffer_protected = VK_NULL_HANDLE;
     VkBuffer buffer_unprotected = VK_NULL_HANDLE;
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
@@ -790,7 +790,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     VkImageObj image_unprotected_descriptor(m_device);
     VkImageView image_views[2];
     VkImageView image_views_descriptor[2];
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.extent = {64, 64, 1};
     image_create_info.format = image_format;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -812,7 +812,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
     VkDeviceMemory memory_unprotected = VK_NULL_HANDLE;
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 0;
 
     // set allocationSize to buffer as it will be larger than the image, but query image to avoid BP warning
@@ -927,7 +927,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkRect2D render_area = {{0, 0}, {8, 8}};
     VkRenderPassBeginInfo render_pass_begin =
-        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
     VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
     VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
@@ -1121,8 +1121,8 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     // Try submitting together to test only 1 error occurs for the corresponding command buffer
     VkCommandBuffer comman_buffers[2] = {m_commandBuffer->handle(), protectedCommandBuffer.handle()};
 
-    VkProtectedSubmitInfo protected_submit_info = LvlInitStruct<VkProtectedSubmitInfo>();
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&protected_submit_info);
+    VkProtectedSubmitInfo protected_submit_info = vku::InitStructHelper();
+    VkSubmitInfo submit_info = vku::InitStructHelper(&protected_submit_info);
     submit_info.commandBufferCount = 2;
     submit_info.pCommandBuffers = comman_buffers;
 

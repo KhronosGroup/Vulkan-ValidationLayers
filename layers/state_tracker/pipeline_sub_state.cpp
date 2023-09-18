@@ -76,7 +76,7 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
-                const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
+                const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
                 if (shader_ci) {
                     // don't need to worry about GroupDecoration in GPL
                     auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
@@ -87,7 +87,7 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
             // Check if a shader module identifier is used to reference the shader module.
             if (!module_state) {
                 if (const auto shader_stage_id =
-                        LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                        vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
                     shader_stage_id) {
                     module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }
@@ -173,7 +173,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
-                const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
+                const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
                 if (shader_ci) {
                     // don't need to worry about GroupDecoration in GPL
                     auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
@@ -184,7 +184,7 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
             // Check if a shader module identifier is used to reference the shader module.
             if (!module_state) {
                 if (const auto shader_stage_id =
-                        LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                        vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
                     shader_stage_id) {
                     module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }

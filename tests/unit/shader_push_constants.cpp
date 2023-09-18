@@ -288,7 +288,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
     VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 4, 4};
 
-    auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
@@ -427,7 +427,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
 
     // Push constant are in the vertex Entrypoint
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
-    auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);

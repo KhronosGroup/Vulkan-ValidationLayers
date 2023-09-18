@@ -27,7 +27,7 @@ struct SHADER_MODULE_STATE;
 
 template <typename CreateInfoType>
 static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateInfoType &create_info) {
-    const auto lib_ci = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+    const auto lib_ci = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
     if (lib_ci) {
         return lib_ci->flags;
     }
@@ -146,7 +146,7 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
     bool result = false;
     if (create_info.pMultisampleState) {
         const auto *sample_location_state =
-            LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
+            vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
         if (sample_location_state != nullptr) {
             result = (sample_location_state->sampleLocationsEnable != 0);
         }
@@ -184,7 +184,7 @@ struct FragmentOutputState : public PipelineSubState {
         }
 
         // TODO
-        // auto format_ci = LvlFindInChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
+        // auto format_ci = vku::FindStructInPNextChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
     }
 
     static bool IsBlendConstantsEnabled(const AttachmentVector &attachments);

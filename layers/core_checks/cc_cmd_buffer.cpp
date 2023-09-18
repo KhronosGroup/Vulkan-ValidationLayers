@@ -90,7 +90,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00051", commandBuffer, inheritance_loc,
                              "is null for Secondary %s.", FormatHandle(commandBuffer).c_str());
         } else {
-            auto p_inherited_rendering_info = LvlFindInChain<VkCommandBufferInheritanceRenderingInfo>(info->pNext);
+            auto p_inherited_rendering_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(info->pNext);
 
             if ((pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) &&
                 ((api_version >= VK_API_VERSION_1_3) || enabled_features.core13.dynamicRendering)) {
@@ -128,7 +128,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             }
 
             if (p_inherited_rendering_info) {
-                auto p_attachment_sample_count_info_amd = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(info->pNext);
+                auto p_attachment_sample_count_info_amd = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(info->pNext);
                 if (p_attachment_sample_count_info_amd &&
                     p_attachment_sample_count_info_amd->colorAttachmentCount != p_inherited_rendering_info->colorAttachmentCount) {
                     skip |= LogError(
@@ -247,7 +247,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                  "occulusionQuery is disabled or the device does not support precise occlusion queries.",
                                  FormatHandle(commandBuffer).c_str());
             }
-            auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+            auto p_inherited_viewport_scissor_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
                 if (!enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D) {
                     skip |= LogError(
@@ -311,7 +311,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                              FormatHandle(commandBuffer).c_str(), FormatHandle(cmd_pool).c_str());
         }
     }
-    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         const LogObjectList objlist(commandBuffer);
         skip |= ValidateDeviceMaskToPhysicalDeviceCount(
@@ -1063,7 +1063,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
                         const auto amd_sample_count =
-                            LvlFindInChain<VkAttachmentSampleCountInfoAMD>(inheritance_rendering_info.pNext);
+                            vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(inheritance_rendering_info.pNext);
 
                         if (amd_sample_count) {
                             for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {

@@ -224,7 +224,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                              const Location &submit_loc) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    if (const auto d3d12_fence_submit_info = LvlFindInChain<VkD3D12FenceSubmitInfoKHR>(submit.pNext)) {
+    if (const auto d3d12_fence_submit_info = vku::FindStructInPNextChain<VkD3D12FenceSubmitInfoKHR>(submit.pNext)) {
         if (d3d12_fence_submit_info->waitSemaphoreValuesCount != submit.waitSemaphoreCount) {
             skip |= LogError("VUID-VkD3D12FenceSubmitInfoKHR-waitSemaphoreValuesCount-00079", state.queue, submit_loc,
                              "contains an instance of VkD3D12FenceSubmitInfoKHR, but its waitSemaphoreValuesCount (%" PRIu32
@@ -241,7 +241,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         }
     }
 #endif
-    auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
+    auto *timeline_semaphore_submit_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
     for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
         uint64_t value = 0;
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
@@ -353,7 +353,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
 bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const VkBindSparseInfo &submit,
                                              const Location &submit_loc) const {
     bool skip = false;
-    auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
+    auto *timeline_semaphore_submit_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
     for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
         uint64_t value = 0;
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
@@ -427,13 +427,13 @@ bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreate
                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    auto fence_export_info = LvlFindInChain<VkExportFenceCreateInfo>(pCreateInfo->pNext);
+    auto fence_export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(pCreateInfo->pNext);
     if (fence_export_info && fence_export_info->handleTypes != 0) {
-        auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+        auto external_properties = vku::InitStruct<VkExternalFenceProperties>();
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalFenceHandleTypeFlagBits flag) {
-            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalFenceInfo>();
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &external_info, &external_properties);
             if ((external_properties.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) == 0) {
@@ -462,7 +462,7 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
                                                 const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                 const ErrorObject &error_obj) const {
     bool skip = false;
-    auto sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
+    auto sem_type_create_info = vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     if (sem_type_create_info) {
@@ -479,13 +479,13 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
         }
     }
 
-    auto sem_export_info = LvlFindInChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
+    auto sem_export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
     if (sem_export_info && sem_export_info->handleTypes != 0) {
-        auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+        auto external_properties = vku::InitStruct<VkExternalSemaphoreProperties>();
         bool export_supported = true;
         // Check export support
         auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
             external_info.handleType = flag;
             DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &external_info, &external_properties);
             if ((external_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) == 0) {
@@ -687,11 +687,11 @@ struct RenderPassDepState {
         // "If a VkMemoryBarrier2 is included in the pNext chain, srcStageMask, dstStageMask,
         // srcAccessMask, and dstAccessMask parameters are ignored. The synchronization and
         // access scopes instead are defined by the parameters of VkMemoryBarrier2."
-        if (const auto override_barrier = LvlFindInChain<VkMemoryBarrier2>(dep.pNext)) {
+        if (const auto override_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(dep.pNext)) {
             return *override_barrier;
         }
 
-        auto barrier = LvlInitStruct<VkMemoryBarrier2>();
+        auto barrier = vku::InitStruct<VkMemoryBarrier2>();
         barrier.srcStageMask = dep.srcStageMask;
         barrier.dstStageMask = dep.dstStageMask;
         barrier.srcAccessMask = dep.srcAccessMask;
@@ -1397,7 +1397,7 @@ bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const L
                                            const VkSubpassDependency2 &dependency) const {
     bool skip = false;
     VkMemoryBarrier2KHR converted_barrier;
-    const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dependency.pNext);
+    const auto *mem_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(dependency.pNext);
     const Location loc = mem_barrier ? in_loc.dot(Field::pNext) : in_loc;
 
     if (mem_barrier) {
@@ -1644,7 +1644,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, CMD
             sub_image_found = true;
         }
         if (!sub_image_found) {
-            const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
+            const auto *resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
                 sub_image_layout = resolve->pDepthStencilResolveAttachment->layout;

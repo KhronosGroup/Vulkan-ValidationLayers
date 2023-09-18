@@ -128,7 +128,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                                              const ErrorObject &error_obj) const {
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    auto chained_devaddr_struct = LvlFindInChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
+    auto chained_devaddr_struct = vku::FindStructInPNextChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_devaddr_struct->deviceAddress != 0) {
@@ -139,7 +139,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    auto chained_opaqueaddr_struct = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
+    auto chained_opaqueaddr_struct = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
     if (chained_opaqueaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
             chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
@@ -150,7 +150,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    auto dedicated_allocation_buffer = LvlFindInChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
+    auto dedicated_allocation_buffer = vku::FindStructInPNextChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
     if (dedicated_allocation_buffer && dedicated_allocation_buffer->dedicatedAllocation == VK_TRUE) {
         if (pCreateInfo->flags &
             (VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) {
@@ -187,13 +187,13 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    const auto *usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext);
+    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext);
     const VkBufferUsageFlags2KHR usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
 
     bool has_decode_usage = usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR);
     bool has_encode_usage = usage & (VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR);
     if (has_decode_usage || has_encode_usage) {
-        const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
+        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
         skip |= ValidateVideoProfileListInfo(video_profiles, device, "vkCreateBuffer", has_decode_usage,
                                              "VUID-VkBufferCreateInfo-usage-04813", has_encode_usage,
                                              "VUID-VkBufferCreateInfo-usage-04814");
@@ -244,7 +244,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                          "device feature is not enabled.");
     }
 
-    auto opaque_capture_descriptor_buffer = LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+    auto opaque_capture_descriptor_buffer = vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
     if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkBufferCreateInfo-pNext-08100", device, create_info_loc.dot(Field::flags),
                          "(%s) is missing VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
@@ -271,15 +271,15 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    auto external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
+    auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
     if (external_memory_info && external_memory_info->handleTypes) {
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
-        auto external_buffer_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        auto external_buffer_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
         external_buffer_info.flags = pCreateInfo->flags;
         // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
         external_buffer_info.usage = VkBufferUsageFlags(pCreateInfo->usage);
         external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
-        auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+        auto external_buffer_properties = vku::InitStruct<VkExternalBufferProperties>();
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_buffer_info, &external_buffer_properties);
         const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 
@@ -394,7 +394,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
-    if (auto buffer_usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+    if (auto buffer_usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
         const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
         if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,

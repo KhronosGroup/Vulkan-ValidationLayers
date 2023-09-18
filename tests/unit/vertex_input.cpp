@@ -55,20 +55,20 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_TRUE;
 
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
+    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
-    auto pdvad_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    auto pdvad_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
     GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -140,20 +140,20 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_FALSE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
+    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto pdvad_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    auto pdvad_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
     GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 2;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -184,17 +184,17 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
     vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vadf);
+    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 0;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -411,7 +411,7 @@ TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
-    auto provoking_vertex_state_ci = LvlInitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    auto provoking_vertex_state_ci = vku::InitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
     pipe.rs_state_ci_.pNext = &provoking_vertex_state_ci;
     pipe.InitState();
@@ -437,21 +437,21 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto provoking_vertex_properties = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
+    auto provoking_vertex_properties = vku::InitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
     GetPhysicalDeviceProperties2(provoking_vertex_properties);
     if (provoking_vertex_properties.provokingVertexModePerPipeline == VK_TRUE) {
         GTEST_SKIP() << "provokingVertexModePerPipeline is VK_TRUE";
     }
 
-    auto provoking_vertex_features = LvlInitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>();
+    auto provoking_vertex_features = vku::InitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>();
     provoking_vertex_features.provokingVertexLast = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&provoking_vertex_features);
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&provoking_vertex_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe1(*this);
-    auto provoking_vertex_state_ci = LvlInitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
+    auto provoking_vertex_state_ci = vku::InitStruct<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>();
     provoking_vertex_state_ci.provokingVertexMode = VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
     pipe1.rs_state_ci_.pNext = &provoking_vertex_state_ci;
     pipe1.InitState();

@@ -17,7 +17,7 @@ namespace rt {
 namespace as {
 
 GeometryKHR::GeometryKHR(APIVersion vk_api_version)
-    : vk_api_version_(vk_api_version), vk_obj_(LvlInitStruct<decltype(vk_obj_)>()) {}
+    : vk_api_version_(vk_api_version), vk_obj_(vku::InitStructHelper()) {}
 
 GeometryKHR &GeometryKHR::SetType(Type type) {
     type_ = type;
@@ -134,7 +134,7 @@ GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vk_testing::Devi
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
     assert(vkGetAccelerationStructureDeviceAddressKHR);
-    auto as_address_info = LvlInitStruct<VkAccelerationStructureDeviceAddressInfoKHR>();
+    auto as_address_info = vku::InitStruct<VkAccelerationStructureDeviceAddressInfoKHR>();
     as_address_info.accelerationStructure = bottom_level_as;
     VkDeviceAddress as_address = vkGetAccelerationStructureDeviceAddressKHR(device.handle(), &as_address_info);
     instance_.vk_instance = std::make_unique<VkAccelerationStructureInstanceKHR>();
@@ -143,7 +143,7 @@ GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vk_testing::Devi
 
     // Create instance buffer. Do not copy instance_.vk_instance into it, for now no point in doing it for the test framework
     assert(!instance_.buffer.initialized());  // for now, do not handle already initialized buffer
-    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     instance_.buffer.init(
         device, sizeof(VkAccelerationStructureInstanceKHR),
@@ -178,7 +178,7 @@ VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const 
 }
 
 AccelerationStructureKHR::AccelerationStructureKHR(APIVersion vk_api_version)
-    : vk_api_version_(vk_api_version), vk_info_(LvlInitStruct<decltype(vk_info_)>()), device_buffer_() {}
+    : vk_api_version_(vk_api_version), vk_info_(vku::InitStructHelper()), device_buffer_() {}
 
 AccelerationStructureKHR &AccelerationStructureKHR::SetSize(VkDeviceSize size) {
     vk_info_.size = size;
@@ -239,9 +239,9 @@ void AccelerationStructureKHR::Build(const vk_testing::Device &device) {
 
     // Create a buffer to store acceleration structure
     if (!device_buffer_.initialized() && (buffer_usage_flags_ != 0)) {
-        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = buffer_memory_allocate_flags_;
-        auto ci = LvlInitStruct<VkBufferCreateInfo>();
+        auto ci = vku::InitStruct<VkBufferCreateInfo>();
         ci.size = vk_info_.size;
         ci.usage = buffer_usage_flags_;
         if (buffer_init_no_mem_) {
@@ -274,7 +274,7 @@ void AccelerationStructureKHR::Destroy() {
 
 BuildGeometryInfoKHR::BuildGeometryInfoKHR(APIVersion vk_api_version)
     : vk_api_version_(vk_api_version),
-      vk_info_(LvlInitStruct<decltype(vk_info_)>()),
+      vk_info_(vku::InitStructHelper()),
       geometries_(),
       src_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
       dst_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
@@ -494,7 +494,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(VkDev
     }
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
-    auto size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    auto size_info = vku::InitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
     vk::GetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vk_info_, &primitives_count,
                                               &size_info);
 
@@ -533,13 +533,13 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
         // Allocate device local scratch buffer
 
         // Get minAccelerationStructureScratchOffsetAlignment
-        auto as_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-        auto phys_dev_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&as_props);
+        auto as_props = vku::InitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
+        auto phys_dev_props = vku::InitStruct<VkPhysicalDeviceProperties2>(&as_props);
         vk::GetPhysicalDeviceProperties2(device.phy(), &phys_dev_props);
 
         assert(device_scratch_);  // So far null pointers are not supported
         if (!device_scratch_->initialized()) {
-            auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+            auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
             alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 
             if (scratch_size > 0) {
@@ -636,7 +636,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(APIVersion vk_api_version, const 
     triangle_geometry.SetType(GeometryKHR::Type::Triangle);
 
     // Allocate vertex and index buffers
-    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
@@ -700,7 +700,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(APIVersion vk_api_version, const vk_t
 
     const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();
     vk_testing::Buffer aabb_buffer;
-    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |

@@ -24,7 +24,7 @@ void DescriptorIndexingTest::InitBasicDescriptorIndexing(void* pNextFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    descriptor_indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>(pNextFeatures);
+    descriptor_indexing_features = vku::InitStructHelper(pNextFeatures);
     GetPhysicalDeviceFeatures2(descriptor_indexing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_indexing_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
@@ -56,7 +56,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    auto layout_createinfo_binding_flags = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    auto layout_createinfo_binding_flags = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     ds_binding_flags[0] = 0;
     // No Error
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
@@ -75,7 +75,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
                                        0, &layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
-    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -88,14 +88,14 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     buffer_info[0].offset = 0;
     buffer_info[0].range = sizeof(uint32_t);
 
-    auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto index_buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBufferObj index_buffer(*m_device, index_buffer_create_info);
 
     // Only update binding 0
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -122,7 +122,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -144,7 +144,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto synchronization2 = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     InitBasicDescriptorIndexing(&synchronization2);
     if (::testing::Test::IsSkipped()) return;
 
@@ -156,7 +156,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -168,7 +168,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = buffer_mem_reqs.size;
 
     VkDeviceMemory memory1, memory2, memory3;
@@ -185,7 +185,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     VkDescriptorBindingFlagsEXT flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, 0};
-    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     flags_create_info.bindingCount = 2;
     flags_create_info.pBindingFlags = flags;
     OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
@@ -194,7 +194,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
 
     VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -241,10 +241,10 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     buffer_info.buffer = buffer2;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
-    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfoKHR>();
+    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfoKHR>();
     cb_info.commandBuffer = m_commandBuffer->handle();
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo2KHR>();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -264,7 +264,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto synchronization2 = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     InitBasicDescriptorIndexing(&synchronization2);
     if (::testing::Test::IsSkipped()) return;
 
@@ -277,7 +277,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -288,7 +288,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = buffer_mem_reqs.size;
 
     VkDeviceMemory memory1, memory3;
@@ -303,7 +303,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
     VkDescriptorBindingFlagsEXT flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
-    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     flags_create_info.bindingCount = 2;
     flags_create_info.pBindingFlags = flags;
     OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
@@ -312,7 +312,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     VkDescriptorBufferInfo buffer_info = {buffer1, 0, sizeof(uint32_t)};
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -357,10 +357,10 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
 
     vk::DestroyBuffer(device(), buffer1, nullptr);
 
-    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfoKHR>();
+    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfoKHR>();
     cb_info.commandBuffer = m_commandBuffer->handle();
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo2KHR>();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 

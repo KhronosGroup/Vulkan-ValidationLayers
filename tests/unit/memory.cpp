@@ -27,7 +27,7 @@ TEST_F(NegativeMemory, MapMemory) {
 
     const VkDeviceSize atom_size = m_device->props.limits.nonCoherentAtomSize;
 
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buf_info.size = 256;
     buf_info.queueFamilyIndexCount = 0;
@@ -37,7 +37,7 @@ TEST_F(NegativeMemory, MapMemory) {
     ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer));
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.memoryTypeIndex = 0;
 
     // Ensure memory is big enough for both bindings
@@ -83,7 +83,7 @@ TEST_F(NegativeMemory, MapMemory) {
 
     // Now map memory and cause errors due to flushing invalid ranges
     ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 4 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData));
-    VkMappedMemoryRange mmr = LvlInitStruct<VkMappedMemoryRange>();
+    VkMappedMemoryRange mmr = vku::InitStructHelper();
     mmr.memory = mem;
     mmr.offset = atom_size;  // Error b/c offset less than offset of mapped mem
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00685");
@@ -204,7 +204,7 @@ TEST_F(NegativeMemory, MapMemory2) {
      */
     const VkDeviceSize allocation_size = 64 << 10;
 
-    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
     bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -212,10 +212,10 @@ TEST_F(NegativeMemory, MapMemory2) {
 
     vk_testing::DeviceMemory memory(*m_device, memory_info);
 
-    VkMemoryMapInfoKHR map_info = LvlInitStruct<VkMemoryMapInfoKHR>();
+    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
     map_info.memory = memory;
 
-    VkMemoryUnmapInfoKHR unmap_info = LvlInitStruct<VkMemoryUnmapInfoKHR>();
+    VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
     unmap_info.memory = memory;
 
     uint8_t *pData;
@@ -258,7 +258,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
 
     if (!m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
@@ -275,7 +275,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     m_errorMonitor->VerifyFound();
 
     // Attempt to flush and invalidate non-host memory
-    VkMappedMemoryRange memory_range = LvlInitStruct<VkMappedMemoryRange>();
+    VkMappedMemoryRange memory_range = vku::InitStructHelper();
     memory_range.memory = memory.handle();
     memory_range.offset = 0;
     memory_range.size = VK_WHOLE_SIZE;
@@ -296,7 +296,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
     if (!m_device->phy().set_memory_type(
             0xFFFFFFFF, &mem_alloc, 0,
@@ -306,7 +306,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
 
     vk_testing::DeviceMemory memory(*m_device, mem_alloc);
 
-    VkMemoryMapInfoKHR map_info = LvlInitStruct<VkMemoryMapInfoKHR>();
+    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
     map_info.memory = memory.handle();
     map_info.offset = 0;
     map_info.size = 32;
@@ -335,7 +335,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = tex_width;
@@ -348,7 +348,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
 
@@ -404,7 +404,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     image.init_no_mem(*m_device, image_ci);
 
     const auto mem_reqs = image.memory_requirements();
-    auto image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto image_alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     image_alloc_info.allocationSize = mem_reqs.size;
 
     // the last argument is the "forbid" argument for set_memory_type, disallowing
@@ -436,7 +436,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = tex_width;
@@ -449,7 +449,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
 
@@ -500,7 +500,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     if (IsExtensionsEnabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME) &&
         IsExtensionsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        auto coherent_mem_features = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+        auto coherent_mem_features = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
         GetPhysicalDeviceFeatures2(coherent_mem_features);
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_mem_features));
     } else {
@@ -511,7 +511,7 @@ TEST_F(NegativeMemory, BindMemory) {
     const int32_t tex_width = 256;
     const int32_t tex_height = 256;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = tex_width;
@@ -524,7 +524,7 @@ TEST_F(NegativeMemory, BindMemory) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = 0;
     buffer_create_info.size = 4 * 1024 * 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -542,8 +542,8 @@ TEST_F(NegativeMemory, BindMemory) {
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
 
-        VkMemoryAllocateInfo image_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
-        VkMemoryAllocateInfo buffer_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_mem_alloc = vku::InitStructHelper();
+        VkMemoryAllocateInfo buffer_mem_alloc = vku::InitStructHelper();
         image_mem_alloc.allocationSize = image_mem_reqs.size;
         pass = m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_mem_alloc, 0);
         ASSERT_TRUE(pass);
@@ -585,8 +585,8 @@ TEST_F(NegativeMemory, BindMemory) {
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
+        VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
         pass = m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
@@ -630,8 +630,8 @@ TEST_F(NegativeMemory, BindMemory) {
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
+        VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
@@ -718,8 +718,8 @@ TEST_F(NegativeMemory, BindMemory) {
         VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
+        VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
         // Create a mask of available memory types *not* supported by these resources,
@@ -781,7 +781,7 @@ TEST_F(NegativeMemory, BindMemory) {
                 VkMemoryRequirements sparse_mem_reqs = {};
                 vk::GetImageMemoryRequirements(m_device->device(), sparse_image, &sparse_mem_reqs);
                 if (sparse_mem_reqs.memoryTypeBits != 0) {
-                    VkMemoryAllocateInfo sparse_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+                    VkMemoryAllocateInfo sparse_mem_alloc = vku::InitStructHelper();
                     sparse_mem_alloc.allocationSize = sparse_mem_reqs.size;
                     sparse_mem_alloc.memoryTypeIndex = 0;
                     pass = m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
@@ -814,7 +814,7 @@ TEST_F(NegativeMemory, BindMemory) {
             VkMemoryRequirements sparse_mem_reqs = {};
             vk::GetBufferMemoryRequirements(m_device->device(), sparse_buffer, &sparse_mem_reqs);
             if (sparse_mem_reqs.memoryTypeBits != 0) {
-                VkMemoryAllocateInfo sparse_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+                VkMemoryAllocateInfo sparse_mem_alloc = vku::InitStructHelper();
                 sparse_mem_alloc.allocationSize = sparse_mem_reqs.size;
                 sparse_mem_alloc.memoryTypeIndex = 0;
                 pass = m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
@@ -844,7 +844,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
     // first test buffer
     {
-        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
         buffer_create_info.flags = 0;
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -860,7 +860,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
         VkMemoryRequirements buffer_mem_reqs = {};
         vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-        VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
         ASSERT_TRUE(m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0));
@@ -890,7 +890,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
     // Next test is a single-plane image
     {
-        VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
         image_create_info.extent.width = 256;
@@ -913,7 +913,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
@@ -956,7 +956,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
             GTEST_SKIP() << "test rely on a supported disjoint format";
         }
 
-        VkImageCreateInfo mp_image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo mp_image_create_info = vku::InitStructHelper();
         mp_image_create_info.imageType = VK_IMAGE_TYPE_2D;
         mp_image_create_info.format = mp_format;
         mp_image_create_info.extent.width = 256;
@@ -980,20 +980,20 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image));
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_unchecked_image));
 
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
         mem_req_info2.image = mp_image;
-        mp_image_mem_reqs2[0] = LvlInitStruct<VkMemoryRequirements2>();
+        mp_image_mem_reqs2[0] = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        mp_image_mem_reqs2[1] = LvlInitStruct<VkMemoryRequirements2>();
+        mp_image_mem_reqs2[1] = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
 
-        mp_image_alloc_info[0] = LvlInitStruct<VkMemoryAllocateInfo>();
-        mp_image_alloc_info[1] = LvlInitStruct<VkMemoryAllocateInfo>();
+        mp_image_alloc_info[0] = vku::InitStructHelper();
+        mp_image_alloc_info[1] = vku::InitStructHelper();
 
         mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
         ASSERT_TRUE(
@@ -1012,17 +1012,17 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         // Sets an invalid offset to plane 1
         if (mp_image_mem_reqs2[1].memoryRequirements.alignment > 1) {
             VkBindImagePlaneMemoryInfo plane_memory_info[2];
-            plane_memory_info[0] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+            plane_memory_info[0] = vku::InitStructHelper();
             plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-            plane_memory_info[1] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+            plane_memory_info[1] = vku::InitStructHelper();
             plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
 
             VkBindImageMemoryInfo bind_image_info[2];
-            bind_image_info[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[0]);
+            bind_image_info[0] = vku::InitStructHelper(&plane_memory_info[0]);
             bind_image_info[0].image = mp_image;
             bind_image_info[0].memory = mp_image_mem[0];
             bind_image_info[0].memoryOffset = 0;
-            bind_image_info[1] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[1]);
+            bind_image_info[1] = vku::InitStructHelper(&plane_memory_info[1]);
             bind_image_info[1].image = mp_image;
             bind_image_info[1].memory = mp_image_mem[1];
             bind_image_info[1].memoryOffset = 1;  // off alignment
@@ -1068,7 +1068,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 256;
@@ -1092,7 +1092,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
 
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), image_a, &image_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_a_mem));
@@ -1103,11 +1103,11 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
 
         // Try binding same image twice in array
         VkBindImageMemoryInfo bind_image_info[3];
-        bind_image_info[0] = LvlInitStruct<VkBindImageMemoryInfo>();
+        bind_image_info[0] = vku::InitStructHelper();
         bind_image_info[0].image = image_a;
         bind_image_info[0].memory = image_a_mem;
         bind_image_info[0].memoryOffset = 0;
-        bind_image_info[1] = LvlInitStruct<VkBindImageMemoryInfo>();
+        bind_image_info[1] = vku::InitStructHelper();
         bind_image_info[1].image = image_b;
         bind_image_info[1].memory = image_b_mem;
         bind_image_info[1].memoryOffset = 0;
@@ -1146,7 +1146,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &normal_image));
         VkMemoryRequirements image_mem_reqs = {};
         vk::GetImageMemoryRequirements(device(), normal_image, &image_mem_reqs);
-        VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &normal_image_mem));
@@ -1173,15 +1173,15 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
                                VK_IMAGE_ASPECT_PLANE_1_BIT);
 
         VkBindImagePlaneMemoryInfo plane_memory_info[2];
-        plane_memory_info[0] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        plane_memory_info[0] = vku::InitStructHelper();
         plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        plane_memory_info[1] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        plane_memory_info[1] = vku::InitStructHelper();
         plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
 
         // set all sType and memoryOffset as they are the same
         VkBindImageMemoryInfo bind_image_info[6];
         for (int i = 0; i < 6; i++) {
-            bind_image_info[i] = LvlInitStruct<VkBindImageMemoryInfo>();
+            bind_image_info[i] = vku::InitStructHelper();
             bind_image_info[i].memoryOffset = 0;
         }
 
@@ -1258,7 +1258,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = tex_width;
@@ -1271,7 +1271,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 0;
     mem_alloc.memoryTypeIndex = 0;
 
@@ -1323,7 +1323,7 @@ TEST_F(NegativeMemory, AllocationCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = 4;
 
@@ -1347,7 +1347,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
 
     VkImage image;
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = 32;
@@ -1365,7 +1365,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     VkMemoryRequirements mem_reqs;
     VkDeviceMemory image_mem;
     bool pass;
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
     mem_alloc.allocationSize = mem_reqs.size;
@@ -1411,7 +1411,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
 
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 1024;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1420,7 +1420,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = 1024;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1467,7 +1467,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     VkBufferObj buffer;
     buffer.init_no_mem(*m_device, buffer_info);
     auto buffer_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
-    auto buffer_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    auto buffer_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     buffer_dedicated_info.buffer = buffer.handle();
     buffer_alloc_info.pNext = &buffer_dedicated_info;
     vk_testing::DeviceMemory dedicated_buffer_memory;
@@ -1503,7 +1503,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     image.init_no_mem(*m_device, image_info);
     wrong_image.init_no_mem(*m_device, image_info);
 
-    auto image_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     image_dedicated_info.image = image.handle();
     auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1537,7 +1537,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto aliasing_features = LvlInitStruct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
+    auto aliasing_features = vku::InitStruct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
     GetPhysicalDeviceFeatures2(aliasing_features);
     if (aliasing_features.dedicatedAllocationImageAliasing != VK_TRUE) {
         GTEST_SKIP() << "dedicatedAllocationImageAliasing feature not supported";
@@ -1560,7 +1560,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     identical_image.init_no_mem(*m_device, image_info);
     post_delete_image.init_no_mem(*m_device, image_info);
 
-    auto image_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfoKHR>();
+    auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     image_dedicated_info.image = image->handle();
     auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1619,21 +1619,21 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
-    VkBufferDeviceAddressCreateInfoEXT addr_ci = LvlInitStruct<VkBufferDeviceAddressCreateInfoEXT>();
+    VkBufferDeviceAddressCreateInfoEXT addr_ci = vku::InitStructHelper();
     addr_ci.deviceAddress = 1;
     buffer_create_info.pNext = &addr_ci;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-deviceAddress-02604");
@@ -1643,7 +1643,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
 
-    VkBufferDeviceAddressInfoEXT info = LvlInitStruct<VkBufferDeviceAddressInfoEXT>();
+    VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
@@ -1652,7 +1652,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
 
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
@@ -1673,21 +1673,21 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBuffer buffer;
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
 
-    VkBufferDeviceAddressInfoEXT info = LvlInitStruct<VkBufferDeviceAddressInfoEXT>();
+    VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
@@ -1708,21 +1708,21 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
-    VkBufferOpaqueCaptureAddressCreateInfoKHR addr_ci = LvlInitStruct<VkBufferOpaqueCaptureAddressCreateInfoKHR>();
+    VkBufferOpaqueCaptureAddressCreateInfoKHR addr_ci = vku::InitStructHelper();
     addr_ci.opaqueCaptureAddress = 1;
     buffer_create_info.pNext = &addr_ci;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337");
@@ -1732,7 +1732,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
 
-    VkBufferDeviceAddressInfoKHR info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
+    VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
@@ -1741,7 +1741,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
 
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
@@ -1752,7 +1752,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
     m_errorMonitor->VerifyFound();
 
-    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = LvlInitStruct<VkDeviceMemoryOpaqueCaptureAddressInfoKHR>();
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
     vk::GetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
@@ -1764,7 +1764,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
 
-    VkMemoryAllocateFlagsInfo alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
     err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
@@ -1789,21 +1789,21 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto buffer_device_address_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBuffer buffer;
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
 
-    VkBufferDeviceAddressInfoKHR info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
+    VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
@@ -1818,14 +1818,14 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
 
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
     err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
-    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = LvlInitStruct<VkDeviceMemoryOpaqueCaptureAddressInfoKHR>();
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
@@ -1834,7 +1834,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
 
-    VkMemoryAllocateFlagsInfo alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
     buffer_alloc_info.pNext = &alloc_flags;
 
@@ -1857,7 +1857,7 @@ TEST_F(NegativeMemory, MemoryType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-pAllocateInfo-01714");
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
     mem_alloc.allocationSize = 4;
 
@@ -1878,7 +1878,7 @@ TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-pAllocateInfo-01713");
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = memory_info.memoryHeaps[memory_info.memoryTypes[0].heapIndex].size + 1;
 
@@ -1902,7 +1902,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
 
-    auto coherent_memory_features_amd = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+    auto coherent_memory_features_amd = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
     coherent_memory_features_amd.deviceCoherentMemory = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_memory_features_amd));
@@ -1925,7 +1925,7 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-deviceCoherentMemory-02790");
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = deviceCoherentMemoryTypeIndex;
     mem_alloc.allocationSize = 4;
 
@@ -1955,14 +1955,14 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     bool sparse_support = (m_device->phy().features().sparseBinding == VK_TRUE);
     bool disjoint_support = ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) != 0);
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.size = 2048;
     buffer_create_info.queueFamilyIndexCount = 0;
     buffer_create_info.pQueueFamilyIndices = NULL;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = normal_format;
     image_create_info.extent.width = 64;
@@ -1999,8 +1999,8 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     }
 
     VkDeviceMemory device_memory;
-    VkMemoryDedicatedAllocateInfo dedicated_allocate_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&dedicated_allocate_info);
+    VkMemoryDedicatedAllocateInfo dedicated_allocate_info = vku::InitStructHelper();
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&dedicated_allocate_info);
     memory_allocate_info.memoryTypeIndex = 0;
     memory_allocate_info.allocationSize = 64;
 
@@ -2033,11 +2033,11 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     }
 
     if (disjoint_support == true) {
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
         mem_req_info2.image = disjoint_image;
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
 
         vk::GetImageMemoryRequirements2(m_device->device(), &mem_req_info2, &mem_req2);
 
@@ -2103,7 +2103,7 @@ TEST_F(NegativeMemory, MemoryRequirements) {
           (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
         GTEST_SKIP() << "test requires disjoint/sampled feature bit on format";
     } else {
-        VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
         image_create_info.extent.width = 64;
@@ -2125,16 +2125,16 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         vk::GetImageMemoryRequirements(m_device->device(), image, &memory_requirements);
         m_errorMonitor->VerifyFound();
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image;
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         // Point to a 3rd plane for a 2-plane format
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
         mem_req_info2.pNext = &image_plane_req;
         mem_req_info2.image = image;
@@ -2201,16 +2201,16 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkDeviceMemory mem;
-    auto mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = 4;
 
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryAllocateInfoNV
     {
-        auto export_memory_info_nv = LvlInitStruct<VkExportMemoryAllocateInfoNV>();
+        auto export_memory_info_nv = vku::InitStruct<VkExportMemoryAllocateInfoNV>();
         export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
-        auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
+        auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
         export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
@@ -2221,11 +2221,11 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryWin32HandleInfoNV
     {
-        auto export_memory_info_win32_nv = LvlInitStruct<VkExportMemoryWin32HandleInfoNV>();
+        auto export_memory_info_win32_nv = vku::InitStruct<VkExportMemoryWin32HandleInfoNV>();
         export_memory_info_win32_nv.pAttributes = nullptr;
         export_memory_info_win32_nv.dwAccess = 0;
 
-        auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_win32_nv);
+        auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_win32_nv);
         export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
@@ -2235,10 +2235,10 @@ TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     }
     // pNext chain includes both VkImportMemoryWin32HandleInfoKHR and VkImportMemoryWin32HandleInfoNV
     {
-        auto import_memory_info_win32_khr = LvlInitStruct<VkImportMemoryWin32HandleInfoKHR>();
+        auto import_memory_info_win32_khr = vku::InitStruct<VkImportMemoryWin32HandleInfoKHR>();
         import_memory_info_win32_khr.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
-        auto import_memory_info_win32_nv = LvlInitStruct<VkImportMemoryWin32HandleInfoNV>(&import_memory_info_win32_khr);
+        auto import_memory_info_win32_nv = vku::InitStruct<VkImportMemoryWin32HandleInfoNV>(&import_memory_info_win32_khr);
         import_memory_info_win32_nv.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00641");
@@ -2262,10 +2262,10 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
+    auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
     image_swapchain_create_info.swapchain = m_swapchain;
 
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>(&image_swapchain_create_info);
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>(&image_swapchain_create_info);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent = {32, 32, 1};
@@ -2275,11 +2275,11 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
 
-    auto device_image_memory_requirements = LvlInitStruct<VkDeviceImageMemoryRequirementsKHR>();
+    auto device_image_memory_requirements = vku::InitStruct<VkDeviceImageMemoryRequirementsKHR>();
     device_image_memory_requirements.pCreateInfo = &image_create_info;
     device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
@@ -2306,7 +2306,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
         GTEST_SKIP() << "Test requires disjoint support extensions";
     }
 
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
@@ -2317,11 +2317,11 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
 
-    auto device_image_memory_requirements = LvlInitStruct<VkDeviceImageMemoryRequirementsKHR>();
+    auto device_image_memory_requirements = vku::InitStruct<VkDeviceImageMemoryRequirementsKHR>();
     device_image_memory_requirements.pCreateInfo = &image_create_info;
     device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_NONE_KHR;
 
-    VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
@@ -2355,7 +2355,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
-    auto create_device_pnext = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
+    auto create_device_pnext = vku::InitStruct<VkDeviceGroupDeviceCreateInfo>();
     create_device_pnext.physicalDeviceCount = 0;
     create_device_pnext.pPhysicalDevices = nullptr;
     for (const auto &dg : physical_device_group) {
@@ -2377,7 +2377,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.memoryTypeIndex = 0;
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
 
@@ -2386,11 +2386,11 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     std::vector<uint32_t> device_indices(create_device_pnext.physicalDeviceCount);
 
-    VkBindBufferMemoryDeviceGroupInfo bind_buffer_memory_device_group = LvlInitStruct<VkBindBufferMemoryDeviceGroupInfo>();
+    VkBindBufferMemoryDeviceGroupInfo bind_buffer_memory_device_group = vku::InitStructHelper();
     bind_buffer_memory_device_group.deviceIndexCount = 1;
     bind_buffer_memory_device_group.pDeviceIndices = device_indices.data();
 
-    VkBindBufferMemoryInfo bind_buffer_info = LvlInitStruct<VkBindBufferMemoryInfo>(&bind_buffer_memory_device_group);
+    VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper(&bind_buffer_memory_device_group);
     bind_buffer_info.buffer = buffer.handle();
     bind_buffer_info.memory = buffer_memory;
     bind_buffer_info.memoryOffset = 0;
@@ -2406,7 +2406,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     m_errorMonitor->VerifyFound();
     device_indices[0] = 0;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -2424,18 +2424,18 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &image_mem_reqs);
-    VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     image_alloc_info.memoryTypeIndex = 0;
     image_alloc_info.allocationSize = image_mem_reqs.size;
 
     VkDeviceMemory image_memory;
     vk::AllocateMemory(m_device->device(), &image_alloc_info, nullptr, &image_memory);
 
-    VkBindImageMemoryDeviceGroupInfo bind_image_memory_device_group = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
+    VkBindImageMemoryDeviceGroupInfo bind_image_memory_device_group = vku::InitStructHelper();
     bind_image_memory_device_group.deviceIndexCount = 1;
     bind_image_memory_device_group.pDeviceIndices = device_indices.data();
 
-    VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_image_memory_device_group);
+    VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper(&bind_image_memory_device_group);
     bind_image_info.image = image.handle();
     bind_image_info.memory = image_memory;
     bind_image_info.memoryOffset = 0;

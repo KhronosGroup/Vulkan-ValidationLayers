@@ -26,11 +26,12 @@
 #include <vector>
 #include <unordered_set>
 
+#include <vulkan/utility/vk_struct_helper.hpp>
+
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_layer_dispatch_table.h"
 #include "generated/vk_object_types.h"
-#include "generated/vk_typemap_helper.h"
 
 #if defined __ANDROID__
 #include <android/log.h>
@@ -113,7 +114,7 @@ struct LoggingLabel {
     bool Empty() const { return name.empty(); }
 
     VkDebugUtilsLabelEXT Export() const {
-        auto out = LvlInitStruct<VkDebugUtilsLabelEXT>();
+        auto out = vku::InitStruct<VkDebugUtilsLabelEXT>();
         out.pLabelName = name.c_str();
         std::copy(color.cbegin(), color.cend(), out.color);
         return out;

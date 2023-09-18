@@ -132,14 +132,14 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
         out.append('''
             #include "pnext_chain_extraction.h"
 
-            #include "vk_typemap_helper.h"
+            #include <vulkan/utility/vk_struct_helper.hpp>
 
             namespace vvl {
 
             void* PnextChainAdd(void *chain, void *new_struct) {
                 assert(chain);
                 assert(new_struct);
-                void *chain_end = LvlFindLastInChain(chain);
+                void *chain_end = vku::FindLastStructInPNextChain(chain);
                 auto *vk_base_struct = static_cast<VkBaseOutStructure*>(chain_end);
                 assert(!vk_base_struct->pNext);
                 vk_base_struct->pNext = static_cast<VkBaseOutStructure*>(new_struct);
@@ -175,7 +175,7 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
             # Add extraction logic for each struct extending target struct
             for extending_struct in struct.extendedBy:
                 out.append(f'''
-                    if (auto *chain_struct = LvlFindInChain<{extending_struct}>(in_pnext_chain)) {{
+                    if (auto *chain_struct = vku::FindStructInPNextChain<{extending_struct}>(in_pnext_chain)) {{
                         auto &out_chain_struct = std::get<{extending_struct}>(out);
                         out_chain_struct = *chain_struct;
                         out_chain_struct.pNext = nullptr;

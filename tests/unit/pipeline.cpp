@@ -67,7 +67,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    auto bci = LvlInitStruct<VkBufferCreateInfo>();
+    auto bci = vku::InitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 1024;
     VkBufferObj buffer(*m_device, bci);
@@ -124,7 +124,7 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     subpass.pColorAttachments = attachments;
     subpass.colorAttachmentCount = 2;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 2;
@@ -199,7 +199,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     subpass.pColorAttachments = &attachment;
     subpass.colorAttachmentCount = 1;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -282,7 +282,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
         GTEST_SKIP() << "Test requires at least Vulkan 1.2";
     }
 
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     GetPhysicalDeviceFeatures2(features12);
     bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     if (has_khr_indirect && !features12.drawIndirectCount) {
@@ -312,7 +312,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_commandBuffer->DrawIndexed(1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferCreateInfo ci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo ci = vku::InitStructHelper();
     ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     ci.size = 1024;
     VkBufferObj buffer(*m_device, ci);
@@ -472,7 +472,7 @@ TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineViewportDepthClipControlCreateInfoEXT clip_control = LvlInitStruct<VkPipelineViewportDepthClipControlCreateInfoEXT>();
+    VkPipelineViewportDepthClipControlCreateInfoEXT clip_control = vku::InitStructHelper();
     clip_control.negativeOneToOne = VK_TRUE;
     auto set_shading_enable = [clip_control](CreatePipelineHelper &helper) { helper.vp_state_ci_.pNext = &clip_control; };
     CreatePipelineHelper::OneshotTest(*this, set_shading_enable, kErrorBit,
@@ -486,12 +486,12 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto sample_locations = LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
-    sample_locations.sampleLocationsInfo = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    auto sample_locations = vku::InitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
+    sample_locations.sampleLocationsInfo = vku::InitStructHelper();
     auto good_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &sample_locations; };
     CreatePipelineHelper::OneshotTest(*this, good_chain, kErrorBit);
 
-    auto instance_ci = LvlInitStruct<VkInstanceCreateInfo>();
+    auto instance_ci = vku::InitStruct<VkInstanceCreateInfo>();
     auto bad_chain = [&instance_ci](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &instance_ci; };
     CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
@@ -503,8 +503,8 @@ TEST_F(NegativePipeline, DISABLED_SamplePNextDisabled) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto sample_locations = LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
-    sample_locations.sampleLocationsInfo = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    auto sample_locations = vku::InitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
+    sample_locations.sampleLocationsInfo = vku::InitStructHelper();
     auto bad_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &sample_locations; };
     CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
@@ -537,7 +537,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -547,7 +547,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     ASSERT_TRUE(renderpass.initialized());
 
     auto render_target_view = m_renderTargets[0]->targetView(m_renderTargets[0]->format());
-    auto framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto framebuffer_info = vku::InitStruct<VkFramebufferCreateInfo>();
     framebuffer_info.renderPass = renderpass;
     framebuffer_info.width = m_renderTargets[0]->width();
     framebuffer_info.height = m_renderTargets[0]->height();
@@ -566,7 +566,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     VkPipelineObj pipeline_1(m_device);
     pipeline_1.AddShader(&vs);
     pipeline_1.AddShader(&fs);
-    VkPipelineMultisampleStateCreateInfo ms_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
     ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipeline_1.SetMSAA(&ms_state);
 
@@ -579,7 +579,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     pipeline_1.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
     pipeline_2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
 
-    auto rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rpbinfo = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbinfo.renderPass = renderpass.handle();
     rpbinfo.framebuffer = framebuffer;
     rpbinfo.renderArea.extent.width = framebuffer_info.width;
@@ -638,7 +638,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &attachmentRefs[1];
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 2;
@@ -686,7 +686,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     att_state1.blendEnable = VK_TRUE;
     pipeline.AddColorAttachment(0, att_state1);
 
-    VkPipelineMultisampleStateCreateInfo ms_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
     ms_state.flags = 0;
     ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state.sampleShadingEnable = VK_FALSE;
@@ -761,7 +761,7 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
         1.0f};
 
     VkPipelineLayout pipeline_layout;
-    auto pipeline_layout_create_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_create_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
@@ -828,7 +828,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
         1.0f};
 
     VkPipelineLayout pipeline_layout;
-    auto pipeline_layout_create_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_create_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
     ASSERT_VK_SUCCESS(err);
 
@@ -883,7 +883,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>();
+    auto cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>();
     cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cache_control_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -901,7 +901,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
 
     VkPipelineCache pipeline_cache;
-    VkPipelineCacheCreateInfo cache_create_info = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
     cache_create_info.initialDataSize = 0;
     cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892");
@@ -921,7 +921,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
@@ -969,7 +969,7 @@ TEST_F(NegativePipeline, NumBlendAttachMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
@@ -1204,7 +1204,7 @@ TEST_F(NegativePipeline, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Set a mismatched sample count
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_ = ms_state_ci; };
@@ -1283,15 +1283,15 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
         sp.pResolveAttachments = NULL;
         sp.pDepthStencilAttachment = &dr;
 
-        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
         rpi.attachmentCount = 2;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
         vk_testing::RenderPass rp(*m_device, rpi);
 
-        auto ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
-        auto cmi = LvlInitStruct<VkPipelineCoverageModulationStateCreateInfoNV>();
+        auto ds = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        auto cmi = vku::InitStruct<VkPipelineCoverageModulationStateCreateInfoNV>();
 
         // Create a dummy modulation table that can be used for the positive
         // coverageModulationTableCount test.
@@ -1368,7 +1368,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
         sp.pResolveAttachments = NULL;
         sp.pDepthStencilAttachment = &dr;
 
-        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
         rpi.attachmentCount = 2;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
@@ -1386,7 +1386,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
             continue;
         }
 
-        VkPipelineDepthStencilStateCreateInfo ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
 
         const auto break_samples = [&rp, &ds, &test_case](CreatePipelineHelper &helper) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
@@ -1444,7 +1444,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     }
     combinations.resize(combination_count);
     // TODO this fill can be removed once https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4138 merges
-    std::fill(combinations.begin(), combinations.end(), LvlInitStruct<VkFramebufferMixedSamplesCombinationNV>());
+    std::fill(combinations.begin(), combinations.end(), vku::InitStruct<VkFramebufferMixedSamplesCombinationNV>());
     ASSERT_NO_FATAL_FAILURE(
         vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]));
 
@@ -1514,7 +1514,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
         sp.pResolveAttachments = nullptr;
         sp.pDepthStencilAttachment = (test_case.depth_samples) ? &dr : nullptr;
 
-        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
         rpi.attachmentCount = (test_case.depth_samples) ? 2 : 1;
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
@@ -1523,8 +1523,8 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
         vk_testing::RenderPass rp(*m_device, rpi);
         ASSERT_TRUE(rp.initialized());
 
-        VkPipelineDepthStencilStateCreateInfo dss = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
-        VkPipelineCoverageReductionStateCreateInfoNV crs = LvlInitStruct<VkPipelineCoverageReductionStateCreateInfoNV>();
+        VkPipelineDepthStencilStateCreateInfo dss = vku::InitStructHelper();
+        VkPipelineCoverageReductionStateCreateInfoNV crs = vku::InitStructHelper();
 
         const auto break_samples = [&rp, &dss, &crs, &test_case](CreatePipelineHelper &helper) {
             crs.flags = 0;
@@ -1604,7 +1604,7 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
         sp.colorAttachmentCount = cr.size();
         sp.pColorAttachments = cr.data();
 
-        VkRenderPassCreateInfo rpi = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rpi = vku::InitStructHelper();
         rpi.attachmentCount = att.size();
         rpi.pAttachments = att.data();
         rpi.subpassCount = 1;
@@ -1612,14 +1612,14 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
 
         const std::array<VkPipelineColorBlendAttachmentState, 3> cba = {{{}, {}, {}}};
 
-        VkPipelineColorBlendStateCreateInfo cbi = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+        VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
         cbi.attachmentCount = cba.size();
         cbi.pAttachments = cba.data();
 
         vk_testing::RenderPass rp(*m_device, rpi);
         ASSERT_TRUE(rp.initialized());
 
-        VkPipelineCoverageToColorStateCreateInfoNV cci = LvlInitStruct<VkPipelineCoverageToColorStateCreateInfoNV>();
+        VkPipelineCoverageToColorStateCreateInfoNV cci = vku::InitStructHelper();
 
         const auto break_samples = [&cci, &cbi, &rp, &test_case](CreatePipelineHelper &helper) {
             cci.coverageToColorEnable = test_case.enabled;
@@ -1649,7 +1649,7 @@ TEST_F(NegativePipeline, ViewportSwizzleNV) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vp_swizzle_state = LvlInitStruct<VkPipelineViewportSwizzleStateCreateInfoNV>();
+    auto vp_swizzle_state = vku::InitStruct<VkPipelineViewportSwizzleStateCreateInfoNV>();
 
     // Test invalid VkViewportSwizzleNV
     {
@@ -1716,7 +1716,7 @@ TEST_F(NegativePipeline, CreationFeedbackCount) {
         GTEST_SKIP() << "Driver data writeback check not supported by MockICD";
     }
 
-    auto feedback_info = LvlInitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    auto feedback_info = vku::InitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
     VkPipelineCreationFeedbackEXT feedbacks[3] = {};
     // Set flags to known value that the driver has to overwrite
     feedbacks[0].flags = VK_PIPELINE_CREATION_FEEDBACK_FLAG_BITS_MAX_ENUM;
@@ -1750,7 +1750,7 @@ TEST_F(NegativePipeline, CreationFeedbackCountCompute) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = LvlInitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
     VkPipelineCreationFeedbackEXT feedbacks[3] = {};
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 1;
@@ -1775,7 +1775,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto line_rasterization_features = LvlInitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
+    auto line_rasterization_features = vku::InitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(line_rasterization_features);
 
     line_rasterization_features.rectangularLines = VK_FALSE;
@@ -1865,7 +1865,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     }
 
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     bci.size = 4;
     bci.queueFamilyIndexCount = 1;
@@ -1894,14 +1894,14 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     VkDescriptorBufferInfo uniform_buffer_info = {uniform_buffer.handle(), 0, 5 * sizeof(uint32_t)};
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = binding_descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &storage_buffer_info;
 
-    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[1] = vku::InitStructHelper();
     descriptor_writes[1].dstSet = binding_descriptor_set.set_;
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].descriptorCount = 1;  // Write 4 bytes to val
@@ -1921,7 +1921,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
 
     VkShaderObj shader_module(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkPipelineShaderStageCreateInfo stage = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    VkPipelineShaderStageCreateInfo stage = vku::InitStructHelper();
     stage.flags = 0;
     stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     stage.module = shader_module.handle();
@@ -1929,7 +1929,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     stage.pSpecializationInfo = nullptr;
 
     // CreateComputePipelines
-    VkComputePipelineCreateInfo pipeline_info = LvlInitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
     pipeline_info.layout = pipeline_layout.handle();
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -2053,10 +2053,10 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     }
 
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features =
-        LvlInitStruct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
+        vku::InitStructHelper();
     pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
 
-    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pipeline_exe_features);
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&pipeline_exe_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -2070,11 +2070,11 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     pipe.CreateGraphicsPipeline();
 
     uint32_t count;
-    VkPipelineExecutableInfoKHR pipeline_exe_info = LvlInitStruct<VkPipelineExecutableInfoKHR>();
+    VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();
     pipeline_exe_info.pipeline = pipe.pipeline_;
     pipeline_exe_info.executableIndex = 0;
 
-    VkPipelineInfoKHR pipeline_info = LvlInitStruct<VkPipelineInfoKHR>();
+    VkPipelineInfoKHR pipeline_info = vku::InitStructHelper();
     pipeline_info.pipeline = pipe.pipeline_;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
@@ -2229,21 +2229,21 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
     // first item is combined, second/third item are seperate
     VkWriteDescriptorSet descriptor_writes[3] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = combined_descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[0].pImageInfo = &combined_sampler_info;
 
-    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[1] = vku::InitStructHelper();
     descriptor_writes[1].dstSet = seperate_descriptor_set.set_;
     descriptor_writes[1].dstBinding = 0;
     descriptor_writes[1].descriptorCount = 1;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_writes[1].pImageInfo = &seperate_sampled_image_info;
 
-    descriptor_writes[2] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[2] = vku::InitStructHelper();
     descriptor_writes[2].dstSet = seperate_descriptor_set.set_;
     descriptor_writes[2].dstBinding = 1;
     descriptor_writes[2].descriptorCount = 1;
@@ -2469,7 +2469,7 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     const VkDescriptorSetLayoutObj pipeline_dsl(m_device, bindings);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&pipeline_dsl});
 
-    VkComputePipelineCreateInfo compute_create_info = LvlInitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
@@ -2507,14 +2507,14 @@ TEST_F(NegativePipeline, DiscardRectangle) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto discard_rectangle_properties = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    auto discard_rectangle_properties = vku::InitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
     GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
     uint32_t count = discard_rectangle_properties.maxDiscardRectangles + 1;
     std::vector<VkRect2D> discard_rectangles(count);
 
     VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state =
-        LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+        vku::InitStructHelper();
     discard_rectangle_state.discardRectangleCount = count;
     discard_rectangle_state.pDiscardRectangles = discard_rectangles.data();
 
@@ -2538,7 +2538,7 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineColorWriteCreateInfoEXT color_write = LvlInitStruct<VkPipelineColorWriteCreateInfoEXT>();
+    VkPipelineColorWriteCreateInfoEXT color_write = vku::InitStructHelper();
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -2566,7 +2566,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto sample_locations = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
+    auto sample_locations = vku::InitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
     GetPhysicalDeviceProperties2(sample_locations);
 
     if (sample_locations.variableSampleLocations) {
@@ -2596,7 +2596,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
                                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                               VK_DEPENDENCY_BY_REGION_BIT};
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 2;
     rpci.pSubpasses = subpasses;
     rpci.attachmentCount = 1;
@@ -2611,7 +2611,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkFramebufferCreateInfo framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo framebuffer_info = vku::InitStructHelper();
     framebuffer_info.renderPass = render_pass.handle();
     framebuffer_info.attachmentCount = 1;
     framebuffer_info.pAttachments = &image_view;
@@ -2622,7 +2622,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     vk_testing::Framebuffer framebuffer(*m_device, framebuffer_info);
     ASSERT_TRUE(framebuffer.initialized());
 
-    auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
+    auto multisample_prop = vku::InitStruct<VkMultisamplePropertiesEXT>();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
@@ -2633,18 +2633,18 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     }
 
     std::vector<VkSampleLocationEXT> sample_location(valid_count, {0.5, 0.5});
-    VkSampleLocationsInfoEXT sample_locations_info = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
     sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
     sample_locations_info.sampleLocationGridSize = multisample_prop.maxSampleLocationGridSize;
     sample_locations_info.sampleLocationsCount = valid_count;
     sample_locations_info.pSampleLocations = sample_location.data();
 
     VkPipelineSampleLocationsStateCreateInfoEXT sample_locations_state =
-        LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
+        vku::InitStructHelper();
     sample_locations_state.sampleLocationsEnable = VK_TRUE;
     sample_locations_state.sampleLocationsInfo = sample_locations_info;
 
-    auto multi_sample_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>(&sample_locations_state);
+    auto multi_sample_state = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>(&sample_locations_state);
     multi_sample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multi_sample_state.sampleShadingEnable = VK_FALSE;
     multi_sample_state.minSampleShading = 1.0;
@@ -2668,7 +2668,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     subpass_sample_locations.subpassIndex = 0;
     subpass_sample_locations.sampleLocationsInfo = sample_locations_info;
 
-    VkRenderPassSampleLocationsBeginInfoEXT render_pass_sample_locations = LvlInitStruct<VkRenderPassSampleLocationsBeginInfoEXT>();
+    VkRenderPassSampleLocationsBeginInfoEXT render_pass_sample_locations = vku::InitStructHelper();
     render_pass_sample_locations.attachmentInitialSampleLocationsCount = 1;
     render_pass_sample_locations.pAttachmentInitialSampleLocations = &attachment_sample_locations;
     render_pass_sample_locations.postSubpassSampleLocationsCount = 1;
@@ -2677,7 +2677,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     sample_location[0].x =
         0.0f;  // Invalid, VkRenderPassSampleLocationsBeginInfoEXT wont match VkPipelineSampleLocationsStateCreateInfoEXT
 
-    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>(&render_pass_sample_locations);
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper(&render_pass_sample_locations);
     begin_info.renderPass = render_pass.handle();
     begin_info.framebuffer = framebuffer.handle();
     begin_info.renderArea.extent.width = 32;
@@ -2724,11 +2724,11 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto conservative_rasterization_props = LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    auto conservative_rasterization_props = vku::InitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
 
     VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state =
-        LvlInitStruct<VkPipelineRasterizationConservativeStateCreateInfoEXT>();
+        vku::InitStructHelper();
     conservative_state.extraPrimitiveOverestimationSize = -1.0f;
 
     CreatePipelineHelper pipe(*this);
@@ -2774,7 +2774,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
@@ -2794,7 +2794,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    auto rasterization_order_features = vku::InitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
     GetPhysicalDeviceFeatures2(rasterization_order_features);
 
     rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
@@ -2803,9 +2803,9 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     VkPipelineColorBlendAttachmentState cb_as = {};
-    auto cb_ci = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    auto cb_ci = vku::InitStruct<VkPipelineColorBlendStateCreateInfo>();
     cb_ci.attachmentCount = 1;
     cb_ci.pAttachments = &cb_as;
 
@@ -2847,7 +2847,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
                     VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM |
                     VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 2;
     rpci.pAttachments = attachments;
     rpci.subpassCount = 1;
@@ -2894,7 +2894,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    auto rasterization_order_features = vku::InitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
     GetPhysicalDeviceFeatures2(rasterization_order_features);
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -2905,9 +2905,9 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     VkPipelineColorBlendAttachmentState cb_as = {};
-    auto cb_ci = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    auto cb_ci = vku::InitStruct<VkPipelineColorBlendStateCreateInfo>();
     cb_ci.attachmentCount = 1;
     cb_ci.pAttachments = &cb_as;
     VkRenderPass render_pass_handle = VK_NULL_HANDLE;
@@ -2949,7 +2949,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         subpass.pDepthStencilAttachment = &dsAttachRef;
         subpass.flags = subpass_flags;
 
-        VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rpci = vku::InitStructHelper();
         rpci.attachmentCount = 2;
         rpci.pAttachments = attachments;
         rpci.subpassCount = 1;
@@ -3119,8 +3119,8 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto shader_tile_image_features = vku::InitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
     dynamic_rendering_features.pNext = &shader_tile_image_features;
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
@@ -3141,7 +3141,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -3200,8 +3200,8 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto shader_tile_image_features = vku::InitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
     dynamic_rendering_features.pNext = &shader_tile_image_features;
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
@@ -3218,13 +3218,13 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
         auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageDepthReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -3278,7 +3278,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &attachmentRefs[0];
 
-        VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+        VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
         rp_ci.subpassCount = 1;
         rp_ci.pSubpasses = &subpass;
         rp_ci.attachmentCount = 1;
@@ -3302,7 +3302,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
                                           "VUID-VkGraphicsPipelineCreateInfo-renderPass-08710");
 
         // sampleShading enable and minSampleShading not equal to 1.0
-        auto ms_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+        auto ms_ci = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>();
         ms_ci.sampleShadingEnable = VK_TRUE;
         ms_ci.minSampleShading = 0;
         ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -3334,7 +3334,7 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto depth_bias_control_features = LvlInitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>();
+    auto depth_bias_control_features = vku::InitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
 
     if (!depth_bias_control_features.depthBiasControl) {
@@ -3364,13 +3364,13 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
         pipe.AddShader(&fs);
 
         pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
-        const auto raster_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&depth_bias_representation);
+        const auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>(&depth_bias_representation);
         pipe.SetRasterization(&raster_state);
 
         pipe.CreateVKPipeline(pl.handle(), m_renderPass);
     };
 
-    auto depth_bias_representation = LvlInitStruct<VkDepthBiasRepresentationInfoEXT>();
+    auto depth_bias_representation = vku::InitStruct<VkDepthBiasRepresentationInfoEXT>();
     depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
     depth_bias_representation.depthBiasExact = VK_TRUE;
     m_errorMonitor->SetDesiredFailureMsg(

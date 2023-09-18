@@ -24,7 +24,7 @@
 // NOLINTBEGIN
 
 #include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "utils/vk_layer_utils.h"
 
 #include <cstddef>
@@ -3644,7 +3644,8 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
       basePipelineHandle(in_struct->basePipelineHandle),
       basePipelineIndex(in_struct->basePipelineIndex) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
-    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
+    const bool is_graphics_library =
+        vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -3756,7 +3757,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
     pNext = SafePnextCopy(copy_src.pNext);
-    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
+    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -3850,7 +3851,7 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
     pNext = SafePnextCopy(copy_src.pNext);
-    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
+    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -3959,7 +3960,8 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     basePipelineHandle = in_struct->basePipelineHandle;
     basePipelineIndex = in_struct->basePipelineIndex;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
-    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
+    const bool is_graphics_library =
+        vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4051,7 +4053,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     basePipelineHandle = copy_src->basePipelineHandle;
     basePipelineIndex = copy_src->basePipelineIndex;
     pNext = SafePnextCopy(copy_src->pNext);
-    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src->pNext);
+    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src->pNext);
     if (stageCount && copy_src->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {

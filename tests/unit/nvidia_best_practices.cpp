@@ -32,15 +32,15 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = &defaultQueuePriority;
 
-    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
 
-    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable = LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable = vku::InitStructHelper();
     pageable.pageableDeviceLocalMemory = VK_TRUE;
 
     {
@@ -72,7 +72,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
     InitBestPracticesFramework(kEnableNVIDIAValidation);
     InitState();
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
     image_ci.extent = { 512, 512, 1 };
@@ -103,7 +103,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
     InitBestPracticesFramework(kEnableNVIDIAValidation);
     InitState();
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     // This should be VK_FORMAT_D24_UNORM_S8_UINT, but that's not a required format.
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
@@ -141,7 +141,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         GTEST_SKIP() << "Test requires sparseBinding";
     }
 
-    auto general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    auto general_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
@@ -153,7 +153,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         general_queue_ci.queueFamilyIndex = familyIndex.value();
     }
 
-    auto transfer_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    auto transfer_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
@@ -177,7 +177,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     VkPhysicalDeviceFeatures features = {};
     features.sparseBinding = VK_TRUE;
 
-    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 2;
     device_ci.pQueueCreateInfos = queue_cis;
     device_ci.pEnabledFeatures = &features;
@@ -190,7 +190,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     vk::GetDeviceQueue(test_device.handle(), general_queue_ci.queueFamilyIndex, 0, &graphics_queue);
     vk::GetDeviceQueue(test_device.handle(), transfer_queue_ci.queueFamilyIndex, 0, &transfer_queue);
 
-    VkBufferCreateInfo sparse_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo sparse_buffer_ci = vku::InitStructHelper();
     sparse_buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     sparse_buffer_ci.size = 0x10000;
     sparse_buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -209,7 +209,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         ++memory_type_index;
     }
 
-    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = memory_requirements.size;
     memory_ai.memoryTypeIndex = memory_type_index;
 
@@ -227,7 +227,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     sparse_buffer_bind.bindCount = 1;
     sparse_buffer_bind.pBinds = &bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &sparse_buffer_bind;
 
@@ -265,9 +265,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto rt_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&rt_pipeline_features);
-    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
+    auto rt_pipeline_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto as_features = vku::InitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&rt_pipeline_features);
+    auto bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
     GetPhysicalDeviceFeatures2(bda_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
@@ -319,7 +319,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
     InitBestPracticesFramework(kEnableNVIDIAValidation);
     InitState();
 
-    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = 0x100000;
     memory_ai.memoryTypeIndex = 0;
 
@@ -330,7 +330,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_SetPriority) {
         m_errorMonitor->VerifyFound();
     }
 
-    VkMemoryPriorityAllocateInfoEXT priority = LvlInitStruct<VkMemoryPriorityAllocateInfoEXT>();
+    VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
     priority.priority = 0.5f;
     memory_ai.pNext = &priority;
 
@@ -346,11 +346,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AllocateMemory_ReuseAllocations) {
     InitBestPracticesFramework(kEnableNVIDIAValidation);
     InitState();
 
-    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = 0x100000;
     memory_ai.memoryTypeIndex = 0;
 
-    VkMemoryPriorityAllocateInfoEXT priority = LvlInitStruct<VkMemoryPriorityAllocateInfoEXT>();
+    VkMemoryPriorityAllocateInfoEXT priority = vku::InitStructHelper();
     priority.priority = 0.5f;
     memory_ai.pNext = &priority;
 
@@ -392,20 +392,20 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     }
     InitState();
 
-    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = &defaultQueuePriority;
 
-    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = LvlInitStruct<VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT>();
+    VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageable_features = vku::InitStructHelper();
     pageable_features.pNext = nullptr;
     pageable_features.pageableDeviceLocalMemory = VK_TRUE;
 
-    VkPhysicalDeviceMaintenance4Features maintenance4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
+    VkPhysicalDeviceMaintenance4Features maintenance4_features = vku::InitStructHelper();
     maintenance4_features.pNext = &pageable_features;
     maintenance4_features.maintenance4 = VK_TRUE;
 
-    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.pNext = &maintenance4_features;
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
@@ -415,7 +415,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     vk_testing::Device test_device(gpu());
     test_device.init(device_ci);
 
-    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.flags = 0;
     buffer_ci.size = 0x100000;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -435,7 +435,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
         ++memory_type_index;
     }
 
-    VkMemoryAllocateInfo memory_ai = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo memory_ai = vku::InitStructHelper();
     memory_ai.allocationSize = memory_requirements.size;
     memory_ai.memoryTypeIndex = memory_type_index;
 
@@ -480,12 +480,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
         CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0),
     };
 
-    VkDescriptorSetLayoutCreateInfo separate_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo separate_set_layout_ci = vku::InitStructHelper();
     separate_set_layout_ci.flags = 0;
     separate_set_layout_ci.bindingCount = sizeof(separate_bindings) / sizeof(separate_bindings[0]);
     separate_set_layout_ci.pBindings = separate_bindings;
 
-    VkDescriptorSetLayoutCreateInfo combined_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo combined_set_layout_ci = vku::InitStructHelper();
     combined_set_layout_ci.flags = 0;
     combined_set_layout_ci.bindingCount = sizeof(combined_bindings) / sizeof(combined_bindings[0]);
     combined_set_layout_ci.pBindings = combined_bindings;
@@ -493,7 +493,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
     vk_testing::DescriptorSetLayout separate_set_layout(*m_device, separate_set_layout_ci);
     vk_testing::DescriptorSetLayout combined_set_layout(*m_device, combined_set_layout_ci);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.flags = 0;
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
@@ -525,12 +525,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
         { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
     };
 
-    VkDescriptorSetLayoutCreateInfo large_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo large_set_layout_ci = vku::InitStructHelper();
     large_set_layout_ci.flags = 0;
     large_set_layout_ci.bindingCount = sizeof(large_bindings) / sizeof(large_bindings[0]);
     large_set_layout_ci.pBindings = large_bindings;
 
-    VkDescriptorSetLayoutCreateInfo small_set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo small_set_layout_ci = vku::InitStructHelper();
     small_set_layout_ci.flags = 0;
     small_set_layout_ci.bindingCount = sizeof(small_bindings) / sizeof(small_bindings[0]);
     small_set_layout_ci.pBindings = small_bindings;
@@ -538,7 +538,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     vk_testing::DescriptorSetLayout large_set_layout(*m_device, large_set_layout_ci);
     vk_testing::DescriptorSetLayout small_set_layout(*m_device, small_set_layout_ci);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.flags = 0;
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
@@ -570,7 +570,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
@@ -597,7 +597,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
 
     CreatePipelineHelper vsPipe(*this);
     vsPipe.shader_stages_ = {vs.GetStageCreateInfo()};
@@ -642,8 +642,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    VkPhysicalDeviceSynchronization2Features synchronization2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>(&dynamic_rendering_features);
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
+    VkPhysicalDeviceSynchronization2Features synchronization2_features = vku::InitStructHelper(&dynamic_rendering_features);
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(synchronization2_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
@@ -651,7 +651,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
@@ -662,7 +662,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
                                        VK_IMAGE_TILING_OPTIMAL, 0));
     ASSERT_TRUE(image.initialized());
 
-    VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image.handle();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = depth_format;
@@ -671,12 +671,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
 
     vk_testing::ImageView depth_image_view(*m_device, image_view_ci);
 
-    VkRenderingAttachmentInfo depth_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     depth_attachment.imageView = depth_image_view.handle();
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
-    VkRenderingInfo begin_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.renderArea.extent = {32, 32};
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
@@ -691,7 +691,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     VkClearAttachment attachment{};
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    VkImageMemoryBarrier discard_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
     discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -700,7 +700,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
                                         VK_REMAINING_ARRAY_LAYERS};
 
-    VkImageMemoryBarrier2 discard_barrier2 = LvlInitStruct<VkImageMemoryBarrier2>();
+    VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
     discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
     discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -709,7 +709,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
                                          VK_REMAINING_ARRAY_LAYERS};
 
-    VkDependencyInfo discard_dependency_info = LvlInitStruct<VkDependencyInfo>();
+    VkDependencyInfo discard_dependency_info = vku::InitStructHelper();
     discard_dependency_info.imageMemoryBarrierCount = 1;
     discard_dependency_info.pImageMemoryBarriers = &discard_barrier2;
 
@@ -731,12 +731,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
 
-    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
-    VkGraphicsPipelineCreateInfo create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    VkGraphicsPipelineCreateInfo create_info = vku::InitStructHelper();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     create_info.pNext = &pipeline_rendering_info;
     create_info.pDepthStencilState = &depth_stencil_state_ci;
@@ -752,7 +752,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     scissor.extent.width = 32;
     scissor.extent.height = 32;
 
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
 
     auto cmd = m_commandBuffer->handle();
@@ -1045,7 +1045,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_features = vku::InitStructHelper();
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "This test requires dynamicRendering";
@@ -1063,7 +1063,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
     image.Init(m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
     image_view_ci.image = image.handle();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1071,14 +1071,14 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
 
     vk_testing::ImageView image_view(*m_device, image_view_ci);
 
-    VkRenderingAttachmentInfo color_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     color_attachment.clearValue = {};
 
-    VkRenderingInfo begin_rendering_info = LvlInitStruct<VkRenderingInfo>();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.colorAttachmentCount = 1;
@@ -1157,13 +1157,13 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
 
     VkResult err = VK_SUCCESS;
 
-    VkCommandPoolCreateInfo command_pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper();
     command_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_ci.queueFamilyIndex = m_device->graphics_queue_node_index_;
 
     vk_testing::CommandPool command_pool(*m_device, command_pool_ci);
 
-    VkCommandBufferAllocateInfo allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.commandPool = command_pool.handle();
     allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocate_info.commandBufferCount = 1;
@@ -1171,10 +1171,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     vk_testing::CommandBuffer command_buffer1(*m_device, allocate_info);
     vk_testing::CommandBuffer command_buffer2(*m_device, allocate_info);
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
 
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,

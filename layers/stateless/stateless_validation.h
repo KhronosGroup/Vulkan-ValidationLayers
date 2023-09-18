@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "generated/vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
 

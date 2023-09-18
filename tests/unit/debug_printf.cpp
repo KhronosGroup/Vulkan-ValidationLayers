@@ -19,7 +19,7 @@ void NegativeDebugPrintf::InitDebugPrintfFramework() {
     VkValidationFeatureDisableEXT disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
         VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
-    VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.disabledValidationFeatureCount = 4;
     features.pEnabledValidationFeatures = enables;
@@ -37,7 +37,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
@@ -55,7 +55,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
@@ -72,7 +72,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     buffer_info[0].range = sizeof(uint32_t);
 
     VkWriteDescriptorSet descriptor_writes[1] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -150,7 +150,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -161,8 +161,8 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &hinfo;
 
     m_commandBuffer->begin(&begin_info);
@@ -349,7 +349,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -427,8 +427,8 @@ TEST_F(NegativeDebugPrintf, GPL) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multi_draw_features);
+    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multi_draw_features);
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -450,7 +450,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
@@ -467,7 +467,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     buffer_info[0].range = sizeof(uint32_t);
 
     VkWriteDescriptorSet descriptor_writes[1] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -571,12 +571,12 @@ TEST_F(NegativeDebugPrintf, GPL) {
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
     ASSERT_TRUE(pipe);
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &hinfo;
 
     m_commandBuffer->begin(&begin_info);
@@ -765,7 +765,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -776,7 +776,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     uint32_t queue_family_index = 0;
     buffer_create_info.size = 4;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -844,7 +844,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
@@ -919,7 +919,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -930,7 +930,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     uint32_t queue_family_index = 0;
     buffer_create_info.size = 4;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -1003,7 +1003,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state.dynamicStateCount = size(dyn_states);
     dyn_state.pDynamicStates = dyn_states;
     CreatePipelineHelper pre_raster(*this);
@@ -1076,9 +1076,9 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto shader_object_features = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
-    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&shader_object_features);
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    auto multi_draw_features = vku::InitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>(&shader_object_features);
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!features2.features.vertexPipelineStoresAndAtomics || !features2.features.fragmentStoresAndAtomics) {
         GTEST_SKIP() << "Debug Printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
@@ -1096,7 +1096,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo bci = vku::InitStructHelper();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
@@ -1113,7 +1113,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     buffer_info[0].range = sizeof(uint32_t);
 
     VkWriteDescriptorSet descriptor_writes[1] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -1192,12 +1192,12 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &hinfo;
 
     m_commandBuffer->begin(&begin_info);
@@ -1414,10 +1414,10 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     }
 
     // Create a device that enables mesh_shader
-    auto maintenance_4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&maintenance_4_features);
-    auto shader_object_features = LvlInitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&shader_object_features);
+    auto maintenance_4_features = vku::InitStruct<VkPhysicalDeviceMaintenance4Features>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&maintenance_4_features);
+    auto shader_object_features = vku::InitStruct<VkPhysicalDeviceShaderObjectFeaturesEXT>(&dynamic_rendering_features);
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&shader_object_features);
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
 
     if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {

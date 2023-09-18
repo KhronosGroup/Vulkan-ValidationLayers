@@ -155,31 +155,31 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAlloca
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT |
                                                                VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    const auto import_memory_win32 = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+    const auto import_memory_win32 = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
     if (import_memory_win32 && (import_memory_win32->handleType & ignored_allocation) != 0) {
         return true;
     }
 #endif
-    const auto import_memory_fd = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+    const auto import_memory_fd = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
     if (import_memory_fd && (import_memory_fd->handleType & ignored_allocation) != 0) {
         return true;
     }
-    const auto import_memory_host_pointer = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+    const auto import_memory_host_pointer = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
     if (import_memory_host_pointer && (import_memory_host_pointer->handleType & ignored_allocation) != 0) {
         return true;
     }
 
     // Handles 01874 cases
-    const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
+    const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
     if (export_info && (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        const auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+        const auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
         if (dedicated_info && dedicated_info->image) {
             return true;
         }
     }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-    const auto import_memory_zircon = LvlFindInChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pAllocateInfo->pNext);
+    const auto import_memory_zircon = vku::FindStructInPNextChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pAllocateInfo->pNext);
     if (import_memory_zircon && (import_memory_zircon->handleType & ignored_allocation) != 0) {
         return true;
     }
@@ -208,7 +208,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
-    auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+    auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
     if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
         const LogObjectList objlist(device);
         skip |=
@@ -260,7 +260,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
-    if (auto imported_ahb_info = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+    if (auto imported_ahb_info = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
         imported_ahb_info != nullptr) {
         imported_buffer = imported_ahb_info->buffer != nullptr;
     }
@@ -268,12 +268,12 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     //  "memory is not an imported QNX Screen Buffer" refers to VkImportScreenBufferInfoQNX with a non-NULL
     //  buffer value. Memory imported has another VUID to check size and allocationSize match up
-    if (auto imported_buffer_info = LvlFindInChain<VkImportScreenBufferInfoQNX>(pAllocateInfo->pNext);
+    if (auto imported_buffer_info = vku::FindStructInPNextChain<VkImportScreenBufferInfoQNX>(pAllocateInfo->pNext);
         imported_buffer_info != nullptr) {
         imported_buffer = imported_buffer_info->buffer != nullptr;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
-    auto dedicated_allocate_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+    auto dedicated_allocate_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
             skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01432", device, allocate_info_loc,
@@ -325,7 +325,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
-    if (const auto import_memory_fd_info = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
+    if (const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
         if (import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
             if (const auto payload_info = GetAllocateInfoFromFdHandle(import_memory_fd_info->fd)) {
                 const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd);
@@ -348,7 +348,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    if (const auto import_memory_win32_info = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext)) {
+    if (const auto import_memory_win32_info = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext)) {
         if (import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
             import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT) {
             if (const auto payload_info = GetAllocateInfoFromWin32Handle(import_memory_win32_info->handle)) {
@@ -447,7 +447,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
     bool skip = false;
 
     // Validate device group information
-    if (const auto *bind_buffer_memory_device_group_info = LvlFindInChain<VkBindBufferMemoryDeviceGroupInfo>(pNext)) {
+    if (const auto *bind_buffer_memory_device_group_info = vku::FindStructInPNextChain<VkBindBufferMemoryDeviceGroupInfo>(pNext)) {
         if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
             bind_buffer_memory_device_group_info->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
             device_group_create_info.physicalDeviceCount > 0) {
@@ -495,11 +495,11 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
         // because they require buffer information.
         if (mem_info->IsExport()) {
-            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
             external_info.flags = buffer_state->createInfo.flags;
             // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
             external_info.usage = VkBufferUsageFlags(buffer_state->usage);
-            auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
+            auto external_properties = vku::InitStruct<VkExternalBufferProperties>();
             bool export_supported = true;
 
             auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
@@ -518,8 +518,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                      string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
                 if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                    auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
-                    auto dedicated_info_nv = LvlFindInChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
+                    auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
+                    auto dedicated_info_nv = vku::FindStructInPNextChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
                     const bool has_dedicated_info = dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE;
                     const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->buffer != VK_NULL_HANDLE;
                     if (!has_dedicated_info && !has_dedicated_info_nv) {
@@ -582,7 +582,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                              FormatHandle(buffer).c_str(), memoryOffset);
         }
 
-        auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+        auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
         if (enabled_features.core12.bufferDeviceAddress && (buffer_state->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
             (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
             const LogObjectList objlist(buffer, memory);
@@ -731,7 +731,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     auto image_state = Get<IMAGE_STATE>(pInfo->image);
     const VkFormat image_format = image_state->createInfo.format;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
-    const auto *image_plane_info = LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+    const auto *image_plane_info = vku::FindStructInPNextChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
     if (!image_plane_info && image_state->disjoint) {
         if (vkuFormatIsMultiplane(image_format)) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-01589", pInfo->image, image_loc,
@@ -1020,7 +1020,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             // Track objects tied to memory
             skip |= ValidateSetMemBinding(bind_info.memory, *image_state, loc);
 
-            const auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
+            const auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
             auto mem_info = Get<DEVICE_MEMORY_STATE>(bind_info.memory);
 
             if (image_state->disjoint && plane_info == nullptr) {
@@ -1192,7 +1192,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     }
                 }
 
-                auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+                auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
                 const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
                 if ((image_state->createInfo.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
                     !(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
@@ -1219,26 +1219,26 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 // Validate export memory handles
                 if (mem_info->IsExport()) {
-                    auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                    auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
                     drm_format_modifier.sharingMode = image_state->createInfo.sharingMode;
                     drm_format_modifier.queueFamilyIndexCount = image_state->createInfo.queueFamilyIndexCount;
                     drm_format_modifier.pQueueFamilyIndices = image_state->createInfo.pQueueFamilyIndices;
-                    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
-                    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+                    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+                    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
                     image_info.format = image_state->createInfo.format;
                     image_info.type = image_state->createInfo.imageType;
                     image_info.tiling = image_state->createInfo.tiling;
                     image_info.usage = image_state->createInfo.usage;
                     image_info.flags = image_state->createInfo.flags;
-                    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-                    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+                    auto external_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+                    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_properties);
                     bool export_supported = true;
 
                     auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                         external_info.handleType = flag;
                         external_info.pNext = NULL;
                         if (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-                            auto drm_modifier_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+                            auto drm_modifier_properties = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
                             auto result =
                                 DispatchGetImageDrmFormatModifierPropertiesEXT(device, bind_info.image, &drm_modifier_properties);
                             if (result == VK_SUCCESS) {
@@ -1277,9 +1277,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                              string_VkImageCreateFlags(image_info.flags).c_str());
                         }
                         if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
-                            auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
+                            auto dedicated_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
                             auto dedicated_info_nv =
-                                LvlFindInChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
+                                vku::FindStructInPNextChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
                             const bool has_dedicated_info = dedicated_info && dedicated_info->image != VK_NULL_HANDLE;
                             const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->image != VK_NULL_HANDLE;
                             if (!has_dedicated_info && !has_dedicated_info_nv) {
@@ -1369,7 +1369,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             }
 
-            const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
+            const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
             if (swapchain_info) {
                 if (bind_info.memory != VK_NULL_HANDLE) {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1420,7 +1420,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             }
 
-            const auto bind_image_memory_device_group_info = LvlFindInChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
+            const auto bind_image_memory_device_group_info = vku::FindStructInPNextChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
             if (bind_image_memory_device_group_info && bind_image_memory_device_group_info->splitInstanceBindRegionCount != 0) {
                 if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)) {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1470,7 +1470,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             }
         }
 
-        const auto bind_image_memory_device_group = LvlFindInChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
+        const auto bind_image_memory_device_group = vku::FindStructInPNextChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
         if (bind_image_memory_device_group) {
             if (bind_image_memory_device_group->deviceIndexCount > 0 &&
                 bind_image_memory_device_group->splitInstanceBindRegionCount > 0) {
@@ -1525,7 +1525,7 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
         }
     }
 
-    auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image;
     bind_info.memory = memory;
     bind_info.memoryOffset = memoryOffset;
@@ -1822,7 +1822,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
 
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pInfo->memory);
     if (mem_info) {
-        auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+        auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
         if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
             skip |= LogError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336", objlst, error_obj.location,
                              "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.");

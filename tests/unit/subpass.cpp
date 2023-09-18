@@ -32,7 +32,7 @@ TEST_F(NegativeSubpass, NonGraphicsPipeline) {
         {0, VK_PIPELINE_BIND_POINT_COMPUTE, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
     };
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pipelineBindPoint-04952",
                          "VUID-VkSubpassDescription2-pipelineBindPoint-04953");
@@ -49,24 +49,24 @@ TEST_F(NegativeSubpass, InputAttachmentParameters) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R32_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto reference = LvlInitStruct<VkAttachmentReference2>();
+    auto reference = vku::InitStruct<VkAttachmentReference2>();
     reference.attachment = 0;
     reference.layout = VK_IMAGE_LAYOUT_GENERAL;
     reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    auto subpass = LvlInitStruct<VkSubpassDescription2KHR>();
+    auto subpass = vku::InitStruct<VkSubpassDescription2KHR>();
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.viewMask = 0;
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &reference;
 
-    auto rpci2 = LvlInitStruct<VkRenderPassCreateInfo2KHR>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 0u, nullptr, 0u, nullptr);
+    auto rpci2 = vku::InitStruct<VkRenderPassCreateInfo2KHR>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
     // Valid
     PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
@@ -104,7 +104,7 @@ TEST_F(NegativeSubpass, SubpassDependencies) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported";
@@ -120,7 +120,7 @@ TEST_F(NegativeSubpass, SubpassDependencies) {
     };
 
     VkSubpassDependency dependency;
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
 
     // Non graphics stages in subpass dependency
     dependency = {0, 1, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -252,7 +252,7 @@ TEST_F(NegativeSubpass, SubpassDependencies) {
         // Enable multiview
         uint32_t pViewMasks[2] = {0x3u, 0x3u};
         int32_t pViewOffsets[2] = {0, 0};
-        auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, pViewMasks, 0u, nullptr, 0u, nullptr);
+        auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, pViewMasks, 0u, nullptr, 0u, nullptr);
         rpci.pNext = &rpmvci;
 
         // Excessive view offsets
@@ -333,8 +333,8 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
-        auto subpassBeginInfo = LvlInitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
-        auto subpassEndInfo = LvlInitStruct<VkSubpassEndInfoKHR>();
+        auto subpassBeginInfo = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
+        auto subpassEndInfo = vku::InitStruct<VkSubpassEndInfoKHR>();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdNextSubpass2-None-03102");
 
@@ -361,17 +361,17 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     VkSubpassDescription sd[2] = {{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
                                   {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr}};
 
-    auto rcpi = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, sd, 0u, nullptr);
+    auto rcpi = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, sd, 0u, nullptr);
 
     vk_testing::RenderPass rp(*m_device, rcpi);
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 0u, nullptr, 16u, 16u, 1u);
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 0u, nullptr, 16u, 16u, 1u);
 
     vk_testing::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
 
-    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {16u, 16u}}, 0u, nullptr);
+    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {16u, 16u}}, 0u, nullptr);
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -380,7 +380,7 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
-        auto subpassEndInfo = LvlInitStruct<VkSubpassEndInfoKHR>();
+        auto subpassEndInfo = vku::InitStruct<VkSubpassEndInfoKHR>();
 
         m_commandBuffer->reset();
         m_commandBuffer->begin();
@@ -421,7 +421,7 @@ TEST_F(NegativeSubpass, SubpassIndices) {
     dependency.srcStageMask = kGraphicsStages;
     dependency.dstStageMask = kGraphicsStages;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 2;
     rpci.pSubpasses = sci;
     rpci.dependencyCount = 1;
@@ -467,14 +467,14 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 2u, subpasses, 1u, &dep);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 2u, subpasses, 1u, &dep);
     vk_testing::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &imageView, 32u, 32u, 1u);
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &imageView, 32u, 32u, 1u);
     vk_testing::Framebuffer fb(*m_device, fbci);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -495,7 +495,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
 
     m_commandBuffer->begin();
 
-    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
     // subtest 1: bind in the wrong subpass
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
@@ -546,7 +546,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 2u, attach, 1u, subpasses, 1u, &dep);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 2u, attach, 1u, subpasses, 1u, &dep);
     vk_testing::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
@@ -558,12 +558,12 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     // re-use imageView from start of test
     VkImageView iv_array[2] = {imageView, imageView2};
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 2u, iv_array, 32u, 32u, 1u);
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 2u, iv_array, 32u, 32u, 1u);
     vk_testing::Framebuffer fb(*m_device, fbci);
 
-    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
-    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -627,12 +627,12 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     };
     const std::vector<VkSubpassDescription> subpasses(1u, subpass);
 
-    const auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
+    const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
                                                             size32(subpasses), subpasses.data(), 0u, nullptr);
     vk_testing::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1u;
     fbci.pAttachments = &view_input;
@@ -724,13 +724,13 @@ TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported";
     }
 
-    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto render_pass_multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
 
     if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
@@ -739,7 +739,7 @@ TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -749,12 +749,12 @@ TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    auto subpass = LvlInitStruct<VkSubpassDescription2>();  //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
+    auto subpass = vku::InitStruct<VkSubpassDescription2>();  //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
                                                             // nullptr, 0, nullptr};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
 
-    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    auto render_pass_ci = vku::InitStruct<VkRenderPassCreateInfo2>();
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
     render_pass_ci.subpassCount = 1;
@@ -801,7 +801,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     dependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dependency.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto render_pass_ci = vku::InitStruct<VkRenderPassCreateInfo>();
     render_pass_ci.subpassCount = 2;
     render_pass_ci.pSubpasses = sci;
     render_pass_ci.dependencyCount = 1;
@@ -815,7 +815,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto framebuffer_ci = vku::InitStruct<VkFramebufferCreateInfo>();
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1;
     framebuffer_ci.pAttachments = &imageView;
@@ -840,7 +840,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     VkClearValue clear_value = {};
     clear_value.color = {{0, 0, 0, 0}};
 
-    auto render_pass_bi = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto render_pass_bi = vku::InitStruct<VkRenderPassBeginInfo>();
     render_pass_bi.renderPass = render_pass.handle();
     render_pass_bi.framebuffer = framebuffer.handle();
     render_pass_bi.renderArea = {{0, 0}, {32, 32}};
@@ -884,21 +884,21 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto attach_ref = LvlInitStruct<VkAttachmentReference2>();
+    auto attach_ref = vku::InitStruct<VkAttachmentReference2>();
     attach_ref.attachment = 0;
     attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    auto subpass = LvlInitStruct<VkSubpassDescription2>();
+    auto subpass = vku::InitStruct<VkSubpassDescription2>();
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &attach_ref;
     subpass.viewMask = 0;
 
-    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    auto attach_desc = vku::InitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -906,13 +906,13 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
+    auto mem_barrier = vku::InitStruct<VkMemoryBarrier2>();
     mem_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    auto dependency = LvlInitStruct<VkSubpassDependency2>();
+    auto dependency = vku::InitStruct<VkSubpassDependency2>();
     dependency.srcSubpass = 0;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = 0X8000000;  // not real value, VK_PIPELINE_STAGE_VIDEO_ENCODE_BIT_KHR doesn't exist
@@ -922,7 +922,7 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     dependency.viewOffset = 0;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -971,9 +971,9 @@ TEST_F(NegativeSubpass, InputAttachmentReferences) {
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
     VkInputAttachmentAspectReference iaar = {0, 0, VK_IMAGE_ASPECT_METADATA_BIT};
-    auto rpiaaci = LvlInitStruct<VkRenderPassInputAttachmentAspectCreateInfo>(nullptr, 1u, &iaar);
+    auto rpiaaci = vku::InitStruct<VkRenderPassInputAttachmentAspectCreateInfo>(nullptr, 1u, &iaar);
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpiaaci, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpiaaci, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
     // Invalid aspect masks
     // Cannot/should not avoid getting the unxpected ones too
@@ -1075,7 +1075,7 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
     std::vector<VkSubpassDescription> subpasses = {subpass0, subpass1, subpass2};
     std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
                                                       subpasses.data(), size32(deps), deps.data());
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
@@ -1167,7 +1167,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
                                                      0,
                                                      nullptr};
 
-    auto renderPassInfo = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto renderPassInfo = vku::InitStruct<VkRenderPassCreateInfo>();
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &inputAttachmentDescription;
     renderPassInfo.subpassCount = 1;
@@ -1287,7 +1287,7 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
 
     VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.flags = 0;
     rpci.attachmentCount = 2;
     rpci.pAttachments = descs;

@@ -24,12 +24,12 @@
 #endif
 
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "test_common.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_extension_helper.h"
 #include "render.h"
-#include "generated/vk_typemap_helper.h"
 #include "utils/convert_utils.h"
 #include "shader_templates.h"
 
@@ -182,13 +182,13 @@ class VkLayerTest : public VkLayerTestBase {
 
     template <typename Features>
     VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
-        auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&feature_query);
+        auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>(&feature_query);
         return GetPhysicalDeviceFeatures2(features2);
     }
 
     template <typename Properties>
     VkPhysicalDeviceProperties2 GetPhysicalDeviceProperties2(Properties &props_query) {
-        auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props_query);
+        auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&props_query);
         return GetPhysicalDeviceProperties2(props2);
     }
 
@@ -700,7 +700,7 @@ struct OneOffDescriptorSet {
 
 template <typename T>
 bool IsValidVkStruct(const T &s) {
-    return LvlTypeMap<T>::kSType == s.sType;
+    return vku::GetSType<T>() == s.sType;
 }
 
 class BarrierQueueFamilyBase {

@@ -250,12 +250,12 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     ASSERT_EQ(physical_device_count, 1);
 
     float dqci_priorities[] = {1.0};
-    VkDeviceQueueCreateInfo dqci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo dqci = vku::InitStructHelper();
     dqci.queueFamilyIndex = 0;
     dqci.queueCount = 1;
     dqci.pQueuePriorities = dqci_priorities;
 
-    VkDeviceCreateInfo dci = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo dci = vku::InitStructHelper();
     dci.queueCreateInfoCount = 1;
     dci.pQueueCreateInfos = &dqci;
 

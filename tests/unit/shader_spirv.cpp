@@ -29,7 +29,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
 
     {
         VkShaderModule module;
-        auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+        auto module_create_info = vku::InitStruct<VkShaderModuleCreateInfo>();
 
         constexpr icd_spv_header spv = {};
         module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
@@ -42,7 +42,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
 
     {
         std::vector<uint32_t> shader;
-        auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+        auto module_create_info = vku::InitStruct<VkShaderModuleCreateInfo>();
         VkShaderModule module;
         this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
         module_create_info.pCode = shader.data();
@@ -62,7 +62,7 @@ TEST_F(NegativeShaderSpirv, Magic) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderModule module;
-    auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+    auto module_create_info = vku::InitStruct<VkShaderModuleCreateInfo>();
 
     constexpr uint32_t bad_magic = 4175232508U;
     constexpr icd_spv_header spv = {bad_magic};
@@ -96,7 +96,7 @@ TEST_F(NegativeShaderSpirv, ShaderFloatControl) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
+    auto shader_float_control = vku::InitStruct<VkPhysicalDeviceFloatControlsProperties>();
     GetPhysicalDeviceProperties2(shader_float_control);
 
     if (shader_float_control.denormBehaviorIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE) {
@@ -634,7 +634,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto float16Int8 = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
+    auto float16Int8 = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
     auto features2 = GetPhysicalDeviceFeatures2(float16Int8);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1261,9 +1261,9 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
     auto shader_module_id_features =
-        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+        vku::InitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
     GetPhysicalDeviceFeatures2(shader_module_id_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1277,8 +1277,8 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
-    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    auto sm_id_create_info = vku::InitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    auto get_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
@@ -1293,7 +1293,7 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
         &data,
     };
 
-    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = VK_NULL_HANDLE;
     stage_ci.pName = "main";
@@ -1406,7 +1406,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     features12.shaderInt8 = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (features12.shaderInt8 == VK_TRUE) {
@@ -1776,7 +1776,7 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     auto features = m_device->phy().features();
 
     // Disable the image footprint feature.
-    auto image_footprint_features = LvlInitStruct<VkPhysicalDeviceShaderImageFootprintFeaturesNV>();
+    auto image_footprint_features = vku::InitStruct<VkPhysicalDeviceShaderImageFootprintFeaturesNV>();
     image_footprint_features.imageFootprint = VK_FALSE;
 
     VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &image_footprint_features);
@@ -1832,7 +1832,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     auto features = m_device->phy().features();
 
     // Disable the fragment shader barycentric feature.
-    auto fragment_shader_barycentric_features = LvlInitStruct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
+    auto fragment_shader_barycentric_features = vku::InitStruct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_FALSE;
 
     VkDeviceObj test_device(0, gpu(), m_device_extension_names, &features, &fragment_shader_barycentric_features);
@@ -1878,7 +1878,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     auto features = m_device->phy().features();
 
     // Disable the compute shader derivatives features.
-    auto compute_shader_derivatives_features = LvlInitStruct<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>();
+    auto compute_shader_derivatives_features = vku::InitStruct<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>();
     compute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
     compute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
 
@@ -1940,7 +1940,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     auto features = m_device->phy().features();
 
     // Disable the fragment shader interlock feature.
-    auto fragment_shader_interlock_features = LvlInitStruct<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>();
+    auto fragment_shader_interlock_features = vku::InitStruct<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>();
     fragment_shader_interlock_features.fragmentShaderSampleInterlock = VK_FALSE;
     fragment_shader_interlock_features.fragmentShaderPixelInterlock = VK_FALSE;
     fragment_shader_interlock_features.fragmentShaderShadingRateInterlock = VK_FALSE;
@@ -1987,7 +1987,7 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     auto features = m_device->phy().features();
 
     // Disable the demote to helper invocation feature.
-    auto demote_features = LvlInitStruct<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
+    auto demote_features = vku::InitStruct<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
     demote_features.shaderDemoteToHelperInvocation = VK_FALSE;
 
     VkDeviceObj test_device(0, gpu(), m_device_extension_names, &features, &demote_features);
@@ -2200,7 +2200,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     features12.vulkanMemoryModelDeviceScope = VK_FALSE;
     if (features12.vulkanMemoryModel == VK_FALSE) {
@@ -2232,7 +2232,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     features12.vulkanMemoryModel = VK_FALSE;
     if (features12.vulkanMemoryModelDeviceScope == VK_FALSE) {
@@ -2268,7 +2268,7 @@ TEST_F(NegativeShaderSpirv, ConservativeRasterizationPostDepthCoverage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto conservative_rasterization_props = LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    auto conservative_rasterization_props = vku::InitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
     if (conservative_rasterization_props.conservativeRasterizationPostDepthCoverage) {
         GTEST_SKIP() << "need conservativeRasterizationPostDepthCoverage to not be supported";

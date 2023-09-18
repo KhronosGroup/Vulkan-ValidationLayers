@@ -28,7 +28,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     }
 
     VkImageObj image(m_device);
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 64;
@@ -57,7 +57,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     }
     // Allocate 2 memory regions of minimum alignment size, bind one at 0, the other
     // at the end of the first
-    auto memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto memory_info = vku::InitStruct<VkMemoryAllocateInfo>();
     memory_info.allocationSize = memory_reqs.alignment;
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
@@ -79,7 +79,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     opaqueBindInfo.bindCount = size32(binds);
     opaqueBindInfo.pBinds = binds.data();
 
-    auto bindSparseInfo = LvlInitStruct<VkBindSparseInfo>();
+    auto bindSparseInfo = vku::InitStruct<VkBindSparseInfo>();
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
@@ -103,7 +103,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     }
 
     VkImageObj image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 512;
@@ -120,7 +120,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     VkMemoryRequirements memory_reqs;
 
     vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
-    auto memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto memory_info = vku::InitStruct<VkMemoryAllocateInfo>();
     memory_info.allocationSize = memory_reqs.size;
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
@@ -139,7 +139,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     opaqueBindInfo.bindCount = 1;
     opaqueBindInfo.pBinds = &bind;
 
-    auto bindSparseInfo = LvlInitStruct<VkBindSparseInfo>();
+    auto bindSparseInfo = vku::InitStruct<VkBindSparseInfo>();
     bindSparseInfo.imageOpaqueBindCount = 1;
     bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
 
@@ -157,7 +157,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
 
     m_commandBuffer->begin();
 
-    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     img_barrier.image = image;
@@ -176,7 +176,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_commandBuffer->end();
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -200,7 +200,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
 
     // Create a sparse image
     VkImageObj image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 64;
@@ -237,7 +237,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     }
 
     // Allocate memory for the metadata
-    VkMemoryAllocateInfo metadata_memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo metadata_memory_info = vku::InitStructHelper();
     metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
     m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
     VkDeviceMemoryObj metadata_memory(*m_device, metadata_memory_info);
@@ -255,7 +255,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     opaque_bind_info.bindCount = 1;
     opaque_bind_info.pBinds = &sparse_bind;
 
-    auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+    auto bind_info = vku::InitStruct<VkBindSparseInfo>();
     bind_info.imageOpaqueBindCount = 1;
     bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
@@ -282,7 +282,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 64;

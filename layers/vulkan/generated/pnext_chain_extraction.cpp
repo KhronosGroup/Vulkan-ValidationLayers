@@ -24,14 +24,14 @@
 
 #include "pnext_chain_extraction.h"
 
-#include "vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace vvl {
 
 void *PnextChainAdd(void *chain, void *new_struct) {
     assert(chain);
     assert(new_struct);
-    void *chain_end = LvlFindLastInChain(chain);
+    void *chain_end = vku::FindLastStructInPNextChain(chain);
     auto *vk_base_struct = static_cast<VkBaseOutStructure *>(chain_end);
     assert(!vk_base_struct->pNext);
     vk_base_struct->pNext = static_cast<VkBaseOutStructure *>(new_struct);
@@ -56,7 +56,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
     void *chain_begin = nullptr;
     void *chain_end = nullptr;
 
-    if (auto *chain_struct = LvlFindInChain<VkImageCompressionControlEXT>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkImageCompressionControlEXT>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -68,7 +68,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkImageFormatListCreateInfo>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkImageFormatListCreateInfo>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -80,7 +80,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkImageStencilUsageCreateInfo>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -92,7 +92,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkOpticalFlowImageFormatInfoNV>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkOpticalFlowImageFormatInfoNV>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkOpticalFlowImageFormatInfoNV>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -104,7 +104,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkPhysicalDeviceExternalImageFormatInfo>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkPhysicalDeviceExternalImageFormatInfo>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -116,7 +116,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -128,7 +128,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkPhysicalDeviceImageViewImageFormatInfoEXT>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkPhysicalDeviceImageViewImageFormatInfoEXT>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;
@@ -140,7 +140,7 @@ void *PnextChainExtract(const void *in_pnext_chain, PnextChainVkPhysicalDeviceIm
         }
     }
 
-    if (auto *chain_struct = LvlFindInChain<VkVideoProfileListInfoKHR>(in_pnext_chain)) {
+    if (auto *chain_struct = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(in_pnext_chain)) {
         auto &out_chain_struct = std::get<VkVideoProfileListInfoKHR>(out);
         out_chain_struct = *chain_struct;
         out_chain_struct.pNext = nullptr;

@@ -461,7 +461,7 @@ void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRende
     auto &attachments = *(active_attachments.get());
     const bool imageless = (activeFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
-    if (pRenderPassBegin) attachment_info_struct = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
     for (uint32_t i = 0; i < attachments.size(); ++i) {
         if (imageless) {
@@ -495,7 +495,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(Func command, const VkRenderPassBeginInfo
         UnbindResources();
     }
 
-    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
     if (chained_device_group_struct) {
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -556,7 +556,7 @@ void CMD_BUFFER_STATE::BeginRendering(Func command, const VkRenderingInfo *pRend
     RecordCmd(command);
     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo, true);
 
-    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -873,7 +873,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 }
             } else {
                 auto inheritance_rendering_info =
-                    LvlFindInChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
+                    vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(inheritance_rendering_info);
                 }
@@ -881,7 +881,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
             // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
             auto p_inherited_viewport_scissor_info =
-                LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(beginInfo.pInheritanceInfo->pNext);
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(beginInfo.pInheritanceInfo->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
                 auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
                 inheritedViewportDepths.assign(pViewportDepths,
@@ -890,7 +890,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         }
     }
 
-    auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         initial_device_mask = chained_device_group_struct->deviceMask;
     } else {

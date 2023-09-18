@@ -56,7 +56,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory) &&
-            !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
+            !vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_AllocateMemory_SetPriority,
                 "%s Use VkMemoryPriorityAllocateInfoEXT to provide the operating system information on the allocations that "
@@ -257,7 +257,7 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        if (!LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
+        if (!vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
             skip |=
                 ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, error_obj.location.dot(Field::pBindInfos, i));
         }

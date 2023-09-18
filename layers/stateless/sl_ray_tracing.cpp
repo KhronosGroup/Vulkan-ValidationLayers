@@ -208,7 +208,7 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     VkAccelerationStructureKHR *pAccelerationStructure, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *acceleration_structure_features =
-        LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acceleration_structure_features ||
         (acceleration_structure_features && acceleration_structure_features->accelerationStructure == VK_FALSE)) {
         skip |= LogError("VUID-vkCreateAccelerationStructureKHR-accelerationStructure-03611", device, error_obj.location,
@@ -246,7 +246,7 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
         }
 
         const auto *descriptor_buffer_features =
-            LvlFindInChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(device_createinfo_pnext);
         if ((pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
             (!descriptor_buffer_features ||
              (descriptor_buffer_features && descriptor_buffer_features->descriptorBufferCaptureReplay == VK_FALSE))) {
@@ -257,7 +257,7 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
         }
 
         const auto *opaque_capture_descriptor_buffer =
-            LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
         if (opaque_capture_descriptor_buffer &&
             !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |=
@@ -304,7 +304,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
             ValidatePipelineShaderStageCreateInfo(&pCreateInfos[i].pStages[stage_index],
                                                   create_info_loc.dot(Field::pStages, stage_index));
         }
-        auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
+        auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
             (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
             skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651", device,
@@ -314,9 +314,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
                              pCreateInfos[i].stageCount, feedback_struct->pipelineStageCreationFeedbackCount);
         }
 
-        const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
+        const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
         const auto *pipeline_cache_contol_features =
-            LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
         if ((!vulkan_13_features || vulkan_13_features->pipelineCreationCacheControl == VK_FALSE) &&
             (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE)) {
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
@@ -421,7 +421,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
+    const auto *raytracing_features = vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipeline == VK_FALSE) {
         skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-rayTracingPipeline-03586", device, error_obj.location,
                          "The rayTracingPipeline feature was not enabled.");
@@ -455,7 +455,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             }
         }
 
-        auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfo>(pCreateInfos[i].pNext);
+        auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
             (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
             skip |= LogError(
@@ -465,9 +465,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 create_info_loc.Fields().c_str(), pCreateInfos[i].stageCount);
         }
 
-        const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
+        const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
         const auto *pipeline_cache_contol_features =
-            LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
         if ((!vulkan_13_features || vulkan_13_features->pipelineCreationCacheControl == VK_FALSE) &&
             (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE)) {
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
@@ -640,7 +640,7 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
         skip |= LogError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412", device, info_loc.dot(Field::mode), "is %s.",
                          string_VkCopyAccelerationStructureModeKHR(pInfo->mode));
     }
-    const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *acc_struct_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_struct_features || acc_struct_features->accelerationStructureHostCommands == VK_FALSE) {
         skip |= LogError("VUID-vkCopyAccelerationStructureToMemoryKHR-accelerationStructureHostCommands-03584", device,
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
@@ -691,7 +691,7 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(VkD
                                                                              const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
-    const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *acc_struct_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_struct_features || acc_struct_features->accelerationStructureHostCommands == VK_FALSE) {
         skip |= LogError("VUID-vkCopyAccelerationStructureKHR-accelerationStructureHostCommands-03582", device, error_obj.location,
                          "feature was not enabled.");
@@ -725,7 +725,7 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
     bool skip = false;
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, error_obj.handle, info_loc);
-    const auto *acc_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *acc_struct_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_struct_features || acc_struct_features->accelerationStructureHostCommands == VK_FALSE) {
         skip |= LogError("VUID-vkCopyMemoryToAccelerationStructureKHR-accelerationStructureHostCommands-03583", device,
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
@@ -766,7 +766,7 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
     VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, size_t dataSize, void *pData, size_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *acc_structure_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *acc_structure_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!acc_structure_features || acc_structure_features->accelerationStructureHostCommands == VK_FALSE) {
         skip |= LogError("VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructureHostCommands-03585", device,
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
@@ -821,7 +821,7 @@ bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShader
     VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData,
     const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
+    const auto *raytracing_features = vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
         skip |= LogError(
             "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-rayTracingPipelineShaderGroupHandleCaptureReplay-03606", device,
@@ -834,7 +834,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
     VkAccelerationStructureCompatibilityKHR *pCompatibility, const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *accel_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *accel_struct_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!(accel_struct_features && accel_struct_features->accelerationStructure)) {
         skip |= LogError("VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-accelerationStructure-08928", device,
                          error_obj.location, "accelerationStructure feature was not enabled.");
@@ -1274,7 +1274,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, error_obj.handle, error_obj.location);
     const auto *ray_tracing_acceleration_structure_features =
-        LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!ray_tracing_acceleration_structure_features ||
         ray_tracing_acceleration_structure_features->accelerationStructureIndirectBuild == VK_FALSE) {
         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-accelerationStructureIndirectBuild-03650", commandBuffer,
@@ -1411,7 +1411,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
     bool skip = false;
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, error_obj.handle, error_obj.location);
     const auto *ray_tracing_acceleration_structure_features =
-        LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!ray_tracing_acceleration_structure_features ||
         ray_tracing_acceleration_structure_features->accelerationStructureHostCommands == VK_FALSE) {
         skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-accelerationStructureHostCommands-03581", device,
@@ -1451,7 +1451,7 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     }
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pBuildInfo, 1, total_primitive_count, error_obj.handle,
                                                               error_obj.location);
-    const auto *accel_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    const auto *accel_struct_features = vku::FindStructInPNextChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!(accel_struct_features && accel_struct_features->accelerationStructure)) {
         skip |= LogError("VUID-vkGetAccelerationStructureBuildSizesKHR-accelerationStructure-08933", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");

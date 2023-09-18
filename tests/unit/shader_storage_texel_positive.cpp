@@ -72,18 +72,18 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
     vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;

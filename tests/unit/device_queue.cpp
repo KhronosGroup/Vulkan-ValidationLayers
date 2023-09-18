@@ -26,12 +26,12 @@ TEST_F(NegativeDeviceQueue, FamilyIndex) {
     uint32_t queue_family_index = queue_family_count;
 
     float priority = 1.0f;
-    auto device_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
     device_queue_ci.queueFamilyIndex = queue_family_index;
     device_queue_ci.queueCount = 1;
     device_queue_ci.pQueuePriorities = &priority;
 
-    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -53,7 +53,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkBufferCreateInfo buffCI = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffCI = vku::InitStructHelper();
     buffCI.size = 1024;
     buffCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffCI.queueFamilyIndexCount = 2;
@@ -101,11 +101,11 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
         GTEST_SKIP() << "Multiple queue families are required to run this test.";
     }
     std::vector<float> priorities(queue_props.at(0).queueCount, 1.0f);
-    VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = queue_props.at(0).queueCount;
     queue_info.pQueuePriorities = priorities.data();
-    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -155,7 +155,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
 
     float queue_priority = 1.0;
     VkDeviceQueueCreateInfo queue_create_info[2];
-    queue_create_info[0] = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_create_info[0] = vku::InitStructHelper();
     queue_create_info[0].flags = 0;
     queue_create_info[0].queueFamilyIndex = queue_family_index;
     queue_create_info[0].queueCount = 1;
@@ -165,7 +165,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
     queue_create_info[1] = queue_create_info[0];
 
     VkDevice test_device = VK_NULL_HANDLE;
-    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.flags = 0;
     device_create_info.pQueueCreateInfos = queue_create_info;
     device_create_info.queueCreateInfoCount = 2;
@@ -211,24 +211,24 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     }
 
     VkDeviceQueueGlobalPriorityCreateInfoKHR queue_global_priority_ci[2] = {};
-    queue_global_priority_ci[0] = LvlInitStruct<VkDeviceQueueGlobalPriorityCreateInfoKHR>();
+    queue_global_priority_ci[0] = vku::InitStructHelper();
     queue_global_priority_ci[0].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
-    queue_global_priority_ci[1] = LvlInitStruct<VkDeviceQueueGlobalPriorityCreateInfoKHR>();
+    queue_global_priority_ci[1] = vku::InitStructHelper();
     queue_global_priority_ci[1].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
 
     float priorities[] = {1.0f, 1.0f};
     VkDeviceQueueCreateInfo device_queue_ci[2] = {};
-    device_queue_ci[0] = LvlInitStruct<VkDeviceQueueCreateInfo>(&queue_global_priority_ci[0]);
+    device_queue_ci[0] = vku::InitStructHelper(&queue_global_priority_ci[0]);
     device_queue_ci[0].queueFamilyIndex = queue_family_index;
     device_queue_ci[0].queueCount = 1;
     device_queue_ci[0].pQueuePriorities = &priorities[0];
 
-    device_queue_ci[1] = LvlInitStruct<VkDeviceQueueCreateInfo>(&queue_global_priority_ci[1]);
+    device_queue_ci[1] = vku::InitStructHelper(&queue_global_priority_ci[1]);
     device_queue_ci[1].queueFamilyIndex = queue_family_index;
     device_queue_ci[1].queueCount = 1;
     device_queue_ci[1].pQueuePriorities = &priorities[1];
 
-    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 2;
     device_ci.pQueueCreateInfos = device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -256,12 +256,12 @@ TEST_F(NegativeDeviceQueue, QueueCount) {
     std::vector<float> priorities(invalid_count);
     std::fill(priorities.begin(), priorities.end(), 0.0f);
 
-    auto device_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
     device_queue_ci.queueFamilyIndex = 0;
     device_queue_ci.queueCount = queue_props[0].queueCount + 1;
     device_queue_ci.pQueuePriorities = priorities.data();
 
-    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
@@ -284,11 +284,11 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
     std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_props.data());
 
-    auto device_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    auto device_queue_ci = vku::InitStruct<VkDeviceQueueCreateInfo>();
     device_queue_ci.queueFamilyIndex = 0;
     device_queue_ci.queueCount = 1;
 
-    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    auto device_ci = vku::InitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;

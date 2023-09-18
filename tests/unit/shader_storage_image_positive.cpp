@@ -80,7 +80,7 @@ TEST_F(PositiveShaderStorageImage, WriteMoreComponent) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -172,7 +172,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteMoreComponent) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -263,7 +263,7 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -398,7 +398,7 @@ TEST_F(PositiveShaderStorageImage, UnknownWriteLessComponentMultiEntrypoint) {
     image_info.imageView = image.targetView(format);
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;

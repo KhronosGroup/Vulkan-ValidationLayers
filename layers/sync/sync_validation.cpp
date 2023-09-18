@@ -680,7 +680,7 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const A
     }
 
     // Depth stencil resolve only if the extension is present
-    const auto ds_resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
+    const auto ds_resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
     if (ds_resolve && ds_resolve->pDepthStencilResolveAttachment &&
         (ds_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) && subpass_ci.pDepthStencilAttachment &&
         (subpass_ci.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
@@ -3110,7 +3110,7 @@ SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const
       dst_access_scope(SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask)) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
-    const auto barrier = LvlFindInChain<VkMemoryBarrier2KHR>(subpass.pNext);
+    const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(subpass.pNext);
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
         src_exec_scope = src;
@@ -4768,7 +4768,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
 bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                       VkSubpassContents contents, const ErrorObject &error_obj) const {
     bool skip = StateTracker::PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, error_obj);
-    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     skip |= ValidateBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, error_obj);
     return skip;
@@ -4811,7 +4811,7 @@ void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
 void SyncValidator::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                      VkSubpassContents contents, const RecordObject &record_obj) {
     StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
-    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, record_obj.location.function);
 }
@@ -4846,9 +4846,9 @@ bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer,
                                                   const ErrorObject &error_obj) const {
     bool skip = StateTracker::PreCallValidateCmdNextSubpass(commandBuffer, contents, error_obj);
     // Convert to a NextSubpass2
-    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
-    auto subpass_end_info = LvlInitStruct<VkSubpassEndInfo>();
+    auto subpass_end_info = vku::InitStruct<VkSubpassEndInfo>();
     skip |= ValidateCmdNextSubpass(commandBuffer, &subpass_begin_info, &subpass_end_info, error_obj);
     return skip;
 }
@@ -4878,7 +4878,7 @@ void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const Vk
 void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                  const RecordObject &record_obj) {
     StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
-    auto subpass_begin_info = LvlInitStruct<VkSubpassBeginInfo>();
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>();
     subpass_begin_info.contents = contents;
     RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, record_obj.location.function);
 }
@@ -8625,20 +8625,20 @@ SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> 
 FenceSyncState::FenceSyncState() : fence(), tag(kInvalidTag), queue_id(QueueSyncState::kQueueIdInvalid) {}
 
 VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo &info, uint32_t index) {
-    auto semaphore_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto semaphore_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     semaphore_info.semaphore = info.pWaitSemaphores[index];
     semaphore_info.stageMask = info.pWaitDstStageMask[index];
     return semaphore_info;
 }
 VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const VkSubmitInfo &info, uint32_t index) {
-    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfo>();
     cb_info.commandBuffer = info.pCommandBuffers[index];
     return cb_info;
 }
 
 VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo &info, uint32_t index,
                                                                        VkQueueFlags queue_flags) {
-    auto semaphore_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto semaphore_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     semaphore_info.semaphore = info.pSignalSemaphores[index];
     // Can't just use BOTTOM, because of how access expansion is done
     semaphore_info.stageMask =
@@ -8647,7 +8647,7 @@ VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkS
 }
 
 SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info, VkQueueFlags queue_flags) {
-    info2 = LvlInitStruct<VkSubmitInfo2>();
+    info2 = vku::InitStructHelper();
 
     info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
     waits.reserve(info2.waitSemaphoreInfoCount);

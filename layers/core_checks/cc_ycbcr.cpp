@@ -45,7 +45,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     // Need to check for external format conversion first as it allows for non-UNORM format
     bool external_format = false;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
+    const VkExternalFormatANDROID *ext_format_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
     if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
         external_format = true;
         if (VK_FORMAT_UNDEFINED != conversion_format) {

@@ -18,34 +18,34 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
     // InitInputAndVertexInfo
-    vi_ci_ = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
+    vi_ci_ = vku::InitStructHelper();
 
-    ia_ci_ = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    ia_ci_ = vku::InitStructHelper();
     ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
     // InitMultisampleInfo
-    pipe_ms_state_ci_ = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    pipe_ms_state_ci_ = vku::InitStructHelper();
     pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci_.sampleShadingEnable = VK_FALSE;
     pipe_ms_state_ci_.minSampleShading = 1.0;
     pipe_ms_state_ci_.pSampleMask = nullptr;
 
     // InitPipelineLayoutInfo
-    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci_ = vku::InitStructHelper();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 
     // InitViewportInfo
     viewport_ = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     scissor_ = {{0, 0}, {64, 64}};
-    vp_state_ci_ = LvlInitStruct<VkPipelineViewportStateCreateInfo>();
+    vp_state_ci_ = vku::InitStructHelper();
     vp_state_ci_.viewportCount = 1;
     vp_state_ci_.pViewports = &viewport_;  // ignored if dynamic
     vp_state_ci_.scissorCount = 1;
     vp_state_ci_.pScissors = &scissor_;  // ignored if dynamic
 
     // InitRasterizationInfo
-    rs_state_ci_ = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&line_state_ci_);
+    rs_state_ci_ = vku::InitStructHelper(&line_state_ci_);
     rs_state_ci_.flags = 0;
     rs_state_ci_.depthClampEnable = VK_FALSE;
     rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
@@ -56,14 +56,14 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     rs_state_ci_.lineWidth = 1.0F;
 
     // InitLineRasterizationInfo
-    line_state_ci_ = LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
+    line_state_ci_ = vku::InitStructHelper();
     line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
     line_state_ci_.stippledLineEnable = VK_FALSE;
     line_state_ci_.lineStippleFactor = 0;
     line_state_ci_.lineStipplePattern = 0;
 
     // InitBlendStateInfo
-    cb_ci_ = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    cb_ci_ = vku::InitStructHelper();
     cb_ci_.logicOpEnable = VK_FALSE;
     cb_ci_.logicOp = VK_LOGIC_OP_COPY;  // ignored if enable is VK_FALSE above
     cb_ci_.attachmentCount = cb_attachments_.size();
@@ -73,7 +73,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     }
 
     // InitPipelineCacheInfo
-    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    pc_ci_ = vku::InitStructHelper();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
@@ -91,7 +91,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, uint32_t color_att
     //    VkPipelineRasterizationStateCreateInfo
     //    VkPipelineMultisampleStateCreateInfo
     //    VkPipelineColorBlendStateCreateInfo
-    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    gp_ci_ = vku::InitStructHelper();
     gp_ci_.layout = VK_NULL_HANDLE;
     gp_ci_.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
     gp_ci_.pVertexInputState = &vi_ci_;
@@ -130,7 +130,7 @@ void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const
 // Designed for majority of cases that just need to simply add dynamic state
 void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
     dynamic_states_.push_back(dynamic_state);
-    dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci_ = vku::InitStructHelper();
     dyn_state_ci_.pDynamicStates = dynamic_states_.data();
     dyn_state_ci_.dynamicStateCount = dynamic_states_.size();
     // Set here and don't have have to worry about late bind setting it
@@ -138,10 +138,10 @@ void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
 }
 
 void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
-    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
 
-    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     gp_ci_.pVertexInputState = &vi_ci_;
     gp_ci_.pInputAssemblyState = &ia_ci_;
@@ -151,10 +151,10 @@ void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
 }
 
 void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
-    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
 
-    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     gp_ci_.pViewportState = &vp_state_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
@@ -169,10 +169,10 @@ void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreat
 }
 
 void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
-    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
-    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     //  gp_ci_.pTessellationState = nullptr; // TODO
     gp_ci_.pViewportState = &vp_state_ci_;
@@ -190,10 +190,10 @@ void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreate
 }
 
 void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
-    gpl_info.emplace(LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
+    gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
-    gp_ci_ = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+    gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     gp_ci_.pColorBlendState = &cb_ci_;
     gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
@@ -261,19 +261,19 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : la
     dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
     // InitPipelineLayoutInfo
-    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci_ = vku::InitStructHelper();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 
     // InitPipelineCacheInfo
-    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    pc_ci_ = vku::InitStructHelper();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
 
     InitShaderInfo();
 
-    cp_ci_ = LvlInitStruct<VkComputePipelineCreateInfo>();
+    cp_ci_ = vku::InitStructHelper();
     cp_ci_.flags = 0;
     cp_ci_.layout = VK_NULL_HANDLE;
 }
@@ -345,7 +345,7 @@ RayTracingPipelineHelper::~RayTracingPipelineHelper() {
 
 void RayTracingPipelineHelper::InitShaderGroups() {
     {
-        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
+        VkRayTracingShaderGroupCreateInfoNV group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group.generalShader = 0;
         group.closestHitShader = VK_SHADER_UNUSED_NV;
@@ -354,7 +354,7 @@ void RayTracingPipelineHelper::InitShaderGroups() {
         groups_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
+        VkRayTracingShaderGroupCreateInfoNV group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group.generalShader = VK_SHADER_UNUSED_NV;
         group.closestHitShader = 1;
@@ -363,7 +363,7 @@ void RayTracingPipelineHelper::InitShaderGroups() {
         groups_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
+        VkRayTracingShaderGroupCreateInfoNV group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group.generalShader = 2;
         group.closestHitShader = VK_SHADER_UNUSED_NV;
@@ -375,7 +375,7 @@ void RayTracingPipelineHelper::InitShaderGroups() {
 
 void RayTracingPipelineHelper::InitShaderGroupsKHR() {
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+        VkRayTracingShaderGroupCreateInfoKHR group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group.generalShader = 0;
         group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -384,7 +384,7 @@ void RayTracingPipelineHelper::InitShaderGroupsKHR() {
         groups_KHR_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+        VkRayTracingShaderGroupCreateInfoKHR group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group.generalShader = VK_SHADER_UNUSED_KHR;
         group.closestHitShader = 1;
@@ -393,7 +393,7 @@ void RayTracingPipelineHelper::InitShaderGroupsKHR() {
         groups_KHR_.push_back(group);
     }
     {
-        VkRayTracingShaderGroupCreateInfoKHR group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+        VkRayTracingShaderGroupCreateInfoKHR group = vku::InitStructHelper();
         group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group.generalShader = 2;
         group.closestHitShader = VK_SHADER_UNUSED_KHR;
@@ -417,7 +417,7 @@ void RayTracingPipelineHelper::InitDescriptorSetInfoKHR() {
 }
 
 void RayTracingPipelineHelper::InitPipelineLayoutInfo() {
-    pipeline_layout_ci_ = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci_ = vku::InitStructHelper();
     pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
     pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
 }
@@ -528,7 +528,7 @@ void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
 }
 
 void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
-    rp_ci_ = LvlInitStruct<VkRayTracingPipelineCreateInfoNV>();
+    rp_ci_ = vku::InitStructHelper();
     rp_ci_.maxRecursionDepth = 0;
     rp_ci_.stageCount = shader_stages_.size();
     rp_ci_.pStages = shader_stages_.data();
@@ -537,7 +537,7 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
 }
 
 void RayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
-    rp_ci_KHR_ = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    rp_ci_KHR_ = vku::InitStructHelper();
     rp_ci_KHR_.maxPipelineRayRecursionDepth = 0;
     rp_ci_KHR_.stageCount = shader_stages_.size();
     rp_ci_KHR_.pStages = shader_stages_.data();
@@ -546,7 +546,7 @@ void RayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
 }
 
 void RayTracingPipelineHelper::InitPipelineCacheInfo() {
-    pc_ci_ = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    pc_ci_ = vku::InitStructHelper();
     pc_ci_.flags = 0;
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;

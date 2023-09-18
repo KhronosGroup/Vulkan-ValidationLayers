@@ -78,7 +78,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
     // 14 = is set 3 binding 3 index 1 written
     //
     // Once the buffer is complete, write its buffer device address into the address buffer
-    VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = (1 + binding_count + binding_count + descriptor_count) * 4;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -114,7 +114,7 @@ std::shared_ptr<gpuav_state::DescriptorSet::State> gpuav_state::DescriptorSet::G
 
         written_index += binding->count;
     }
-    auto buffer_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    auto buffer_device_address_info = vku::InitStruct<VkBufferDeviceAddressInfo>();
     buffer_device_address_info.buffer = next_state->buffer;
 
     // We cannot rely on device_extensions here, since we may be enabling BDA support even

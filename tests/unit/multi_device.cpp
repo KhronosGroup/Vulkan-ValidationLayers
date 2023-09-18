@@ -17,7 +17,7 @@ TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
@@ -42,7 +42,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
@@ -55,12 +55,12 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     m_errorMonitor->VerifyFound();
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
     m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     vk_testing::DeviceMemory memory(*m_second_device, mem_alloc);
 
-    VkBindBufferMemoryInfo bind_buffer_info = LvlInitStruct<VkBindBufferMemoryInfo>();
+    VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
     bind_buffer_info.buffer = buffer.handle();
     bind_buffer_info.memory = memory.handle();
     bind_buffer_info.memoryOffset = 0;
@@ -93,12 +93,12 @@ TEST_F(MultiDeviceTest, CommonParentBindImage) {
     m_errorMonitor->VerifyFound();
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
     m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     vk_testing::DeviceMemory memory(*m_second_device, mem_alloc);
 
-    VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
     bind_image_info.memory = memory.handle();
     bind_image_info.memoryOffset = 0;
@@ -121,7 +121,7 @@ TEST_F(MultiDeviceTest, CommonParentImageView) {
     image.Init(image_ci);
 
     VkImageView image_view;
-    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -142,14 +142,14 @@ TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
     auto features = m_device->phy().features();
     m_second_device = new VkDeviceObj(0, gpu_, m_device_extension_names, &features, nullptr);
 
-    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 0;
     vk_testing::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     cs.InitFromGLSLTry(false, m_second_device);
 
-    auto pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
+    auto pipeline_ci = vku::InitStruct<VkComputePipelineCreateInfo>();
     pipeline_ci.layout = pipeline_layout.handle();
     pipeline_ci.stage = cs.GetStageCreateInfo();
     vk_testing::Pipeline pipeline(*m_second_device, pipeline_ci);

@@ -34,7 +34,7 @@ static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D m
 }
 
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
-    auto result = LvlInitStruct<VkImageCreateInfo>();
+    auto result = vku::InitStruct<VkImageCreateInfo>();
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) {
         result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
@@ -79,7 +79,7 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     }
 
     // Validate VkSwapchainPresentModesCreateInfoEXT data
-    auto swapchain_present_modes_ci = LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
+    auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
     if (swapchain_present_modes_ci) {
         // Ensure surface state is non-null if not using surfaceless_query
         assert(surface_state);
@@ -126,7 +126,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                                                            VkSwapchainCreateInfoKHR const *create_info,
                                                            const SURFACE_STATE *surface_state) const {
     bool skip = false;
-    auto pres_scale_ci = LvlFindInChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info->pNext);
+    auto pres_scale_ci = vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info->pNext);
     if ((!pres_scale_ci) || (pres_scale_ci && (pres_scale_ci->scalingBehavior == 0))) {
         if (!IsExtentInsideBounds(create_info->imageExtent, capabilities->minImageExtent, capabilities->maxImageExtent)) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-07781", device, create_info_loc.dot(Field::imageExtent),
@@ -242,7 +242,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
         }
 
         // Further validation for when a VkSwapchainPresentModesCreateInfoEXT struct is *also* in the pNext chain
-        const auto *present_modes_ci = LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
+        const auto *present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info->pNext);
         if (present_modes_ci) {
             for (uint32_t i = 0; i < present_modes_ci->presentModeCount; i++) {
                 const Location present_mode_loc =
@@ -337,16 +337,16 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
 
     void *surface_caps_query_pnext = nullptr;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    auto full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
-    auto win32_full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
-    const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
+    auto full_screen_info_copy = vku::InitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
+    auto win32_full_screen_info_copy = vku::InitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
+    const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
     if (full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
         full_screen_info_copy = *full_screen_info;
         full_screen_info_copy.pNext = surface_caps_query_pnext;
         surface_caps_query_pnext = &full_screen_info_copy;
 
         if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
-            const auto *win32_full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
+            const auto *win32_full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
             if (!win32_full_screen_info) {
                 const LogObjectList objlist(device, pCreateInfo->surface);
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-02679", objlist, create_info_loc,
@@ -363,7 +363,7 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         }
     }
 #endif
-    auto present_mode_info = LvlInitStruct<VkSurfacePresentModeEXT>();
+    auto present_mode_info = vku::InitStruct<VkSurfacePresentModeEXT>();
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
         present_mode_info.presentMode = pCreateInfo->presentMode;
         present_mode_info.pNext = surface_caps_query_pnext;
@@ -464,11 +464,11 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
         bool log_error = !is_required_ext_enabled;
 
         if (is_required_ext_enabled) {
-            VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+            VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
             surface_info.surface = pCreateInfo->surface;
-            VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = LvlInitStruct<VkSurfaceProtectedCapabilitiesKHR>();
+            VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = vku::InitStructHelper();
             VkSurfaceCapabilities2KHR surface_capabilities =
-                LvlInitStruct<VkSurfaceCapabilities2KHR>(&surface_protected_capabilities);
+                vku::InitStructHelper(&surface_protected_capabilities);
             const VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(),
                                                                                      &surface_info, &surface_capabilities);
 
@@ -579,9 +579,9 @@ bool CoreChecks::ValidateCreateSwapchain(VkSwapchainCreateInfoKHR const *pCreate
             }
         }
 
-        VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
-        VkSurfaceCapabilities2KHR capabilities2 = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
-        VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+        VkSharedPresentSurfaceCapabilitiesKHR shared_present_capabilities = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&shared_present_capabilities);
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
         surface_info.surface = pCreateInfo->surface;
         DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->PhysDev(), &surface_info, &capabilities2);
 
@@ -817,7 +817,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                         }
                     }
                 }
-                const auto *display_present_info = LvlFindInChain<VkDisplayPresentInfoKHR>(pPresentInfo->pNext);
+                const auto *display_present_info = vku::FindStructInPNextChain<VkDisplayPresentInfoKHR>(pPresentInfo->pNext);
                 if (display_present_info) {
                     if (display_present_info->srcRect.offset.x < 0 || display_present_info->srcRect.offset.y < 0 ||
                         display_present_info->srcRect.offset.x + display_present_info->srcRect.extent.width >
@@ -848,7 +848,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
     if (pPresentInfo->pNext) {
         // Verify ext struct
-        const auto *present_regions = LvlFindInChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
+        const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
                 auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
@@ -894,7 +894,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        const auto *present_times_info = LvlFindInChain<VkPresentTimesInfoGOOGLE>(pPresentInfo->pNext);
+        const auto *present_times_info = vku::FindStructInPNextChain<VkPresentTimesInfoGOOGLE>(pPresentInfo->pNext);
         if (present_times_info) {
             if (pPresentInfo->swapchainCount != present_times_info->swapchainCount) {
                 skip |= LogError("VUID-VkPresentTimesInfoGOOGLE-swapchainCount-01247", pPresentInfo->pSwapchains[0],
@@ -904,7 +904,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        const auto *present_id_info = LvlFindInChain<VkPresentIdKHR>(pPresentInfo->pNext);
+        const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
         if (present_id_info) {
             if (!enabled_features.present_id_features.presentId) {
                 for (uint32_t i = 0; i < present_id_info->swapchainCount; i++) {
@@ -936,7 +936,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        const auto *swapchain_present_fence_info = LvlFindInChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
+        const auto *swapchain_present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
         if (swapchain_present_fence_info) {
             if (pPresentInfo->swapchainCount != swapchain_present_fence_info->swapchainCount) {
                 skip |= LogError("VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757", pPresentInfo->pSwapchains[0],
@@ -957,7 +957,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        const auto *swapchain_present_mode_info = LvlFindInChain<VkSwapchainPresentModeInfoEXT>(pPresentInfo->pNext);
+        const auto *swapchain_present_mode_info = vku::FindStructInPNextChain<VkSwapchainPresentModeInfoEXT>(pPresentInfo->pNext);
         if (swapchain_present_mode_info) {
             if (pPresentInfo->swapchainCount != swapchain_present_mode_info->swapchainCount) {
                 skip |= LogError("VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-07760", pPresentInfo->pSwapchains[0],
@@ -1095,7 +1095,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         }
         auto min_image_count = surface_caps2.surfaceCapabilities.minImageCount;
         const VkSwapchainPresentModesCreateInfoEXT *present_modes_ci =
-            LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->createInfo.pNext);
+            vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->createInfo.pNext);
         if (present_modes_ci) {
             auto surface_state = Get<SURFACE_STATE>(swapchain_data->createInfo.surface);
             // If a SwapchainPresentModesCreateInfo struct was included, min_image_count becomes the max of the
@@ -1351,7 +1351,7 @@ bool CoreChecks::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice devic
                              "swapchain %s is retired.", FormatHandle(swapchain).c_str());
         }
         const auto *surface_full_screen_exclusive_info =
-            LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
+            vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
         if (!surface_full_screen_exclusive_info ||
             surface_full_screen_exclusive_info->fullScreenExclusive != VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
             skip |=
@@ -1380,7 +1380,7 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
                              "swapchain %s is retired.", FormatHandle(swapchain).c_str());
         }
         const auto *surface_full_screen_exclusive_info =
-            LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
+            vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(swapchain_state->createInfo.pNext);
         if (!surface_full_screen_exclusive_info ||
             surface_full_screen_exclusive_info->fullScreenExclusive != VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
             skip |=
@@ -1513,7 +1513,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
     const auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
 
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
-        const auto *surface_present_mode = LvlFindInChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
+        const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
         if (surface_present_mode) {
             VkPresentModeKHR present_mode = surface_present_mode->presentMode;
             std::vector<VkPresentModeKHR> present_modes{};
@@ -1536,10 +1536,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     if (IsExtEnabled(device_extensions.vk_khr_win32_surface) && IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive)) {
         if (surface_state) {
-            if (const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pSurfaceInfo->pNext);
+            if (const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(pSurfaceInfo->pNext);
                 full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
                 if (const auto *win32_full_screen_info =
-                        LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
+                        vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
                     !win32_full_screen_info) {
                     const LogObjectList objlist(device, pSurfaceInfo->surface);
                     skip |= LogError("VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672", objlist,

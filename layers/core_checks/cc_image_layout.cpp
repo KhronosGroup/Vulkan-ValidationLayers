@@ -259,7 +259,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state) {
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
-                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
             }
@@ -481,7 +481,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
     const bool use_rp2 = rp_loc.function != Func::vkCmdBeginRenderPass;
 
     auto image_usage = image_state->createInfo.usage;
-    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+    const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
     if (stencil_usage_info) {
         image_usage |= stencil_usage_info->stencilUsage;
     }
@@ -555,7 +555,7 @@ bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkI
         return skip;  // validated at VUID-VkRenderPassBeginInfo-framebuffer-parameter
     }
     auto image_usage = image_state->createInfo.usage;
-    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+    const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
     if (stencil_usage_info) {
         image_usage |= stencil_usage_info->stencilUsage;
     }
@@ -595,7 +595,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
                          render_pass_info->attachmentCount, framebuffer_info.attachmentCount);
     }
 
-    const auto *attachment_info = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    const auto *attachment_info = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
     if (((framebuffer_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0) && attachment_info != nullptr) {
         attachments = attachment_info->pAttachments;
     }
@@ -638,9 +638,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
 
         // If a separate layout is specified, look for that.
         const auto *attachment_desc_stencil_layout =
-            LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+            vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
         if (const auto *attachment_description_stencil_layout =
-                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
             attachment_description_stencil_layout) {
             attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
         }
@@ -716,7 +716,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
         const Location subpass_loc = rp_create_info.dot(Field::pSubpasses, j);
         auto &subpass = render_pass_info->pSubpasses[j];
         const auto *ms_rendered_to_single_sampled =
-            LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(render_pass_info->pSubpasses[j].pNext);
+            vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(render_pass_info->pSubpasses[j].pNext);
         for (uint32_t k = 0; k < render_pass_info->pSubpasses[j].inputAttachmentCount; ++k) {
             auto &attachment_ref = subpass.pInputAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
@@ -780,7 +780,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const CMD_BUFFER_STATE &c
                                                                                  render_pass, attachment_ref.attachment, rp_loc,
                                                                                  ds_loc.dot(Field::layout));
 
-                    if (const auto *stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayout>(attachment_ref.pNext);
+                    if (const auto *stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(attachment_ref.pNext);
                         stencil_layout != nullptr) {
                         skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
                             stencil_layout->stencilLayout, *view_state, framebuffer, render_pass,
@@ -806,7 +806,7 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, const
         IMAGE_VIEW_STATE *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_reference_stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
+            const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
             if (attachment_reference_stencil_layout) {
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
@@ -842,7 +842,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
             IMAGE_STATE *image_state = view_state->image_state.get();
             const auto initial_layout = rpci->pAttachments[i].initialLayout;
             const auto *attachment_description_stencil_layout =
-                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
+                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
             if (attachment_description_stencil_layout) {
                 const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
                 VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;

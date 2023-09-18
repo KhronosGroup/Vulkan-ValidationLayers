@@ -190,7 +190,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
             pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, objlist, loc,
                                               vuid.dynamic_line_width_07833);
-            const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
+            const auto *line_state = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
             if (line_state && line_state->stippledLineEnable) {
                 skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_EXT, objlist, loc,
                                                   vuid.dynamic_line_stipple_ext_07849);
@@ -334,7 +334,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LAST_BOUND_STATE& last_b
     const DrawDispatchVuid& vuid = GetDrawDispatchVuid(loc.function);
 
     // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
-    const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
+    const auto *discard_rectangle_state = vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
     if (discard_rectangle_state && pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
         for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
             if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
@@ -1192,7 +1192,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
                          "is %f, but the depthBiasClamp device feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
     }
 
-    if (const auto *depth_bias_representation = LvlFindInChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
+    if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
         skip |= ValidateDepthBiasRepresentationInfo(error_obj.location, error_obj.objlist, *depth_bias_representation);
     }
 

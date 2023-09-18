@@ -103,14 +103,14 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
         (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
                                                                                 "vkGetPhysicalDeviceImageFormatProperties2KHR");
     if (NULL != p_GetPDIFP2KHR) {
-        VkPhysicalDeviceImageFormatInfo2KHR fmt_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2KHR>();
+        VkPhysicalDeviceImageFormatInfo2KHR fmt_info = vku::InitStructHelper();
         fmt_info.format = info.format;
         fmt_info.type = info.imageType;
         fmt_info.tiling = info.tiling;
         fmt_info.usage = info.usage;
         fmt_info.flags = info.flags;
 
-        VkImageFormatProperties2KHR fmt_props = LvlInitStruct<VkImageFormatProperties2KHR>();
+        VkImageFormatProperties2KHR fmt_props = vku::InitStructHelper();
         err = p_GetPDIFP2KHR(phy, &fmt_info, &fmt_props);
         if (VK_SUCCESS != err) {
             return false;
@@ -165,7 +165,7 @@ void UpdateDescriptor(ThreadTestData *data) {
     buffer_info.offset = 0;
     buffer_info.range = 1;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = data->descriptorSet;
     descriptor_write.dstBinding = data->binding;
     descriptor_write.descriptorCount = 1;
@@ -327,7 +327,7 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier) {
     cb->begin();
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
@@ -399,8 +399,8 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
     const VkFormat first_vk_format = VK_FORMAT_R4G4_UNORM_PACK8;
     VkFormat return_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format = first_vk_format; format < first_compressed_format; format = static_cast<VkFormat>(format + 1)) {
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(gpu, format, &fmt_props_2);
         auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? fmt_props_3.linearTilingFeatures : fmt_props_3.optimalTilingFeatures;
         if ((features & undesired_features) == 0) {
@@ -416,26 +416,26 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHan
     constexpr auto export_import_flags =
         VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
 
-    auto info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    auto info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
     info.handleType = handle_type;
-    auto properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    auto properties = vku::InitStruct<VkExternalSemaphoreProperties>();
     vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &info, &properties);
     return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
 }
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
-    VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+    VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
     image_plane_req.planeAspect = plane;
 
-    VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+    VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
     mem_req_info2.image = mp_image;
 
-    VkMemoryRequirements2 mp_image_mem_reqs2 = LvlInitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 mp_image_mem_reqs2 = vku::InitStructHelper();
 
     fp(device->device(), &mem_req_info2, &mp_image_mem_reqs2);
 
-    VkMemoryAllocateInfo mp_image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo mp_image_alloc_info = vku::InitStructHelper();
     mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
     ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
     ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
@@ -494,7 +494,7 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_
 }
 
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
-    VkSamplerCreateInfo sampler_create_info = LvlInitStruct<VkSamplerCreateInfo>();
+    VkSamplerCreateInfo sampler_create_info = vku::InitStructHelper();
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -534,19 +534,19 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     switch (failCase) {
         case BsoFailLineWidth: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_WIDTH);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+            VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
             ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             pipelineobj.SetInputAssembly(&ia_state);
             break;
         }
         case BsoFailLineStipple: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
-            VkPipelineInputAssemblyStateCreateInfo ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+            VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
             ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             pipelineobj.SetInputAssembly(&ia_state);
 
             VkPipelineRasterizationLineStateCreateInfoEXT line_state =
-                LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
+                vku::InitStructHelper();
             line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
             line_state.stippledLineEnable = VK_TRUE;
             line_state.lineStippleFactor = 1;
@@ -556,7 +556,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         }
         case BsoFailDepthBias: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
-            VkPipelineRasterizationStateCreateInfo rs_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+            VkPipelineRasterizationStateCreateInfo rs_state = vku::InitStructHelper();
             rs_state.depthBiasEnable = VK_TRUE;
             rs_state.lineWidth = 1.0f;
             pipelineobj.SetRasterization(&rs_state);
@@ -608,7 +608,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
             // Create an index buffer for these tests.
             // There is no need to populate it because we should bail before trying to draw.
             uint32_t const indices[] = {0};
-            VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+            VkBufferCreateInfo buffer_info = vku::InitStructHelper();
             buffer_info.size = 1024;
             buffer_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             buffer_info.queueFamilyIndexCount = 1;
@@ -652,7 +652,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         stencil.depthFailOp = VK_STENCIL_OP_KEEP;
         stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-        VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
         ds_ci.depthTestEnable = VK_FALSE;
         ds_ci.depthWriteEnable = VK_TRUE;
         ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -737,7 +737,7 @@ VkLayerTest::VkLayerTest() {
         instance_layers_.push_back(kSynchronization2LayerName);
     }
 
-    app_info_ = LvlInitStruct<VkApplicationInfo>();
+    app_info_ = vku::InitStructHelper();
     app_info_.pApplicationName = "layer_tests";
     app_info_.applicationVersion = 1;
     app_info_.pEngineName = "unittest";
@@ -825,8 +825,8 @@ bool VkLayerTest::IsDriver(VkDriverId driver_id) {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
-        auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
+        auto driver_properties = vku::InitStruct<VkPhysicalDeviceDriverProperties>();
+        auto physical_device_properties2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
         GetPhysicalDeviceProperties2(physical_device_properties2);
         return (driver_properties.driverID == driver_id);
     }
@@ -954,7 +954,7 @@ bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlag
     VkDeviceSize offset_limit = 0;
     if (eInvalidMemoryOffset == aTestFlag) {
         VkBuffer vulkanBuffer;
-        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
@@ -981,7 +981,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
       InvalidDeleteEn(false),
       VulkanDevice(aVulkanDevice->device()) {
     if (eBindNullBuffer == aTestFlag || eBindFakeBuffer == aTestFlag) {
-        VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
         memory_allocate_info.allocationSize = 1;   // fake size -- shouldn't matter for the test
         memory_allocate_info.memoryTypeIndex = 0;  // fake type -- shouldn't matter for the test
         vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
@@ -990,7 +990,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
 
         vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
     } else {
-        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
@@ -1001,7 +1001,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
         VkMemoryRequirements memory_requirements;
         vk::GetBufferMemoryRequirements(VulkanDevice, VulkanBuffer, &memory_requirements);
 
-        VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
         memory_allocate_info.allocationSize = memory_requirements.size + eOffsetAlignment;
         bool pass = aVulkanDevice->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info,
                                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1087,7 +1087,7 @@ VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAt
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &attachment_reference;
 
-    VkRenderPassCreateInfo rpinf = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpinf = vku::InitStructHelper();
     rpinf.attachmentCount = 1;
     rpinf.pAttachments = &attachment;
     rpinf.subpassCount = 1;
@@ -1106,7 +1106,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
                                                              VkRenderPass renderpass) {
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
 
-    VkFramebufferCreateInfo framebuffer_create_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo framebuffer_create_info = vku::InitStructHelper();
     framebuffer_create_info.renderPass = renderpass;
     framebuffer_create_info.attachmentCount = 1;
     framebuffer_create_info.pAttachments = &image_view;
@@ -1124,7 +1124,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
 VkSampler VkArmBestPracticesLayerTest::CreateDefaultSampler() {
     VkSampler sampler{VK_NULL_HANDLE};
 
-    VkSamplerCreateInfo sampler_create_info = LvlInitStruct<VkSamplerCreateInfo>();
+    VkSamplerCreateInfo sampler_create_info = vku::InitStructHelper();
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -1202,7 +1202,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer
         buffer_infos.emplace_back(buffer_info);
     }
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1223,7 +1223,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView bu
         buffer_views.emplace_back(buffer_view);
     }
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1250,7 +1250,7 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
         image_infos.emplace_back(image_info);
     }
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = arrayElement;
@@ -1423,7 +1423,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     buffer_barrier_.srcQueueFamilyIndex = src;
     buffer_barrier_.dstQueueFamilyIndex = dst;
 
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buffer_barrier_;
     dep_info.imageMemoryBarrierCount = 1;

@@ -322,7 +322,7 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>();
     features11.shaderDrawParameters = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features11);
 
@@ -367,9 +367,9 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
+    auto uniform_buffer_standard_layout_features = vku::InitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
     auto scalar_block_layout_features =
-        LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
+        vku::InitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
     GetPhysicalDeviceFeatures2(scalar_block_layout_features);
     if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
         uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
@@ -429,7 +429,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     GetPhysicalDeviceFeatures2(features12);
     if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
         GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported";
@@ -489,7 +489,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
     if (float16int8_features.shaderInt8 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt8 feature not supported";
@@ -627,7 +627,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     pipe.CreateComputePipeline();
 
     // Submit shader to see SSBO output
-    auto bci = LvlInitStruct<VkBufferCreateInfo>();
+    auto bci = vku::InitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     bci.size = 1024;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -642,7 +642,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -813,8 +813,8 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
@@ -994,7 +994,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
     if (float16int8_features.shaderInt8 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt8 feature not supported";
@@ -1055,7 +1055,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>();
     GetPhysicalDeviceFeatures2(features2);
     if (features2.features.shaderInt16 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt16 feature not supported";
@@ -1166,7 +1166,7 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>();
     GetPhysicalDeviceFeatures2(features2);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -1288,7 +1288,7 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
+    auto shader_float_control = vku::InitStruct<VkPhysicalDeviceFloatControlsProperties>();
     GetPhysicalDeviceProperties2(shader_float_control);
 
     bool signed_zero_inf_nan_preserve = (shader_float_control.shaderSignedZeroInfNanPreserveFloat32 == VK_TRUE);
@@ -1424,9 +1424,9 @@ TEST_F(PositiveShaderSpirv, Storage8and16bit) {
         GTEST_SKIP() << "Extension not supported";
     }
 
-    auto storage_8_bit_features = LvlInitStruct<VkPhysicalDevice8BitStorageFeaturesKHR>();
-    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeaturesKHR>(&storage_8_bit_features);
-    auto float_16_int_8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&storage_16_bit_features);
+    auto storage_8_bit_features = vku::InitStruct<VkPhysicalDevice8BitStorageFeaturesKHR>();
+    auto storage_16_bit_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeaturesKHR>(&storage_8_bit_features);
+    auto float_16_int_8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&storage_16_bit_features);
     auto features2 = GetPhysicalDeviceFeatures2(float_16_int_8_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1704,7 +1704,7 @@ TEST_F(PositiveShaderSpirv, ReadShaderClock) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto shader_clock_features = LvlInitStruct<VkPhysicalDeviceShaderClockFeaturesKHR>();
+    auto shader_clock_features = vku::InitStruct<VkPhysicalDeviceShaderClockFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(shader_clock_features);
     if ((shader_clock_features.shaderDeviceClock == VK_FALSE) && (shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
         // shaderSubgroupClock should be supported, but extra check
@@ -1766,7 +1766,7 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (VK_TRUE != features12.bufferDeviceAddress) {
         GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
@@ -1810,7 +1810,7 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features12 = vku::InitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (VK_TRUE != features12.shaderStorageTexelBufferArrayNonUniformIndexing) {
         GTEST_SKIP()

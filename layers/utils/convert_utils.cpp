@@ -22,7 +22,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 
-#include "generated/vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 static safe_VkAttachmentDescription2 ToV2KHR(const VkAttachmentDescription& in_struct) {
     safe_VkAttachmentDescription2 v2;
@@ -120,9 +120,9 @@ static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, i
 
 safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
     safe_VkRenderPassCreateInfo2 out_struct;
-    const auto multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
-    const auto* input_attachment_aspect_info = LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
-    const auto fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
+    const auto multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
+    const auto* input_attachment_aspect_info = vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
+    const auto fragment_density_map_info = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
 
     out_struct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
 
@@ -225,7 +225,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
 
 safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags2 srcStageMask,
                                                            VkPipelineStageFlags2 dstStageMask) {
-    auto barrier2 = LvlInitStruct<VkImageMemoryBarrier2>();
+    auto barrier2 = vku::InitStruct<VkImageMemoryBarrier2>();
 
     // As of Vulkan 1.3.153, the VkImageMemoryBarrier2 supports the same pNext structs as VkImageMemoryBarrier
     // (VkExternalMemoryAcquireUnmodifiedEXT and VkSampleLocationsInfoEXT). It means we can copy entire pNext

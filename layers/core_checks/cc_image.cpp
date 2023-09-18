@@ -37,7 +37,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     if (image_format == VK_FORMAT_UNDEFINED) {
         // VU 01975 states format can't be undefined unless an android externalFormat
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
+        const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pCreateInfo->pNext);
         if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (ext_fmt_android != nullptr) && (0 != ext_fmt_android->externalFormat)) {
             auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
             if (it != ahb_ext_formats_map.end()) {
@@ -48,9 +48,9 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         vvl::unordered_set<uint64_t> drm_format_modifiers;
         const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit =
-            LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         const VkImageDrmFormatModifierListCreateInfoEXT *drm_implicit =
-            LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
 
         if (drm_explicit != nullptr) {
             drm_format_modifiers.insert(drm_explicit->drmFormatModifier);
@@ -62,8 +62,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
             }
         }
 
-        auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
-        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+        auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &fmt_props_2);
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
         drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
@@ -176,8 +176,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
-    auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
+    auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>();
+    auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
     image_format_info.type = pCreateInfo->imageType;
     image_format_info.format = pCreateInfo->format;
     image_format_info.tiling = pCreateInfo->tiling;
@@ -204,7 +204,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (result != VK_SUCCESS) {
             // External memory will always have a "imageCreateImageFormatPropertiesList" so skip
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-            if (!LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
+            if (!vku::FindStructInPNextChain<VkExternalFormatANDROID>(pCreateInfo->pNext)) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
                 Func command = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
                                    ? Func::vkGetPhysicalDeviceImageFormatProperties2
@@ -225,9 +225,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
         }
     } else {
-        auto *modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        auto *explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-        auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        auto *modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+        auto *explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
         drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
@@ -387,7 +387,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    const auto swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_create_info != nullptr) {
         if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
             auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain_create_info->swapchain);
@@ -462,8 +462,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    const auto external_memory_create_info_nv = LvlFindInChain<VkExternalMemoryImageCreateInfoNV>(pCreateInfo->pNext);
-    const auto external_memory_create_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    const auto external_memory_create_info_nv = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfoNV>(pCreateInfo->pNext);
+    const auto external_memory_create_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     if (external_memory_create_info_nv != nullptr && external_memory_create_info != nullptr) {
         skip |= LogError("VUID-VkImageCreateInfo-pNext-00988", device, create_info_loc,
                          "has both VkExternalMemoryImageCreateInfoNV and "
@@ -478,20 +478,20 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
         // Check external memory handle types compatibility
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
-        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
         external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
 
-        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
         VkExternalMemoryHandleTypeFlags compatible_types = 0;
         if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_properties);
             compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
         } else {
-            auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-            auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-            auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+            auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            auto explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
             drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
             drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
             drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
@@ -580,7 +580,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          "feature is not enabled.");
     }
 
-    auto opaque_capture_descriptor_buffer = LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+    auto opaque_capture_descriptor_buffer = vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
     if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkImageCreateInfo-pNext-08105", device, create_info_loc.dot(Field::flags),
                          "(%s) does not have VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
@@ -595,7 +595,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
                               VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
     if (has_decode_usage || has_encode_usage) {
-        const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
+        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
         skip |= ValidateVideoProfileListInfo(video_profiles, device, "vkCreateImage", has_decode_usage,
                                              "VUID-VkImageCreateInfo-usage-04815", has_encode_usage,
                                              "VUID-VkImageCreateInfo-usage-04816");
@@ -796,7 +796,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     skip |= ValidateProtectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01807");
     skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01808");
 
-    const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
+    const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
         skip |= ValidateCmdClearDepthSubresourceRange(image_state, pRanges[i], range_loc);
@@ -1454,11 +1454,11 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
     } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
         assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
-        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
-        auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
-        auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+        auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, view_format, &fmt_props_2);
 
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
@@ -1588,9 +1588,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
     VkImageUsageFlags image_usage = image_state.createInfo.usage;
-    if (const auto chained_ivuci_struct = LvlFindInChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext); chained_ivuci_struct) {
+    if (const auto chained_ivuci_struct = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(pCreateInfo->pNext); chained_ivuci_struct) {
         if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
-            const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
+            const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
             if (image_stencil_struct == nullptr) {
                 if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
                     skip |=
@@ -1627,7 +1627,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         image_usage = chained_ivuci_struct->usage;
     }
 
-    if (const auto sliced_create_info_ext = LvlFindInChain<VkImageViewSlicedCreateInfoEXT>(pCreateInfo->pNext);
+    if (const auto sliced_create_info_ext = vku::FindStructInPNextChain<VkImageViewSlicedCreateInfoEXT>(pCreateInfo->pNext);
         sliced_create_info_ext) {
         const bool feature_disabled = (enabled_features.sliced_3d_features.imageSlicedViewOf3D == VK_FALSE);
         if (feature_disabled) {
@@ -1679,7 +1679,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     // If image used VkImageFormatListCreateInfo need to make sure a format from list is used
-    if (const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(image_state.createInfo.pNext);
+    if (const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(image_state.createInfo.pNext);
         format_list_info && (format_list_info->viewFormatCount > 0)) {
         bool found_format = false;
         for (uint32_t i = 0; i < format_list_info->viewFormatCount; i++) {
@@ -2015,7 +2015,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
-    if (const auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
+    if (const auto astc_decode_mode = vku::FindStructInPNextChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
         (astc_decode_mode != nullptr)) {
         if ((enabled_features.astc_decode_features.decodeModeSharedExponent == VK_FALSE) &&
             (astc_decode_mode->decodeMode == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {
@@ -2049,7 +2049,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
-    if (const auto image_view_min_lod = LvlFindInChain<VkImageViewMinLodCreateInfoEXT>(pCreateInfo->pNext); image_view_min_lod) {
+    if (const auto image_view_min_lod = vku::FindStructInPNextChain<VkImageViewMinLodCreateInfoEXT>(pCreateInfo->pNext); image_view_min_lod) {
         if ((!enabled_features.image_view_min_lod_features.minLod) && (image_view_min_lod->minLod != 0)) {
             skip |= LogError("VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455", pCreateInfo->image,
                              create_info_loc.pNext(Struct::VkImageViewMinLodCreateInfoEXT, Field::minLod),
@@ -2066,7 +2066,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
-    const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    const auto ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
     if (ycbcr_conversion && ycbcr_conversion->conversion != VK_NULL_HANDLE) {
         auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conversion->conversion);
         if (pCreateInfo->format != ycbcr_state->format) {
@@ -2099,7 +2099,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     if (const auto opaque_capture_descriptor_buffer =
-            LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
         opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-08107", pCreateInfo->image, create_info_loc.dot(Field::flags),
                          "(%s) is missing VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
@@ -2211,11 +2211,11 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const IMAGE_STATE &image_stat
         } else {
             // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
             assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
-            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
             DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
-            auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
-            auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+            auto fmt_drm_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
+            auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_state.createInfo.format, &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
@@ -2492,7 +2492,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo *
                                                    const Location &loc) const {
     bool skip = false;
 
-    auto sample_weight_info = LvlFindInChain<VkImageViewSampleWeightCreateInfoQCOM>(pCreateInfo->pNext);
+    auto sample_weight_info = vku::FindStructInPNextChain<VkImageViewSampleWeightCreateInfoQCOM>(pCreateInfo->pNext);
     if (!sample_weight_info) {
         return skip;
     }

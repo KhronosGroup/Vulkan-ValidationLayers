@@ -24,7 +24,7 @@ void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(pNextFeatures);
+    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>(pNextFeatures);
     GetPhysicalDeviceFeatures2(features11);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
@@ -34,8 +34,8 @@ void ImageDrmTest::InitBasicImageDrm(void *pNextFeatures) {
 
 std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {
     std::vector<uint64_t> mods;
-    auto mod_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
-    auto format_props = LvlInitStruct<VkFormatProperties2>(&mod_props);
+    auto mod_props = vku::InitStruct<VkDrmFormatModifierPropertiesListEXT>();
+    auto format_props = vku::InitStruct<VkFormatProperties2>(&mod_props);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
     if (mod_props.drmFormatModifierCount == 0) {
         return mods;
@@ -78,7 +78,7 @@ TEST_F(PositiveImageDrm, Basic) {
         }
 
         // create image
-        auto ci = LvlInitStruct<VkImageCreateInfo>();
+        auto ci = vku::InitStruct<VkImageCreateInfo>();
         ci.flags = 0;
         ci.imageType = VK_IMAGE_TYPE_2D;
         ci.format = format;
@@ -91,7 +91,7 @@ TEST_F(PositiveImageDrm, Basic) {
         ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        auto mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+        auto mod_list = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
         mod_list.pDrmFormatModifiers = mods.data();
         mod_list.drmFormatModifierCount = mods.size();
         ci.pNext = &mod_list;
@@ -111,7 +111,7 @@ TEST_F(PositiveImageDrm, Basic) {
         for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
             if ((mem_reqs.memoryTypeBits & (1 << type)) &&
                 ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
-                auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+                auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
                 alloc_info.allocationSize = mem_reqs.size;
                 alloc_info.memoryTypeIndex = type;
                 ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
@@ -160,17 +160,17 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    auto external_info = vku::InitStruct<VkExternalMemoryImageCreateInfo>();
     external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     // handleTypes needs to be assigned to trigger the behavior we want
     assert(external_info.handleTypes);
 
-    auto drm_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&external_info);
+    auto drm_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&external_info);
     drm_info.drmFormatModifierCount = size32(mods);
     drm_info.pDrmFormatModifiers = mods.data();
 
-    auto ci = LvlInitStruct<VkImageCreateInfo>(&drm_info);
+    auto ci = vku::InitStruct<VkImageCreateInfo>(&drm_info);
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = format;
     ci.extent = {128, 128, 1};
@@ -183,21 +183,21 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     {
-        auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         drm_format_modifier.sharingMode = ci.sharingMode;
         drm_format_modifier.queueFamilyIndexCount = ci.queueFamilyIndexCount;
         drm_format_modifier.pQueueFamilyIndices = ci.pQueueFamilyIndices;
-        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
+        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
         external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(external_info.handleTypes);
-        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
         image_info.format = ci.format;
         image_info.type = ci.imageType;
         image_info.tiling = ci.tiling;
         image_info.usage = ci.usage;
         image_info.flags = ci.flags;
 
-        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
 
         if (const auto result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
             result != VK_SUCCESS) {
@@ -223,10 +223,10 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto list_create_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
     list_create_info.drmFormatModifierCount = mods.size();
     list_create_info.pDrmFormatModifiers = mods.data();
-    auto create_info = LvlInitStruct<VkImageCreateInfo>(&list_create_info);
+    auto create_info = vku::InitStruct<VkImageCreateInfo>(&list_create_info);
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
     create_info.extent.width = 64;
@@ -239,16 +239,16 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     for (uint64_t mod : mods) {
-        auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         drm_format_modifier.drmFormatModifier = mod;
-        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
         image_info.format = format;
         image_info.type = create_info.imageType;
         image_info.tiling = create_info.tiling;
         image_info.usage = create_info.usage;
         image_info.flags = create_info.flags;
-        auto image_properties = LvlInitStruct<VkImageFormatProperties2>();
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
         if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             // Works with Mesa, Pixel 7 doesn't support this combo
             GTEST_SKIP() << "Required formats/features not supported";
@@ -276,16 +276,16 @@ TEST_F(PositiveImageDrm, MutableFormat) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    auto mod_list = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
     mod_list.pDrmFormatModifiers = mods.data();
     mod_list.drmFormatModifierCount = mods.size();
 
     VkFormat formats = VK_FORMAT_R8G8B8A8_SNORM;
-    auto format_list = LvlInitStruct<VkImageFormatListCreateInfo>(&mod_list);
+    auto format_list = vku::InitStruct<VkImageFormatListCreateInfo>(&mod_list);
     format_list.viewFormatCount = 1;
     format_list.pViewFormats = &formats;
 
-    auto image_info = LvlInitStruct<VkImageCreateInfo>(&format_list);
+    auto image_info = vku::InitStruct<VkImageCreateInfo>(&format_list);
     image_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -310,11 +310,11 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    auto mod_list = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
     mod_list.pDrmFormatModifiers = mods.data();
     mod_list.drmFormatModifierCount = mods.size();
 
-    auto image_info = LvlInitStruct<VkImageCreateInfo>(&mod_list);
+    auto image_info = vku::InitStruct<VkImageCreateInfo>(&mod_list);
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.extent = {128, 128, 1};
@@ -327,7 +327,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vk_testing::Image image(*m_device, image_info);
 
-    auto props = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+    auto props = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
     vk::GetImageDrmFormatModifierPropertiesEXT(device(), image.handle(), &props);
 }
 
@@ -337,21 +337,21 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {
     InitBasicImageDrm();
     if (::testing::Test::IsSkipped()) return;
 
-    auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+    auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
+    auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
     external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.type = VK_IMAGE_TYPE_2D;
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_info.flags = 0;
 
-    auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+    auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
 }
@@ -370,24 +370,24 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     std::vector<VkQueueFamilyProperties2> queue_family_props(queue_family_property_count);
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);
 
-    auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+    auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
     drm_format_modifier.queueFamilyIndexCount = 2;
     uint32_t queue_family_indices[2] = {0, 1};
     drm_format_modifier.pQueueFamilyIndices = queue_family_indices;
 
-    auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
+    auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
     external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.type = VK_IMAGE_TYPE_2D;
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_info.flags = 0;
 
-    auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+    auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
 }

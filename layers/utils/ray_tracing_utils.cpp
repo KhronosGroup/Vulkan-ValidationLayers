@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "generated/layer_chassis_dispatch.h"
-#include "generated/vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace rt {
 VkDeviceSize ComputeScratchSize(const VkDevice device, const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
@@ -30,7 +30,7 @@ VkDeviceSize ComputeScratchSize(const VkDevice device, const VkAccelerationStruc
     for (uint32_t build_range_i = 0; build_range_i < build_info.geometryCount; build_range_i++) {
         primitive_counts[build_range_i] = range_infos[build_range_i].primitiveCount;
     }
-    auto size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    auto size_info = vku::InitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
     DispatchGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info,
                                                   primitive_counts.data(), &size_info);
     switch (build_info.mode) {

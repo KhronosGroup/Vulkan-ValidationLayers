@@ -235,7 +235,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
                              "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but performanceCounterQueryPools feature was not enabled.");
             }
 
-            auto perf_ci = LvlFindInChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
+            auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
             if (!perf_ci) {
                 skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, create_info_loc.dot(Field::queryType),
                                  "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext does not contain in instance of "
@@ -261,7 +261,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
             break;
         }
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
-            auto video_profile = LvlFindInChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
+            auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext);
             if (video_profile) {
                 skip |= ValidateVideoProfileInfo(video_profile, device, "vkCreateQueryPool",
                                                  "the VkVideoProfileInfoKHR structure included in the pCreateInfo->pNext chain");

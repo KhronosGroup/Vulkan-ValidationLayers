@@ -511,7 +511,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                             continue
                         contains_pNext = True
                         nested_struct.extend([f'#ifdef {extended_struct.protect}\n'] if extended_struct.protect else [])
-                        nested_struct.append(f'if (auto pNext = LvlFindInChain<{extendedBy}>({new_prefix}pNext)) {{\n')
+                        nested_struct.append(f'if (auto pNext = vku::FindStructInPNextChain<{extendedBy}>({new_prefix}pNext)) {{\n')
                         nested_struct.append(f'    const Location pNext_loc = {new_error_loc}.pNext(Struct::{extendedBy});\n')
                         nested_struct.append(self.validateObjects(extended_members, 'pNext->', arrayIndex + 1, extendedBy, topCommand, 'pNext_loc', False))
                         nested_struct.append('}\n')

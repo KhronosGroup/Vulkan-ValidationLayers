@@ -264,7 +264,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                                            index0_loc.dot(Field::pSignalSemaphores, index1));
                 }
             }
-            if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
@@ -284,7 +284,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 }
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -306,7 +306,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
             }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -359,7 +359,7 @@ bool ObjectLifetimes::PreCallValidateAllocateMemory(VkDevice device, const VkMem
                            error_obj.location.dot(Field::device));
     if (pAllocateInfo) {
         [[maybe_unused]] const Location pAllocateInfo_loc = error_obj.location.dot(Field::pAllocateInfo);
-        if (auto pNext = LvlFindInChain<VkDedicatedAllocationMemoryAllocateInfoNV>(pAllocateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkDedicatedAllocationMemoryAllocateInfoNV>(pAllocateInfo->pNext)) {
             const Location pNext_loc = pAllocateInfo_loc.pNext(Struct::VkDedicatedAllocationMemoryAllocateInfoNV);
             skip |= ValidateObject(pNext->image, kVulkanObjectTypeImage, true,
                                    "VUID-VkDedicatedAllocationMemoryAllocateInfoNV-image-parameter", kVUIDUndefined,
@@ -369,14 +369,14 @@ bool ObjectLifetimes::PreCallValidateAllocateMemory(VkDevice device, const VkMem
                                    "VUID-VkDedicatedAllocationMemoryAllocateInfoNV-commonparent", pNext_loc.dot(Field::buffer));
         }
 #ifdef VK_USE_PLATFORM_FUCHSIA
-        if (auto pNext = LvlFindInChain<VkImportMemoryBufferCollectionFUCHSIA>(pAllocateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkImportMemoryBufferCollectionFUCHSIA>(pAllocateInfo->pNext)) {
             const Location pNext_loc = pAllocateInfo_loc.pNext(Struct::VkImportMemoryBufferCollectionFUCHSIA);
             skip |= ValidateObject(pNext->collection, kVulkanObjectTypeBufferCollectionFUCHSIA, false,
                                    "VUID-VkImportMemoryBufferCollectionFUCHSIA-collection-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::collection));
         }
 #endif  // VK_USE_PLATFORM_FUCHSIA
-        if (auto pNext = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
             const Location pNext_loc = pAllocateInfo_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo);
             skip |= ValidateObject(pNext->image, kVulkanObjectTypeImage, true, "VUID-VkMemoryDedicatedAllocateInfo-image-parameter",
                                    kVUIDUndefined, pNext_loc.dot(Field::image));
@@ -629,7 +629,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                                            "VUID-VkBindSparseInfo-commonparent", index0_loc.dot(Field::pSignalSemaphores, index1));
                 }
             }
-            if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pBindInfo[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(pBindInfo[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
@@ -887,7 +887,7 @@ bool ObjectLifetimes::PreCallValidateCreateBuffer(VkDevice device, const VkBuffe
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
 #ifdef VK_USE_PLATFORM_FUCHSIA
-        if (auto pNext = LvlFindInChain<VkBufferCollectionBufferCreateInfoFUCHSIA>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkBufferCollectionBufferCreateInfoFUCHSIA>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkBufferCollectionBufferCreateInfoFUCHSIA);
             skip |= ValidateObject(pNext->collection, kVulkanObjectTypeBufferCollectionFUCHSIA, false,
                                    "VUID-VkBufferCollectionBufferCreateInfoFUCHSIA-collection-parameter", kVUIDUndefined,
@@ -973,14 +973,14 @@ bool ObjectLifetimes::PreCallValidateCreateImage(VkDevice device, const VkImageC
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
 #ifdef VK_USE_PLATFORM_FUCHSIA
-        if (auto pNext = LvlFindInChain<VkBufferCollectionImageCreateInfoFUCHSIA>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkBufferCollectionImageCreateInfoFUCHSIA>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkBufferCollectionImageCreateInfoFUCHSIA);
             skip |= ValidateObject(pNext->collection, kVulkanObjectTypeBufferCollectionFUCHSIA, false,
                                    "VUID-VkBufferCollectionImageCreateInfoFUCHSIA-collection-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::collection));
         }
 #endif  // VK_USE_PLATFORM_FUCHSIA
-        if (auto pNext = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR);
             skip |= ValidateObject(pNext->swapchain, kVulkanObjectTypeSwapchainKHR, true,
                                    "VUID-VkImageSwapchainCreateInfoKHR-swapchain-parameter", kVUIDUndefined,
@@ -1037,7 +1037,7 @@ bool ObjectLifetimes::PreCallValidateCreateImageView(VkDevice device, const VkIm
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         skip |= ValidateObject(pCreateInfo->image, kVulkanObjectTypeImage, false, "VUID-VkImageViewCreateInfo-image-parameter",
                                "VUID-vkCreateImageView-image-09179", pCreateInfo_loc.dot(Field::image));
-        if (auto pNext = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkSamplerYcbcrConversionInfo);
             skip |= ValidateObject(pNext->conversion, kVulkanObjectTypeSamplerYcbcrConversion, false,
                                    "VUID-VkSamplerYcbcrConversionInfo-conversion-parameter", kVUIDUndefined,
@@ -1081,7 +1081,7 @@ bool ObjectLifetimes::PreCallValidateCreateShaderModule(VkDevice device, const V
                            error_obj.location.dot(Field::device));
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
-        if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
             skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
                                    "VUID-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parameter", kVUIDUndefined,
@@ -1208,7 +1208,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                     skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
                                            "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined,
                                            index1_loc.dot(Field::module));
-                    if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(
+                    if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(
                             pCreateInfos[index0].pStages[index1].pNext)) {
                         const Location pNext_loc = index1_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
                         skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
@@ -1225,7 +1225,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
                                        "VUID-VkGraphicsPipelineCreateInfo-flags-07984",
                                        "VUID-VkGraphicsPipelineCreateInfo-commonparent", error_obj.location);
-            if (auto pNext = LvlFindInChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkGraphicsPipelineShaderGroupsCreateInfoNV);
 
                 if ((pNext->pipelineCount > 0) && (pNext->pPipelines)) {
@@ -1236,7 +1236,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                     }
                 }
             }
-            if (auto pNext = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR);
 
                 if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
@@ -1285,7 +1285,8 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
             skip |= ValidateObject(pCreateInfos[index0].stage.module, kVulkanObjectTypeShaderModule, true,
                                    "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined,
                                    stage_loc.dot(Field::module));
-            if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfos[index0].stage.pNext)) {
+            if (auto pNext =
+                    vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfos[index0].stage.pNext)) {
                 const Location pNext_loc = stage_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
                 skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
                                        "VUID-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parameter", kVUIDUndefined,
@@ -1298,7 +1299,7 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
                                        "VUID-VkComputePipelineCreateInfo-flags-07984",
                                        "VUID-VkComputePipelineCreateInfo-commonparent", error_obj.location);
-            if (auto pNext = LvlFindInChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
                 skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
                                        pNext_loc.dot(Field::renderPass));
@@ -1396,7 +1397,7 @@ bool ObjectLifetimes::PreCallValidateCreateSampler(VkDevice device, const VkSamp
                            error_obj.location.dot(Field::device));
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
-        if (auto pNext = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkSamplerYcbcrConversionInfo);
             skip |= ValidateObject(pNext->conversion, kVulkanObjectTypeSamplerYcbcrConversion, false,
                                    "VUID-VkSamplerYcbcrConversionInfo-conversion-parameter", kVUIDUndefined,
@@ -2116,7 +2117,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandB
         skip |= ValidateObject(pRenderPassBegin->framebuffer, kVulkanObjectTypeFramebuffer, false,
                                "VUID-VkRenderPassBeginInfo-framebuffer-parameter", "VUID-VkRenderPassBeginInfo-commonparent",
                                pRenderPassBegin_loc.dot(Field::framebuffer));
-        if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
@@ -2202,7 +2203,7 @@ bool ObjectLifetimes::PreCallValidateBindImageMemory2(VkDevice device, uint32_t 
                                    index0_loc.dot(Field::image));
             skip |= ValidateObject(pBindInfos[index0].memory, kVulkanObjectTypeDeviceMemory, true, kVUIDUndefined,
                                    "VUID-VkBindImageMemoryInfo-commonparent", index0_loc.dot(Field::memory));
-            if (auto pNext = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkBindImageMemorySwapchainInfoKHR);
                 skip |= ValidateObject(pNext->swapchain, kVulkanObjectTypeSwapchainKHR, false,
                                        "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-parameter", kVUIDUndefined,
@@ -2576,7 +2577,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer command
         skip |= ValidateObject(pRenderPassBegin->framebuffer, kVulkanObjectTypeFramebuffer, false,
                                "VUID-VkRenderPassBeginInfo-framebuffer-parameter", "VUID-VkRenderPassBeginInfo-commonparent",
                                pRenderPassBegin_loc.dot(Field::framebuffer));
-        if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
@@ -2920,7 +2921,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                                            index1_loc.dot(Field::semaphore));
                 }
             }
-            if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
@@ -2940,7 +2941,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -2962,7 +2963,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
             }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -3137,13 +3138,13 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBu
                                "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter",
                                "VUID-VkRenderingAttachmentInfo-commonparent", pStencilAttachment_loc.dot(Field::resolveImageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, false,
                                    "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::imageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, true,
                                    "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-parameter", kVUIDUndefined,
@@ -3493,7 +3494,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
                                        pPresentInfo_loc.dot(Field::pSwapchains, index1));
             }
         }
-        if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pPresentInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(pPresentInfo->pNext)) {
             const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkFrameBoundaryEXT);
 
             if ((pNext->imageCount > 0) && (pNext->pImages)) {
@@ -3512,7 +3513,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
                 }
             }
         }
-        if (auto pNext = LvlFindInChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
             const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT);
 
             if ((pNext->swapchainCount > 0) && (pNext->pFences)) {
@@ -4164,13 +4165,13 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer comman
                                "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter",
                                "VUID-VkRenderingAttachmentInfo-commonparent", pStencilAttachment_loc.dot(Field::resolveImageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, false,
                                    "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::imageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, true,
                                    "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-parameter", kVUIDUndefined,
@@ -4557,7 +4558,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comm
         skip |= ValidateObject(pRenderPassBegin->framebuffer, kVulkanObjectTypeFramebuffer, false,
                                "VUID-VkRenderPassBeginInfo-framebuffer-parameter", "VUID-VkRenderPassBeginInfo-commonparent",
                                pRenderPassBegin_loc.dot(Field::framebuffer));
-        if (auto pNext = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
@@ -4910,7 +4911,7 @@ bool ObjectLifetimes::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32
                                    index0_loc.dot(Field::image));
             skip |= ValidateObject(pBindInfos[index0].memory, kVulkanObjectTypeDeviceMemory, true, kVUIDUndefined,
                                    "VUID-VkBindImageMemoryInfo-commonparent", index0_loc.dot(Field::memory));
-            if (auto pNext = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkBindImageMemorySwapchainInfoKHR);
                 skip |= ValidateObject(pNext->swapchain, kVulkanObjectTypeSwapchainKHR, false,
                                        "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-parameter", kVUIDUndefined,
@@ -5442,7 +5443,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
                                            index1_loc.dot(Field::semaphore));
                 }
             }
-            if (auto pNext = LvlFindInChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
@@ -5462,7 +5463,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
                 }
             }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -5484,7 +5485,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
             }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-            if (auto pNext = LvlFindInChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoNV>(pSubmits[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
@@ -6607,7 +6608,7 @@ bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice 
                     skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
                                            "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined,
                                            index1_loc.dot(Field::module));
-                    if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(
+                    if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(
                             pCreateInfos[index0].pStages[index1].pNext)) {
                         const Location pNext_loc = index1_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
                         skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
@@ -7097,7 +7098,7 @@ bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device
                     skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
                                            "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined,
                                            index1_loc.dot(Field::module));
-                    if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(
+                    if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(
                             pCreateInfos[index0].pStages[index1].pNext)) {
                         const Location pNext_loc = index1_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
                         skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
@@ -8182,7 +8183,8 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer
     if (pBindingInfos) {
         for (uint32_t index0 = 0; index0 < bufferCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindingInfos, index0);
-            if (auto pNext = LvlFindInChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[index0].pNext)) {
+            if (auto pNext = vku::FindStructInPNextChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(
+                    pBindingInfos[index0].pNext)) {
                 const Location pNext_loc = index0_loc.pNext(Struct::VkDescriptorBufferBindingPushDescriptorBufferHandleEXT);
                 skip |= ValidateObject(pNext->buffer, kVulkanObjectTypeBuffer, false,
                                        "VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-buffer-parameter",
@@ -9132,7 +9134,7 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkD
         skip |=
             ValidateObject(pCreateInfo->stage.module, kVulkanObjectTypeShaderModule, true,
                            "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined, stage_loc.dot(Field::module));
-        if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->stage.pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->stage.pNext)) {
             const Location pNext_loc = stage_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
             skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
                                    "VUID-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parameter", kVUIDUndefined,
@@ -9145,7 +9147,7 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkD
             skip |= ValidateObject(pCreateInfo->basePipelineHandle, kVulkanObjectTypePipeline, false,
                                    "VUID-VkComputePipelineCreateInfo-flags-07984", "VUID-VkComputePipelineCreateInfo-commonparent",
                                    error_obj.location);
-        if (auto pNext = LvlFindInChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkSubpassShadingPipelineCreateInfoHUAWEI>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkSubpassShadingPipelineCreateInfoHUAWEI);
             skip |= ValidateObject(pNext->renderPass, kVulkanObjectTypeRenderPass, false, kVUIDUndefined, kVUIDUndefined,
                                    pNext_loc.dot(Field::renderPass));
@@ -9532,7 +9534,7 @@ bool ObjectLifetimes::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDe
                            kVUIDUndefined, error_obj.location.dot(Field::device));
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
-        if (auto pNext = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext)) {
             const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkShaderModuleValidationCacheCreateInfoEXT);
             skip |= ValidateObject(pNext->validationCache, kVulkanObjectTypeValidationCacheEXT, false,
                                    "VUID-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parameter", kVUIDUndefined,
@@ -9758,13 +9760,13 @@ bool ObjectLifetimes::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDev
                                "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter",
                                "VUID-VkRenderingAttachmentInfo-commonparent", pStencilAttachment_loc.dot(Field::resolveImageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, false,
                                    "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-parameter", kVUIDUndefined,
                                    pNext_loc.dot(Field::imageView));
         }
-        if (auto pNext = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
+        if (auto pNext = vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext)) {
             const Location pNext_loc = pRenderingInfo_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR);
             skip |= ValidateObject(pNext->imageView, kVulkanObjectTypeImageView, true,
                                    "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-parameter", kVUIDUndefined,

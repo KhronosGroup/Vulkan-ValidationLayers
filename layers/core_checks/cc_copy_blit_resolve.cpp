@@ -2091,7 +2091,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         skip |=
             ValidateImageUsageFlags(commandBuffer, *dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, false, vuid, dst_image_loc);
     } else {
-        auto src_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(src_image_state->createInfo.pNext);
+        auto src_separate_stencil = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(src_image_state->createInfo.pNext);
         if (src_separate_stencil && has_stencil_aspect &&
             ((src_separate_stencil->stencilUsage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0)) {
             const LogObjectList objlist(commandBuffer, srcImage);
@@ -2106,7 +2106,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                             src_image_loc);
         }
 
-        auto dst_separate_stencil = LvlFindInChain<VkImageStencilUsageCreateInfo>(dst_image_state->createInfo.pNext);
+        auto dst_separate_stencil = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(dst_image_state->createInfo.pNext);
         if (dst_separate_stencil && has_stencil_aspect &&
             ((dst_separate_stencil->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0)) {
             const LogObjectList objlist(commandBuffer, dstImage);
@@ -2743,7 +2743,7 @@ bool CoreChecks::UsageHostTransferCheck(VkDevice device, const IMAGE_STATE &imag
                                         const Location &loc) const {
     bool skip = false;
     if (has_stencil) {
-        const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
+        const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.createInfo.pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
                 LogObjectList objlist(device, image_state.image());

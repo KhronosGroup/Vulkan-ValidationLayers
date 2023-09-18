@@ -25,7 +25,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
 
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -34,7 +34,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -56,7 +56,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     // Destroy buffer dependency prior to submit to cause ERROR
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -69,7 +69,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buf_info = vku::InitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -80,7 +80,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
 
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -92,7 +92,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     ASSERT_VK_SUCCESS(vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
 
     m_commandBuffer->begin();
-    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buf_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
     buf_barrier.buffer = buffer.handle();
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
@@ -101,7 +101,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
                            NULL, 1, &buf_barrier, 0, NULL);
     m_commandBuffer->end();
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -127,7 +127,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
 
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -139,7 +139,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->begin();
-    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     img_barrier.image = image.handle();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -149,7 +149,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
                            NULL, 0, NULL, 1, &img_barrier);
     m_commandBuffer->end();
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -168,7 +168,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -176,7 +176,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
 
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -185,7 +185,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -201,14 +201,14 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
-    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
+    auto buf_barrier = vku::InitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier.buffer = buffer;
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
@@ -220,7 +220,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -238,7 +238,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -254,7 +254,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
 
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -268,13 +268,13 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
-    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
+    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier2KHR>();
     img_barrier.image = image;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
 
@@ -286,7 +286,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -308,8 +308,8 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
     CreatePipelineHelper pipe(*this);
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
-    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     VkBufferView view;
 
     {
@@ -389,7 +389,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     // Delete BufferView in order to invalidate cmd buffer
     vk::DestroyBufferView(m_device->device(), view, NULL);
     // Now attempt submit of cmd buffer
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkBufferView");
@@ -402,7 +402,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
     {
         const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-        VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = tex_format;
         image_create_info.extent.width = 32;
@@ -435,7 +435,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
     // Destroy image dependency prior to submit to cause ERROR
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkImage");
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -458,7 +458,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     {
-        VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_ci = vku::InitStructHelper();
         image_ci.imageType = VK_IMAGE_TYPE_2D;
         image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
         image_ci.extent.width = 32;
@@ -522,7 +522,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     VkFramebuffer fb;
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 32;
@@ -603,7 +603,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put pool in-flight
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -646,7 +646,7 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put it in-flight
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -698,7 +698,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     buff_info.buffer = vbo->handle();
     buff_info.offset = 0;
     buff_info.range = sizeof(vbo_data);
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -715,7 +715,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
                                 &descriptor_write);
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -737,7 +737,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 256;
@@ -768,7 +768,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer to put it (and attached imageView) in-flight
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer to put framebuffer and children in-flight
@@ -791,14 +791,14 @@ TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
     m_commandBuffer->begin();
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo event_create_info = vku::InitStructHelper();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
     vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     m_commandBuffer->end();
     vk::DestroyEvent(m_device->device(), event, nullptr);
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkEvent");
@@ -814,10 +814,10 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     VkFence fence;
     ASSERT_VK_SUCCESS(vk::CreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
 
@@ -832,7 +832,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkEvent event;
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo event_create_info = vku::InitStructHelper();
     vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
 
     m_commandBuffer->begin();
@@ -845,7 +845,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
 
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 1;
@@ -902,7 +902,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
 
         m_commandBuffer->end();
 
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         // Submit cmd buffer and then pipeline destroyed while in-flight
@@ -962,7 +962,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy imageView while in-flight
@@ -984,7 +984,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -992,7 +992,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     VkBufferObj buffer(*m_device, buffer_create_info);
 
     VkBufferView view;
-    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
@@ -1036,7 +1036,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy bufferView while in-flight
@@ -1097,7 +1097,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     // Submit cmd buffer then destroy sampler
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     // Submit cmd buffer and then destroy sampler while in-flight
@@ -1118,7 +1118,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkEvent event;
-    VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo evci = vku::InitStructHelper();
     VkResult result = vk::CreateEvent(m_device->device(), &evci, NULL, &event);
     ASSERT_VK_SUCCESS(result);
 
@@ -1130,7 +1130,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     // Destroy event dependency prior to submit to cause ERROR
     vk::DestroyEvent(m_device->device(), event, NULL);
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -1157,16 +1157,16 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     }
 
     // Create semaphore and export its fd handle
-    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>();
     export_info.handleTypes = handle_type;
-    auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
     vk_testing::Semaphore export_semaphore(*m_device, create_info);
     int fd = -1;
     ASSERT_VK_SUCCESS(export_semaphore.export_handle(fd, handle_type));
 
     // Create a new semaphore and put it to work
     vk_testing::Semaphore semaphore(*m_device);
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
@@ -1198,16 +1198,16 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     }
 
     // Create semaphore and export its Win32 handle
-    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>();
     export_info.handleTypes = handle_type;
-    auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
     vk_testing::Semaphore export_semaphore(*m_device, create_info);
     HANDLE handle = NULL;
     ASSERT_VK_SUCCESS(export_semaphore.export_handle(handle, handle_type));
 
     // Create a new semaphore and put it to work
     vk_testing::Semaphore semaphore(*m_device);
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));

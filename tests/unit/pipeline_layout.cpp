@@ -27,7 +27,7 @@ TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     layout_binding.pImmutableSamplers = NULL;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
     vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -36,7 +36,7 @@ TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
     std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout.handle());
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = excess_layouts;
     pipeline_layout_ci.pSetLayouts = dsl_array.data();
 
@@ -55,7 +55,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto density_map2_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
+    auto density_map2_properties = vku::InitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
     auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -76,7 +76,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
 
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.maxLod = 0.f;
@@ -110,7 +110,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     ASSERT_TRUE(ds_layout.initialized());
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
     const char *max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
@@ -151,7 +151,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
 
     VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
+        vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
@@ -165,8 +165,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -460,7 +460,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
 
     VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
+        vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
@@ -474,8 +474,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -1018,7 +1018,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
 
     VkPipelineLayout pipeline_layout;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = NULL;
     pipeline_layout_ci.setLayoutCount = ds_vk_layouts.size();
@@ -1038,7 +1038,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mut_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
+    auto mut_features = vku::InitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mut_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mut_features));
 
@@ -1049,7 +1049,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     layout_binding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
@@ -1057,7 +1057,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout_handle;
 

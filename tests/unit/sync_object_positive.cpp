@@ -26,7 +26,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -76,7 +76,7 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -134,7 +134,7 @@ TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
                VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageMemoryBarrier barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
     VkImageSubresourceRange range;
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = 0;
@@ -164,7 +164,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkCommandBuffer cmd_bufs[4];
-    VkCommandBufferAllocateInfo alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.commandBufferCount = 4;
     alloc_info.commandPool = m_commandPool->handle();
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -174,12 +174,12 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
                (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkCommandBufferBeginInfo cb_binfo = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo cb_binfo = vku::InitStructHelper();
     cb_binfo.pInheritanceInfo = VK_NULL_HANDLE;
     cb_binfo.flags = 0;
     // Use 4 command buffers, each with an image layout transition, ColorAO->General->ColorAO->TransferSrc->TransferDst
     vk::BeginCommandBuffer(cmd_bufs[0], &cb_binfo);
-    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -219,7 +219,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     vk_testing::Semaphore semaphore2(*m_device);
     VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
     VkSubmitInfo submit_info[3];
-    submit_info[0] = LvlInitStruct<VkSubmitInfo>();
+    submit_info[0] = vku::InitStructHelper();
     submit_info[0].commandBufferCount = 1;
     submit_info[0].pCommandBuffers = &cmd_bufs[0];
     submit_info[0].signalSemaphoreCount = 1;
@@ -227,7 +227,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     submit_info[0].waitSemaphoreCount = 0;
     submit_info[0].pWaitDstStageMask = nullptr;
     submit_info[0].pWaitDstStageMask = flags;
-    submit_info[1] = LvlInitStruct<VkSubmitInfo>();
+    submit_info[1] = vku::InitStructHelper();
     submit_info[1].commandBufferCount = 1;
     submit_info[1].pCommandBuffers = &cmd_bufs[1];
     submit_info[1].waitSemaphoreCount = 1;
@@ -235,7 +235,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     submit_info[1].signalSemaphoreCount = 1;
     submit_info[1].pSignalSemaphores = &semaphore2.handle();
     submit_info[1].pWaitDstStageMask = flags;
-    submit_info[2] = LvlInitStruct<VkSubmitInfo>();
+    submit_info[2] = vku::InitStructHelper();
     submit_info[2].commandBufferCount = 2;
     submit_info[2].pCommandBuffers = &cmd_bufs[2];
     submit_info[2].waitSemaphoreCount = 1;
@@ -249,7 +249,7 @@ TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
 
 TEST_F(PositiveSyncObject, ResetUnsignaledFence) {
     vk_testing::Fence testFence;
-    VkFenceCreateInfo fenceInfo = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fenceInfo = vku::InitStructHelper();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     testFence.init(*m_device, fenceInfo);
@@ -293,17 +293,17 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
     VkCommandBuffer cmd_buffers[NUM_OBJECTS] = {};
     VkFence fences[NUM_OBJECTS] = {};
 
-    VkCommandPoolCreateInfo cmd_pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo cmd_pool_ci = vku::InitStructHelper();
     cmd_pool_ci.queueFamilyIndex = m_device->graphics_queue_node_index_;
     cmd_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool cmd_pool(*m_device, cmd_pool_ci);
 
-    VkCommandBufferAllocateInfo cmd_buf_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo cmd_buf_info = vku::InitStructHelper();
     cmd_buf_info.commandPool = cmd_pool.handle();
     cmd_buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd_buf_info.commandBufferCount = 1;
 
-    VkFenceCreateInfo fence_ci = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     fence_ci.flags = 0;
 
     VkResult err;
@@ -317,14 +317,14 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
     for (uint32_t frame = 0; frame < NUM_FRAMES; ++frame) {
         for (uint32_t obj = 0; obj < NUM_OBJECTS; ++obj) {
             // Create empty cmd buffer
-            VkCommandBufferBeginInfo cmdBufBeginDesc = LvlInitStruct<VkCommandBufferBeginInfo>();
+            VkCommandBufferBeginInfo cmdBufBeginDesc = vku::InitStructHelper();
 
             err = vk::BeginCommandBuffer(cmd_buffers[obj], &cmdBufBeginDesc);
             ASSERT_VK_SUCCESS(err);
             err = vk::EndCommandBuffer(cmd_buffers[obj]);
             ASSERT_VK_SUCCESS(err);
 
-            VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+            VkSubmitInfo submit_info = vku::InitStructHelper();
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &cmd_buffers[obj];
             // Submit cmd buffer and wait for fence
@@ -352,13 +352,13 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -368,7 +368,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -385,7 +385,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -399,7 +399,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -408,7 +408,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -432,18 +432,18 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
 
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -453,7 +453,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -470,7 +470,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -484,7 +484,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -493,7 +493,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -517,18 +517,18 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
 
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -538,7 +538,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -555,7 +555,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -569,7 +569,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -578,7 +578,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -616,7 +616,7 @@ TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     VkCommandBuffer cb;
     err = vk::AllocateCommandBuffers(m_device->device(), &cbai, &cb);
     ASSERT_VK_SUCCESS(err);
-    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     err = vk::BeginCommandBuffer(cb, &cbbi);
     ASSERT_VK_SUCCESS(err);
     err = vk::EndCommandBuffer(cb);
@@ -661,18 +661,18 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
 
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -682,7 +682,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -699,7 +699,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -713,7 +713,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -722,7 +722,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -749,7 +749,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -757,22 +757,22 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
 
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkSemaphoreTypeCreateInfo semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     semaphore_type_create_info.initialValue = 0;
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
     vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -782,7 +782,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 1, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -799,7 +799,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -814,10 +814,10 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
     }
     {
         uint64_t signal_value = 1;
-        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
+        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
         timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &signal_value;
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
+        VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -826,11 +826,11 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAnd
     }
     {
         uint64_t wait_value = 1;
-        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
+        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
         timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
         timeline_semaphore_submit_info.pWaitSemaphoreValues = &wait_value;
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
+        VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -850,25 +850,25 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
         "having a fence, followed by a WaitForFences call.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -885,7 +885,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -899,7 +899,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 1;
@@ -908,7 +908,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 1;
@@ -928,23 +928,23 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
         "with NO SubmitInfos but with a fence, followed by a WaitForFences call.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -961,7 +961,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -975,7 +975,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 0;
@@ -984,7 +984,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 0;
@@ -1007,23 +1007,23 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
         "WaitForFences call.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -1040,7 +1040,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -1054,7 +1054,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[0];
         submit_info.signalSemaphoreCount = 0;
@@ -1063,7 +1063,7 @@ TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
     }
     {
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer[1];
         submit_info.waitSemaphoreCount = 0;
@@ -1082,25 +1082,25 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
         "Two command buffers each in a separate SubmitInfo sent in a single QueueSubmit call followed by a WaitForFences call.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore semaphore(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
         vk::CmdPipelineBarrier(command_buffer[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -1117,7 +1117,7 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
         vk::EndCommandBuffer(command_buffer[0]);
     }
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
         VkViewport viewport{};
@@ -1134,7 +1134,7 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
         VkSubmitInfo submit_info[2];
         VkPipelineStageFlags flags[]{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
 
-        submit_info[0] = LvlInitStruct<VkSubmitInfo>();
+        submit_info[0] = vku::InitStructHelper();
         submit_info[0].commandBufferCount = 1;
         submit_info[0].pCommandBuffers = &command_buffer[0];
         submit_info[0].signalSemaphoreCount = 1;
@@ -1143,7 +1143,7 @@ TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
         submit_info[0].pWaitSemaphores = NULL;
         submit_info[0].pWaitDstStageMask = 0;
 
-        submit_info[1] = LvlInitStruct<VkSubmitInfo>();
+        submit_info[1] = vku::InitStructHelper();
         submit_info[1].commandBufferCount = 1;
         submit_info[1].pCommandBuffers = &command_buffer[1];
         submit_info[1].waitSemaphoreCount = 1;
@@ -1233,9 +1233,9 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     VkResult err;
 
     // Create a semaphore to export payload from
-    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfoKHR>();
+    auto esci = vku::InitStruct<VkExportSemaphoreCreateInfoKHR>();
     esci.handleTypes = handle_type;
-    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&esci);
+    auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&esci);
 
     vk_testing::Semaphore export_semaphore(*m_device, sci);
 
@@ -1251,7 +1251,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
 
     // Signal the exported semaphore and wait on the imported semaphore
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    std::vector<VkSubmitInfo> si(4, LvlInitStruct<VkSubmitInfo>());
+    std::vector<VkSubmitInfo> si(4, vku::InitStruct<VkSubmitInfo>());
     si[0].signalSemaphoreCount = 1;
     si[0].pSignalSemaphores = &export_semaphore.handle();
     si[1].pWaitDstStageMask = &flags;
@@ -1265,7 +1265,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
 
     if (m_device->phy().features().sparseBinding) {
         // Signal the imported semaphore and wait on the exported semaphore
-        std::vector<VkBindSparseInfo> bi(4, LvlInitStruct<VkBindSparseInfo>());
+        std::vector<VkBindSparseInfo> bi(4, vku::InitStruct<VkBindSparseInfo>());
         bi[0].signalSemaphoreCount = 1;
         bi[0].pSignalSemaphores = &export_semaphore.handle();
         bi[1].waitSemaphoreCount = 1;
@@ -1305,18 +1305,18 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
-    auto tci = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    auto tci = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>();
     tci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    auto esi = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>(&tci);
+    auto esi = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>(&tci);
     esi.handleType = handle_type;
 
-    auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
+    auto esp = vku::InitStruct<VkExternalSemaphorePropertiesKHR>();
 
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
@@ -1327,11 +1327,11 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     VkResult err;
 
     // Create a semaphore to export payload from
-    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfoKHR>();
+    auto esci = vku::InitStruct<VkExportSemaphoreCreateInfoKHR>();
     esci.handleTypes = handle_type;
-    auto stci = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>(&esci);
+    auto stci = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>(&esci);
     stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
-    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&stci);
+    auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&stci);
 
     vk_testing::Semaphore export_semaphore(*m_device, sci);
 
@@ -1350,8 +1350,8 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 
     // Signal the exported semaphore and wait on the imported semaphore
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    std::vector<VkTimelineSemaphoreSubmitInfo> ti(2, LvlInitStruct<VkTimelineSemaphoreSubmitInfo>());
-    std::vector<VkSubmitInfo> si(2, LvlInitStruct<VkSubmitInfo>());
+    std::vector<VkTimelineSemaphoreSubmitInfo> ti(2, vku::InitStruct<VkTimelineSemaphoreSubmitInfo>());
+    std::vector<VkSubmitInfo> si(2, vku::InitStruct<VkSubmitInfo>());
 
     si[0].pWaitDstStageMask = &flags;
     si[0].signalSemaphoreCount = 1;
@@ -1402,9 +1402,9 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     }
 
     // Check for external fence import and export capability
-    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
-    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1415,9 +1415,9 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
-    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
     vk_testing::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
@@ -1466,9 +1466,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     }
 
     // Check for external fence import and export capability
-    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
-    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
@@ -1480,9 +1480,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
-    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
     vk_testing::Fence export_fence(*m_device, fci);
 
     fci.pNext = nullptr;
@@ -1531,9 +1531,9 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     }
 
     // Check for external fence export capability
-    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    auto efi = vku::InitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
-    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto efp = vku::InitStruct<VkExternalFencePropertiesKHR>();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR)) {
@@ -1544,16 +1544,16 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     VkResult err;
 
     // Create a fence to export payload from
-    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
-    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
     vk_testing::Fence export_fence(*m_device, fci);
 
     for (uint32_t i = 0; i < 1000; i++) {
         m_commandBuffer->begin();
         m_commandBuffer->end();
 
-        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        auto submit_info = vku::InitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, export_fence.handle());
@@ -1604,13 +1604,13 @@ TEST_F(PositiveSyncObject, WaitEventThenSet) {
 
     vk_testing::Event event(*m_device);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer;
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1620,7 +1620,7 @@ TEST_F(PositiveSyncObject, WaitEventThenSet) {
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         vk::BeginCommandBuffer(command_buffer, &begin_info);
 
         vk::CmdWaitEvents(command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
@@ -1629,7 +1629,7 @@ TEST_F(PositiveSyncObject, WaitEventThenSet) {
         vk::EndCommandBuffer(command_buffer);
     }
     {
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;
         submit_info.signalSemaphoreCount = 0;
@@ -1649,7 +1649,7 @@ TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -1702,7 +1702,7 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -1751,10 +1751,10 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vk::CmdCopyBuffer(cb1.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
     cb1.end();
 
-    auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    auto semaphore_type_create_info = vku::InitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
 
-    auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
+    auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
     vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
 
     // timeline values, Begins will be signaled by host, Ends by the queues
@@ -1766,14 +1766,14 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     uint64_t submit_wait_value = kQ0Begin;
     uint64_t submit_signal_value = kQ0End;
 
-    auto timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
+    auto timeline_semaphore_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = &submit_wait_value;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &submit_signal_value;
 
     VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
+    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_semaphore_submit_info);
     submit_info.pWaitDstStageMask = &stageFlags;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
@@ -1792,14 +1792,14 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vk::QueueSubmit(q1->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // signal semaphore to allow q0 to proceed
-    auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+    auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
     signal_info.semaphore = semaphore.handle();
     signal_info.value = kQ0Begin;
     vk::SignalSemaphoreKHR(m_device->device(), &signal_info);
 
     // buffer_a is only used by the q0 commands
     uint64_t wait_info_value = kQ0End;
-    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &wait_info_value;
@@ -1832,26 +1832,26 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkFenceCreateInfo fence_info = LvlInitStruct<VkFenceCreateInfo>();
+    VkFenceCreateInfo fence_info = vku::InitStructHelper();
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     vk_testing::Fence ts_fence;
     ts_fence.init(*m_device, fence_info);
     VkFence fence_handle = ts_fence.handle();
 
-    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     VkCommandBuffer command_buffer[2];
-    VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = m_commandPool->handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
 
     {
-        VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
@@ -1863,7 +1863,7 @@ TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
         vk::EndCommandBuffer(command_buffer[1]);
     }
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
 
     // Begin by resetting the query pool.
@@ -1908,7 +1908,7 @@ struct FenceSemRaceData {
 
 void WaitTimelineSem(FenceSemRaceData *data) {
     uint64_t wait_value = data->wait_value;
-    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &data->sem;
     wait_info.pValues = &wait_value;
@@ -1931,28 +1931,28 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
+    auto fence_ci = vku::InitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_ci);
     auto fence_handle = fence.handle();
 
-    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    auto timeline_ci = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     timeline_ci.initialValue = 0;
 
-    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+    auto sem_ci = vku::InitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
     vk_testing::Semaphore sem(*m_device, sem_ci);
     auto sem_handle = sem.handle();
 
     uint64_t signal_value = 1;
-    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    auto timeline_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
     timeline_info.signalSemaphoreValueCount = 1;
     timeline_info.pSignalSemaphoreValues = &signal_value;
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_info);
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &sem_handle;
 
@@ -1998,19 +1998,19 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
 
-    auto fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    auto fence_create_info = vku::InitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_create_info);
 
     vk_testing::Semaphore sem(*m_device);
 
-    auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    auto pool_create_info = vku::InitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     std::optional<vk_testing::CommandPool> command_pool(vvl::in_place, *m_device, pool_create_info);
 
     // create a raw command buffer because we'll just the destroy the pool.
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    auto alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    auto alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
     alloc_info.commandPool = command_pool->handle();
     alloc_info.commandBufferCount = 1;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -2021,7 +2021,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, sem.handle(), VK_NULL_HANDLE, &image_index);
     ASSERT_VK_SUCCESS(err);
 
-    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
     err = vk::BeginCommandBuffer(command_buffer, &begin_info);
     ASSERT_VK_SUCCESS(err);
 
@@ -2039,7 +2039,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     err = vk::EndCommandBuffer(command_buffer);
     ASSERT_VK_SUCCESS(err);
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
@@ -2051,11 +2051,11 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
 
 struct SemBufferRaceData {
     SemBufferRaceData(VkDeviceObj &dev_) : dev(dev_) {
-        auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+        auto timeline_ci = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
         timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         timeline_ci.initialValue = 0;
 
-        auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+        auto sem_ci = vku::InitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
         sem.init(dev, sem_ci);
     }
 
@@ -2071,7 +2071,7 @@ struct SemBufferRaceData {
     virtual VkResult Wait(uint64_t sem_value) = 0;
 
     virtual VkResult Signal(uint64_t sem_value) {
-        auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+        auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
         signal_info.semaphore = sem.handle();
         signal_info.value = sem_value;
         return vk::SignalSemaphoreKHR(dev.handle(), &signal_info);
@@ -2099,14 +2099,14 @@ struct SemBufferRaceData {
 
     void Run(VkCommandPoolObj &command_pool, ErrorMonitor &error_mon) {
         uint64_t gpu_wait_value, gpu_signal_value;
-        auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+        auto timeline_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
         timeline_info.waitSemaphoreValueCount = 1;
         timeline_info.pWaitSemaphoreValues = &gpu_wait_value;
         timeline_info.signalSemaphoreValueCount = 1;
         timeline_info.pSignalSemaphoreValues = &gpu_signal_value;
 
         VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+        auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_info);
         submit_info.waitSemaphoreCount = 1;
         submit_info.pWaitSemaphores = &sem.handle();
         submit_info.pWaitDstStageMask = &wait_stage;
@@ -2168,7 +2168,7 @@ struct WaitTimelineSemThreadData : public SemBufferRaceData {
     WaitTimelineSemThreadData(VkDeviceObj &dev_) : SemBufferRaceData(dev_) {}
 
     VkResult Wait(uint64_t sem_value) {
-        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &sem.handle();
         wait_info.pValues = &sem_value;
@@ -2184,7 +2184,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     WaitTimelineSemThreadData data(*m_device);
@@ -2212,7 +2212,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2221,14 +2221,14 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     }
 
     // Create exportable timeline semaphore
-    auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    auto semaphore_type_create_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 0;
 
-    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>(&semaphore_type_create_info);
+    auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>(&semaphore_type_create_info);
     export_info.handleTypes = handle_type;
 
-    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
     vk_testing::Semaphore semaphore(*m_device, create_info);
 
     // This caused original issue: exported semaphore failed to retire queue operations.
@@ -2237,17 +2237,17 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
 
     // Put semaphore to work
     const uint64_t signal_value = 1;
-    auto timeline_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    auto timeline_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfo>();
     timeline_submit_info.signalSemaphoreValueCount = 1;
     timeline_submit_info.pSignalSemaphoreValues = &signal_value;
 
-    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_submit_info);
+    auto submit_info = vku::InitStruct<VkSubmitInfo>(&timeline_submit_info);
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     // This wait (with exported semaphore) should properly retire all queue operations
-    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &signal_value;
@@ -2272,14 +2272,14 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     subpass_dependency.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
     subpass_dependency.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.dependencyCount = 1;
     rpci.pDependencies = &subpass_dependency;
     const vk_testing::RenderPass rp(*m_device, rpci);
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.renderPass = rp;
     fbci.width = m_width;
     fbci.height = m_height;
@@ -2289,7 +2289,7 @@ TEST_F(PositiveSyncObject, SubpassBarrierWithExpandableStages) {
     m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
 
-    auto barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto barrier = vku::InitStruct<VkMemoryBarrier>();
     barrier.srcAccessMask = VK_ACCESS_INDEX_READ_BIT;
     barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
 
@@ -2313,13 +2313,13 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     sync2_features.synchronization2 = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // HOST stage as source
     VkBufferObj buffer(*m_device, 32);
-    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier2>();
+    auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
     buffer_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
@@ -2329,7 +2329,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = VK_WHOLE_SIZE;
 
-    auto buffer_dependency = LvlInitStruct<VkDependencyInfo>();
+    auto buffer_dependency = vku::InitStruct<VkDependencyInfo>();
     buffer_dependency.bufferMemoryBarrierCount = 1;
     buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
 
@@ -2340,7 +2340,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     // HOST stage as destination
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier2>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier2>();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     image_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
@@ -2352,7 +2352,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     image_barrier.image = image.handle();
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    auto image_dependency = LvlInitStruct<VkDependencyInfo>();
+    auto image_dependency = vku::InitStruct<VkDependencyInfo>();
     image_dependency.imageMemoryBarrierCount = 1;
     image_dependency.pImageMemoryBarriers = &image_barrier;
 

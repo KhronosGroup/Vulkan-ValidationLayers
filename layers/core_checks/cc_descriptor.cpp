@@ -367,7 +367,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, uint32_t max_binding,
                                                          uint32_t *update_after_bind, const Location &loc) const {
     bool skip = false;
-    const auto *flags_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
+    const auto *flags_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
     if (!flags_info) {
         return skip;
     }
@@ -1234,7 +1234,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
 
             if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
-                const auto reduction_mode_info = LvlFindInChain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
+                const auto reduction_mode_info = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(sampler_state->createInfo.pNext);
                 if (reduction_mode_info &&
                     (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
                      reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
@@ -1911,8 +1911,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     assert(image_node);
 
     format = image_node->createInfo.format;
-    const auto image_view_usage_info = LvlFindInChain<VkImageViewUsageCreateInfo>(iv_state->create_info.pNext);
-    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
+    const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(iv_state->create_info.pNext);
+    const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
     if (image_view_usage_info) {
         usage = image_view_usage_info->usage;
     } else {
@@ -2181,7 +2181,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
         const auto &set_node = *Get<cvdescriptorset::DescriptorSet>(dst_set);
         skip |= ValidateWriteUpdate(set_node, pDescriptorWrites[i], write_loc, false);
 
-        const auto *acceleration_structure_khr = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
+        const auto *acceleration_structure_khr = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
         if (acceleration_structure_khr) {
             for (uint32_t j = 0; j < acceleration_structure_khr->accelerationStructureCount; ++j) {
                 auto as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(acceleration_structure_khr->pAccelerationStructures[j]);
@@ -2197,7 +2197,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
             }
         }
 
-        const auto *acceleration_structure_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
+        const auto *acceleration_structure_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
         if (acceleration_structure_nv) {
             for (uint32_t j = 0; j < acceleration_structure_nv->accelerationStructureCount; ++j) {
                 auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(acceleration_structure_nv->pAccelerationStructures[j]);
@@ -2626,7 +2626,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
                              ".",
                              update.dstBinding, update.descriptorCount);
         }
-        const auto *write_inline_info = LvlFindInChain<VkWriteDescriptorSetInlineUniformBlock>(update.pNext);
+        const auto *write_inline_info = vku::FindStructInPNextChain<VkWriteDescriptorSetInlineUniformBlock>(update.pNext);
         if (!write_inline_info) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", objlist, dst_binding_loc,
                              "(%" PRIu32
@@ -2877,7 +2877,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
-            const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
+            const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
                 VkAccelerationStructureNV as = acc_info->pAccelerationStructures[di];
                 auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(as);
@@ -3207,7 +3207,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                                       address_name, bindingInfo.address);
         }
 
-        const auto *buffer_handle = LvlFindInChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[i].pNext);
+        const auto *buffer_handle = vku::FindStructInPNextChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[i].pNext);
         if (!phys_dev_ext_props.descriptor_buffer_props.bufferlessPushDescriptors &&
             (pBindingInfos[i].usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) && !buffer_handle) {
             skip |= LogError("VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056", commandBuffer,
@@ -4010,7 +4010,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
         }
     }
 
-    const auto *count_allocate_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
+    const auto *count_allocate_info = vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
     if (count_allocate_info) {
         if (count_allocate_info->descriptorSetCount != 0 &&
             count_allocate_info->descriptorSetCount != pAllocateInfo->descriptorSetCount) {
@@ -5033,7 +5033,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    const auto sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+    const auto sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
     if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
         if ((api_version >= VK_API_VERSION_1_2) && !enabled_features.core12.samplerFilterMinmax) {
             skip |= LogError("VUID-VkSamplerCreateInfo-pNext-06726", device,
@@ -5049,7 +5049,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         }
     }
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {
-        const auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+        const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if (conversion_info) {
             const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
             auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(sampler_ycbcr_conversion);
@@ -5096,7 +5096,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                 LogError("VUID-VkSamplerCreateInfo-customBorderColors-04085", device, error_obj.location,
                          "is %s but customBorderColors feature was not enabled.", string_VkBorderColor(pCreateInfo->borderColor));
         }
-        auto custom_create_info = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
+        auto custom_create_info = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (custom_create_info) {
             if (custom_create_info->format == VK_FORMAT_UNDEFINED &&
                 !enabled_features.custom_border_color_features.customBorderColorWithoutFormat) {
@@ -5156,7 +5156,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                          "feature was not enabled.");
     }
 
-    auto opaque_capture_descriptor_buffer = LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+    auto opaque_capture_descriptor_buffer = vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
     if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkSamplerCreateInfo-pNext-08111", device, create_info_loc.dot(Field::flags),
                          "is %s but VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",

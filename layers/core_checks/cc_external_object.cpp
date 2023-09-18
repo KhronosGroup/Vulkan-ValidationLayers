@@ -25,7 +25,7 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
-        const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
+        const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
                              error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),

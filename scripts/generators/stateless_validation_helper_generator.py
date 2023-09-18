@@ -198,12 +198,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             {
                 'struct' : 'VkSubpassDependency2',
                 'field' :  'VkPipelineStageFlagBits',
-                'condition' : '!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
+                'condition' : '!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
             },
             {
                 'struct' : 'VkSubpassDependency2',
                 'field' :  'VkAccessFlagBits',
-                'condition' : '!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
+                'condition' : '!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
             }
         ]
 

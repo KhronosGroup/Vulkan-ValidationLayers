@@ -37,7 +37,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
                          "is VK_INDEX_TYPE_NONE_KHR.");
     }
 
-    const auto *index_type_uint8_features = LvlFindInChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
+    const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
     if (indexType == VK_INDEX_TYPE_UINT8_EXT && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
         skip |= LogError("VUID-vkCmdBindIndexBuffer-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature was not enabled.");
@@ -55,7 +55,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommand
         skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08786", commandBuffer, error_obj.location.dot(Field::indexType),
                          "is VK_INDEX_TYPE_NONE_KHR.");
     } else if (indexType == VK_INDEX_TYPE_UINT8_EXT) {
-        const auto *index_type_uint8_features = LvlFindInChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
+        const auto *index_type_uint8_features = vku::FindStructInPNextChain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
         if (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8) {
             skip |=
                 LogError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08787", commandBuffer, error_obj.location.dot(Field::indexType),
@@ -86,7 +86,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-            const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+            const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
             if (!(robustness2_features && robustness2_features->nullDescriptor)) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-04001", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else {
@@ -238,7 +238,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     for (uint32_t i = 0; i < bindingCount; ++i) {
         if (pBuffers[i] == VK_NULL_HANDLE) {
             const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-            const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+            const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
             if (!(robustness2_features && robustness2_features->nullDescriptor)) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-04111", commandBuffer, buffer_loc, "is VK_NULL_HANDLE.");
             } else {
@@ -399,7 +399,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     const auto rendering_fragment_shading_rate_attachment_info =
-        LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
+        vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
     if (rendering_fragment_shading_rate_attachment_info &&
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
         if (UniqueRenderingInfoImageViews(pRenderingInfo, rendering_fragment_shading_rate_attachment_info->imageView) == false) {
@@ -526,7 +526,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     const auto fragment_density_map_attachment_info =
-        LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
+        vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
     if (fragment_density_map_attachment_info && (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE)) {
         if (UniqueRenderingInfoImageViews(pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06116", commandBuffer,
@@ -1044,9 +1044,9 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                           "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
 
-        const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
+        const auto *conditional_rendering = vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
         if (conditional_rendering) {
-            const auto *cr_features = LvlFindInChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
+            const auto *cr_features = vku::FindStructInPNextChain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
             const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
             if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
                 skip |= LogError(
@@ -1057,7 +1057,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
             }
         }
 
-        auto p_inherited_viewport_scissor_info = LvlFindInChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+        auto p_inherited_viewport_scissor_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
         if (p_inherited_viewport_scissor_info != nullptr && !physical_device_features.multiViewport &&
             p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
             p_inherited_viewport_scissor_info->viewportDepthCount != 1) {

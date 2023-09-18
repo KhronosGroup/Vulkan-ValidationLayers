@@ -22,7 +22,7 @@
 #include <cassert>
 
 #include <vulkan/utility/vk_format_utils.h>
-#include "generated/vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace {
 
@@ -215,7 +215,7 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
 
     for (uint32_t i = 0; i < (uint32_t)queue_props.size(); ++i) {
         if (queue_props[i].queueCount > 0) {
-            VkDeviceQueueCreateInfo qi = LvlInitStruct<VkDeviceQueueCreateInfo>();
+            VkDeviceQueueCreateInfo qi = vku::InitStructHelper();
             qi.queueFamilyIndex = i;
             qi.queueCount = queue_props[i].queueCount;
             queue_priorities_.emplace_back(qi.queueCount, 0.0f);
@@ -254,7 +254,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 
     enabled_extensions_ = extensions;
 
-    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>(create_device_pnext);
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper(create_device_pnext);
     dev_info.queueCreateInfoCount = static_cast<uint32_t>(create_queue_infos.size());
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
@@ -266,7 +266,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     // Let VkPhysicalDeviceFeatures2 take priority over VkPhysicalDeviceFeatures,
     // since it supports extensions
 
-    if (!(LvlFindInChain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
+    if (!(vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
         if (features) {
             dev_info.pEnabledFeatures = features;
         } else {
@@ -386,7 +386,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
 
 VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.waitSemaphoreCount = 0;
     submit_info.pWaitSemaphores = nullptr;
     submit_info.pWaitDstStageMask = nullptr;
@@ -412,13 +412,13 @@ VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
 VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     for (size_t i = 0; i < cmds.size(); i++) {
-        VkCommandBufferSubmitInfo cmd_submit_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+        VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
         cmd_submit_info.deviceMask = 0;
         cmd_submit_info.commandBuffer = cmds[i]->handle();
         cmd_submit_infos.push_back(cmd_submit_info);
     }
 
-    VkSubmitInfo2 submit_info = LvlInitStruct<VkSubmitInfo2>();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.flags = 0;
     submit_info.waitSemaphoreInfoCount = 0;
     submit_info.pWaitSemaphoreInfos = nullptr;
@@ -487,7 +487,7 @@ void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
 
 VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
     EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
     return alloc_info;
@@ -509,14 +509,14 @@ VkResult Fence::reset() {
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Fence::export_handle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
-    auto ghi = LvlInitStruct<VkFenceGetWin32HandleInfoKHR>();
+    auto ghi = vku::InitStruct<VkFenceGetWin32HandleInfoKHR>();
     ghi.fence = handle();
     ghi.handleType = handle_type;
     return vk::GetFenceWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
 VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
-    auto ifi = LvlInitStruct<VkImportFenceWin32HandleInfoKHR>();
+    auto ifi = vku::InitStruct<VkImportFenceWin32HandleInfoKHR>();
     ifi.fence = handle();
     ifi.handleType = handle_type;
     ifi.handle = win32_handle;
@@ -526,14 +526,14 @@ VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlag
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 VkResult Fence::export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
-    auto gfi = LvlInitStruct<VkFenceGetFdInfoKHR>();
+    auto gfi = vku::InitStruct<VkFenceGetFdInfoKHR>();
     gfi.fence = handle();
     gfi.handleType = handle_type;
     return vk::GetFenceFdKHR(device(), &gfi, &fd_handle);
 }
 
 VkResult Fence::import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
-    auto ifi = LvlInitStruct<VkImportFenceFdInfoKHR>();
+    auto ifi = vku::InitStruct<VkImportFenceFdInfoKHR>();
     ifi.fence = handle();
     ifi.handleType = handle_type;
     ifi.fd = fd_handle;
@@ -550,7 +550,7 @@ void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     win32_handle = nullptr;
-    auto ghi = LvlInitStruct<VkSemaphoreGetWin32HandleInfoKHR>();
+    auto ghi = vku::InitStruct<VkSemaphoreGetWin32HandleInfoKHR>();
     ghi.semaphore = handle();
     ghi.handleType = handle_type;
     return vk::GetSemaphoreWin32HandleKHR(device(), &ghi, &win32_handle);
@@ -558,7 +558,7 @@ VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandl
 
 VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                   VkSemaphoreImportFlags flags) {
-    auto ihi = LvlInitStruct<VkImportSemaphoreWin32HandleInfoKHR>();
+    auto ihi = vku::InitStruct<VkImportSemaphoreWin32HandleInfoKHR>();
     ihi.semaphore = handle();
     ihi.handleType = handle_type;
     ihi.handle = win32_handle;
@@ -569,7 +569,7 @@ VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandle
 
 VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     fd_handle = -1;
-    auto ghi = LvlInitStruct<VkSemaphoreGetFdInfoKHR>();
+    auto ghi = vku::InitStruct<VkSemaphoreGetFdInfoKHR>();
     ghi.semaphore = handle();
     ghi.handleType = handle_type;
     return vk::GetSemaphoreFdKHR(device(), &ghi, &fd_handle);
@@ -577,7 +577,7 @@ VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeF
 
 VkResult Semaphore::import_handle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
     // Import opaque handle exported above
-    auto ihi = LvlInitStruct<VkImportSemaphoreFdInfoKHR>();
+    auto ihi = vku::InitStruct<VkImportSemaphoreFdInfoKHR>();
     ihi.semaphore = handle();
     ihi.handleType = handle_type;
     ihi.fd = fd_handle;
@@ -661,7 +661,7 @@ void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
 }
 
 VkDeviceAddress Buffer::address(APIVersion vk_api_version /*= VK_API_VERSION_1_2*/) const {
-    auto bdai = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    auto bdai = vku::InitStruct<VkBufferDeviceAddressInfo>();
     bdai.buffer = handle();
     if (vk_api_version < VK_API_VERSION_1_2) {
         const auto vkGetBufferDeviceAddressKHR =
@@ -798,7 +798,7 @@ VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
-        LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        vku::InitStructHelper();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
     vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
@@ -812,7 +812,7 @@ VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements()
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo =
-        LvlInitStruct<VkAccelerationStructureMemoryRequirementsInfoNV>();
+        vku::InitStructHelper();
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
 
@@ -838,7 +838,7 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
             (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
         assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
-        VkBindAccelerationStructureMemoryInfoNV bind_info = LvlInitStruct<VkBindAccelerationStructureMemoryInfoNV>();
+        VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
         bind_info.accelerationStructure = handle();
         bind_info.memory = memory_.handle();
         EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
@@ -863,7 +863,7 @@ vk_testing::Buffer AccelerationStructure::create_scratch_buffer(const Device &de
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 
-    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     void *pNext = nullptr;
     if (buffer_device_address) {
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -905,7 +905,7 @@ VkResult Shader::init_try(const Device &dev, const VkShaderCreateInfoEXT &info) 
 
 Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
                const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange* pushConstRange) {
-    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
@@ -924,7 +924,7 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
 
 Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
                const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
-    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
     createInfo.codeSize = binary.size();
@@ -943,7 +943,7 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
 
 Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
                VkShaderCreateFlagsEXT flags) {
-    VkShaderCreateInfoEXT createInfo = LvlInitStruct<VkShaderCreateInfoEXT>();
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.flags = flags;
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -957,7 +957,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
 void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateGraphicsPipelines, dev, cache, 1, &info);
@@ -968,7 +968,7 @@ void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info)
 VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipeline pipe;
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     EXPECT(err == VK_SUCCESS);
     if (err == VK_SUCCESS) {
@@ -984,7 +984,7 @@ VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInf
 
 void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) {
     VkPipelineCache cache;
-    VkPipelineCacheCreateInfo ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
     if (err == VK_SUCCESS) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateComputePipelines, dev, cache, 1, &info);
@@ -1035,7 +1035,7 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
     std::vector<VkDescriptorSet> set_handles;
     set_handles.resize(layout_handles.size());
 
-    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = static_cast<uint32_t>(layout_handles.size());
     alloc_info.descriptorPool = handle();
     alloc_info.pSetLayouts = layout_handles.data();
@@ -1104,8 +1104,8 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
 void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { EXPECT(vk::BeginCommandBuffer(handle(), info) == VK_SUCCESS); }
 
 void CommandBuffer::begin() {
-    VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferBeginInfo info = vku::InitStructHelper();
+    VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     info.pInheritanceInfo = &hinfo;
     hinfo.renderPass = VK_NULL_HANDLE;
@@ -1157,14 +1157,14 @@ void SamplerYcbcrConversion::init(const Device &dev, const VkSamplerYcbcrConvers
 }
 
 VkSamplerYcbcrConversionInfo SamplerYcbcrConversion::ConversionInfo() {
-    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = handle();
     return ycbcr_info;
 }
 
 // static
 VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo(VkFormat format) {
-    auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    auto ycbcr_create_info = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
     ycbcr_create_info.format = format;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;

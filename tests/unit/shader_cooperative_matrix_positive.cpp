@@ -58,9 +58,9 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto float16_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
-    auto cooperative_matrix_features = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
-    auto memory_model_features = LvlInitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
+    auto float16_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto cooperative_matrix_features = vku::InitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
+    auto memory_model_features = vku::InitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
@@ -130,10 +130,10 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto float16_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
-    auto storage16_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16_features);
-    auto cooperative_matrix_features = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(&storage16_features);
-    auto memory_model_features = LvlInitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
+    auto float16_features = vku::InitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto storage16_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16_features);
+    auto cooperative_matrix_features = vku::InitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(&storage16_features);
+    auto memory_model_features = vku::InitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &memory_model_features));
 
@@ -141,11 +141,11 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     uint32_t props_count = 0;
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, nullptr);
     for (uint32_t i = 0; i < props_count; i++) {
-        props.emplace_back(LvlInitStruct<VkCooperativeMatrixPropertiesKHR>());
+        props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
     }
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, props.data());
 
-    auto subgroup_prop = LvlInitStruct<VkCooperativeMatrixPropertiesKHR>();
+    auto subgroup_prop = vku::InitStruct<VkCooperativeMatrixPropertiesKHR>();
     bool found_scope_subgroup = false;
     for (const auto &prop : props) {
         if (prop.scope == VK_SCOPE_SUBGROUP_KHR) {

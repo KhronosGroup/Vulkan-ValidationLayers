@@ -42,8 +42,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = vku::InitStructHelper();
+    top_level_as_create_info.info = vku::InitStructHelper();
     top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
@@ -95,7 +95,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -123,15 +123,15 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = vku::InitStructHelper();
+    bot_level_as_create_info.info = vku::InitStructHelper();
     bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     bot_level_as_create_info.info.instanceCount = 0;
     bot_level_as_create_info.info.geometryCount = 1;
     bot_level_as_create_info.info.pGeometries = &geometry;
 
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = vku::InitStructHelper();
+    top_level_as_create_info.info = vku::InitStructHelper();
     top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
@@ -185,7 +185,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -213,15 +213,15 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    bot_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV bot_level_as_create_info = vku::InitStructHelper();
+    bot_level_as_create_info.info = vku::InitStructHelper();
     bot_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     bot_level_as_create_info.info.instanceCount = 0;
     bot_level_as_create_info.info.geometryCount = 1;
     bot_level_as_create_info.info.pGeometries = &geometry;
 
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = vku::InitStructHelper();
+    top_level_as_create_info.info = vku::InitStructHelper();
     top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
@@ -251,7 +251,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
                                             destroyed_bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
         command_buffer.end();
 
-        VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+        VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer.handle();
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -296,7 +296,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -323,8 +323,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
-    VkAccelerationStructureCreateInfoNV top_level_as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
-    top_level_as_create_info.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = vku::InitStructHelper();
+    top_level_as_create_info.info = vku::InitStructHelper();
     top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
     top_level_as_create_info.info.instanceCount = 1;
     top_level_as_create_info.info.geometryCount = 0;
@@ -432,7 +432,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
                                                       },
                                                       {push_constant_range});
 
-    VkComputePipelineCreateInfo compute_pipeline_ci = LvlInitStruct<VkComputePipelineCreateInfo>();
+    VkComputePipelineCreateInfo compute_pipeline_ci = vku::InitStructHelper();
     compute_pipeline_ci.layout = compute_pipeline_layout.handle();
     compute_pipeline_ci.stage = cs.GetStageCreateInfo();
 
@@ -470,7 +470,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     push_descriptor_buffer_info.buffer = push_descriptor_buffer.handle();
     push_descriptor_buffer_info.offset = 0;
     push_descriptor_buffer_info.range = 4;
-    VkWriteDescriptorSet push_descriptor_set_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet push_descriptor_set_write = vku::InitStructHelper();
     push_descriptor_set_write.descriptorCount = 1;
     push_descriptor_set_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     push_descriptor_set_write.dstBinding = 0;
@@ -497,7 +497,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "Attempted to build top level acceleration structure using invalid bottom level acceleration structure handle");
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);

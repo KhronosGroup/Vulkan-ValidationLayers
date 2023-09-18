@@ -52,7 +52,7 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     buff_info.buffer = vbo.handle();
     buff_info.offset = 0;
     buff_info.range = sizeof(vbo_data);
-    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -286,7 +286,7 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
             {8, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
         };
         const auto dslci =
-            LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, 0u, size32(non_sampler_bindings), non_sampler_bindings);
+            vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, 0u, size32(non_sampler_bindings), non_sampler_bindings);
         vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
     }
 
@@ -301,7 +301,7 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
             {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
             {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
         };
-        const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
+        const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(
             nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR),
             size32(non_sampler_bindings), non_sampler_bindings);
         vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
@@ -340,7 +340,7 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     img_info.imageView = imageView;
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -366,7 +366,7 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     VkBufferObj buffer(*m_device, buffer_ci);
@@ -391,7 +391,7 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    auto update_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
+    auto update_template_ci = vku::InitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
@@ -426,13 +426,13 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    auto dsl_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    auto dsl_ci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>();
     dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &ds_binding;
     vk_testing::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
 
-    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
     pipeline_layout_ci.pushConstantRangeCount = 0;
@@ -443,7 +443,7 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
-    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = bad_set;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;

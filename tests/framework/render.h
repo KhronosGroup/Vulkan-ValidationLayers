@@ -438,7 +438,7 @@ class VkImageObj : public vk_testing::Image {
     VkImage image() const { return handle(); }
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const {
-        auto ci = LvlInitStruct<VkImageViewCreateInfo>();
+        auto ci = vku::InitStruct<VkImageViewCreateInfo>();
         ci.image = handle();
         ci.format = format();
         ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -463,7 +463,7 @@ class VkImageObj : public vk_testing::Image {
                                   uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
                                   uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
         if (!m_targetView.initialized()) {
-            VkImageViewCreateInfo createView = LvlInitStruct<VkImageViewCreateInfo>();
+            VkImageViewCreateInfo createView = vku::InitStructHelper();
             createView.image = handle();
             createView.viewType = type;
             createView.format = format;

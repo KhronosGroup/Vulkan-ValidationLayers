@@ -114,7 +114,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     // Flag as default if these settings are not from a vk_layer_settings.txt file
     const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
 
-    auto dbg_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    auto dbg_create_info = vku::InitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     if (report_flags & kErrorBit) {
         dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;

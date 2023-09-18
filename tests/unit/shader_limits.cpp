@@ -266,7 +266,7 @@ TEST_F(NegativeShaderLimits, DISABLED_MaxFragmentDualSrcAttachments) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2>();
     GetPhysicalDeviceFeatures2(features2);
 
     if (features2.features.dualSrcBlend == VK_FALSE) {

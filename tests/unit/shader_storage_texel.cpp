@@ -133,25 +133,25 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-    auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+    auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
     if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
     vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -194,8 +194,8 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     }
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto fmt_props_3 = LvlInitStruct<VkFormatProperties3>();
-    auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>();
+    auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
     // set so format can be used as a storage texel buffer, but no WITHOUT_FORMAT support
     fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(gpu(), format, &fmt_props);
@@ -254,12 +254,12 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
@@ -269,7 +269,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
         GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
     }
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;

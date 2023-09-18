@@ -30,10 +30,10 @@ bool FindSTypes(void* chain, const std::vector<VkStructureType>& sTypes_list) {
 // Extract all structs from a pNext chain
 TEST(PnextChainExtract, Extract1) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
-    auto s1 = LvlInitStruct<VkImageCompressionControlEXT>();
-    auto s2 = LvlInitStruct<VkImageFormatListCreateInfo>(&s1);
-    auto s3 = LvlInitStruct<VkImageStencilUsageCreateInfo>(&s2);
-    auto s4 = LvlInitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
+    auto s1 = vku::InitStruct<VkImageCompressionControlEXT>();
+    auto s2 = vku::InitStruct<VkImageFormatListCreateInfo>(&s1);
+    auto s3 = vku::InitStruct<VkImageStencilUsageCreateInfo>(&s2);
+    auto s4 = vku::InitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
 
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
@@ -45,17 +45,17 @@ TEST(PnextChainExtract, Extract1) {
 // Extract all structs mentioned in tuple vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 and found in input pNext chain
 TEST(PnextChainExtract, Extract2) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
-    auto s1 = LvlInitStruct<VkImageCompressionControlEXT>();
-    auto s2 = LvlInitStruct<VkImageFormatListCreateInfo>(&s1);
-    auto s3 = LvlInitStruct<VkImageStencilUsageCreateInfo>(&s2);
-    auto s4 = LvlInitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
+    auto s1 = vku::InitStruct<VkImageCompressionControlEXT>();
+    auto s2 = vku::InitStruct<VkImageFormatListCreateInfo>(&s1);
+    auto s3 = vku::InitStruct<VkImageStencilUsageCreateInfo>(&s2);
+    auto s4 = vku::InitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
 
     // Those do not
-    auto wrong1 = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&s4);
-    auto wrong2 = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&wrong1);
+    auto wrong1 = vku::InitStruct<VkExternalMemoryImageCreateInfo>(&s4);
+    auto wrong2 = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&wrong1);
 
     // And this one does
-    auto s5 = LvlInitStruct<VkVideoProfileListInfoKHR>(&wrong2);
+    auto s5 = vku::InitStruct<VkVideoProfileListInfoKHR>(&wrong2);
 
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s5, extracted_chain);
@@ -68,8 +68,8 @@ TEST(PnextChainExtract, Extract2) {
 // VkPhysicalDeviceImageFormatInfo2
 TEST(PnextChainExtract, Extract3) {
     // Those structs do not extend VkPhysicalDeviceImageFormatInfo2
-    auto wrong1 = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
-    auto wrong2 = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&wrong1);
+    auto wrong1 = vku::InitStruct<VkExternalMemoryImageCreateInfo>();
+    auto wrong2 = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&wrong1);
 
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&wrong2, extracted_chain);
@@ -81,10 +81,10 @@ TEST(PnextChainExtract, Extract3) {
 // Extract all structs from a pNext chain, add a new element, then remove it
 TEST(PnextChainExtract, ExtractAddRemove1) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
-    auto s1 = LvlInitStruct<VkImageCompressionControlEXT>();
-    auto s2 = LvlInitStruct<VkImageFormatListCreateInfo>(&s1);
-    auto s3 = LvlInitStruct<VkImageStencilUsageCreateInfo>(&s2);
-    auto s4 = LvlInitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
+    auto s1 = vku::InitStruct<VkImageCompressionControlEXT>();
+    auto s2 = vku::InitStruct<VkImageFormatListCreateInfo>(&s1);
+    auto s3 = vku::InitStruct<VkImageStencilUsageCreateInfo>(&s2);
+    auto s4 = vku::InitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
 
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
@@ -93,7 +93,7 @@ TEST(PnextChainExtract, ExtractAddRemove1) {
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 
     {
-        auto s5 = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        auto s5 = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         vvl::PnextChainScopedAdd scoped_add_s5(chain_begin, &s5);
         expected_sTypes.emplace_back(s5.sType);
         ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
@@ -106,10 +106,10 @@ TEST(PnextChainExtract, ExtractAddRemove1) {
 // Extract all structs from a pNext chain, add two new elements, in a nested fashion, then remove them
 TEST(PnextChainExtract, ExtractAddRemove2) {
     // Those structs extend VkPhysicalDeviceImageFormatInfo2
-    auto s1 = LvlInitStruct<VkImageCompressionControlEXT>();
-    auto s2 = LvlInitStruct<VkImageFormatListCreateInfo>(&s1);
-    auto s3 = LvlInitStruct<VkImageStencilUsageCreateInfo>(&s2);
-    auto s4 = LvlInitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
+    auto s1 = vku::InitStruct<VkImageCompressionControlEXT>();
+    auto s2 = vku::InitStruct<VkImageFormatListCreateInfo>(&s1);
+    auto s3 = vku::InitStruct<VkImageStencilUsageCreateInfo>(&s2);
+    auto s4 = vku::InitStruct<VkOpticalFlowImageFormatInfoNV>(&s3);
 
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
@@ -118,13 +118,13 @@ TEST(PnextChainExtract, ExtractAddRemove2) {
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 
     {
-        auto s5 = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        auto s5 = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         vvl::PnextChainScopedAdd scoped_add_s5(chain_begin, &s5);
         expected_sTypes.emplace_back(s5.sType);
         ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 
         {
-            auto s6 = LvlInitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
+            auto s6 = vku::InitStruct<VkPhysicalDeviceImageViewImageFormatInfoEXT>();
             vvl::PnextChainScopedAdd scoped_add_s6(chain_begin, &s6);
             expected_sTypes.emplace_back(s6.sType);
             ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
