@@ -43,7 +43,7 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
             flags |= nonwritable_bit;
             break;
         case spv::DecorationBuiltIn:
-            assert(builtin == kInvalidValue);  // being over written - not valid
+            assert(builtin == kInvalidSpirvValue);  // being over written - not valid
             builtin = value;
             break;
         case spv::DecorationNonReadable:
@@ -91,11 +91,11 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
 }
 
 bool DecorationSet::HasBuiltIn() const {
-    if (kInvalidValue != builtin) {
+    if (kInvalidSpirvValue != builtin) {
         return true;
     } else if (!member_decorations.empty()) {
         for (const auto& member : member_decorations) {
-            if (kInvalidValue != member.second.builtin) {
+            if (kInvalidSpirvValue != member.second.builtin) {
                 return true;
             }
         }
@@ -1557,7 +1557,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         // Structs has two options being labeled
         // 1. The block is given a Location, need to walk though and add up starting for that value
         // 2. The block is NOT given a Location, each member has dedicated decoration
-        const bool block_decorated_with_location = variable.decorations.location != DecorationSet::kInvalidValue;
+        const bool block_decorated_with_location = variable.decorations.location != kInvalidSpirvValue;
         if (block_decorated_with_location) {
             // In case of option 1, need to keep track as we go
             uint32_t base_location = variable.decorations.location;
@@ -1784,7 +1784,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 if (image_access.is_written_to) {
                     if (is_image_without_format) {
                         is_write_without_format |= true;
-                        if (image_access.texel_component_count != ImageAccess::kInvalidValue) {
+                        if (image_access.texel_component_count != kInvalidSpirvValue) {
                             write_without_formats_component_count_list.push_back(image_access.texel_component_count);
                         }
                     }
@@ -1797,7 +1797,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
 
                     // If accessed in an array, track which indexes were read, if not runtime array
                     if (is_input_attachment && !runtime_array) {
-                        if (image_access.image_access_chain_index != ImageAccess::kInvalidValue) {
+                        if (image_access.image_access_chain_index != kInvalidSpirvValue) {
                             input_attachment_index_read[image_access.image_access_chain_index] = true;
                         } else {
                             // if InputAttachment is accessed from load, just a single, non-array, index
@@ -1810,12 +1810,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SPIRV_MODULE_STATE& m
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
                 if (image_access.variable_sampler_insn && !is_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
-                    const uint32_t image_index = image_access.image_access_chain_index != ImageAccess::kInvalidValue
-                                                     ? image_access.image_access_chain_index
-                                                     : 0;
-                    const uint32_t sampler_index = image_access.sampler_access_chain_index != ImageAccess::kInvalidValue
-                                                       ? image_access.sampler_access_chain_index
-                                                       : 0;
+                    const uint32_t image_index =
+                        image_access.image_access_chain_index != kInvalidSpirvValue ? image_access.image_access_chain_index : 0;
+                    const uint32_t sampler_index =
+                        image_access.sampler_access_chain_index != kInvalidSpirvValue ? image_access.sampler_access_chain_index : 0;
 
                     if (image_index >= samplers_used_by_image.size()) {
                         samplers_used_by_image.resize(image_index + 1);

@@ -2114,7 +2114,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
                 // behavior of the pipeline."
                 if (itr != module_state.static_data_.spec_const_map.cend()) {
                     // Make sure map_entry.size matches the spec constant's size
-                    uint32_t spec_const_size = DecorationSet::kInvalidValue;
+                    uint32_t spec_const_size = kInvalidSpirvValue;
                     const Instruction *def_insn = module_state.FindDef(itr->second);
                     const Instruction *type_insn = module_state.FindDef(def_insn->Word(1));
                     // Specialization constants can only be of type bool, scalar integer, or scalar floating point
