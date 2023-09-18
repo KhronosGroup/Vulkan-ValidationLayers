@@ -32,6 +32,8 @@
 class PIPELINE_STATE;
 struct EntryPoint;
 
+static constexpr uint32_t kInvalidSpirvValue = std::numeric_limits<uint32_t>::max();
+
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
 struct DecorationBase {
@@ -48,20 +50,19 @@ struct DecorationBase {
         per_task_nv = 1 << 9,
         per_primitive_ext = 1 << 10,
     };
-    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
     // bits to know if things have been set or not by a Decoration
     uint32_t flags = 0;
 
     // When being used as an User-defined Variable (input, output, rtx)
-    uint32_t location = kInvalidValue;
+    uint32_t location = kInvalidSpirvValue;
     // Component is optional and spec says it is 0 if not defined
     uint32_t component = 0;
 
     uint32_t offset = 0;
 
     // A given object can only have a single BuiltIn OpDecoration
-    uint32_t builtin = kInvalidValue;
+    uint32_t builtin = kInvalidSpirvValue;
 
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -75,7 +76,7 @@ struct DecorationSet : public DecorationBase {
     uint32_t binding = 0;
 
     // Value of InputAttachmentIndex the variable starts
-    uint32_t input_attachment_index_start = kInvalidValue;
+    uint32_t input_attachment_index_start = kInvalidSpirvValue;
 
     // <index into struct, DecorationBase>
     vvl::unordered_map<uint32_t, DecorationBase> member_decorations;
@@ -115,7 +116,6 @@ struct ExecutionModeSet {
         rounding_mode_rtz_width_32 = 1 << 22,
         rounding_mode_rtz_width_64 = 1 << 23,
     };
-    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
     // bits to know if things have been set or not by a Decoration
     uint32_t flags = 0;
@@ -123,9 +123,9 @@ struct ExecutionModeSet {
     VkPrimitiveTopology primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 
     // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
-    uint32_t local_size_x = kInvalidValue;
-    uint32_t local_size_y = kInvalidValue;
-    uint32_t local_size_z = kInvalidValue;
+    uint32_t local_size_x = kInvalidSpirvValue;
+    uint32_t local_size_y = kInvalidSpirvValue;
+    uint32_t local_size_z = kInvalidSpirvValue;
 
     uint32_t output_vertices = 0;
     uint32_t output_primitives = 0;
@@ -169,10 +169,9 @@ struct ImageAccess {
     bool is_written_to = false;
     bool is_read_from = false;
 
-    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
-    uint32_t image_access_chain_index = kInvalidValue;    // OpAccessChain's Index 0
-    uint32_t sampler_access_chain_index = kInvalidValue;  // OpAccessChain's Index 0
-    uint32_t texel_component_count = kInvalidValue;
+    uint32_t image_access_chain_index = kInvalidSpirvValue;    // OpAccessChain's Index 0
+    uint32_t sampler_access_chain_index = kInvalidSpirvValue;  // OpAccessChain's Index 0
+    uint32_t texel_component_count = kInvalidSpirvValue;
 
     ImageAccess(const SPIRV_MODULE_STATE &module_state, const Instruction &image_insn);
 };

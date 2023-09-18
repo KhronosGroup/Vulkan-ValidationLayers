@@ -73,7 +73,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const PIPELINE_STATE &pipeline, co
             for (const auto &slot : variable.interface_slots) {
                 location_map[slot.Location()].shader_input = &variable.base_type;
             }
-        } else if (variable.decorations.location != DecorationSet::kInvalidValue) {
+        } else if (variable.decorations.location != kInvalidSpirvValue) {
             // Variable is decorated with Location
             uint32_t location = variable.decorations.location;
             for (uint32_t i = 0; i < variable.type_struct_info->members.size(); i++) {
@@ -559,7 +559,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SPIRV_MODULE_STATE &produc
         for (size_t i = 0; i < input_builtins_block.size(); i++) {
             const uint32_t input_builtin = input_builtins_block[i];
             const uint32_t output_builtin = output_builtins_block[i];
-            if (input_builtin == DecorationSet::kInvalidValue || output_builtin == DecorationSet::kInvalidValue) {
+            if (input_builtin == kInvalidSpirvValue || output_builtin == kInvalidSpirvValue) {
                 continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mistmatch
             } else if (input_builtin != output_builtin) {
                 mismatch = true;
