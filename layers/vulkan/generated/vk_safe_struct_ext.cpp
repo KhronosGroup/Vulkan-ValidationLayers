@@ -280,6 +280,7 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMa
     : sType(in_struct->sType) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     pMarkerName = SafeStringCopy(in_struct->pMarkerName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -292,6 +293,7 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const safe_VkDe
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
     pMarkerName = SafeStringCopy(copy_src.pMarkerName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src.color[i];
     }
@@ -306,6 +308,7 @@ safe_VkDebugMarkerMarkerInfoEXT& safe_VkDebugMarkerMarkerInfoEXT::operator=(cons
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
     pMarkerName = SafeStringCopy(copy_src.pMarkerName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src.color[i];
     }
@@ -325,6 +328,7 @@ void safe_VkDebugMarkerMarkerInfoEXT::initialize(const VkDebugMarkerMarkerInfoEX
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     pMarkerName = SafeStringCopy(in_struct->pMarkerName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -335,6 +339,7 @@ void safe_VkDebugMarkerMarkerInfoEXT::initialize(const safe_VkDebugMarkerMarkerI
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
     pMarkerName = SafeStringCopy(copy_src->pMarkerName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src->color[i];
     }
@@ -844,10 +849,12 @@ safe_VkVideoEncodeH264SessionParametersAddInfoEXT::safe_VkVideoEncodeH264Session
       stdPPSCount(in_struct->stdPPSCount),
       pStdPPSs(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSPSs) {
         pStdSPSs = new StdVideoH264SequenceParameterSet[in_struct->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)in_struct->pStdSPSs, sizeof(StdVideoH264SequenceParameterSet) * in_struct->stdSPSCount);
     }
+
     if (in_struct->pStdPPSs) {
         pStdPPSs = new StdVideoH264PictureParameterSet[in_struct->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)in_struct->pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * in_struct->stdPPSCount);
@@ -870,10 +877,12 @@ safe_VkVideoEncodeH264SessionParametersAddInfoEXT::safe_VkVideoEncodeH264Session
     stdPPSCount = copy_src.stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSPSs) {
         pStdSPSs = new StdVideoH264SequenceParameterSet[copy_src.stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src.pStdSPSs, sizeof(StdVideoH264SequenceParameterSet) * copy_src.stdSPSCount);
     }
+
     if (copy_src.pStdPPSs) {
         pStdPPSs = new StdVideoH264PictureParameterSet[copy_src.stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src.pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * copy_src.stdPPSCount);
@@ -894,10 +903,12 @@ safe_VkVideoEncodeH264SessionParametersAddInfoEXT& safe_VkVideoEncodeH264Session
     stdPPSCount = copy_src.stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSPSs) {
         pStdSPSs = new StdVideoH264SequenceParameterSet[copy_src.stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src.pStdSPSs, sizeof(StdVideoH264SequenceParameterSet) * copy_src.stdSPSCount);
     }
+
     if (copy_src.pStdPPSs) {
         pStdPPSs = new StdVideoH264PictureParameterSet[copy_src.stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src.pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * copy_src.stdPPSCount);
@@ -923,10 +934,12 @@ void safe_VkVideoEncodeH264SessionParametersAddInfoEXT::initialize(const VkVideo
     stdPPSCount = in_struct->stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSPSs) {
         pStdSPSs = new StdVideoH264SequenceParameterSet[in_struct->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)in_struct->pStdSPSs, sizeof(StdVideoH264SequenceParameterSet) * in_struct->stdSPSCount);
     }
+
     if (in_struct->pStdPPSs) {
         pStdPPSs = new StdVideoH264PictureParameterSet[in_struct->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)in_struct->pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * in_struct->stdPPSCount);
@@ -941,10 +954,12 @@ void safe_VkVideoEncodeH264SessionParametersAddInfoEXT::initialize(
     stdPPSCount = copy_src->stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdSPSs) {
         pStdSPSs = new StdVideoH264SequenceParameterSet[copy_src->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src->pStdSPSs, sizeof(StdVideoH264SequenceParameterSet) * copy_src->stdSPSCount);
     }
+
     if (copy_src->pStdPPSs) {
         pStdPPSs = new StdVideoH264PictureParameterSet[copy_src->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src->pStdPPSs, sizeof(StdVideoH264PictureParameterSet) * copy_src->stdPPSCount);
@@ -1165,6 +1180,7 @@ safe_VkVideoEncodeH264NaluSliceInfoEXT::safe_VkVideoEncodeH264NaluSliceInfoEXT(c
                                                                                [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), constantQp(in_struct->constantQp), pStdSliceHeader(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSliceHeader) {
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*in_struct->pStdSliceHeader);
     }
@@ -1179,6 +1195,7 @@ safe_VkVideoEncodeH264NaluSliceInfoEXT::safe_VkVideoEncodeH264NaluSliceInfoEXT(
     constantQp = copy_src.constantQp;
     pStdSliceHeader = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSliceHeader) {
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*copy_src.pStdSliceHeader);
     }
@@ -1195,6 +1212,7 @@ safe_VkVideoEncodeH264NaluSliceInfoEXT& safe_VkVideoEncodeH264NaluSliceInfoEXT::
     constantQp = copy_src.constantQp;
     pStdSliceHeader = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSliceHeader) {
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*copy_src.pStdSliceHeader);
     }
@@ -1215,6 +1233,7 @@ void safe_VkVideoEncodeH264NaluSliceInfoEXT::initialize(const VkVideoEncodeH264N
     constantQp = in_struct->constantQp;
     pStdSliceHeader = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSliceHeader) {
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*in_struct->pStdSliceHeader);
     }
@@ -1226,6 +1245,7 @@ void safe_VkVideoEncodeH264NaluSliceInfoEXT::initialize(const safe_VkVideoEncode
     constantQp = copy_src->constantQp;
     pStdSliceHeader = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdSliceHeader) {
         pStdSliceHeader = new StdVideoEncodeH264SliceHeader(*copy_src->pStdSliceHeader);
     }
@@ -1247,6 +1267,7 @@ safe_VkVideoEncodeH264PictureInfoEXT::safe_VkVideoEncodeH264PictureInfoEXT(const
             pNaluSliceEntries[i].initialize(&in_struct->pNaluSliceEntries[i]);
         }
     }
+
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*in_struct->pStdPictureInfo);
     }
@@ -1273,6 +1294,7 @@ safe_VkVideoEncodeH264PictureInfoEXT::safe_VkVideoEncodeH264PictureInfoEXT(const
             pNaluSliceEntries[i].initialize(&copy_src.pNaluSliceEntries[i]);
         }
     }
+
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*copy_src.pStdPictureInfo);
     }
@@ -1298,6 +1320,7 @@ safe_VkVideoEncodeH264PictureInfoEXT& safe_VkVideoEncodeH264PictureInfoEXT::oper
             pNaluSliceEntries[i].initialize(&copy_src.pNaluSliceEntries[i]);
         }
     }
+
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*copy_src.pStdPictureInfo);
     }
@@ -1328,6 +1351,7 @@ void safe_VkVideoEncodeH264PictureInfoEXT::initialize(const VkVideoEncodeH264Pic
             pNaluSliceEntries[i].initialize(&in_struct->pNaluSliceEntries[i]);
         }
     }
+
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*in_struct->pStdPictureInfo);
     }
@@ -1347,6 +1371,7 @@ void safe_VkVideoEncodeH264PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
             pNaluSliceEntries[i].initialize(&copy_src->pNaluSliceEntries[i]);
         }
     }
+
     if (copy_src->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH264PictureInfo(*copy_src->pStdPictureInfo);
     }
@@ -1358,6 +1383,7 @@ safe_VkVideoEncodeH264DpbSlotInfoEXT::safe_VkVideoEncodeH264DpbSlotInfoEXT(const
                                                                            [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pStdReferenceInfo(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*in_struct->pStdReferenceInfo);
     }
@@ -1370,6 +1396,7 @@ safe_VkVideoEncodeH264DpbSlotInfoEXT::safe_VkVideoEncodeH264DpbSlotInfoEXT(const
     sType = copy_src.sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*copy_src.pStdReferenceInfo);
     }
@@ -1385,6 +1412,7 @@ safe_VkVideoEncodeH264DpbSlotInfoEXT& safe_VkVideoEncodeH264DpbSlotInfoEXT::oper
     sType = copy_src.sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*copy_src.pStdReferenceInfo);
     }
@@ -1404,6 +1432,7 @@ void safe_VkVideoEncodeH264DpbSlotInfoEXT::initialize(const VkVideoEncodeH264Dpb
     sType = in_struct->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*in_struct->pStdReferenceInfo);
     }
@@ -1414,6 +1443,7 @@ void safe_VkVideoEncodeH264DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
     sType = copy_src->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH264ReferenceInfo(*copy_src->pStdReferenceInfo);
     }
@@ -2003,14 +2033,17 @@ safe_VkVideoEncodeH265SessionParametersAddInfoEXT::safe_VkVideoEncodeH265Session
       stdPPSCount(in_struct->stdPPSCount),
       pStdPPSs(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdVPSs) {
         pStdVPSs = new StdVideoH265VideoParameterSet[in_struct->stdVPSCount];
         memcpy((void*)pStdVPSs, (void*)in_struct->pStdVPSs, sizeof(StdVideoH265VideoParameterSet) * in_struct->stdVPSCount);
     }
+
     if (in_struct->pStdSPSs) {
         pStdSPSs = new StdVideoH265SequenceParameterSet[in_struct->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)in_struct->pStdSPSs, sizeof(StdVideoH265SequenceParameterSet) * in_struct->stdSPSCount);
     }
+
     if (in_struct->pStdPPSs) {
         pStdPPSs = new StdVideoH265PictureParameterSet[in_struct->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)in_struct->pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * in_struct->stdPPSCount);
@@ -2037,14 +2070,17 @@ safe_VkVideoEncodeH265SessionParametersAddInfoEXT::safe_VkVideoEncodeH265Session
     stdPPSCount = copy_src.stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdVPSs) {
         pStdVPSs = new StdVideoH265VideoParameterSet[copy_src.stdVPSCount];
         memcpy((void*)pStdVPSs, (void*)copy_src.pStdVPSs, sizeof(StdVideoH265VideoParameterSet) * copy_src.stdVPSCount);
     }
+
     if (copy_src.pStdSPSs) {
         pStdSPSs = new StdVideoH265SequenceParameterSet[copy_src.stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src.pStdSPSs, sizeof(StdVideoH265SequenceParameterSet) * copy_src.stdSPSCount);
     }
+
     if (copy_src.pStdPPSs) {
         pStdPPSs = new StdVideoH265PictureParameterSet[copy_src.stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src.pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * copy_src.stdPPSCount);
@@ -2068,14 +2104,17 @@ safe_VkVideoEncodeH265SessionParametersAddInfoEXT& safe_VkVideoEncodeH265Session
     stdPPSCount = copy_src.stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdVPSs) {
         pStdVPSs = new StdVideoH265VideoParameterSet[copy_src.stdVPSCount];
         memcpy((void*)pStdVPSs, (void*)copy_src.pStdVPSs, sizeof(StdVideoH265VideoParameterSet) * copy_src.stdVPSCount);
     }
+
     if (copy_src.pStdSPSs) {
         pStdSPSs = new StdVideoH265SequenceParameterSet[copy_src.stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src.pStdSPSs, sizeof(StdVideoH265SequenceParameterSet) * copy_src.stdSPSCount);
     }
+
     if (copy_src.pStdPPSs) {
         pStdPPSs = new StdVideoH265PictureParameterSet[copy_src.stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src.pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * copy_src.stdPPSCount);
@@ -2105,14 +2144,17 @@ void safe_VkVideoEncodeH265SessionParametersAddInfoEXT::initialize(const VkVideo
     stdPPSCount = in_struct->stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdVPSs) {
         pStdVPSs = new StdVideoH265VideoParameterSet[in_struct->stdVPSCount];
         memcpy((void*)pStdVPSs, (void*)in_struct->pStdVPSs, sizeof(StdVideoH265VideoParameterSet) * in_struct->stdVPSCount);
     }
+
     if (in_struct->pStdSPSs) {
         pStdSPSs = new StdVideoH265SequenceParameterSet[in_struct->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)in_struct->pStdSPSs, sizeof(StdVideoH265SequenceParameterSet) * in_struct->stdSPSCount);
     }
+
     if (in_struct->pStdPPSs) {
         pStdPPSs = new StdVideoH265PictureParameterSet[in_struct->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)in_struct->pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * in_struct->stdPPSCount);
@@ -2129,14 +2171,17 @@ void safe_VkVideoEncodeH265SessionParametersAddInfoEXT::initialize(
     stdPPSCount = copy_src->stdPPSCount;
     pStdPPSs = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdVPSs) {
         pStdVPSs = new StdVideoH265VideoParameterSet[copy_src->stdVPSCount];
         memcpy((void*)pStdVPSs, (void*)copy_src->pStdVPSs, sizeof(StdVideoH265VideoParameterSet) * copy_src->stdVPSCount);
     }
+
     if (copy_src->pStdSPSs) {
         pStdSPSs = new StdVideoH265SequenceParameterSet[copy_src->stdSPSCount];
         memcpy((void*)pStdSPSs, (void*)copy_src->pStdSPSs, sizeof(StdVideoH265SequenceParameterSet) * copy_src->stdSPSCount);
     }
+
     if (copy_src->pStdPPSs) {
         pStdPPSs = new StdVideoH265PictureParameterSet[copy_src->stdPPSCount];
         memcpy((void*)pStdPPSs, (void*)copy_src->pStdPPSs, sizeof(StdVideoH265PictureParameterSet) * copy_src->stdPPSCount);
@@ -2381,6 +2426,7 @@ safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::safe_VkVideoEncodeH265NaluSliceSe
     const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), constantQp(in_struct->constantQp), pStdSliceSegmentHeader(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSliceSegmentHeader) {
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*in_struct->pStdSliceSegmentHeader);
     }
@@ -2398,6 +2444,7 @@ safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::safe_VkVideoEncodeH265NaluSliceSe
     constantQp = copy_src.constantQp;
     pStdSliceSegmentHeader = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSliceSegmentHeader) {
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*copy_src.pStdSliceSegmentHeader);
     }
@@ -2414,6 +2461,7 @@ safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& safe_VkVideoEncodeH265NaluSliceSe
     constantQp = copy_src.constantQp;
     pStdSliceSegmentHeader = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdSliceSegmentHeader) {
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*copy_src.pStdSliceSegmentHeader);
     }
@@ -2434,6 +2482,7 @@ void safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::initialize(const VkVideoEnco
     constantQp = in_struct->constantQp;
     pStdSliceSegmentHeader = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdSliceSegmentHeader) {
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*in_struct->pStdSliceSegmentHeader);
     }
@@ -2445,6 +2494,7 @@ void safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::initialize(const safe_VkVide
     constantQp = copy_src->constantQp;
     pStdSliceSegmentHeader = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdSliceSegmentHeader) {
         pStdSliceSegmentHeader = new StdVideoEncodeH265SliceSegmentHeader(*copy_src->pStdSliceSegmentHeader);
     }
@@ -2465,6 +2515,7 @@ safe_VkVideoEncodeH265PictureInfoEXT::safe_VkVideoEncodeH265PictureInfoEXT(const
             pNaluSliceSegmentEntries[i].initialize(&in_struct->pNaluSliceSegmentEntries[i]);
         }
     }
+
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*in_struct->pStdPictureInfo);
     }
@@ -2489,6 +2540,7 @@ safe_VkVideoEncodeH265PictureInfoEXT::safe_VkVideoEncodeH265PictureInfoEXT(const
             pNaluSliceSegmentEntries[i].initialize(&copy_src.pNaluSliceSegmentEntries[i]);
         }
     }
+
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*copy_src.pStdPictureInfo);
     }
@@ -2513,6 +2565,7 @@ safe_VkVideoEncodeH265PictureInfoEXT& safe_VkVideoEncodeH265PictureInfoEXT::oper
             pNaluSliceSegmentEntries[i].initialize(&copy_src.pNaluSliceSegmentEntries[i]);
         }
     }
+
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*copy_src.pStdPictureInfo);
     }
@@ -2542,6 +2595,7 @@ void safe_VkVideoEncodeH265PictureInfoEXT::initialize(const VkVideoEncodeH265Pic
             pNaluSliceSegmentEntries[i].initialize(&in_struct->pNaluSliceSegmentEntries[i]);
         }
     }
+
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*in_struct->pStdPictureInfo);
     }
@@ -2560,6 +2614,7 @@ void safe_VkVideoEncodeH265PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
             pNaluSliceSegmentEntries[i].initialize(&copy_src->pNaluSliceSegmentEntries[i]);
         }
     }
+
     if (copy_src->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoEncodeH265PictureInfo(*copy_src->pStdPictureInfo);
     }
@@ -2571,6 +2626,7 @@ safe_VkVideoEncodeH265DpbSlotInfoEXT::safe_VkVideoEncodeH265DpbSlotInfoEXT(const
                                                                            [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pStdReferenceInfo(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*in_struct->pStdReferenceInfo);
     }
@@ -2583,6 +2639,7 @@ safe_VkVideoEncodeH265DpbSlotInfoEXT::safe_VkVideoEncodeH265DpbSlotInfoEXT(const
     sType = copy_src.sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*copy_src.pStdReferenceInfo);
     }
@@ -2598,6 +2655,7 @@ safe_VkVideoEncodeH265DpbSlotInfoEXT& safe_VkVideoEncodeH265DpbSlotInfoEXT::oper
     sType = copy_src.sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*copy_src.pStdReferenceInfo);
     }
@@ -2617,6 +2675,7 @@ void safe_VkVideoEncodeH265DpbSlotInfoEXT::initialize(const VkVideoEncodeH265Dpb
     sType = in_struct->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*in_struct->pStdReferenceInfo);
     }
@@ -2627,6 +2686,7 @@ void safe_VkVideoEncodeH265DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
     sType = copy_src->sType;
     pStdReferenceInfo = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pStdReferenceInfo) {
         pStdReferenceInfo = new StdVideoEncodeH265ReferenceInfo(*copy_src->pStdReferenceInfo);
     }
@@ -2919,6 +2979,7 @@ safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT(const VkValidationFlagsEXT*
       disabledValidationCheckCount(in_struct->disabledValidationCheckCount),
       pDisabledValidationChecks(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDisabledValidationChecks) {
         pDisabledValidationChecks = new VkValidationCheckEXT[in_struct->disabledValidationCheckCount];
         memcpy((void*)pDisabledValidationChecks, (void*)in_struct->pDisabledValidationChecks,
@@ -2937,6 +2998,7 @@ safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT(const safe_VkValidationFlag
     disabledValidationCheckCount = copy_src.disabledValidationCheckCount;
     pDisabledValidationChecks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDisabledValidationChecks) {
         pDisabledValidationChecks = new VkValidationCheckEXT[copy_src.disabledValidationCheckCount];
         memcpy((void*)pDisabledValidationChecks, (void*)copy_src.pDisabledValidationChecks,
@@ -2954,6 +3016,7 @@ safe_VkValidationFlagsEXT& safe_VkValidationFlagsEXT::operator=(const safe_VkVal
     disabledValidationCheckCount = copy_src.disabledValidationCheckCount;
     pDisabledValidationChecks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDisabledValidationChecks) {
         pDisabledValidationChecks = new VkValidationCheckEXT[copy_src.disabledValidationCheckCount];
         memcpy((void*)pDisabledValidationChecks, (void*)copy_src.pDisabledValidationChecks,
@@ -2975,6 +3038,7 @@ void safe_VkValidationFlagsEXT::initialize(const VkValidationFlagsEXT* in_struct
     disabledValidationCheckCount = in_struct->disabledValidationCheckCount;
     pDisabledValidationChecks = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDisabledValidationChecks) {
         pDisabledValidationChecks = new VkValidationCheckEXT[in_struct->disabledValidationCheckCount];
         memcpy((void*)pDisabledValidationChecks, (void*)in_struct->pDisabledValidationChecks,
@@ -2987,6 +3051,7 @@ void safe_VkValidationFlagsEXT::initialize(const safe_VkValidationFlagsEXT* copy
     disabledValidationCheckCount = copy_src->disabledValidationCheckCount;
     pDisabledValidationChecks = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDisabledValidationChecks) {
         pDisabledValidationChecks = new VkValidationCheckEXT[copy_src->disabledValidationCheckCount];
         memcpy((void*)pDisabledValidationChecks, (void*)copy_src->pDisabledValidationChecks,
@@ -3783,6 +3848,7 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectang
       discardRectangleCount(in_struct->discardRectangleCount),
       pDiscardRectangles(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDiscardRectangles) {
         pDiscardRectangles = new VkRect2D[in_struct->discardRectangleCount];
         memcpy((void*)pDiscardRectangles, (void*)in_struct->pDiscardRectangles,
@@ -3806,6 +3872,7 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectang
     discardRectangleCount = copy_src.discardRectangleCount;
     pDiscardRectangles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDiscardRectangles) {
         pDiscardRectangles = new VkRect2D[copy_src.discardRectangleCount];
         memcpy((void*)pDiscardRectangles, (void*)copy_src.pDiscardRectangles, sizeof(VkRect2D) * copy_src.discardRectangleCount);
@@ -3825,6 +3892,7 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT& safe_VkPipelineDiscardRectang
     discardRectangleCount = copy_src.discardRectangleCount;
     pDiscardRectangles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDiscardRectangles) {
         pDiscardRectangles = new VkRect2D[copy_src.discardRectangleCount];
         memcpy((void*)pDiscardRectangles, (void*)copy_src.pDiscardRectangles, sizeof(VkRect2D) * copy_src.discardRectangleCount);
@@ -3848,6 +3916,7 @@ void safe_VkPipelineDiscardRectangleStateCreateInfoEXT::initialize(const VkPipel
     discardRectangleCount = in_struct->discardRectangleCount;
     pDiscardRectangles = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDiscardRectangles) {
         pDiscardRectangles = new VkRect2D[in_struct->discardRectangleCount];
         memcpy((void*)pDiscardRectangles, (void*)in_struct->pDiscardRectangles,
@@ -3863,6 +3932,7 @@ void safe_VkPipelineDiscardRectangleStateCreateInfoEXT::initialize(
     discardRectangleCount = copy_src->discardRectangleCount;
     pDiscardRectangles = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDiscardRectangles) {
         pDiscardRectangles = new VkRect2D[copy_src->discardRectangleCount];
         memcpy((void*)pDiscardRectangles, (void*)copy_src->pDiscardRectangles, sizeof(VkRect2D) * copy_src->discardRectangleCount);
@@ -4227,6 +4297,7 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT*
     : sType(in_struct->sType) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     pLabelName = SafeStringCopy(in_struct->pLabelName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -4239,6 +4310,7 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const safe_VkDebugUtilsLabe
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
     pLabelName = SafeStringCopy(copy_src.pLabelName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src.color[i];
     }
@@ -4253,6 +4325,7 @@ safe_VkDebugUtilsLabelEXT& safe_VkDebugUtilsLabelEXT::operator=(const safe_VkDeb
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
     pLabelName = SafeStringCopy(copy_src.pLabelName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src.color[i];
     }
@@ -4271,6 +4344,7 @@ void safe_VkDebugUtilsLabelEXT::initialize(const VkDebugUtilsLabelEXT* in_struct
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     pLabelName = SafeStringCopy(in_struct->pLabelName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -4280,6 +4354,7 @@ void safe_VkDebugUtilsLabelEXT::initialize(const safe_VkDebugUtilsLabelEXT* copy
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
     pLabelName = SafeStringCopy(copy_src->pLabelName);
+
     for (uint32_t i = 0; i < 4; ++i) {
         color[i] = copy_src->color[i];
     }
@@ -4714,6 +4789,7 @@ safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT(const VkSampleLocat
       sampleLocationsCount(in_struct->sampleLocationsCount),
       pSampleLocations(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSampleLocations) {
         pSampleLocations = new VkSampleLocationEXT[in_struct->sampleLocationsCount];
         memcpy((void*)pSampleLocations, (void*)in_struct->pSampleLocations,
@@ -4736,6 +4812,7 @@ safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT(const safe_VkSample
     sampleLocationsCount = copy_src.sampleLocationsCount;
     pSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSampleLocations) {
         pSampleLocations = new VkSampleLocationEXT[copy_src.sampleLocationsCount];
         memcpy((void*)pSampleLocations, (void*)copy_src.pSampleLocations,
@@ -4755,6 +4832,7 @@ safe_VkSampleLocationsInfoEXT& safe_VkSampleLocationsInfoEXT::operator=(const sa
     sampleLocationsCount = copy_src.sampleLocationsCount;
     pSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSampleLocations) {
         pSampleLocations = new VkSampleLocationEXT[copy_src.sampleLocationsCount];
         memcpy((void*)pSampleLocations, (void*)copy_src.pSampleLocations,
@@ -4779,6 +4857,7 @@ void safe_VkSampleLocationsInfoEXT::initialize(const VkSampleLocationsInfoEXT* i
     sampleLocationsCount = in_struct->sampleLocationsCount;
     pSampleLocations = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSampleLocations) {
         pSampleLocations = new VkSampleLocationEXT[in_struct->sampleLocationsCount];
         memcpy((void*)pSampleLocations, (void*)in_struct->pSampleLocations,
@@ -4794,6 +4873,7 @@ void safe_VkSampleLocationsInfoEXT::initialize(const safe_VkSampleLocationsInfoE
     sampleLocationsCount = copy_src->sampleLocationsCount;
     pSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pSampleLocations) {
         pSampleLocations = new VkSampleLocationEXT[copy_src->sampleLocationsCount];
         memcpy((void*)pSampleLocations, (void*)copy_src->pSampleLocations,
@@ -4809,11 +4889,13 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBe
       postSubpassSampleLocationsCount(in_struct->postSubpassSampleLocationsCount),
       pPostSubpassSampleLocations(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachmentInitialSampleLocations) {
         pAttachmentInitialSampleLocations = new VkAttachmentSampleLocationsEXT[in_struct->attachmentInitialSampleLocationsCount];
         memcpy((void*)pAttachmentInitialSampleLocations, (void*)in_struct->pAttachmentInitialSampleLocations,
                sizeof(VkAttachmentSampleLocationsEXT) * in_struct->attachmentInitialSampleLocationsCount);
     }
+
     if (in_struct->pPostSubpassSampleLocations) {
         pPostSubpassSampleLocations = new VkSubpassSampleLocationsEXT[in_struct->postSubpassSampleLocationsCount];
         memcpy((void*)pPostSubpassSampleLocations, (void*)in_struct->pPostSubpassSampleLocations,
@@ -4837,11 +4919,13 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBe
     postSubpassSampleLocationsCount = copy_src.postSubpassSampleLocationsCount;
     pPostSubpassSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachmentInitialSampleLocations) {
         pAttachmentInitialSampleLocations = new VkAttachmentSampleLocationsEXT[copy_src.attachmentInitialSampleLocationsCount];
         memcpy((void*)pAttachmentInitialSampleLocations, (void*)copy_src.pAttachmentInitialSampleLocations,
                sizeof(VkAttachmentSampleLocationsEXT) * copy_src.attachmentInitialSampleLocationsCount);
     }
+
     if (copy_src.pPostSubpassSampleLocations) {
         pPostSubpassSampleLocations = new VkSubpassSampleLocationsEXT[copy_src.postSubpassSampleLocationsCount];
         memcpy((void*)pPostSubpassSampleLocations, (void*)copy_src.pPostSubpassSampleLocations,
@@ -4863,11 +4947,13 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT& safe_VkRenderPassSampleLocationsBe
     postSubpassSampleLocationsCount = copy_src.postSubpassSampleLocationsCount;
     pPostSubpassSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachmentInitialSampleLocations) {
         pAttachmentInitialSampleLocations = new VkAttachmentSampleLocationsEXT[copy_src.attachmentInitialSampleLocationsCount];
         memcpy((void*)pAttachmentInitialSampleLocations, (void*)copy_src.pAttachmentInitialSampleLocations,
                sizeof(VkAttachmentSampleLocationsEXT) * copy_src.attachmentInitialSampleLocationsCount);
     }
+
     if (copy_src.pPostSubpassSampleLocations) {
         pPostSubpassSampleLocations = new VkSubpassSampleLocationsEXT[copy_src.postSubpassSampleLocationsCount];
         memcpy((void*)pPostSubpassSampleLocations, (void*)copy_src.pPostSubpassSampleLocations,
@@ -4894,11 +4980,13 @@ void safe_VkRenderPassSampleLocationsBeginInfoEXT::initialize(const VkRenderPass
     postSubpassSampleLocationsCount = in_struct->postSubpassSampleLocationsCount;
     pPostSubpassSampleLocations = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachmentInitialSampleLocations) {
         pAttachmentInitialSampleLocations = new VkAttachmentSampleLocationsEXT[in_struct->attachmentInitialSampleLocationsCount];
         memcpy((void*)pAttachmentInitialSampleLocations, (void*)in_struct->pAttachmentInitialSampleLocations,
                sizeof(VkAttachmentSampleLocationsEXT) * in_struct->attachmentInitialSampleLocationsCount);
     }
+
     if (in_struct->pPostSubpassSampleLocations) {
         pPostSubpassSampleLocations = new VkSubpassSampleLocationsEXT[in_struct->postSubpassSampleLocationsCount];
         memcpy((void*)pPostSubpassSampleLocations, (void*)in_struct->pPostSubpassSampleLocations,
@@ -4914,11 +5002,13 @@ void safe_VkRenderPassSampleLocationsBeginInfoEXT::initialize(const safe_VkRende
     postSubpassSampleLocationsCount = copy_src->postSubpassSampleLocationsCount;
     pPostSubpassSampleLocations = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pAttachmentInitialSampleLocations) {
         pAttachmentInitialSampleLocations = new VkAttachmentSampleLocationsEXT[copy_src->attachmentInitialSampleLocationsCount];
         memcpy((void*)pAttachmentInitialSampleLocations, (void*)copy_src->pAttachmentInitialSampleLocations,
                sizeof(VkAttachmentSampleLocationsEXT) * copy_src->attachmentInitialSampleLocationsCount);
     }
+
     if (copy_src->pPostSubpassSampleLocations) {
         pPostSubpassSampleLocations = new VkSubpassSampleLocationsEXT[copy_src->postSubpassSampleLocationsCount];
         memcpy((void*)pPostSubpassSampleLocations, (void*)copy_src->pPostSubpassSampleLocations,
@@ -4988,6 +5078,7 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLo
       sampleLocationSubPixelBits(in_struct->sampleLocationSubPixelBits),
       variableSampleLocations(in_struct->variableSampleLocations) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         sampleLocationCoordinateRange[i] = in_struct->sampleLocationCoordinateRange[i];
     }
@@ -5009,6 +5100,7 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLo
     sampleLocationSubPixelBits = copy_src.sampleLocationSubPixelBits;
     variableSampleLocations = copy_src.variableSampleLocations;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         sampleLocationCoordinateRange[i] = copy_src.sampleLocationCoordinateRange[i];
     }
@@ -5026,6 +5118,7 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT& safe_VkPhysicalDeviceSampleLo
     sampleLocationSubPixelBits = copy_src.sampleLocationSubPixelBits;
     variableSampleLocations = copy_src.variableSampleLocations;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         sampleLocationCoordinateRange[i] = copy_src.sampleLocationCoordinateRange[i];
     }
@@ -5046,6 +5139,7 @@ void safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::initialize(const VkPhysi
     sampleLocationSubPixelBits = in_struct->sampleLocationSubPixelBits;
     variableSampleLocations = in_struct->variableSampleLocations;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         sampleLocationCoordinateRange[i] = in_struct->sampleLocationCoordinateRange[i];
     }
@@ -5059,6 +5153,7 @@ void safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::initialize(
     sampleLocationSubPixelBits = copy_src->sampleLocationSubPixelBits;
     variableSampleLocations = copy_src->variableSampleLocations;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         sampleLocationCoordinateRange[i] = copy_src->sampleLocationCoordinateRange[i];
     }
@@ -5308,6 +5403,7 @@ safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesLis
     const VkDrmFormatModifierPropertiesListEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), drmFormatModifierCount(in_struct->drmFormatModifierCount), pDrmFormatModifierProperties(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierPropertiesEXT[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)in_struct->pDrmFormatModifierProperties,
@@ -5327,6 +5423,7 @@ safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesLis
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierPropertiesEXT[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src.pDrmFormatModifierProperties,
@@ -5345,6 +5442,7 @@ safe_VkDrmFormatModifierPropertiesListEXT& safe_VkDrmFormatModifierPropertiesLis
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierPropertiesEXT[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src.pDrmFormatModifierProperties,
@@ -5367,6 +5465,7 @@ void safe_VkDrmFormatModifierPropertiesListEXT::initialize(const VkDrmFormatModi
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierPropertiesEXT[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)in_struct->pDrmFormatModifierProperties,
@@ -5380,6 +5479,7 @@ void safe_VkDrmFormatModifierPropertiesListEXT::initialize(const safe_VkDrmForma
     drmFormatModifierCount = copy_src->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierPropertiesEXT[copy_src->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src->pDrmFormatModifierProperties,
@@ -5395,6 +5495,7 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
       queueFamilyIndexCount(0),
       pQueueFamilyIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -5420,6 +5521,7 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
     sharingMode = copy_src.sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -5441,6 +5543,7 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT& safe_VkPhysicalDeviceImageDr
     sharingMode = copy_src.sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -5466,6 +5569,7 @@ void safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::initialize(const VkPhys
     sharingMode = in_struct->sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -5483,6 +5587,7 @@ void safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::initialize(
     sharingMode = copy_src->sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src->pQueueFamilyIndices,
@@ -5497,6 +5602,7 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierLis
     const VkImageDrmFormatModifierListCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), drmFormatModifierCount(in_struct->drmFormatModifierCount), pDrmFormatModifiers(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifiers) {
         pDrmFormatModifiers = new uint64_t[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifiers, (void*)in_struct->pDrmFormatModifiers,
@@ -5516,6 +5622,7 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierLis
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifiers = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifiers) {
         pDrmFormatModifiers = new uint64_t[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifiers, (void*)copy_src.pDrmFormatModifiers, sizeof(uint64_t) * copy_src.drmFormatModifierCount);
@@ -5533,6 +5640,7 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT& safe_VkImageDrmFormatModifierLis
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifiers = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifiers) {
         pDrmFormatModifiers = new uint64_t[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifiers, (void*)copy_src.pDrmFormatModifiers, sizeof(uint64_t) * copy_src.drmFormatModifierCount);
@@ -5554,6 +5662,7 @@ void safe_VkImageDrmFormatModifierListCreateInfoEXT::initialize(const VkImageDrm
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifiers = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifiers) {
         pDrmFormatModifiers = new uint64_t[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifiers, (void*)in_struct->pDrmFormatModifiers,
@@ -5567,6 +5676,7 @@ void safe_VkImageDrmFormatModifierListCreateInfoEXT::initialize(const safe_VkIma
     drmFormatModifierCount = copy_src->drmFormatModifierCount;
     pDrmFormatModifiers = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDrmFormatModifiers) {
         pDrmFormatModifiers = new uint64_t[copy_src->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifiers, (void*)copy_src->pDrmFormatModifiers,
@@ -5581,6 +5691,7 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifie
       drmFormatModifierPlaneCount(in_struct->drmFormatModifierPlaneCount),
       pPlaneLayouts(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPlaneLayouts) {
         pPlaneLayouts = new VkSubresourceLayout[in_struct->drmFormatModifierPlaneCount];
         memcpy((void*)pPlaneLayouts, (void*)in_struct->pPlaneLayouts,
@@ -5602,6 +5713,7 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifie
     drmFormatModifierPlaneCount = copy_src.drmFormatModifierPlaneCount;
     pPlaneLayouts = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPlaneLayouts) {
         pPlaneLayouts = new VkSubresourceLayout[copy_src.drmFormatModifierPlaneCount];
         memcpy((void*)pPlaneLayouts, (void*)copy_src.pPlaneLayouts,
@@ -5621,6 +5733,7 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT& safe_VkImageDrmFormatModifie
     drmFormatModifierPlaneCount = copy_src.drmFormatModifierPlaneCount;
     pPlaneLayouts = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPlaneLayouts) {
         pPlaneLayouts = new VkSubresourceLayout[copy_src.drmFormatModifierPlaneCount];
         memcpy((void*)pPlaneLayouts, (void*)copy_src.pPlaneLayouts,
@@ -5644,6 +5757,7 @@ void safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::initialize(const VkImag
     drmFormatModifierPlaneCount = in_struct->drmFormatModifierPlaneCount;
     pPlaneLayouts = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPlaneLayouts) {
         pPlaneLayouts = new VkSubresourceLayout[in_struct->drmFormatModifierPlaneCount];
         memcpy((void*)pPlaneLayouts, (void*)in_struct->pPlaneLayouts,
@@ -5658,6 +5772,7 @@ void safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::initialize(
     drmFormatModifierPlaneCount = copy_src->drmFormatModifierPlaneCount;
     pPlaneLayouts = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPlaneLayouts) {
         pPlaneLayouts = new VkSubresourceLayout[copy_src->drmFormatModifierPlaneCount];
         memcpy((void*)pPlaneLayouts, (void*)copy_src->pPlaneLayouts,
@@ -5717,6 +5832,7 @@ safe_VkDrmFormatModifierPropertiesList2EXT::safe_VkDrmFormatModifierPropertiesLi
     const VkDrmFormatModifierPropertiesList2EXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), drmFormatModifierCount(in_struct->drmFormatModifierCount), pDrmFormatModifierProperties(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)in_struct->pDrmFormatModifierProperties,
@@ -5736,6 +5852,7 @@ safe_VkDrmFormatModifierPropertiesList2EXT::safe_VkDrmFormatModifierPropertiesLi
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src.pDrmFormatModifierProperties,
@@ -5754,6 +5871,7 @@ safe_VkDrmFormatModifierPropertiesList2EXT& safe_VkDrmFormatModifierPropertiesLi
     drmFormatModifierCount = copy_src.drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src.drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src.pDrmFormatModifierProperties,
@@ -5776,6 +5894,7 @@ void safe_VkDrmFormatModifierPropertiesList2EXT::initialize(const VkDrmFormatMod
     drmFormatModifierCount = in_struct->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[in_struct->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)in_struct->pDrmFormatModifierProperties,
@@ -5789,6 +5908,7 @@ void safe_VkDrmFormatModifierPropertiesList2EXT::initialize(const safe_VkDrmForm
     drmFormatModifierCount = copy_src->drmFormatModifierCount;
     pDrmFormatModifierProperties = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDrmFormatModifierProperties) {
         pDrmFormatModifierProperties = new VkDrmFormatModifierProperties2EXT[copy_src->drmFormatModifierCount];
         memcpy((void*)pDrmFormatModifierProperties, (void*)copy_src->pDrmFormatModifierProperties,
@@ -6257,6 +6377,7 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputD
     const VkPipelineVertexInputDivisorStateCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), vertexBindingDivisorCount(in_struct->vertexBindingDivisorCount), pVertexBindingDivisors(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVertexBindingDivisors) {
         pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionEXT[in_struct->vertexBindingDivisorCount];
         memcpy((void*)pVertexBindingDivisors, (void*)in_struct->pVertexBindingDivisors,
@@ -6276,6 +6397,7 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputD
     vertexBindingDivisorCount = copy_src.vertexBindingDivisorCount;
     pVertexBindingDivisors = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVertexBindingDivisors) {
         pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionEXT[copy_src.vertexBindingDivisorCount];
         memcpy((void*)pVertexBindingDivisors, (void*)copy_src.pVertexBindingDivisors,
@@ -6294,6 +6416,7 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT& safe_VkPipelineVertexInputD
     vertexBindingDivisorCount = copy_src.vertexBindingDivisorCount;
     pVertexBindingDivisors = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVertexBindingDivisors) {
         pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionEXT[copy_src.vertexBindingDivisorCount];
         memcpy((void*)pVertexBindingDivisors, (void*)copy_src.pVertexBindingDivisors,
@@ -6316,6 +6439,7 @@ void safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::initialize(
     vertexBindingDivisorCount = in_struct->vertexBindingDivisorCount;
     pVertexBindingDivisors = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVertexBindingDivisors) {
         pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionEXT[in_struct->vertexBindingDivisorCount];
         memcpy((void*)pVertexBindingDivisors, (void*)in_struct->pVertexBindingDivisors,
@@ -6329,6 +6453,7 @@ void safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::initialize(
     vertexBindingDivisorCount = copy_src->vertexBindingDivisorCount;
     pVertexBindingDivisors = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pVertexBindingDivisors) {
         pVertexBindingDivisors = new VkVertexInputBindingDivisorDescriptionEXT[copy_src->vertexBindingDivisorCount];
         memcpy((void*)pVertexBindingDivisors, (void*)copy_src->pVertexBindingDivisors,
@@ -6697,9 +6822,11 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudge
     const VkPhysicalDeviceMemoryBudgetPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapBudget[i] = in_struct->heapBudget[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapUsage[i] = in_struct->heapUsage[i];
     }
@@ -6712,9 +6839,11 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudge
     const safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& copy_src) {
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapBudget[i] = copy_src.heapBudget[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapUsage[i] = copy_src.heapUsage[i];
     }
@@ -6728,9 +6857,11 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& safe_VkPhysicalDeviceMemoryBudge
 
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapBudget[i] = copy_src.heapBudget[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapUsage[i] = copy_src.heapUsage[i];
     }
@@ -6747,9 +6878,11 @@ void safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::initialize(const VkPhysical
     if (pNext) FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapBudget[i] = in_struct->heapBudget[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapUsage[i] = in_struct->heapUsage[i];
     }
@@ -6759,9 +6892,11 @@ void safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::initialize(const safe_VkPhy
                                                                 [[maybe_unused]] PNextCopyState* copy_state) {
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapBudget[i] = copy_src->heapBudget[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_MEMORY_HEAPS; ++i) {
         heapUsage[i] = copy_src->heapUsage[i];
     }
@@ -6981,11 +7116,13 @@ safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT(const VkValidationFea
       disabledValidationFeatureCount(in_struct->disabledValidationFeatureCount),
       pDisabledValidationFeatures(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pEnabledValidationFeatures) {
         pEnabledValidationFeatures = new VkValidationFeatureEnableEXT[in_struct->enabledValidationFeatureCount];
         memcpy((void*)pEnabledValidationFeatures, (void*)in_struct->pEnabledValidationFeatures,
                sizeof(VkValidationFeatureEnableEXT) * in_struct->enabledValidationFeatureCount);
     }
+
     if (in_struct->pDisabledValidationFeatures) {
         pDisabledValidationFeatures = new VkValidationFeatureDisableEXT[in_struct->disabledValidationFeatureCount];
         memcpy((void*)pDisabledValidationFeatures, (void*)in_struct->pDisabledValidationFeatures,
@@ -7008,11 +7145,13 @@ safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT(const safe_VkValidati
     disabledValidationFeatureCount = copy_src.disabledValidationFeatureCount;
     pDisabledValidationFeatures = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pEnabledValidationFeatures) {
         pEnabledValidationFeatures = new VkValidationFeatureEnableEXT[copy_src.enabledValidationFeatureCount];
         memcpy((void*)pEnabledValidationFeatures, (void*)copy_src.pEnabledValidationFeatures,
                sizeof(VkValidationFeatureEnableEXT) * copy_src.enabledValidationFeatureCount);
     }
+
     if (copy_src.pDisabledValidationFeatures) {
         pDisabledValidationFeatures = new VkValidationFeatureDisableEXT[copy_src.disabledValidationFeatureCount];
         memcpy((void*)pDisabledValidationFeatures, (void*)copy_src.pDisabledValidationFeatures,
@@ -7033,11 +7172,13 @@ safe_VkValidationFeaturesEXT& safe_VkValidationFeaturesEXT::operator=(const safe
     disabledValidationFeatureCount = copy_src.disabledValidationFeatureCount;
     pDisabledValidationFeatures = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pEnabledValidationFeatures) {
         pEnabledValidationFeatures = new VkValidationFeatureEnableEXT[copy_src.enabledValidationFeatureCount];
         memcpy((void*)pEnabledValidationFeatures, (void*)copy_src.pEnabledValidationFeatures,
                sizeof(VkValidationFeatureEnableEXT) * copy_src.enabledValidationFeatureCount);
     }
+
     if (copy_src.pDisabledValidationFeatures) {
         pDisabledValidationFeatures = new VkValidationFeatureDisableEXT[copy_src.disabledValidationFeatureCount];
         memcpy((void*)pDisabledValidationFeatures, (void*)copy_src.pDisabledValidationFeatures,
@@ -7064,11 +7205,13 @@ void safe_VkValidationFeaturesEXT::initialize(const VkValidationFeaturesEXT* in_
     disabledValidationFeatureCount = in_struct->disabledValidationFeatureCount;
     pDisabledValidationFeatures = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pEnabledValidationFeatures) {
         pEnabledValidationFeatures = new VkValidationFeatureEnableEXT[in_struct->enabledValidationFeatureCount];
         memcpy((void*)pEnabledValidationFeatures, (void*)in_struct->pEnabledValidationFeatures,
                sizeof(VkValidationFeatureEnableEXT) * in_struct->enabledValidationFeatureCount);
     }
+
     if (in_struct->pDisabledValidationFeatures) {
         pDisabledValidationFeatures = new VkValidationFeatureDisableEXT[in_struct->disabledValidationFeatureCount];
         memcpy((void*)pDisabledValidationFeatures, (void*)in_struct->pDisabledValidationFeatures,
@@ -7084,11 +7227,13 @@ void safe_VkValidationFeaturesEXT::initialize(const safe_VkValidationFeaturesEXT
     disabledValidationFeatureCount = copy_src->disabledValidationFeatureCount;
     pDisabledValidationFeatures = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pEnabledValidationFeatures) {
         pEnabledValidationFeatures = new VkValidationFeatureEnableEXT[copy_src->enabledValidationFeatureCount];
         memcpy((void*)pEnabledValidationFeatures, (void*)copy_src->pEnabledValidationFeatures,
                sizeof(VkValidationFeatureEnableEXT) * copy_src->enabledValidationFeatureCount);
     }
+
     if (copy_src->pDisabledValidationFeatures) {
         pDisabledValidationFeatures = new VkValidationFeatureDisableEXT[copy_src->disabledValidationFeatureCount];
         memcpy((void*)pDisabledValidationFeatures, (void*)copy_src->pDisabledValidationFeatures,
@@ -8037,14 +8182,17 @@ safe_VkPhysicalDeviceHostImageCopyPropertiesEXT::safe_VkPhysicalDeviceHostImageC
       pCopyDstLayouts(nullptr),
       identicalMemoryTypeRequirements(in_struct->identicalMemoryTypeRequirements) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pCopySrcLayouts) {
         pCopySrcLayouts = new VkImageLayout[in_struct->copySrcLayoutCount];
         memcpy((void*)pCopySrcLayouts, (void*)in_struct->pCopySrcLayouts, sizeof(VkImageLayout) * in_struct->copySrcLayoutCount);
     }
+
     if (in_struct->pCopyDstLayouts) {
         pCopyDstLayouts = new VkImageLayout[in_struct->copyDstLayoutCount];
         memcpy((void*)pCopyDstLayouts, (void*)in_struct->pCopyDstLayouts, sizeof(VkImageLayout) * in_struct->copyDstLayoutCount);
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         optimalTilingLayoutUUID[i] = in_struct->optimalTilingLayoutUUID[i];
     }
@@ -8068,14 +8216,17 @@ safe_VkPhysicalDeviceHostImageCopyPropertiesEXT::safe_VkPhysicalDeviceHostImageC
     pCopyDstLayouts = nullptr;
     identicalMemoryTypeRequirements = copy_src.identicalMemoryTypeRequirements;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCopySrcLayouts) {
         pCopySrcLayouts = new VkImageLayout[copy_src.copySrcLayoutCount];
         memcpy((void*)pCopySrcLayouts, (void*)copy_src.pCopySrcLayouts, sizeof(VkImageLayout) * copy_src.copySrcLayoutCount);
     }
+
     if (copy_src.pCopyDstLayouts) {
         pCopyDstLayouts = new VkImageLayout[copy_src.copyDstLayoutCount];
         memcpy((void*)pCopyDstLayouts, (void*)copy_src.pCopyDstLayouts, sizeof(VkImageLayout) * copy_src.copyDstLayoutCount);
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         optimalTilingLayoutUUID[i] = copy_src.optimalTilingLayoutUUID[i];
     }
@@ -8096,14 +8247,17 @@ safe_VkPhysicalDeviceHostImageCopyPropertiesEXT& safe_VkPhysicalDeviceHostImageC
     pCopyDstLayouts = nullptr;
     identicalMemoryTypeRequirements = copy_src.identicalMemoryTypeRequirements;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pCopySrcLayouts) {
         pCopySrcLayouts = new VkImageLayout[copy_src.copySrcLayoutCount];
         memcpy((void*)pCopySrcLayouts, (void*)copy_src.pCopySrcLayouts, sizeof(VkImageLayout) * copy_src.copySrcLayoutCount);
     }
+
     if (copy_src.pCopyDstLayouts) {
         pCopyDstLayouts = new VkImageLayout[copy_src.copyDstLayoutCount];
         memcpy((void*)pCopyDstLayouts, (void*)copy_src.pCopyDstLayouts, sizeof(VkImageLayout) * copy_src.copyDstLayoutCount);
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         optimalTilingLayoutUUID[i] = copy_src.optimalTilingLayoutUUID[i];
     }
@@ -8129,14 +8283,17 @@ void safe_VkPhysicalDeviceHostImageCopyPropertiesEXT::initialize(const VkPhysica
     pCopyDstLayouts = nullptr;
     identicalMemoryTypeRequirements = in_struct->identicalMemoryTypeRequirements;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pCopySrcLayouts) {
         pCopySrcLayouts = new VkImageLayout[in_struct->copySrcLayoutCount];
         memcpy((void*)pCopySrcLayouts, (void*)in_struct->pCopySrcLayouts, sizeof(VkImageLayout) * in_struct->copySrcLayoutCount);
     }
+
     if (in_struct->pCopyDstLayouts) {
         pCopyDstLayouts = new VkImageLayout[in_struct->copyDstLayoutCount];
         memcpy((void*)pCopyDstLayouts, (void*)in_struct->pCopyDstLayouts, sizeof(VkImageLayout) * in_struct->copyDstLayoutCount);
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         optimalTilingLayoutUUID[i] = in_struct->optimalTilingLayoutUUID[i];
     }
@@ -8151,14 +8308,17 @@ void safe_VkPhysicalDeviceHostImageCopyPropertiesEXT::initialize(const safe_VkPh
     pCopyDstLayouts = nullptr;
     identicalMemoryTypeRequirements = copy_src->identicalMemoryTypeRequirements;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pCopySrcLayouts) {
         pCopySrcLayouts = new VkImageLayout[copy_src->copySrcLayoutCount];
         memcpy((void*)pCopySrcLayouts, (void*)copy_src->pCopySrcLayouts, sizeof(VkImageLayout) * copy_src->copySrcLayoutCount);
     }
+
     if (copy_src->pCopyDstLayouts) {
         pCopyDstLayouts = new VkImageLayout[copy_src->copyDstLayoutCount];
         memcpy((void*)pCopyDstLayouts, (void*)copy_src->pCopyDstLayouts, sizeof(VkImageLayout) * copy_src->copyDstLayoutCount);
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         optimalTilingLayoutUUID[i] = copy_src->optimalTilingLayoutUUID[i];
     }
@@ -9065,6 +9225,7 @@ safe_VkSurfacePresentModeCompatibilityEXT::safe_VkSurfacePresentModeCompatibilit
     const VkSurfacePresentModeCompatibilityEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), presentModeCount(in_struct->presentModeCount), pPresentModes(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
@@ -9080,6 +9241,7 @@ safe_VkSurfacePresentModeCompatibilityEXT::safe_VkSurfacePresentModeCompatibilit
     presentModeCount = copy_src.presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
@@ -9097,6 +9259,7 @@ safe_VkSurfacePresentModeCompatibilityEXT& safe_VkSurfacePresentModeCompatibilit
     presentModeCount = copy_src.presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
@@ -9118,6 +9281,7 @@ void safe_VkSurfacePresentModeCompatibilityEXT::initialize(const VkSurfacePresen
     presentModeCount = in_struct->presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
@@ -9130,6 +9294,7 @@ void safe_VkSurfacePresentModeCompatibilityEXT::initialize(const safe_VkSurfaceP
     presentModeCount = copy_src->presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src->presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src->pPresentModes, sizeof(VkPresentModeKHR) * copy_src->presentModeCount);
@@ -9272,6 +9437,7 @@ safe_VkSwapchainPresentModesCreateInfoEXT::safe_VkSwapchainPresentModesCreateInf
     const VkSwapchainPresentModesCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), presentModeCount(in_struct->presentModeCount), pPresentModes(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
@@ -9290,6 +9456,7 @@ safe_VkSwapchainPresentModesCreateInfoEXT::safe_VkSwapchainPresentModesCreateInf
     presentModeCount = copy_src.presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
@@ -9307,6 +9474,7 @@ safe_VkSwapchainPresentModesCreateInfoEXT& safe_VkSwapchainPresentModesCreateInf
     presentModeCount = copy_src.presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.presentModeCount);
@@ -9328,6 +9496,7 @@ void safe_VkSwapchainPresentModesCreateInfoEXT::initialize(const VkSwapchainPres
     presentModeCount = in_struct->presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->presentModeCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->presentModeCount);
@@ -9340,6 +9509,7 @@ void safe_VkSwapchainPresentModesCreateInfoEXT::initialize(const safe_VkSwapchai
     presentModeCount = copy_src->presentModeCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src->presentModeCount];
         memcpy((void*)pPresentModes, (void*)copy_src->pPresentModes, sizeof(VkPresentModeKHR) * copy_src->presentModeCount);
@@ -9350,6 +9520,7 @@ safe_VkSwapchainPresentModeInfoEXT::safe_VkSwapchainPresentModeInfoEXT(const VkS
                                                                        [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), swapchainCount(in_struct->swapchainCount), pPresentModes(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->swapchainCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->swapchainCount);
@@ -9364,6 +9535,7 @@ safe_VkSwapchainPresentModeInfoEXT::safe_VkSwapchainPresentModeInfoEXT(const saf
     swapchainCount = copy_src.swapchainCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.swapchainCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.swapchainCount);
@@ -9381,6 +9553,7 @@ safe_VkSwapchainPresentModeInfoEXT& safe_VkSwapchainPresentModeInfoEXT::operator
     swapchainCount = copy_src.swapchainCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src.swapchainCount];
         memcpy((void*)pPresentModes, (void*)copy_src.pPresentModes, sizeof(VkPresentModeKHR) * copy_src.swapchainCount);
@@ -9402,6 +9575,7 @@ void safe_VkSwapchainPresentModeInfoEXT::initialize(const VkSwapchainPresentMode
     swapchainCount = in_struct->swapchainCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[in_struct->swapchainCount];
         memcpy((void*)pPresentModes, (void*)in_struct->pPresentModes, sizeof(VkPresentModeKHR) * in_struct->swapchainCount);
@@ -9414,6 +9588,7 @@ void safe_VkSwapchainPresentModeInfoEXT::initialize(const safe_VkSwapchainPresen
     swapchainCount = copy_src->swapchainCount;
     pPresentModes = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPresentModes) {
         pPresentModes = new VkPresentModeKHR[copy_src->swapchainCount];
         memcpy((void*)pPresentModes, (void*)copy_src->pPresentModes, sizeof(VkPresentModeKHR) * copy_src->swapchainCount);
@@ -9490,6 +9665,7 @@ safe_VkReleaseSwapchainImagesInfoEXT::safe_VkReleaseSwapchainImagesInfoEXT(const
       imageIndexCount(in_struct->imageIndexCount),
       pImageIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pImageIndices) {
         pImageIndices = new uint32_t[in_struct->imageIndexCount];
         memcpy((void*)pImageIndices, (void*)in_struct->pImageIndices, sizeof(uint32_t) * in_struct->imageIndexCount);
@@ -9509,6 +9685,7 @@ safe_VkReleaseSwapchainImagesInfoEXT::safe_VkReleaseSwapchainImagesInfoEXT(const
     imageIndexCount = copy_src.imageIndexCount;
     pImageIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pImageIndices) {
         pImageIndices = new uint32_t[copy_src.imageIndexCount];
         memcpy((void*)pImageIndices, (void*)copy_src.pImageIndices, sizeof(uint32_t) * copy_src.imageIndexCount);
@@ -9527,6 +9704,7 @@ safe_VkReleaseSwapchainImagesInfoEXT& safe_VkReleaseSwapchainImagesInfoEXT::oper
     imageIndexCount = copy_src.imageIndexCount;
     pImageIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pImageIndices) {
         pImageIndices = new uint32_t[copy_src.imageIndexCount];
         memcpy((void*)pImageIndices, (void*)copy_src.pImageIndices, sizeof(uint32_t) * copy_src.imageIndexCount);
@@ -9549,6 +9727,7 @@ void safe_VkReleaseSwapchainImagesInfoEXT::initialize(const VkReleaseSwapchainIm
     imageIndexCount = in_struct->imageIndexCount;
     pImageIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pImageIndices) {
         pImageIndices = new uint32_t[in_struct->imageIndexCount];
         memcpy((void*)pImageIndices, (void*)in_struct->pImageIndices, sizeof(uint32_t) * in_struct->imageIndexCount);
@@ -9562,6 +9741,7 @@ void safe_VkReleaseSwapchainImagesInfoEXT::initialize(const safe_VkReleaseSwapch
     imageIndexCount = copy_src->imageIndexCount;
     pImageIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pImageIndices) {
         pImageIndices = new uint32_t[copy_src->imageIndexCount];
         memcpy((void*)pImageIndices, (void*)copy_src->pImageIndices, sizeof(uint32_t) * copy_src->imageIndexCount);
@@ -12624,6 +12804,7 @@ safe_VkImageCompressionControlEXT::safe_VkImageCompressionControlEXT(const VkIma
       compressionControlPlaneCount(in_struct->compressionControlPlaneCount),
       pFixedRateFlags(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pFixedRateFlags) {
         pFixedRateFlags = new VkImageCompressionFixedRateFlagsEXT[in_struct->compressionControlPlaneCount];
         memcpy((void*)pFixedRateFlags, (void*)in_struct->pFixedRateFlags,
@@ -12644,6 +12825,7 @@ safe_VkImageCompressionControlEXT::safe_VkImageCompressionControlEXT(const safe_
     compressionControlPlaneCount = copy_src.compressionControlPlaneCount;
     pFixedRateFlags = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pFixedRateFlags) {
         pFixedRateFlags = new VkImageCompressionFixedRateFlagsEXT[copy_src.compressionControlPlaneCount];
         memcpy((void*)pFixedRateFlags, (void*)copy_src.pFixedRateFlags,
@@ -12662,6 +12844,7 @@ safe_VkImageCompressionControlEXT& safe_VkImageCompressionControlEXT::operator=(
     compressionControlPlaneCount = copy_src.compressionControlPlaneCount;
     pFixedRateFlags = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pFixedRateFlags) {
         pFixedRateFlags = new VkImageCompressionFixedRateFlagsEXT[copy_src.compressionControlPlaneCount];
         memcpy((void*)pFixedRateFlags, (void*)copy_src.pFixedRateFlags,
@@ -12685,6 +12868,7 @@ void safe_VkImageCompressionControlEXT::initialize(const VkImageCompressionContr
     compressionControlPlaneCount = in_struct->compressionControlPlaneCount;
     pFixedRateFlags = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pFixedRateFlags) {
         pFixedRateFlags = new VkImageCompressionFixedRateFlagsEXT[in_struct->compressionControlPlaneCount];
         memcpy((void*)pFixedRateFlags, (void*)in_struct->pFixedRateFlags,
@@ -12699,6 +12883,7 @@ void safe_VkImageCompressionControlEXT::initialize(const safe_VkImageCompression
     compressionControlPlaneCount = copy_src->compressionControlPlaneCount;
     pFixedRateFlags = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pFixedRateFlags) {
         pFixedRateFlags = new VkImageCompressionFixedRateFlagsEXT[copy_src->compressionControlPlaneCount];
         memcpy((void*)pFixedRateFlags, (void*)copy_src->pFixedRateFlags,
@@ -12977,12 +13162,15 @@ safe_VkDeviceFaultInfoEXT::safe_VkDeviceFaultInfoEXT(const VkDeviceFaultInfoEXT*
                                                      [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pAddressInfos(nullptr), pVendorInfos(nullptr), pVendorBinaryData(in_struct->pVendorBinaryData) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
     }
+
     if (in_struct->pAddressInfos) {
         pAddressInfos = new VkDeviceFaultAddressInfoEXT(*in_struct->pAddressInfos);
     }
+
     if (in_struct->pVendorInfos) {
         pVendorInfos = new VkDeviceFaultVendorInfoEXT(*in_struct->pVendorInfos);
     }
@@ -13001,12 +13189,15 @@ safe_VkDeviceFaultInfoEXT::safe_VkDeviceFaultInfoEXT(const safe_VkDeviceFaultInf
     pVendorInfos = nullptr;
     pVendorBinaryData = copy_src.pVendorBinaryData;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
     }
+
     if (copy_src.pAddressInfos) {
         pAddressInfos = new VkDeviceFaultAddressInfoEXT(*copy_src.pAddressInfos);
     }
+
     if (copy_src.pVendorInfos) {
         pVendorInfos = new VkDeviceFaultVendorInfoEXT(*copy_src.pVendorInfos);
     }
@@ -13024,12 +13215,15 @@ safe_VkDeviceFaultInfoEXT& safe_VkDeviceFaultInfoEXT::operator=(const safe_VkDev
     pVendorInfos = nullptr;
     pVendorBinaryData = copy_src.pVendorBinaryData;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
     }
+
     if (copy_src.pAddressInfos) {
         pAddressInfos = new VkDeviceFaultAddressInfoEXT(*copy_src.pAddressInfos);
     }
+
     if (copy_src.pVendorInfos) {
         pVendorInfos = new VkDeviceFaultVendorInfoEXT(*copy_src.pVendorInfos);
     }
@@ -13052,12 +13246,15 @@ void safe_VkDeviceFaultInfoEXT::initialize(const VkDeviceFaultInfoEXT* in_struct
     pVendorInfos = nullptr;
     pVendorBinaryData = in_struct->pVendorBinaryData;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
     }
+
     if (in_struct->pAddressInfos) {
         pAddressInfos = new VkDeviceFaultAddressInfoEXT(*in_struct->pAddressInfos);
     }
+
     if (in_struct->pVendorInfos) {
         pVendorInfos = new VkDeviceFaultVendorInfoEXT(*in_struct->pVendorInfos);
     }
@@ -13069,12 +13266,15 @@ void safe_VkDeviceFaultInfoEXT::initialize(const safe_VkDeviceFaultInfoEXT* copy
     pVendorInfos = nullptr;
     pVendorBinaryData = copy_src->pVendorBinaryData;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src->description[i];
     }
+
     if (copy_src->pAddressInfos) {
         pAddressInfos = new VkDeviceFaultAddressInfoEXT(*copy_src->pAddressInfos);
     }
+
     if (copy_src->pVendorInfos) {
         pVendorInfos = new VkDeviceFaultVendorInfoEXT(*copy_src->pVendorInfos);
     }
@@ -13202,9 +13402,11 @@ safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT(const V
                                                                          [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), flags(in_struct->flags), dfb(nullptr), surface(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->dfb) {
         dfb = new IDirectFB(*in_struct->dfb);
     }
+
     if (in_struct->surface) {
         surface = new IDirectFBSurface(*in_struct->surface);
     }
@@ -13219,9 +13421,11 @@ safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT(const s
     dfb = nullptr;
     surface = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.dfb) {
         dfb = new IDirectFB(*copy_src.dfb);
     }
+
     if (copy_src.surface) {
         surface = new IDirectFBSurface(*copy_src.surface);
     }
@@ -13240,9 +13444,11 @@ safe_VkDirectFBSurfaceCreateInfoEXT& safe_VkDirectFBSurfaceCreateInfoEXT::operat
     dfb = nullptr;
     surface = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.dfb) {
         dfb = new IDirectFB(*copy_src.dfb);
     }
+
     if (copy_src.surface) {
         surface = new IDirectFBSurface(*copy_src.surface);
     }
@@ -13266,9 +13472,11 @@ void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const VkDirectFBSurfaceCrea
     dfb = nullptr;
     surface = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->dfb) {
         dfb = new IDirectFB(*in_struct->dfb);
     }
+
     if (in_struct->surface) {
         surface = new IDirectFBSurface(*in_struct->surface);
     }
@@ -13281,9 +13489,11 @@ void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const safe_VkDirectFBSurfac
     dfb = nullptr;
     surface = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->dfb) {
         dfb = new IDirectFB(*copy_src->dfb);
     }
+
     if (copy_src->surface) {
         surface = new IDirectFBSurface(*copy_src->surface);
     }
@@ -13353,6 +13563,7 @@ safe_VkMutableDescriptorTypeListEXT::safe_VkMutableDescriptorTypeListEXT() : des
 safe_VkMutableDescriptorTypeListEXT::safe_VkMutableDescriptorTypeListEXT(const safe_VkMutableDescriptorTypeListEXT& copy_src) {
     descriptorTypeCount = copy_src.descriptorTypeCount;
     pDescriptorTypes = nullptr;
+
     if (copy_src.pDescriptorTypes) {
         pDescriptorTypes = new VkDescriptorType[copy_src.descriptorTypeCount];
         memcpy((void*)pDescriptorTypes, (void*)copy_src.pDescriptorTypes, sizeof(VkDescriptorType) * copy_src.descriptorTypeCount);
@@ -13367,6 +13578,7 @@ safe_VkMutableDescriptorTypeListEXT& safe_VkMutableDescriptorTypeListEXT::operat
 
     descriptorTypeCount = copy_src.descriptorTypeCount;
     pDescriptorTypes = nullptr;
+
     if (copy_src.pDescriptorTypes) {
         pDescriptorTypes = new VkDescriptorType[copy_src.descriptorTypeCount];
         memcpy((void*)pDescriptorTypes, (void*)copy_src.pDescriptorTypes, sizeof(VkDescriptorType) * copy_src.descriptorTypeCount);
@@ -13384,6 +13596,7 @@ void safe_VkMutableDescriptorTypeListEXT::initialize(const VkMutableDescriptorTy
     if (pDescriptorTypes) delete[] pDescriptorTypes;
     descriptorTypeCount = in_struct->descriptorTypeCount;
     pDescriptorTypes = nullptr;
+
     if (in_struct->pDescriptorTypes) {
         pDescriptorTypes = new VkDescriptorType[in_struct->descriptorTypeCount];
         memcpy((void*)pDescriptorTypes, (void*)in_struct->pDescriptorTypes,
@@ -13395,6 +13608,7 @@ void safe_VkMutableDescriptorTypeListEXT::initialize(const safe_VkMutableDescrip
                                                      [[maybe_unused]] PNextCopyState* copy_state) {
     descriptorTypeCount = copy_src->descriptorTypeCount;
     pDescriptorTypes = nullptr;
+
     if (copy_src->pDescriptorTypes) {
         pDescriptorTypes = new VkDescriptorType[copy_src->descriptorTypeCount];
         memcpy((void*)pDescriptorTypes, (void*)copy_src->pDescriptorTypes,
@@ -14034,6 +14248,7 @@ safe_VkPipelinePropertiesIdentifierEXT::safe_VkPipelinePropertiesIdentifierEXT(c
                                                                                [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         pipelineIdentifier[i] = in_struct->pipelineIdentifier[i];
     }
@@ -14046,6 +14261,7 @@ safe_VkPipelinePropertiesIdentifierEXT::safe_VkPipelinePropertiesIdentifierEXT(
     const safe_VkPipelinePropertiesIdentifierEXT& copy_src) {
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         pipelineIdentifier[i] = copy_src.pipelineIdentifier[i];
     }
@@ -14059,6 +14275,7 @@ safe_VkPipelinePropertiesIdentifierEXT& safe_VkPipelinePropertiesIdentifierEXT::
 
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         pipelineIdentifier[i] = copy_src.pipelineIdentifier[i];
     }
@@ -14075,6 +14292,7 @@ void safe_VkPipelinePropertiesIdentifierEXT::initialize(const VkPipelineProperti
     if (pNext) FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         pipelineIdentifier[i] = in_struct->pipelineIdentifier[i];
     }
@@ -14084,6 +14302,7 @@ void safe_VkPipelinePropertiesIdentifierEXT::initialize(const safe_VkPipelinePro
                                                         [[maybe_unused]] PNextCopyState* copy_state) {
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         pipelineIdentifier[i] = copy_src->pipelineIdentifier[i];
     }
@@ -14621,6 +14840,7 @@ safe_VkPipelineColorWriteCreateInfoEXT::safe_VkPipelineColorWriteCreateInfoEXT(c
                                                                                [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), attachmentCount(in_struct->attachmentCount), pColorWriteEnables(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorWriteEnables) {
         pColorWriteEnables = new VkBool32[in_struct->attachmentCount];
         memcpy((void*)pColorWriteEnables, (void*)in_struct->pColorWriteEnables, sizeof(VkBool32) * in_struct->attachmentCount);
@@ -14639,6 +14859,7 @@ safe_VkPipelineColorWriteCreateInfoEXT::safe_VkPipelineColorWriteCreateInfoEXT(
     attachmentCount = copy_src.attachmentCount;
     pColorWriteEnables = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorWriteEnables) {
         pColorWriteEnables = new VkBool32[copy_src.attachmentCount];
         memcpy((void*)pColorWriteEnables, (void*)copy_src.pColorWriteEnables, sizeof(VkBool32) * copy_src.attachmentCount);
@@ -14656,6 +14877,7 @@ safe_VkPipelineColorWriteCreateInfoEXT& safe_VkPipelineColorWriteCreateInfoEXT::
     attachmentCount = copy_src.attachmentCount;
     pColorWriteEnables = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorWriteEnables) {
         pColorWriteEnables = new VkBool32[copy_src.attachmentCount];
         memcpy((void*)pColorWriteEnables, (void*)copy_src.pColorWriteEnables, sizeof(VkBool32) * copy_src.attachmentCount);
@@ -14677,6 +14899,7 @@ void safe_VkPipelineColorWriteCreateInfoEXT::initialize(const VkPipelineColorWri
     attachmentCount = in_struct->attachmentCount;
     pColorWriteEnables = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorWriteEnables) {
         pColorWriteEnables = new VkBool32[in_struct->attachmentCount];
         memcpy((void*)pColorWriteEnables, (void*)in_struct->pColorWriteEnables, sizeof(VkBool32) * in_struct->attachmentCount);
@@ -14689,6 +14912,7 @@ void safe_VkPipelineColorWriteCreateInfoEXT::initialize(const safe_VkPipelineCol
     attachmentCount = copy_src->attachmentCount;
     pColorWriteEnables = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pColorWriteEnables) {
         pColorWriteEnables = new VkBool32[copy_src->attachmentCount];
         memcpy((void*)pColorWriteEnables, (void*)copy_src->pColorWriteEnables, sizeof(VkBool32) * copy_src->attachmentCount);
@@ -15514,6 +15738,7 @@ safe_VkMicromapVersionInfoEXT::safe_VkMicromapVersionInfoEXT(const VkMicromapVer
                                                              [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pVersionData(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVersionData) {
         pVersionData = new uint8_t[2 * VK_UUID_SIZE];
         memcpy((void*)pVersionData, (void*)in_struct->pVersionData, sizeof(uint8_t) * 2 * VK_UUID_SIZE);
@@ -15527,6 +15752,7 @@ safe_VkMicromapVersionInfoEXT::safe_VkMicromapVersionInfoEXT(const safe_VkMicrom
     sType = copy_src.sType;
     pVersionData = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVersionData) {
         pVersionData = new uint8_t[2 * VK_UUID_SIZE];
         memcpy((void*)pVersionData, (void*)copy_src.pVersionData, sizeof(uint8_t) * 2 * VK_UUID_SIZE);
@@ -15542,6 +15768,7 @@ safe_VkMicromapVersionInfoEXT& safe_VkMicromapVersionInfoEXT::operator=(const sa
     sType = copy_src.sType;
     pVersionData = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVersionData) {
         pVersionData = new uint8_t[2 * VK_UUID_SIZE];
         memcpy((void*)pVersionData, (void*)copy_src.pVersionData, sizeof(uint8_t) * 2 * VK_UUID_SIZE);
@@ -15562,6 +15789,7 @@ void safe_VkMicromapVersionInfoEXT::initialize(const VkMicromapVersionInfoEXT* i
     sType = in_struct->sType;
     pVersionData = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVersionData) {
         pVersionData = new uint8_t[2 * VK_UUID_SIZE];
         memcpy((void*)pVersionData, (void*)in_struct->pVersionData, sizeof(uint8_t) * 2 * VK_UUID_SIZE);
@@ -15573,6 +15801,7 @@ void safe_VkMicromapVersionInfoEXT::initialize(const safe_VkMicromapVersionInfoE
     sType = copy_src->sType;
     pVersionData = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pVersionData) {
         pVersionData = new uint8_t[2 * VK_UUID_SIZE];
         memcpy((void*)pVersionData, (void*)copy_src->pVersionData, sizeof(uint8_t) * 2 * VK_UUID_SIZE);
@@ -16801,6 +17030,7 @@ safe_VkRenderPassCreationFeedbackCreateInfoEXT::safe_VkRenderPassCreationFeedbac
     const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pRenderPassFeedback(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pRenderPassFeedback) {
         pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*in_struct->pRenderPassFeedback);
     }
@@ -16814,6 +17044,7 @@ safe_VkRenderPassCreationFeedbackCreateInfoEXT::safe_VkRenderPassCreationFeedbac
     sType = copy_src.sType;
     pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pRenderPassFeedback) {
         pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src.pRenderPassFeedback);
     }
@@ -16829,6 +17060,7 @@ safe_VkRenderPassCreationFeedbackCreateInfoEXT& safe_VkRenderPassCreationFeedbac
     sType = copy_src.sType;
     pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pRenderPassFeedback) {
         pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src.pRenderPassFeedback);
     }
@@ -16848,6 +17080,7 @@ void safe_VkRenderPassCreationFeedbackCreateInfoEXT::initialize(const VkRenderPa
     sType = in_struct->sType;
     pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pRenderPassFeedback) {
         pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*in_struct->pRenderPassFeedback);
     }
@@ -16858,6 +17091,7 @@ void safe_VkRenderPassCreationFeedbackCreateInfoEXT::initialize(const safe_VkRen
     sType = copy_src->sType;
     pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pRenderPassFeedback) {
         pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src->pRenderPassFeedback);
     }
@@ -16867,6 +17101,7 @@ safe_VkRenderPassSubpassFeedbackCreateInfoEXT::safe_VkRenderPassSubpassFeedbackC
     const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), pSubpassFeedback(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSubpassFeedback) {
         pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*in_struct->pSubpassFeedback);
     }
@@ -16880,6 +17115,7 @@ safe_VkRenderPassSubpassFeedbackCreateInfoEXT::safe_VkRenderPassSubpassFeedbackC
     sType = copy_src.sType;
     pSubpassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSubpassFeedback) {
         pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src.pSubpassFeedback);
     }
@@ -16895,6 +17131,7 @@ safe_VkRenderPassSubpassFeedbackCreateInfoEXT& safe_VkRenderPassSubpassFeedbackC
     sType = copy_src.sType;
     pSubpassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSubpassFeedback) {
         pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src.pSubpassFeedback);
     }
@@ -16914,6 +17151,7 @@ void safe_VkRenderPassSubpassFeedbackCreateInfoEXT::initialize(const VkRenderPas
     sType = in_struct->sType;
     pSubpassFeedback = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSubpassFeedback) {
         pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*in_struct->pSubpassFeedback);
     }
@@ -16924,6 +17162,7 @@ void safe_VkRenderPassSubpassFeedbackCreateInfoEXT::initialize(const safe_VkRend
     sType = copy_src->sType;
     pSubpassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pSubpassFeedback) {
         pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src->pSubpassFeedback);
     }
@@ -16981,6 +17220,7 @@ safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT::safe_VkPhysicalDeviceS
     const VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderModuleIdentifierAlgorithmUUID[i] = in_struct->shaderModuleIdentifierAlgorithmUUID[i];
     }
@@ -16993,6 +17233,7 @@ safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT::safe_VkPhysicalDeviceS
     const safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT& copy_src) {
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderModuleIdentifierAlgorithmUUID[i] = copy_src.shaderModuleIdentifierAlgorithmUUID[i];
     }
@@ -17006,6 +17247,7 @@ safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT& safe_VkPhysicalDeviceS
 
     sType = copy_src.sType;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderModuleIdentifierAlgorithmUUID[i] = copy_src.shaderModuleIdentifierAlgorithmUUID[i];
     }
@@ -17022,6 +17264,7 @@ void safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT::initialize(
     if (pNext) FreePnextChain(pNext);
     sType = in_struct->sType;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderModuleIdentifierAlgorithmUUID[i] = in_struct->shaderModuleIdentifierAlgorithmUUID[i];
     }
@@ -17031,6 +17274,7 @@ void safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT::initialize(
     const safe_VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state) {
     sType = copy_src->sType;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderModuleIdentifierAlgorithmUUID[i] = copy_src->shaderModuleIdentifierAlgorithmUUID[i];
     }
@@ -17040,6 +17284,7 @@ safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT::safe_VkPipelineShaderSt
     const VkPipelineShaderStageModuleIdentifierCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), identifierSize(in_struct->identifierSize), pIdentifier(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pIdentifier) {
         pIdentifier = new uint8_t[in_struct->identifierSize];
         memcpy((void*)pIdentifier, (void*)in_struct->pIdentifier, sizeof(uint8_t) * in_struct->identifierSize);
@@ -17058,6 +17303,7 @@ safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT::safe_VkPipelineShaderSt
     identifierSize = copy_src.identifierSize;
     pIdentifier = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pIdentifier) {
         pIdentifier = new uint8_t[copy_src.identifierSize];
         memcpy((void*)pIdentifier, (void*)copy_src.pIdentifier, sizeof(uint8_t) * copy_src.identifierSize);
@@ -17075,6 +17321,7 @@ safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT& safe_VkPipelineShaderSt
     identifierSize = copy_src.identifierSize;
     pIdentifier = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pIdentifier) {
         pIdentifier = new uint8_t[copy_src.identifierSize];
         memcpy((void*)pIdentifier, (void*)copy_src.pIdentifier, sizeof(uint8_t) * copy_src.identifierSize);
@@ -17096,6 +17343,7 @@ void safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT::initialize(
     identifierSize = in_struct->identifierSize;
     pIdentifier = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pIdentifier) {
         pIdentifier = new uint8_t[in_struct->identifierSize];
         memcpy((void*)pIdentifier, (void*)in_struct->pIdentifier, sizeof(uint8_t) * in_struct->identifierSize);
@@ -17108,6 +17356,7 @@ void safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT::initialize(
     identifierSize = copy_src->identifierSize;
     pIdentifier = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pIdentifier) {
         pIdentifier = new uint8_t[copy_src->identifierSize];
         memcpy((void*)pIdentifier, (void*)copy_src->pIdentifier, sizeof(uint8_t) * copy_src->identifierSize);
@@ -17118,6 +17367,7 @@ safe_VkShaderModuleIdentifierEXT::safe_VkShaderModuleIdentifierEXT(const VkShade
                                                                    [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), identifierSize(in_struct->identifierSize) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = in_struct->identifier[i];
     }
@@ -17130,6 +17380,7 @@ safe_VkShaderModuleIdentifierEXT::safe_VkShaderModuleIdentifierEXT(const safe_Vk
     sType = copy_src.sType;
     identifierSize = copy_src.identifierSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = copy_src.identifier[i];
     }
@@ -17143,6 +17394,7 @@ safe_VkShaderModuleIdentifierEXT& safe_VkShaderModuleIdentifierEXT::operator=(co
     sType = copy_src.sType;
     identifierSize = copy_src.identifierSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = copy_src.identifier[i];
     }
@@ -17160,6 +17412,7 @@ void safe_VkShaderModuleIdentifierEXT::initialize(const VkShaderModuleIdentifier
     sType = in_struct->sType;
     identifierSize = in_struct->identifierSize;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = in_struct->identifier[i];
     }
@@ -17170,6 +17423,7 @@ void safe_VkShaderModuleIdentifierEXT::initialize(const safe_VkShaderModuleIdent
     sType = copy_src->sType;
     identifierSize = copy_src->identifierSize;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = copy_src->identifier[i];
     }
@@ -17323,6 +17577,7 @@ safe_VkPhysicalDeviceShaderObjectPropertiesEXT::safe_VkPhysicalDeviceShaderObjec
     const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), shaderBinaryVersion(in_struct->shaderBinaryVersion) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderBinaryUUID[i] = in_struct->shaderBinaryUUID[i];
     }
@@ -17336,6 +17591,7 @@ safe_VkPhysicalDeviceShaderObjectPropertiesEXT::safe_VkPhysicalDeviceShaderObjec
     sType = copy_src.sType;
     shaderBinaryVersion = copy_src.shaderBinaryVersion;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderBinaryUUID[i] = copy_src.shaderBinaryUUID[i];
     }
@@ -17350,6 +17606,7 @@ safe_VkPhysicalDeviceShaderObjectPropertiesEXT& safe_VkPhysicalDeviceShaderObjec
     sType = copy_src.sType;
     shaderBinaryVersion = copy_src.shaderBinaryVersion;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderBinaryUUID[i] = copy_src.shaderBinaryUUID[i];
     }
@@ -17367,6 +17624,7 @@ void safe_VkPhysicalDeviceShaderObjectPropertiesEXT::initialize(const VkPhysical
     sType = in_struct->sType;
     shaderBinaryVersion = in_struct->shaderBinaryVersion;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderBinaryUUID[i] = in_struct->shaderBinaryUUID[i];
     }
@@ -17377,6 +17635,7 @@ void safe_VkPhysicalDeviceShaderObjectPropertiesEXT::initialize(const safe_VkPhy
     sType = copy_src->sType;
     shaderBinaryVersion = copy_src->shaderBinaryVersion;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         shaderBinaryUUID[i] = copy_src->shaderBinaryUUID[i];
     }
@@ -17404,6 +17663,7 @@ safe_VkShaderCreateInfoEXT::safe_VkShaderCreateInfoEXT(const VkShaderCreateInfoE
             pSetLayouts[i] = in_struct->pSetLayouts[i];
         }
     }
+
     if (in_struct->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)in_struct->pPushConstantRanges,
@@ -17449,6 +17709,7 @@ safe_VkShaderCreateInfoEXT::safe_VkShaderCreateInfoEXT(const safe_VkShaderCreate
             pSetLayouts[i] = copy_src.pSetLayouts[i];
         }
     }
+
     if (copy_src.pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src.pPushConstantRanges,
@@ -17486,6 +17747,7 @@ safe_VkShaderCreateInfoEXT& safe_VkShaderCreateInfoEXT::operator=(const safe_VkS
             pSetLayouts[i] = copy_src.pSetLayouts[i];
         }
     }
+
     if (copy_src.pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src.pPushConstantRanges,
@@ -17530,6 +17792,7 @@ void safe_VkShaderCreateInfoEXT::initialize(const VkShaderCreateInfoEXT* in_stru
             pSetLayouts[i] = in_struct->pSetLayouts[i];
         }
     }
+
     if (in_struct->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)in_struct->pPushConstantRanges,
@@ -17560,6 +17823,7 @@ void safe_VkShaderCreateInfoEXT::initialize(const safe_VkShaderCreateInfoEXT* co
             pSetLayouts[i] = copy_src->pSetLayouts[i];
         }
     }
+
     if (copy_src->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src->pPushConstantRanges,
@@ -17833,15 +18097,19 @@ safe_VkPhysicalDeviceMeshShaderPropertiesEXT::safe_VkPhysicalDeviceMeshShaderPro
       prefersCompactVertexOutput(in_struct->prefersCompactVertexOutput),
       prefersCompactPrimitiveOutput(in_struct->prefersCompactPrimitiveOutput) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupCount[i] = in_struct->maxTaskWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupCount[i] = in_struct->maxMeshWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
     }
@@ -17903,15 +18171,19 @@ safe_VkPhysicalDeviceMeshShaderPropertiesEXT::safe_VkPhysicalDeviceMeshShaderPro
     prefersCompactVertexOutput = copy_src.prefersCompactVertexOutput;
     prefersCompactPrimitiveOutput = copy_src.prefersCompactPrimitiveOutput;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupCount[i] = copy_src.maxTaskWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupCount[i] = copy_src.maxMeshWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
     }
@@ -17949,15 +18221,19 @@ safe_VkPhysicalDeviceMeshShaderPropertiesEXT& safe_VkPhysicalDeviceMeshShaderPro
     prefersCompactVertexOutput = copy_src.prefersCompactVertexOutput;
     prefersCompactPrimitiveOutput = copy_src.prefersCompactPrimitiveOutput;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupCount[i] = copy_src.maxTaskWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupCount[i] = copy_src.maxMeshWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
     }
@@ -17998,15 +18274,19 @@ void safe_VkPhysicalDeviceMeshShaderPropertiesEXT::initialize(const VkPhysicalDe
     prefersCompactVertexOutput = in_struct->prefersCompactVertexOutput;
     prefersCompactPrimitiveOutput = in_struct->prefersCompactPrimitiveOutput;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupCount[i] = in_struct->maxTaskWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupCount[i] = in_struct->maxMeshWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
     }
@@ -18040,15 +18320,19 @@ void safe_VkPhysicalDeviceMeshShaderPropertiesEXT::initialize(const safe_VkPhysi
     prefersCompactVertexOutput = copy_src->prefersCompactVertexOutput;
     prefersCompactPrimitiveOutput = copy_src->prefersCompactPrimitiveOutput;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupCount[i] = copy_src->maxTaskWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxTaskWorkGroupSize[i] = copy_src->maxTaskWorkGroupSize[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupCount[i] = copy_src->maxMeshWorkGroupCount[i];
     }
+
     for (uint32_t i = 0; i < 3; ++i) {
         maxMeshWorkGroupSize[i] = copy_src->maxMeshWorkGroupSize[i];
     }

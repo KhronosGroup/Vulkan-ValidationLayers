@@ -30,25 +30,25 @@ class CommandValidationOutputGenerator(BaseGenerator):
     # Called at beginning of processing as file is opened
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2021-2023 Valve Corporation
-* Copyright (c) 2021-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2021-2023 Valve Corporation
+            * Copyright (c) 2021-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'command_validation.cpp':
@@ -61,27 +61,27 @@ class CommandValidationOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-#include "error_message/logging.h"
-#include "core_checks/core_validation.h"
+            #include "error_message/logging.h"
+            #include "core_checks/core_validation.h"
 
-enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
+            enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
 
-struct CommandValidationInfo {
-    const char* recording_vuid;
-    const char* buffer_level_vuid;
+            struct CommandValidationInfo {
+                const char* recording_vuid;
+                const char* buffer_level_vuid;
 
-    VkQueueFlags queue_flags;
-    const char* queue_vuid;
+                VkQueueFlags queue_flags;
+                const char* queue_vuid;
 
-    CMD_SCOPE_TYPE render_pass;
-    const char* render_pass_vuid;
+                CMD_SCOPE_TYPE render_pass;
+                const char* render_pass_vuid;
 
-    CMD_SCOPE_TYPE video_coding;
-    const char* video_coding_vuid;
-};
+                CMD_SCOPE_TYPE video_coding;
+                const char* video_coding_vuid;
+            };
 
-using Func = vvl::Func;
-''')
+            using Func = vvl::Func;
+            ''')
         out.append('// clang-format off\n')
         out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
@@ -142,63 +142,63 @@ using Func = vvl::Func;
 
             out.append('}},\n')
         out.append('};\n')
-        out.append('// clang-format off\n')
+        out.append('// clang-format on\n')
 
         #
         # The main function to validate all the commands
         # TODO - Remove C++ code from being a single python string
         out.append('''
-// Ran on all vkCmd* commands
-// Because it validate the implicit VUs that stateless can't, if this fails, it is likely
-// the input is very bad and other checks will crash dereferencing null pointers
-bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const Location& loc) const {
-    bool skip = false;
+            // Ran on all vkCmd* commands
+            // Because it validate the implicit VUs that stateless can't, if this fails, it is likely
+            // the input is very bad and other checks will crash dereferencing null pointers
+            bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE& cb_state, const Location& loc) const {
+                bool skip = false;
 
-    auto info_it = kCommandValidationTable.find(loc.function);
-    if (info_it == kCommandValidationTable.end()) {
-        assert(false);
-    }
-    const auto& info = info_it->second;
+                auto info_it = kCommandValidationTable.find(loc.function);
+                if (info_it == kCommandValidationTable.end()) {
+                    assert(false);
+                }
+                const auto& info = info_it->second;
 
-    // Validate the given command being added to the specified cmd buffer,
-    // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
-    switch (cb_state.state) {
-        case CbState::Recording:
-            skip |= ValidateCmdSubpassState(cb_state, loc);
-            break;
+                // Validate the given command being added to the specified cmd buffer,
+                // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
+                switch (cb_state.state) {
+                    case CbState::Recording:
+                        skip |= ValidateCmdSubpassState(cb_state, loc);
+                        break;
 
-        case CbState::InvalidComplete:
-        case CbState::InvalidIncomplete:
-            skip |= ReportInvalidCommandBuffer(cb_state, loc);
-            break;
+                    case CbState::InvalidComplete:
+                    case CbState::InvalidIncomplete:
+                        skip |= ReportInvalidCommandBuffer(cb_state, loc);
+                        break;
 
-        default:
-            assert(loc.function != Func::Empty);
-            skip |= LogError(info.recording_vuid, cb_state.commandBuffer(), loc, "was called before vkBeginCommandBuffer().");
-    }
+                    default:
+                        assert(loc.function != Func::Empty);
+                        skip |= LogError(info.recording_vuid, cb_state.commandBuffer(), loc, "was called before vkBeginCommandBuffer().");
+                }
 
-    // Validate the command pool from which the command buffer is from that the command is allowed for queue type
-    skip |= ValidateCmdQueueFlags(cb_state, loc, info.queue_flags, info.queue_vuid);
+                // Validate the command pool from which the command buffer is from that the command is allowed for queue type
+                skip |= ValidateCmdQueueFlags(cb_state, loc, info.queue_flags, info.queue_vuid);
 
-    // Validate if command is inside or outside a render pass if applicable
-    if (info.render_pass == CMD_SCOPE_INSIDE) {
-        skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
-    } else if (info.render_pass == CMD_SCOPE_OUTSIDE) {
-        skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
-    }
+                // Validate if command is inside or outside a render pass if applicable
+                if (info.render_pass == CMD_SCOPE_INSIDE) {
+                    skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
+                } else if (info.render_pass == CMD_SCOPE_OUTSIDE) {
+                    skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
+                }
 
-    // Validate if command is inside or outside a video coding scope if applicable
-    if (info.video_coding == CMD_SCOPE_INSIDE) {
-        skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
-    } else if (info.video_coding == CMD_SCOPE_OUTSIDE) {
-        skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
-    }
+                // Validate if command is inside or outside a video coding scope if applicable
+                if (info.video_coding == CMD_SCOPE_INSIDE) {
+                    skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
+                } else if (info.video_coding == CMD_SCOPE_OUTSIDE) {
+                    skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
+                }
 
-    // Validate if command has to be recorded in a primary command buffer
-    if (info.buffer_level_vuid != nullptr) {
-        skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
-    }
+                // Validate if command has to be recorded in a primary command buffer
+                if (info.buffer_level_vuid != nullptr) {
+                    skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
+                }
 
-    return skip;
-}''')
+                return skip;
+            }''')
         self.write("".join(out))

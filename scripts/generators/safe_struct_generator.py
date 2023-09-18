@@ -81,27 +81,27 @@ class SafeStructOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-* Copyright (c) 2015-2023 Google Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            * Copyright (c) 2015-2023 Google Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'vk_safe_struct.h':
@@ -118,22 +118,22 @@ class SafeStructOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append('''
-#pragma once
-#include <vulkan/vulkan.h>
-#include <cstdlib>
-#include <algorithm>
-#include <functional>
+            #pragma once
+            #include <vulkan/vulkan.h>
+            #include <cstdlib>
+            #include <algorithm>
+            #include <functional>
 
-// State that elements in a pNext chain may need to be aware of
-struct PNextCopyState {
-    // Custom initialization function. Returns true if the structure passed to init was initialized, false otherwise
-    std::function<bool(VkBaseOutStructure* /* safe_sruct */, const VkBaseOutStructure* /* in_struct */)> init;
-};
+            // State that elements in a pNext chain may need to be aware of
+            struct PNextCopyState {
+                // Custom initialization function. Returns true if the structure passed to init was initialized, false otherwise
+                std::function<bool(VkBaseOutStructure* /* safe_sruct */, const VkBaseOutStructure* /* in_struct */)> init;
+            };
 
-void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state = {});
-void FreePnextChain(const void *pNext);
-char *SafeStringCopy(const char *in_string);
-\n''')
+            void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state = {});
+            void FreePnextChain(const void *pNext);
+            char *SafeStringCopy(const char *in_string);
+            \n''')
 
         for struct in [x for x in self.vk.structs.values() if needSafeStruct(x)]:
             out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
@@ -195,19 +195,21 @@ char *SafeStringCopy(const char *in_string);
     def generateUtil(self):
         out = []
         out.append('''
-#include "vk_safe_struct.h"
-#include "utils/vk_layer_utils.h"
+            #include "vk_safe_struct.h"
+            #include "utils/vk_layer_utils.h"
 
-#include <vector>
+            #include <vector>
 
-extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
+            extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
-char *SafeStringCopy(const char *in_string) {
-    if (nullptr == in_string) return nullptr;
-    char* dest = new char[std::strlen(in_string) + 1];
-    return std::strcpy(dest, in_string);
-}
+            char *SafeStringCopy(const char *in_string) {
+                if (nullptr == in_string) return nullptr;
+                char* dest = new char[std::strlen(in_string) + 1];
+                return std::strcpy(dest, in_string);
+            }
 
+            ''')
+        out.append('''
 // clang-format off
 void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
     if (!pNext) return nullptr;
@@ -318,38 +320,38 @@ void FreePnextChain(const void *pNext) {
     def generateSource(self):
         out = []
         out.append('''
-#include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
-#include "utils/vk_layer_utils.h"
+            #include "vk_safe_struct.h"
+            #include "vk_typemap_helper.h"
+            #include "utils/vk_layer_utils.h"
 
-#include <cstddef>
-#include <cassert>
-#include <cstring>
-#include <vector>
+            #include <cstddef>
+            #include <cassert>
+            #include <cstring>
+            #include <vector>
 
-#include <vulkan/vk_layer.h>
-''')
+            #include <vulkan/vk_layer.h>
+            ''')
 
         custom_definitions = {
             # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array.
             'VkAccelerationStructureGeometryKHR':
-"""
-struct ASGeomKHRExtraData {
-    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
-        ptr(alloc),
-        primitiveOffset(primOffset),
-        primitiveCount(primCount)
-    {}
-    ~ASGeomKHRExtraData() {
-        if (ptr)
-            delete[] ptr;
-    }
-    uint8_t *ptr;
-    uint32_t primitiveOffset;
-    uint32_t primitiveCount;
-};
+            """
+            struct ASGeomKHRExtraData {
+                ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
+                    ptr(alloc),
+                    primitiveOffset(primOffset),
+                    primitiveCount(primCount)
+                {}
+                ~ASGeomKHRExtraData() {
+                    if (ptr)
+                        delete[] ptr;
+                }
+                uint8_t *ptr;
+                uint32_t primitiveOffset;
+                uint32_t primitiveCount;
+            };
 
-vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;"""
+            vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;"""
             }
 
         custom_defeault_construct_txt = {
@@ -605,18 +607,18 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                     '\n'
                     '    *pType = type;\n',
                 'VkPipelineRenderingCreateInfo': '''
-    bool custom_init = copy_state && copy_state->init;
-    if (custom_init) {
-        custom_init = copy_state->init(reinterpret_cast<VkBaseOutStructure*>(this), reinterpret_cast<const VkBaseOutStructure*>(in_struct));
-    }
-    if (!custom_init) {
-        // The custom iniitalization was not used, so do the regular initialization
-        if (in_struct->pColorAttachmentFormats) {
-            pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
-            memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
-        }
-    }
-'''
+                    bool custom_init = copy_state && copy_state->init;
+                    if (custom_init) {
+                        custom_init = copy_state->init(reinterpret_cast<VkBaseOutStructure*>(this), reinterpret_cast<const VkBaseOutStructure*>(in_struct));
+                    }
+                    if (!custom_init) {
+                        // The custom iniitalization was not used, so do the regular initialization
+                        if (in_struct->pColorAttachmentFormats) {
+                            pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+                            memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+                        }
+                    }
+                '''
             }
 
         custom_copy_txt = {
@@ -766,11 +768,11 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                     '\n'
                     '    *pType = type;\n',
                 'VkPipelineRenderingCreateInfo': '''
-    if (copy_src.pColorAttachmentFormats) {
-        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
-        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
-    }
-'''
+                    if (copy_src.pColorAttachmentFormats) {
+                        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+                        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+                    }
+                '''
             }
 
         custom_destruct_txt = {
@@ -916,20 +918,20 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                             if m_type == 'char':
                                 # Create deep copies of strings
                                 if member.length:
-                                    copy_strings += (
-                                        f'''char **tmp_{member.name} = new char *[in_struct->{member.length}];
-                                            for (uint32_t i = 0; i < {member.length}; ++i) {{
-                                                tmp_{member.name}[i] = SafeStringCopy(in_struct->{member.name}[i]);
-                                            }}
-                                            {member.name} = tmp_{member.name};''')
+                                    copy_strings += f'''
+                                        char **tmp_{member.name} = new char *[in_struct->{member.length}];
+                                        for (uint32_t i = 0; i < {member.length}; ++i) {{
+                                            tmp_{member.name}[i] = SafeStringCopy(in_struct->{member.name}[i]);
+                                        }}
+                                        {member.name} = tmp_{member.name};'''
 
-                                    destruct_txt += (
-                                        f'''if ({member.name}) {{
-                                               for (uint32_t i = 0; i < {member.length}; ++i) {{
-                                                 delete [] {member.name}[i];
-                                               }}
-                                               delete [] {member.name};
-                                             }}''')
+                                    destruct_txt += f'''
+                                        if ({member.name}) {{
+                                            for (uint32_t i = 0; i < {member.length}; ++i) {{
+                                                delete [] {member.name}[i];
+                                            }}
+                                            delete [] {member.name};
+                                        }}'''
                                 else:
                                     copy_strings += f'{member.name} = SafeStringCopy(in_struct->{member.name});\n'
                                     destruct_txt += f'if ({member.name}) delete [] {member.name};\n'
@@ -937,20 +939,20 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                 # We need a deep copy of pData / dataSize combos
                                 if member.name == 'pData':
                                     init_list += f'\n    {member.name}(nullptr),'
-                                    construct_txt += (
-                                        '''if (in_struct->pData != nullptr) {
-                                             auto temp = new std::byte[in_struct->dataSize];
-                                             std::memcpy(temp, in_struct->pData, in_struct->dataSize);
-                                             pData = temp;
-                                           }
-                                           ''')
+                                    construct_txt += '''
+                                        if (in_struct->pData != nullptr) {
+                                            auto temp = new std::byte[in_struct->dataSize];
+                                            std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+                                            pData = temp;
+                                        }
+                                        '''
 
-                                    destruct_txt  += (
-                                        '''if (pData != nullptr) {
-                                             auto temp = reinterpret_cast<const std::byte*>(pData);
-                                             delete [] temp;
-                                            }
-                                            ''')
+                                    destruct_txt  += '''
+                                        if (pData != nullptr) {
+                                            auto temp = reinterpret_cast<const std::byte*>(pData);
+                                            delete [] temp;
+                                        }
+                                        '''
                                 else:
                                     init_list += f'\n{member.name}(in_struct->{member.name}),'
                                     init_func_txt += f'{member.name} = in_struct->{member.name};\n'
@@ -963,11 +965,11 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                         else:
                             init_func_txt += f'{member.name} = nullptr;\n'
                             if not member.fixedSizeArray and (member.length is None or '/' in member.length):
-                                construct_txt += (
-                                    f'''if (in_struct->{member.name}) {{
+                                construct_txt += f'''
+                                    if (in_struct->{member.name}) {{
                                             {member.name} = new {m_type}(*in_struct->{member.name});
                                         }}
-                                    ''')
+                                    '''
                                 destruct_txt += f'if ({member.name})\n'
                                 destruct_txt += f'    delete {member.name};\n'
                             else:
@@ -979,10 +981,11 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                     concurrent_clause = member_construct_conditions[member.name](struct, member)
                                 except:
                                     concurrent_clause = (f'in_struct->{member.name}', lambda x: '')
-                                construct_txt += f'''if ({concurrent_clause[0]}) {{
-                                                       {member.name} = new {m_type}[{decorated_length}];
-                                                       memcpy ((void *){member.name}, (void *)in_struct->{member.name}, sizeof({m_type})*{decorated_length});
-                                                       {concurrent_clause[1]('        ')}'''
+                                construct_txt += f'''
+                                    if ({concurrent_clause[0]}) {{
+                                        {member.name} = new {m_type}[{decorated_length}];
+                                        memcpy ((void *){member.name}, (void *)in_struct->{member.name}, sizeof({m_type})*{decorated_length});
+                                        {concurrent_clause[1]('        ')}'''
                                 if len(concurrent_clause) > 2:
                                     construct_txt += '} else {\n'
                                     construct_txt += concurrent_clause[2]('        ')
@@ -991,11 +994,11 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                 destruct_txt += f'    delete[] {member.name};\n'
                 elif member.fixedSizeArray or member.length is not None:
                     if member.fixedSizeArray:
-                        construct_txt += (
-                            f'''for (uint32_t i = 0; i < {member.fixedSizeArray[0]}; ++i) {{
+                        construct_txt += f'''
+                            for (uint32_t i = 0; i < {member.fixedSizeArray[0]}; ++i) {{
                                     {member.name}[i] = in_struct->{member.name}[i];
                                 }}
-                            ''')
+                            '''
                     else:
                         # Init array ptr to NULL
                         default_init_list += f'\n{member.name}(nullptr),'
@@ -1062,31 +1065,31 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                 if (struct.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'
                     out.append(f'''
-safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state)
-{{
-{construct_txt}}}
-''')
+                        safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state)
+                        {{
+                        {construct_txt}}}
+                        ''')
                 else:
                     # Unions don't allow multiple members in the initialization list, so just call initialize
                     out.append(f'''
-safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, PNextCopyState*)
-{{
-    initialize(in_struct);
-}}
-''')
+                        safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, PNextCopyState*)
+                        {{
+                            initialize(in_struct);
+                        }}
+                        ''')
             else:
                 out.append(f'''
-safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state) :{init_list}
-{{
-{construct_txt}}}
-''')
+                    safe_{struct.name}::safe_{struct.name}(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state) :{init_list}
+                    {{
+                    {construct_txt}}}
+                    ''')
             if '' != default_init_list:
                 default_init_list = f' :{default_init_list[:-1]}'
             default_init_body = '\n' + custom_defeault_construct_txt[struct.name] if struct.name in custom_defeault_construct_txt else ''
             out.append(f'''
-safe_{struct.name}::safe_{struct.name}(){default_init_list}
-{{{default_init_body}}}
-''')
+                safe_{struct.name}::safe_{struct.name}(){default_init_list}
+                {{{default_init_body}}}
+                ''')
             # Create slight variation of init and construct txt for copy constructor that takes a copy_src object reference vs. struct ptr
             copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
             copy_construct_init = copy_construct_init.replace(', copy_state', '')
@@ -1103,26 +1106,26 @@ safe_{struct.name}::safe_{struct.name}(){default_init_list}
             copy_assign_txt = '    if (&copy_src == this) return *this;\n\n' + destruct_txt + '\n' + copy_construct_init + copy_construct_txt + '\n    return *this;'
             # Copy constructor
             out.append(f'''
-safe_{struct.name}::safe_{struct.name}(const safe_{struct.name}& copy_src)
-{{
-{copy_construct_init}{copy_construct_txt}}}
-''')
+                safe_{struct.name}::safe_{struct.name}(const safe_{struct.name}& copy_src)
+                {{
+                {copy_construct_init}{copy_construct_txt}}}
+                ''')
             # Copy assignment operator
             out.append(f'''
-safe_{struct.name}& safe_{struct.name}::operator=(const safe_{struct.name}& copy_src)\n{{
-{copy_assign_txt}
-}}
-''')
+                safe_{struct.name}& safe_{struct.name}::operator=(const safe_{struct.name}& copy_src)\n{{
+                {copy_assign_txt}
+                }}
+                ''')
             out.append(f'''
-safe_{struct.name}::~safe_{struct.name}()
-{{
-{destruct_txt}}}
-''')
+                safe_{struct.name}::~safe_{struct.name}()
+                {{
+                {destruct_txt}}}
+                ''')
             out.append(f'''
-void safe_{struct.name}::initialize(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state)
-{{
-{destruct_txt}{init_func_txt}{construct_txt}}}
-''')
+                void safe_{struct.name}::initialize(const {struct.name}* in_struct{self.custom_construct_params.get(struct.name, '')}, [[maybe_unused]] PNextCopyState* copy_state)
+                {{
+                {destruct_txt}{init_func_txt}{construct_txt}}}
+                ''')
             # Copy initializer uses same txt as copy constructor but has a ptr and not a reference
             init_copy = copy_construct_init.replace('copy_src.', 'copy_src->')
             # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
@@ -1131,10 +1134,10 @@ void safe_{struct.name}::initialize(const {struct.name}* in_struct{self.custom_c
             # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
             init_construct = re.sub(r'&copy_src(?!->)', 'copy_src', init_construct)
             out.append(f'''
-void safe_{struct.name}::initialize(const safe_{struct.name}* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
-{{
-{init_copy}{init_construct}}}
-''')
+                void safe_{struct.name}::initialize(const safe_{struct.name}* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+                {{
+                {init_copy}{init_construct}}}
+                ''')
             out.extend([f'#endif // {struct.protect}\n'] if struct.protect else [])
 
         self.write("".join(out))

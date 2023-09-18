@@ -316,6 +316,7 @@ void ThreadSafety::PostCallRecordDestroyFence(VkDevice device, VkFence fence, co
 
 void ThreadSafety::PreCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences) {
     StartReadObjectParentInstance(device, vvl::Func::vkResetFences);
+
     if (pFences) {
         for (uint32_t index = 0; index < fenceCount; index++) {
             StartWriteObject(pFences[index], vvl::Func::vkResetFences);
@@ -327,6 +328,7 @@ void ThreadSafety::PreCallRecordResetFences(VkDevice device, uint32_t fenceCount
 void ThreadSafety::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                              const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkResetFences);
+
     if (pFences) {
         for (uint32_t index = 0; index < fenceCount; index++) {
             FinishWriteObject(pFences[index], vvl::Func::vkResetFences);
@@ -348,6 +350,7 @@ void ThreadSafety::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, 
 void ThreadSafety::PreCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                               uint64_t timeout) {
     StartReadObjectParentInstance(device, vvl::Func::vkWaitForFences);
+
     if (pFences) {
         for (uint32_t index = 0; index < fenceCount; index++) {
             StartReadObject(pFences[index], vvl::Func::vkWaitForFences);
@@ -358,6 +361,7 @@ void ThreadSafety::PreCallRecordWaitForFences(VkDevice device, uint32_t fenceCou
 void ThreadSafety::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                                uint64_t timeout, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkWaitForFences);
+
     if (pFences) {
         for (uint32_t index = 0; index < fenceCount; index++) {
             FinishReadObject(pFences[index], vvl::Func::vkWaitForFences);
@@ -696,6 +700,7 @@ void ThreadSafety::PreCallRecordMergePipelineCaches(VkDevice device, VkPipelineC
                                                     const VkPipelineCache* pSrcCaches) {
     StartReadObjectParentInstance(device, vvl::Func::vkMergePipelineCaches);
     StartWriteObject(dstCache, vvl::Func::vkMergePipelineCaches);
+
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             StartReadObject(pSrcCaches[index], vvl::Func::vkMergePipelineCaches);
@@ -708,6 +713,7 @@ void ThreadSafety::PostCallRecordMergePipelineCaches(VkDevice device, VkPipeline
                                                      const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkMergePipelineCaches);
     FinishWriteObject(dstCache, vvl::Func::vkMergePipelineCaches);
+
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             FinishReadObject(pSrcCaches[index], vvl::Func::vkMergePipelineCaches);
@@ -1090,6 +1096,7 @@ void ThreadSafety::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                       const uint32_t* pDynamicOffsets) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindDescriptorSets);
     StartReadObject(layout, vvl::Func::vkCmdBindDescriptorSets);
+
     if (pDescriptorSets) {
         for (uint32_t index = 0; index < descriptorSetCount; index++) {
             StartReadObject(pDescriptorSets[index], vvl::Func::vkCmdBindDescriptorSets);
@@ -1104,6 +1111,7 @@ void ThreadSafety::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBu
                                                        const uint32_t* pDynamicOffsets, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindDescriptorSets);
     FinishReadObject(layout, vvl::Func::vkCmdBindDescriptorSets);
+
     if (pDescriptorSets) {
         for (uint32_t index = 0; index < descriptorSetCount; index++) {
             FinishReadObject(pDescriptorSets[index], vvl::Func::vkCmdBindDescriptorSets);
@@ -1129,6 +1137,7 @@ void ThreadSafety::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffe
 void ThreadSafety::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers);
@@ -1141,6 +1150,7 @@ void ThreadSafety::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuf
                                                       const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                       const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers);
@@ -1438,6 +1448,7 @@ void ThreadSafety::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             StartReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents);
@@ -1453,6 +1464,7 @@ void ThreadSafety::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, ui
                                                const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                                                const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             FinishReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents);
@@ -1607,6 +1619,7 @@ void ThreadSafety::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer,
 void ThreadSafety::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                    const VkCommandBuffer* pCommandBuffers) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdExecuteCommands);
+
     if (pCommandBuffers) {
         for (uint32_t index = 0; index < commandBufferCount; index++) {
             StartReadObject(pCommandBuffers[index], vvl::Func::vkCmdExecuteCommands);
@@ -1618,6 +1631,7 @@ void ThreadSafety::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer
 void ThreadSafety::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdExecuteCommands);
+
     if (pCommandBuffers) {
         for (uint32_t index = 0; index < commandBufferCount; index++) {
             FinishReadObject(pCommandBuffers[index], vvl::Func::vkCmdExecuteCommands);
@@ -2064,6 +2078,7 @@ void ThreadSafety::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, V
 void ThreadSafety::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                const VkDependencyInfo* pDependencyInfos) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents2);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             StartReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents2);
@@ -2075,6 +2090,7 @@ void ThreadSafety::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
 void ThreadSafety::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                 const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents2);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             FinishReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents2);
@@ -2275,6 +2291,7 @@ void ThreadSafety::PreCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
                                                       const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                       const VkDeviceSize* pSizes, const VkDeviceSize* pStrides) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers2);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers2);
@@ -2288,6 +2305,7 @@ void ThreadSafety::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBu
                                                        const VkDeviceSize* pSizes, const VkDeviceSize* pStrides,
                                                        const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers2);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers2);
@@ -2642,6 +2660,7 @@ void ThreadSafety::PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint3
             StartWriteObjectParentInstance(pCreateInfos[index].oldSwapchain, vvl::Func::vkCreateSharedSwapchainsKHR);
         }
     }
+
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             StartReadObjectParentInstance(pSwapchains[index], vvl::Func::vkCreateSharedSwapchainsKHR);
@@ -3680,6 +3699,7 @@ void ThreadSafety::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer
 void ThreadSafety::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                   const VkDependencyInfo* pDependencyInfos) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents2KHR);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             StartReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents2KHR);
@@ -3691,6 +3711,7 @@ void ThreadSafety::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
 void ThreadSafety::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                    const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWaitEvents2KHR);
+
     if (pEvents) {
         for (uint32_t index = 0; index < eventCount; index++) {
             FinishReadObject(pEvents[index], vvl::Func::vkCmdWaitEvents2KHR);
@@ -3979,6 +4000,7 @@ void ThreadSafety::PreCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                                                                    uint32_t bindingCount, const VkBuffer* pBuffers,
                                                                    const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
@@ -3992,6 +4014,7 @@ void ThreadSafety::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuf
                                                                     const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                                     const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], vvl::Func::vkCmdBindTransformFeedbackBuffersEXT);
@@ -4004,6 +4027,7 @@ void ThreadSafety::PreCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                                                              uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                              const VkDeviceSize* pCounterBufferOffsets) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBeginTransformFeedbackEXT);
+
     if (pCounterBuffers) {
         for (uint32_t index = 0; index < counterBufferCount; index++) {
             StartReadObject(pCounterBuffers[index], vvl::Func::vkCmdBeginTransformFeedbackEXT);
@@ -4017,6 +4041,7 @@ void ThreadSafety::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer co
                                                               const VkDeviceSize* pCounterBufferOffsets,
                                                               const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBeginTransformFeedbackEXT);
+
     if (pCounterBuffers) {
         for (uint32_t index = 0; index < counterBufferCount; index++) {
             FinishReadObject(pCounterBuffers[index], vvl::Func::vkCmdBeginTransformFeedbackEXT);
@@ -4029,6 +4054,7 @@ void ThreadSafety::PreCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                                            uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                            const VkDeviceSize* pCounterBufferOffsets) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdEndTransformFeedbackEXT);
+
     if (pCounterBuffers) {
         for (uint32_t index = 0; index < counterBufferCount; index++) {
             StartReadObject(pCounterBuffers[index], vvl::Func::vkCmdEndTransformFeedbackEXT);
@@ -4042,6 +4068,7 @@ void ThreadSafety::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer comm
                                                             const VkDeviceSize* pCounterBufferOffsets,
                                                             const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdEndTransformFeedbackEXT);
+
     if (pCounterBuffers) {
         for (uint32_t index = 0; index < counterBufferCount; index++) {
             FinishReadObject(pCounterBuffers[index], vvl::Func::vkCmdEndTransformFeedbackEXT);
@@ -4454,6 +4481,7 @@ void ThreadSafety::PostCallRecordCmdSetDiscardRectangleModeEXT(VkCommandBuffer c
 void ThreadSafety::PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
                                                   const VkHdrMetadataEXT* pMetadata) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetHdrMetadataEXT);
+
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             StartReadObjectParentInstance(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
@@ -4464,6 +4492,7 @@ void ThreadSafety::PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swap
 void ThreadSafety::PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
                                                    const VkHdrMetadataEXT* pMetadata, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetHdrMetadataEXT);
+
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             FinishReadObjectParentInstance(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
@@ -4804,6 +4833,7 @@ void ThreadSafety::PreCallRecordMergeValidationCachesEXT(VkDevice device, VkVali
                                                          const VkValidationCacheEXT* pSrcCaches) {
     StartReadObjectParentInstance(device, vvl::Func::vkMergeValidationCachesEXT);
     StartWriteObject(dstCache, vvl::Func::vkMergeValidationCachesEXT);
+
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             StartReadObject(pSrcCaches[index], vvl::Func::vkMergeValidationCachesEXT);
@@ -4816,6 +4846,7 @@ void ThreadSafety::PostCallRecordMergeValidationCachesEXT(VkDevice device, VkVal
                                                           const VkValidationCacheEXT* pSrcCaches, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkMergeValidationCachesEXT);
     FinishWriteObject(dstCache, vvl::Func::vkMergeValidationCachesEXT);
+
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             FinishReadObject(pSrcCaches[index], vvl::Func::vkMergeValidationCachesEXT);
@@ -5079,6 +5110,7 @@ void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(VkCom
                                                                            VkQueryType queryType, VkQueryPool queryPool,
                                                                            uint32_t firstQuery) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
@@ -5092,6 +5124,7 @@ void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureNV* pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], vvl::Func::vkCmdWriteAccelerationStructuresPropertiesNV);
@@ -5552,6 +5585,7 @@ void ThreadSafety::PreCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer command
                                                          const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                          const VkDeviceSize* pStrides) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers2EXT);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers2EXT);
@@ -5565,6 +5599,7 @@ void ThreadSafety::PostCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer comman
                                                           const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                           const VkDeviceSize* pStrides, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindVertexBuffers2EXT);
+
     if (pBuffers) {
         for (uint32_t index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], vvl::Func::vkCmdBindVertexBuffers2EXT);
@@ -6489,6 +6524,7 @@ void ThreadSafety::PreCallRecordWriteMicromapsPropertiesEXT(VkDevice device, uin
                                                             const VkMicromapEXT* pMicromaps, VkQueryType queryType, size_t dataSize,
                                                             void* pData, size_t stride) {
     StartReadObjectParentInstance(device, vvl::Func::vkWriteMicromapsPropertiesEXT);
+
     if (pMicromaps) {
         for (uint32_t index = 0; index < micromapCount; index++) {
             StartReadObject(pMicromaps[index], vvl::Func::vkWriteMicromapsPropertiesEXT);
@@ -6501,6 +6537,7 @@ void ThreadSafety::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, ui
                                                              size_t dataSize, void* pData, size_t stride,
                                                              const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkWriteMicromapsPropertiesEXT);
+
     if (pMicromaps) {
         for (uint32_t index = 0; index < micromapCount; index++) {
             FinishReadObject(pMicromaps[index], vvl::Func::vkWriteMicromapsPropertiesEXT);
@@ -6549,6 +6586,7 @@ void ThreadSafety::PreCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer c
                                                                const VkMicromapEXT* pMicromaps, VkQueryType queryType,
                                                                VkQueryPool queryPool, uint32_t firstQuery) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
+
     if (pMicromaps) {
         for (uint32_t index = 0; index < micromapCount; index++) {
             StartReadObject(pMicromaps[index], vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
@@ -6563,6 +6601,7 @@ void ThreadSafety::PostCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer 
                                                                 VkQueryPool queryPool, uint32_t firstQuery,
                                                                 const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
+
     if (pMicromaps) {
         for (uint32_t index = 0; index < micromapCount; index++) {
             FinishReadObject(pMicromaps[index], vvl::Func::vkCmdWriteMicromapsPropertiesEXT);
@@ -7261,6 +7300,7 @@ void ThreadSafety::PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShade
 void ThreadSafety::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
                                                   const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdBindShadersEXT);
+
     if (pShaders) {
         for (uint32_t index = 0; index < stageCount; index++) {
             StartReadObject(pShaders[index], vvl::Func::vkCmdBindShadersEXT);
@@ -7273,6 +7313,7 @@ void ThreadSafety::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer
                                                    const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
                                                    const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdBindShadersEXT);
+
     if (pShaders) {
         for (uint32_t index = 0; index < stageCount; index++) {
             FinishReadObject(pShaders[index], vvl::Func::vkCmdBindShadersEXT);
@@ -7455,6 +7496,7 @@ void ThreadSafety::PreCallRecordWriteAccelerationStructuresPropertiesKHR(VkDevic
                                                                          VkQueryType queryType, size_t dataSize, void* pData,
                                                                          size_t stride) {
     StartReadObjectParentInstance(device, vvl::Func::vkWriteAccelerationStructuresPropertiesKHR);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], vvl::Func::vkWriteAccelerationStructuresPropertiesKHR);
@@ -7467,6 +7509,7 @@ void ThreadSafety::PostCallRecordWriteAccelerationStructuresPropertiesKHR(VkDevi
                                                                           VkQueryType queryType, size_t dataSize, void* pData,
                                                                           size_t stride, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkWriteAccelerationStructuresPropertiesKHR);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], vvl::Func::vkWriteAccelerationStructuresPropertiesKHR);
@@ -7528,6 +7571,7 @@ void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) {
     StartWriteObject(commandBuffer, vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);
@@ -7541,6 +7585,7 @@ void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);
+
     if (pAccelerationStructures) {
         for (uint32_t index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], vvl::Func::vkCmdWriteAccelerationStructuresPropertiesKHR);

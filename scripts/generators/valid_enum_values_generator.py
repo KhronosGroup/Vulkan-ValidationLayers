@@ -25,26 +25,26 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'valid_enum_values.h':
@@ -70,15 +70,15 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-#include "chassis.h"
-#include "utils/hash_vk_types.h"
+            #include "chassis.h"
+            #include "utils/hash_vk_types.h"
 
-// TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
-//      Ideally "values" would be something like a static variable that is built once and this function returns
-//      a span of the container. This does not work for applications which create and destroy many instances and
-//      devices over the lifespan of the project (e.g., VLT).
+            // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
+            //      Ideally "values" would be something like a static variable that is built once and this function returns
+            //      a span of the container. This does not work for applications which create and destroy many instances and
+            //      devices over the lifespan of the project (e.g., VLT).
 
-''')
+            ''')
         out.append("// clang-format off\n")
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
             out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])

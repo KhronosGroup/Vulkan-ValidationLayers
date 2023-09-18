@@ -82,27 +82,27 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-* Copyright (c) 2015-2023 Google Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            * Copyright (c) 2015-2023 Google Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.filename == 'thread_safety.cpp':
@@ -167,11 +167,12 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         out.append(f'    {prefix}WriteObject{suffix}({member}, vvl::Func::{command.name});\n')
             elif param.externSync:
                 if param.length:
-                    out.append(f'''if ({param.name}) {{
-                        for (uint32_t index = 0; index < {param.length}; index++) {{
-                            {prefix}WriteObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
-                        }}
-                    }}\n''')
+                    out.append(f'''
+                        if ({param.name}) {{
+                            for (uint32_t index = 0; index < {param.length}; index++) {{
+                                {prefix}WriteObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
+                            }}
+                        }}\n''')
                 else:
                     out.append(f'{prefix}WriteObject{GetParentInstance(param)}({param.name}, vvl::Func::{command.name});\n')
                     if ('Destroy' in command.name or 'Free' in command.name or 'ReleasePerformanceConfigurationINTEL' in command.name) and prefix == 'Finish':
@@ -220,11 +221,12 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                                 if candidate.pointer:
                                     dereference = '*'
                         param_len = param.length.replace("::", "->")
-                        out.append(f'''if ({param.name}) {{
-                            for (uint32_t index = 0; index < {dereference}{param.length}; index++) {{
-                                {prefix}ReadObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
-                            }}
-                        }}\n''')
+                        out.append(f'''
+                            if ({param.name}) {{
+                                for (uint32_t index = 0; index < {dereference}{param.length}; index++) {{
+                                    {prefix}ReadObject{GetParentInstance(param)}({param.name}[index], vvl::Func::{command.name});
+                                }}
+                            }}\n''')
                     elif not param.pointer:
                         # Pointer params are often being created.
                         # They are not being read from.
@@ -252,9 +254,9 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-#include "chassis.h"
-#include "thread_tracker/thread_safety_validation.h"
-''')
+            #include "chassis.h"
+            #include "thread_tracker/thread_safety_validation.h"
+            ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist and x.name not in self.manual_commands]:
             # Determine first if this function needs to be intercepted
             startThreadSafety = self.makeThreadUseBlock(command, start=True)

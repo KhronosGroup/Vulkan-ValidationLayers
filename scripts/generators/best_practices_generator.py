@@ -73,26 +73,26 @@ class BestPracticesOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
-*
-* Copyright (c) 2015-2023 The Khronos Group Inc.
-* Copyright (c) 2015-2023 Valve Corporation
-* Copyright (c) 2015-2023 LunarG, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 The Khronos Group Inc.
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         # Build additional pass of functions to ignore
@@ -116,11 +116,11 @@ class BestPracticesOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append('''
-#pragma once
-#include <vulkan/vulkan_core.h>
-#include "containers/custom_containers.h"
-#include "error_message/record_object.h"
-''')
+            #pragma once
+            #include <vulkan/vulkan_core.h>
+            #include "containers/custom_containers.h"
+            #include "error_message/record_object.h"
+            ''')
         # List all Function declarations
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
@@ -162,9 +162,9 @@ class BestPracticesOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-#include "chassis.h"
-#include "best_practices/best_practices_validation.h"
-''')
+            #include "chassis.h"
+            #include "best_practices/best_practices_validation.h"
+            ''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             paramList = [param.name for param in command.params]
             paramList.append('record_obj')
@@ -186,15 +186,15 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
 
             if hasNonVkSuccess(command.successCodes):
-                out.append(
-                    '''if (record_obj.result > VK_SUCCESS) {
+                out.append('''
+                    if (record_obj.result > VK_SUCCESS) {
                         LogPositiveSuccessCode(record_obj);
                         return;
                     }''')
 
             if command.errorCodes is not None:
-                out.append(
-                    '''if (record_obj.result < VK_SUCCESS) {
+                out.append('''
+                    if (record_obj.result < VK_SUCCESS) {
                         LogErrorCode(record_obj);
                     }''')
 

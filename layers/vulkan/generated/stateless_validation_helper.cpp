@@ -49,6 +49,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceSubgroupProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceSubgroupProperties-sType-sType
+
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES) "
@@ -61,6 +62,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevice16BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: {  // Covers
                                                                           // VUID-VkPhysicalDevice16BitStorageFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_16bit_storage))) {
@@ -86,6 +88,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkMemoryDedicatedRequirements structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: {  // Covers VUID-VkMemoryDedicatedRequirements-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dedicated_allocation))) {
@@ -99,6 +102,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkMemoryDedicatedAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO: {  // Covers VUID-VkMemoryDedicatedAllocateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dedicated_allocation))) {
@@ -112,6 +116,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkMemoryAllocateFlagsInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO: {  // Covers VUID-VkMemoryAllocateFlagsInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -131,6 +136,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkDeviceGroupRenderPassBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: {  // Covers VUID-VkDeviceGroupRenderPassBeginInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -160,6 +166,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDeviceGroupCommandBufferBeginInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO: {  // Covers
                                                                           // VUID-VkDeviceGroupCommandBufferBeginInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -173,6 +180,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkDeviceGroupSubmitInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO: {  // Covers VUID-VkDeviceGroupSubmitInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -202,6 +210,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkDeviceGroupBindSparseInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO: {  // Covers VUID-VkDeviceGroupBindSparseInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -215,6 +224,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkBindBufferMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO: {  // Covers VUID-VkBindBufferMemoryDeviceGroupInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -235,6 +245,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkBindImageMemoryDeviceGroupInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO: {  // Covers VUID-VkBindImageMemoryDeviceGroupInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_device_group))) {
@@ -268,6 +279,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkDeviceGroupDeviceCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO: {  // Covers VUID-VkDeviceGroupDeviceCreateInfo-sType-sType
+
             if (is_const_param) {
                 if (!instance_extensions.vk_khr_device_group_creation) {
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -287,6 +299,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceFeatures2 structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2: {  // Covers VUID-VkPhysicalDeviceFeatures2-sType-sType
+
             if (is_const_param) {
                 if (!instance_extensions.vk_khr_get_physical_device_properties2) {
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -428,6 +441,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePointClippingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES: {  // Covers
                                                                              // VUID-VkPhysicalDevicePointClippingProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
@@ -442,6 +456,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkRenderPassInputAttachmentAspectCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO: {  // Covers
                                                                                    // VUID-VkRenderPassInputAttachmentAspectCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
@@ -477,6 +492,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkImageViewUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO: {  // Covers VUID-VkImageViewUsageCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
@@ -498,6 +514,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPipelineTessellationDomainOriginStateCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO: {  // Covers
                                                                                          // VUID-VkPipelineTessellationDomainOriginStateCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance2))) {
@@ -520,6 +537,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkRenderPassMultiviewCreateInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO: {  // Covers VUID-VkRenderPassMultiviewCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
@@ -548,6 +566,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceMultiviewFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {  // Covers VUID-VkPhysicalDeviceMultiviewFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
@@ -571,6 +590,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMultiviewProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES: {  // Covers
                                                                         // VUID-VkPhysicalDeviceMultiviewProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MULTIVIEW_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_multiview))) {
@@ -585,6 +605,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVariablePointersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_variable_pointers))) {
@@ -607,6 +628,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceProtectedMemoryFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceProtectedMemoryFeatures-sType-sType
+
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -625,6 +647,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceProtectedMemoryProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES: {  // Covers
                                                                                // VUID-VkPhysicalDeviceProtectedMemoryProperties-sType-sType
+
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -637,6 +660,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkProtectedSubmitInfo structure members
         case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO: {  // Covers VUID-VkProtectedSubmitInfo-sType-sType
+
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO) which was "
@@ -653,6 +677,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkSamplerYcbcrConversionInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: {  // Covers VUID-VkSamplerYcbcrConversionInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
@@ -671,6 +696,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkBindImagePlaneMemoryInfo structure members
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO: {  // Covers VUID-VkBindImagePlaneMemoryInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
@@ -693,6 +719,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkImagePlaneMemoryRequirementsInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO: {  // Covers
                                                                         // VUID-VkImagePlaneMemoryRequirementsInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
@@ -715,6 +742,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSamplerYcbcrConversionFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceSamplerYcbcrConversionFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
@@ -735,6 +763,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkSamplerYcbcrConversionImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES: {  // Covers
                                                                                     // VUID-VkSamplerYcbcrConversionImageFormatProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))) {
@@ -750,6 +779,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceExternalImageFormatInfo structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO: {  // Covers
                                                                               // VUID-VkPhysicalDeviceExternalImageFormatInfo-sType-sType
+
             if (is_const_param) {
                 if (!instance_extensions.vk_khr_external_memory_capabilities) {
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -769,6 +799,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExternalImageFormatProperties structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES: {  // Covers VUID-VkExternalImageFormatProperties-sType-sType
+
             if (is_const_param) {
                 if (!instance_extensions.vk_khr_external_memory_capabilities) {
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -781,6 +812,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceIDProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceIDProperties-sType-sType
+
             if (is_const_param) {
                 if (!instance_extensions.vk_khr_external_fence_capabilities) {
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -793,6 +825,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExternalMemoryImageCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO: {  // Covers VUID-VkExternalMemoryImageCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
@@ -813,6 +846,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExternalMemoryBufferCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO: {  // Covers VUID-VkExternalMemoryBufferCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
@@ -833,6 +867,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExportMemoryAllocateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO: {  // Covers VUID-VkExportMemoryAllocateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_memory))) {
@@ -853,6 +888,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExportFenceCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO: {  // Covers VUID-VkExportFenceCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_fence))) {
@@ -873,6 +909,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkExportSemaphoreCreateInfo structure members
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO: {  // Covers VUID-VkExportSemaphoreCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_external_semaphore))) {
@@ -894,6 +931,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMaintenance3Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES: {  // Covers
                                                                             // VUID-VkPhysicalDeviceMaintenance3Properties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_3_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance3))) {
@@ -908,6 +946,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderDrawParametersFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceShaderDrawParametersFeatures-sType-sType
+
             if (api_version < VK_API_VERSION_1_1) {
                 skip |= LogError(
                     pnext_vuid, instance, loc.dot(Field::pNext),
@@ -925,6 +964,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceVulkan11Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES: {  // Covers VUID-VkPhysicalDeviceVulkan11Features-sType-sType
+
             if (api_version < VK_API_VERSION_1_2) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES) "
@@ -966,6 +1006,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVulkan11Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES: {  // Covers
                                                                          // VUID-VkPhysicalDeviceVulkan11Properties-sType-sType
+
             if (api_version < VK_API_VERSION_1_2) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -978,6 +1019,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceVulkan12Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES: {  // Covers VUID-VkPhysicalDeviceVulkan12Features-sType-sType
+
             if (api_version < VK_API_VERSION_1_2) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) "
@@ -1110,6 +1152,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVulkan12Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES: {  // Covers
                                                                          // VUID-VkPhysicalDeviceVulkan12Properties-sType-sType
+
             if (api_version < VK_API_VERSION_1_2) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -1122,6 +1165,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkImageFormatListCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: {  // Covers VUID-VkImageFormatListCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_image_format_list))) {
@@ -1142,6 +1186,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevice8BitStorageFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: {  // Covers
                                                                          // VUID-VkPhysicalDevice8BitStorageFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_8bit_storage))) {
@@ -1165,6 +1210,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceDriverProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES: {  // Covers VUID-VkPhysicalDeviceDriverProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_driver_properties))) {
@@ -1179,6 +1225,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderAtomicInt64Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceShaderAtomicInt64Features-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_atomic_int64))) {
@@ -1200,6 +1247,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderFloat16Int8Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceShaderFloat16Int8Features-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_float16_int8))) {
@@ -1221,6 +1269,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceFloatControlsProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceFloatControlsProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_float_controls))) {
@@ -1235,6 +1284,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDescriptorSetLayoutBindingFlagsCreateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO: {  // Covers
                                                                                    // VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
@@ -1258,6 +1308,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDescriptorIndexingFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceDescriptorIndexingFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
@@ -1334,6 +1385,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDescriptorIndexingProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDescriptorIndexingProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
@@ -1348,6 +1400,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDescriptorSetVariableDescriptorCountAllocateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO: {  // Covers
                                                                                           // VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
@@ -1371,6 +1424,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDescriptorSetVariableDescriptorCountLayoutSupport structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: {  // Covers
                                                                                            // VUID-VkDescriptorSetVariableDescriptorCountLayoutSupport-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing))) {
@@ -1386,6 +1440,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkSubpassDescriptionDepthStencilResolve structure members
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE: {  // Covers
                                                                              // VUID-VkSubpassDescriptionDepthStencilResolve-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve))) {
@@ -1417,6 +1472,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDepthStencilResolveProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve))) {
@@ -1432,6 +1488,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceScalarBlockLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceScalarBlockLayoutFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_scalar_block_layout))) {
@@ -1450,6 +1507,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkImageStencilUsageCreateInfo structure members
         case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO: {  // Covers VUID-VkImageStencilUsageCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage))) {
@@ -1471,6 +1529,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkSamplerReductionModeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: {  // Covers VUID-VkSamplerReductionModeCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax))) {
@@ -1491,6 +1550,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSamplerFilterMinmaxProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax))) {
@@ -1506,6 +1566,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVulkanMemoryModelFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: {  // Covers
                                                                                 // VUID-VkPhysicalDeviceVulkanMemoryModelFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_vulkan_memory_model))) {
@@ -1530,6 +1591,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImagelessFramebufferFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceImagelessFramebufferFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
@@ -1548,6 +1610,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkFramebufferAttachmentsCreateInfo structure members
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO: {  // Covers VUID-VkFramebufferAttachmentsCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
@@ -1595,6 +1658,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkRenderPassAttachmentBeginInfo structure members
         case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {  // Covers VUID-VkRenderPassAttachmentBeginInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_imageless_framebuffer))) {
@@ -1616,6 +1680,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceUniformBufferStandardLayoutFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceUniformBufferStandardLayoutFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_uniform_buffer_standard_layout))) {
@@ -1637,6 +1702,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_subgroup_extended_types))) {
@@ -1652,6 +1718,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
@@ -1672,6 +1739,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkAttachmentReferenceStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT: {  // Covers VUID-VkAttachmentReferenceStencilLayout-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
@@ -1692,6 +1760,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkAttachmentDescriptionStencilLayout structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT: {  // Covers
                                                                          // VUID-VkAttachmentDescriptionStencilLayout-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts))) {
@@ -1716,6 +1785,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceHostQueryResetFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceHostQueryResetFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_host_query_reset))) {
@@ -1735,6 +1805,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTimelineSemaphoreFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: {  // Covers
                                                                                // VUID-VkPhysicalDeviceTimelineSemaphoreFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
@@ -1754,6 +1825,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTimelineSemaphoreProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceTimelineSemaphoreProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
@@ -1767,6 +1839,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkSemaphoreTypeCreateInfo structure members
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO: {  // Covers VUID-VkSemaphoreTypeCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
@@ -1786,6 +1859,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkTimelineSemaphoreSubmitInfo structure members
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO: {  // Covers VUID-VkTimelineSemaphoreSubmitInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))) {
@@ -1800,6 +1874,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceBufferDeviceAddressFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
@@ -1825,6 +1900,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkBufferOpaqueCaptureAddressCreateInfo structure members
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO: {  // Covers
                                                                              // VUID-VkBufferOpaqueCaptureAddressCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
@@ -1839,6 +1915,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkMemoryOpaqueCaptureAddressAllocateInfo structure members
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO: {  // Covers
                                                                                // VUID-VkMemoryOpaqueCaptureAddressAllocateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_buffer_device_address))) {
@@ -1852,6 +1929,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPhysicalDeviceVulkan13Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES: {  // Covers VUID-VkPhysicalDeviceVulkan13Features-sType-sType
+
             if (api_version < VK_API_VERSION_1_3) {
                 skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES) "
@@ -1900,6 +1978,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceVulkan13Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES: {  // Covers
                                                                          // VUID-VkPhysicalDeviceVulkan13Properties-sType-sType
+
             if (api_version < VK_API_VERSION_1_3) {
                 skip |=
                     LogError(pnext_vuid, instance, loc.dot(Field::pNext),
@@ -1913,6 +1992,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPipelineCreationFeedbackCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO: {  // Covers
                                                                           // VUID-VkPipelineCreationFeedbackCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_pipeline_creation_feedback))) {
@@ -1952,6 +2032,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderTerminateInvocationFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES: {  // Covers
                                                                                         // VUID-VkPhysicalDeviceShaderTerminateInvocationFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_terminate_invocation))) {
@@ -1973,6 +2054,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES: {  // Covers
                                                                                                // VUID-VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api &&
                      !SupportedByPdev(physical_device, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)) ||
@@ -1997,6 +2079,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePrivateDataFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES: {  // Covers
                                                                          // VUID-VkPhysicalDevicePrivateDataFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_private_data))) {
@@ -2015,6 +2098,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkDevicePrivateDataCreateInfo structure members
         case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO: {  // Covers VUID-VkDevicePrivateDataCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_private_data))) {
@@ -2029,6 +2113,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDevicePipelineCreationCacheControlFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES: {  // Covers
                                                                                             // VUID-VkPhysicalDevicePipelineCreationCacheControlFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_pipeline_creation_cache_control))) {
@@ -2049,6 +2134,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkMemoryBarrier2 structure members
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2: {  // Covers VUID-VkMemoryBarrier2-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_synchronization2))) {
@@ -2078,6 +2164,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSynchronization2Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceSynchronization2Features-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_synchronization2))) {
@@ -2097,6 +2184,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory))) {
@@ -2120,6 +2208,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceImageRobustnessFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES: {  // Covers
                                                                              // VUID-VkPhysicalDeviceImageRobustnessFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_image_robustness))) {
@@ -2139,6 +2228,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSubgroupSizeControlFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceSubgroupSizeControlFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
@@ -2160,6 +2250,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceSubgroupSizeControlProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceSubgroupSizeControlProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
@@ -2175,6 +2266,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPipelineShaderStageRequiredSubgroupSizeCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO: {  // Covers
                                                                                             // VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_subgroup_size_control))) {
@@ -2190,6 +2282,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceInlineUniformBlockFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES: {  // Covers
                                                                                  // VUID-VkPhysicalDeviceInlineUniformBlockFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
@@ -2212,6 +2305,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceInlineUniformBlockProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_PROPERTIES: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceInlineUniformBlockProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
@@ -2227,6 +2321,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkWriteDescriptorSetInlineUniformBlock structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK: {  // Covers
                                                                              // VUID-VkWriteDescriptorSetInlineUniformBlock-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
@@ -2249,6 +2344,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkDescriptorPoolInlineUniformBlockCreateInfo structure members
         case VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO: {  // Covers
                                                                                     // VUID-VkDescriptorPoolInlineUniformBlockCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_inline_uniform_block))) {
@@ -2264,6 +2360,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTextureCompressionASTCHDRFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceTextureCompressionASTCHDRFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_texture_compression_astc_hdr))) {
@@ -2284,6 +2381,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkPipelineRenderingCreateInfo structure members
         case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO: {  // Covers VUID-VkPipelineRenderingCreateInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
@@ -2298,6 +2396,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceDynamicRenderingFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES: {  // Covers
                                                                               // VUID-VkPhysicalDeviceDynamicRenderingFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
@@ -2317,6 +2416,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkCommandBufferInheritanceRenderingInfo structure members
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO: {  // Covers
                                                                              // VUID-VkCommandBufferInheritanceRenderingInfo-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
@@ -2353,6 +2453,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderIntegerDotProductFeatures structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceShaderIntegerDotProductFeatures-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_integer_dot_product))) {
@@ -2374,6 +2475,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceShaderIntegerDotProductProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceShaderIntegerDotProductProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_shader_integer_dot_product))) {
@@ -2389,6 +2491,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceTexelBufferAlignmentProperties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceTexelBufferAlignmentProperties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_texel_buffer_alignment))) {
@@ -2403,6 +2506,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkFormatProperties3 structure members
         case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3: {  // Covers VUID-VkFormatProperties3-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_format_feature_flags2))) {
@@ -2417,6 +2521,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMaintenance4Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {  // Covers
                                                                           // VUID-VkPhysicalDeviceMaintenance4Features-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance4))) {
@@ -2436,6 +2541,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // Validation code for VkPhysicalDeviceMaintenance4Properties structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES: {  // Covers
                                                                             // VUID-VkPhysicalDeviceMaintenance4Properties-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_maintenance4))) {
@@ -2693,6 +2799,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // Validation code for VkAttachmentSampleCountInfoAMD structure members
         case VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD: {  // Covers VUID-VkAttachmentSampleCountInfoAMD-sType-sType
+
             if (is_const_param) {
                 if ((is_physdev_api && !SupportedByPdev(physical_device, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) ||
                     (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {

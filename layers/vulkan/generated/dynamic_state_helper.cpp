@@ -169,6 +169,7 @@ static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
             return VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV;
         case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT;
+
         default:
             return VK_DYNAMIC_STATE_MAX_ENUM;
     }
@@ -320,6 +321,7 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
             return CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV;
         case VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT;
+
         default:
             return CB_DYNAMIC_STATE_STATUS_NUM;
     }

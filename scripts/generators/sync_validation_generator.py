@@ -76,25 +76,25 @@ class SyncValidationOutputGenerator(BaseGenerator):
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
+            // See {os.path.basename(__file__)} for modifications
 
-/***************************************************************************
- *
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/\n''')
+            /***************************************************************************
+            *
+            * Copyright (c) 2015-2023 Valve Corporation
+            * Copyright (c) 2015-2023 LunarG, Inc.
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         # Set value to be at end of bitmask
@@ -146,15 +146,15 @@ class SyncValidationOutputGenerator(BaseGenerator):
     def generateHeader(self):
         out = []
         out.append('''
-#pragma once
+            #pragma once
 
-#include <array>
-#include <bitset>
-#include <map>
-#include <stdint.h>
-#include <vulkan/vulkan.h>
-#include "containers/custom_containers.h"
-''')
+            #include <array>
+            #include <bitset>
+            #include <map>
+            #include <stdint.h>
+            #include <vulkan/vulkan.h>
+            #include "containers/custom_containers.h"
+            ''')
         out.append('// clang-format off\n')
         out.append(f'''
 // Fake stages and accesses for acquire present support
@@ -235,8 +235,8 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
     def generateSource(self):
         out = []
         out.append('''
-#include "sync_validation_types.h"
-''')
+            #include "sync_validation_types.h"
+            ''')
 
         out.append('// clang-format off\n')
         out.append(f'const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex() {{\n')

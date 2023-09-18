@@ -393,6 +393,7 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo*
       enabledLayerCount(in_struct->enabledLayerCount),
       enabledExtensionCount(in_struct->enabledExtensionCount) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     char** tmp_ppEnabledLayerNames = new char*[in_struct->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
@@ -423,6 +424,7 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreate
     enabledLayerCount = copy_src.enabledLayerCount;
     enabledExtensionCount = copy_src.enabledExtensionCount;
     pNext = SafePnextCopy(copy_src.pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src.enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src.ppEnabledLayerNames[i]);
@@ -440,6 +442,7 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
     if (&copy_src == this) return *this;
 
     if (pApplicationInfo) delete pApplicationInfo;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -460,6 +463,7 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
     enabledLayerCount = copy_src.enabledLayerCount;
     enabledExtensionCount = copy_src.enabledExtensionCount;
     pNext = SafePnextCopy(copy_src.pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src.enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src.ppEnabledLayerNames[i]);
@@ -477,6 +481,7 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
 
 safe_VkInstanceCreateInfo::~safe_VkInstanceCreateInfo() {
     if (pApplicationInfo) delete pApplicationInfo;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -494,6 +499,7 @@ safe_VkInstanceCreateInfo::~safe_VkInstanceCreateInfo() {
 
 void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
     if (pApplicationInfo) delete pApplicationInfo;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -513,6 +519,7 @@ void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct
     enabledLayerCount = in_struct->enabledLayerCount;
     enabledExtensionCount = in_struct->enabledExtensionCount;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     char** tmp_ppEnabledLayerNames = new char*[in_struct->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
@@ -533,6 +540,7 @@ void safe_VkInstanceCreateInfo::initialize(const safe_VkInstanceCreateInfo* copy
     enabledLayerCount = copy_src->enabledLayerCount;
     enabledExtensionCount = copy_src->enabledExtensionCount;
     pNext = SafePnextCopy(copy_src->pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src->ppEnabledLayerNames[i]);
@@ -554,6 +562,7 @@ safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo(const VkDeviceQueueCr
       queueCount(in_struct->queueCount),
       pQueuePriorities(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pQueuePriorities) {
         pQueuePriorities = new float[in_struct->queueCount];
         memcpy((void*)pQueuePriorities, (void*)in_struct->pQueuePriorities, sizeof(float) * in_struct->queueCount);
@@ -575,6 +584,7 @@ safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo(const safe_VkDeviceQu
     queueCount = copy_src.queueCount;
     pQueuePriorities = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pQueuePriorities) {
         pQueuePriorities = new float[copy_src.queueCount];
         memcpy((void*)pQueuePriorities, (void*)copy_src.pQueuePriorities, sizeof(float) * copy_src.queueCount);
@@ -593,6 +603,7 @@ safe_VkDeviceQueueCreateInfo& safe_VkDeviceQueueCreateInfo::operator=(const safe
     queueCount = copy_src.queueCount;
     pQueuePriorities = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pQueuePriorities) {
         pQueuePriorities = new float[copy_src.queueCount];
         memcpy((void*)pQueuePriorities, (void*)copy_src.pQueuePriorities, sizeof(float) * copy_src.queueCount);
@@ -616,6 +627,7 @@ void safe_VkDeviceQueueCreateInfo::initialize(const VkDeviceQueueCreateInfo* in_
     queueCount = in_struct->queueCount;
     pQueuePriorities = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pQueuePriorities) {
         pQueuePriorities = new float[in_struct->queueCount];
         memcpy((void*)pQueuePriorities, (void*)in_struct->pQueuePriorities, sizeof(float) * in_struct->queueCount);
@@ -630,6 +642,7 @@ void safe_VkDeviceQueueCreateInfo::initialize(const safe_VkDeviceQueueCreateInfo
     queueCount = copy_src->queueCount;
     pQueuePriorities = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pQueuePriorities) {
         pQueuePriorities = new float[copy_src->queueCount];
         memcpy((void*)pQueuePriorities, (void*)copy_src->pQueuePriorities, sizeof(float) * copy_src->queueCount);
@@ -645,6 +658,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
       enabledExtensionCount(in_struct->enabledExtensionCount),
       pEnabledFeatures(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     char** tmp_ppEnabledLayerNames = new char*[in_struct->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
@@ -661,6 +675,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
             pQueueCreateInfos[i].initialize(&in_struct->pQueueCreateInfos[i]);
         }
     }
+
     if (in_struct->pEnabledFeatures) {
         pEnabledFeatures = new VkPhysicalDeviceFeatures(*in_struct->pEnabledFeatures);
     }
@@ -687,6 +702,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const safe_VkDeviceCreateInfo& 
     enabledExtensionCount = copy_src.enabledExtensionCount;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src.enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src.ppEnabledLayerNames[i]);
@@ -703,6 +719,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const safe_VkDeviceCreateInfo& 
             pQueueCreateInfos[i].initialize(&copy_src.pQueueCreateInfos[i]);
         }
     }
+
     if (copy_src.pEnabledFeatures) {
         pEnabledFeatures = new VkPhysicalDeviceFeatures(*copy_src.pEnabledFeatures);
     }
@@ -712,6 +729,7 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
     if (&copy_src == this) return *this;
 
     if (pQueueCreateInfos) delete[] pQueueCreateInfos;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -735,6 +753,7 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
     enabledExtensionCount = copy_src.enabledExtensionCount;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src.enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src.ppEnabledLayerNames[i]);
@@ -751,6 +770,7 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
             pQueueCreateInfos[i].initialize(&copy_src.pQueueCreateInfos[i]);
         }
     }
+
     if (copy_src.pEnabledFeatures) {
         pEnabledFeatures = new VkPhysicalDeviceFeatures(*copy_src.pEnabledFeatures);
     }
@@ -760,6 +780,7 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
 
 safe_VkDeviceCreateInfo::~safe_VkDeviceCreateInfo() {
     if (pQueueCreateInfos) delete[] pQueueCreateInfos;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -778,6 +799,7 @@ safe_VkDeviceCreateInfo::~safe_VkDeviceCreateInfo() {
 
 void safe_VkDeviceCreateInfo::initialize(const VkDeviceCreateInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
     if (pQueueCreateInfos) delete[] pQueueCreateInfos;
+
     if (ppEnabledLayerNames) {
         for (uint32_t i = 0; i < enabledLayerCount; ++i) {
             delete[] ppEnabledLayerNames[i];
@@ -800,6 +822,7 @@ void safe_VkDeviceCreateInfo::initialize(const VkDeviceCreateInfo* in_struct, [[
     enabledExtensionCount = in_struct->enabledExtensionCount;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     char** tmp_ppEnabledLayerNames = new char*[in_struct->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
@@ -816,6 +839,7 @@ void safe_VkDeviceCreateInfo::initialize(const VkDeviceCreateInfo* in_struct, [[
             pQueueCreateInfos[i].initialize(&in_struct->pQueueCreateInfos[i]);
         }
     }
+
     if (in_struct->pEnabledFeatures) {
         pEnabledFeatures = new VkPhysicalDeviceFeatures(*in_struct->pEnabledFeatures);
     }
@@ -830,6 +854,7 @@ void safe_VkDeviceCreateInfo::initialize(const safe_VkDeviceCreateInfo* copy_src
     enabledExtensionCount = copy_src->enabledExtensionCount;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     char** tmp_ppEnabledLayerNames = new char*[copy_src->enabledLayerCount];
     for (uint32_t i = 0; i < enabledLayerCount; ++i) {
         tmp_ppEnabledLayerNames[i] = SafeStringCopy(copy_src->ppEnabledLayerNames[i]);
@@ -846,6 +871,7 @@ void safe_VkDeviceCreateInfo::initialize(const safe_VkDeviceCreateInfo* copy_src
             pQueueCreateInfos[i].initialize(&copy_src->pQueueCreateInfos[i]);
         }
     }
+
     if (copy_src->pEnabledFeatures) {
         pEnabledFeatures = new VkPhysicalDeviceFeatures(*copy_src->pEnabledFeatures);
     }
@@ -867,11 +893,13 @@ safe_VkSubmitInfo::safe_VkSubmitInfo(const VkSubmitInfo* in_struct, [[maybe_unus
             pWaitSemaphores[i] = in_struct->pWaitSemaphores[i];
         }
     }
+
     if (in_struct->pWaitDstStageMask) {
         pWaitDstStageMask = new VkPipelineStageFlags[in_struct->waitSemaphoreCount];
         memcpy((void*)pWaitDstStageMask, (void*)in_struct->pWaitDstStageMask,
                sizeof(VkPipelineStageFlags) * in_struct->waitSemaphoreCount);
     }
+
     if (in_struct->pCommandBuffers) {
         pCommandBuffers = new VkCommandBuffer[in_struct->commandBufferCount];
         memcpy((void*)pCommandBuffers, (void*)in_struct->pCommandBuffers, sizeof(VkCommandBuffer) * in_struct->commandBufferCount);
@@ -911,11 +939,13 @@ safe_VkSubmitInfo::safe_VkSubmitInfo(const safe_VkSubmitInfo& copy_src) {
             pWaitSemaphores[i] = copy_src.pWaitSemaphores[i];
         }
     }
+
     if (copy_src.pWaitDstStageMask) {
         pWaitDstStageMask = new VkPipelineStageFlags[copy_src.waitSemaphoreCount];
         memcpy((void*)pWaitDstStageMask, (void*)copy_src.pWaitDstStageMask,
                sizeof(VkPipelineStageFlags) * copy_src.waitSemaphoreCount);
     }
+
     if (copy_src.pCommandBuffers) {
         pCommandBuffers = new VkCommandBuffer[copy_src.commandBufferCount];
         memcpy((void*)pCommandBuffers, (void*)copy_src.pCommandBuffers, sizeof(VkCommandBuffer) * copy_src.commandBufferCount);
@@ -952,11 +982,13 @@ safe_VkSubmitInfo& safe_VkSubmitInfo::operator=(const safe_VkSubmitInfo& copy_sr
             pWaitSemaphores[i] = copy_src.pWaitSemaphores[i];
         }
     }
+
     if (copy_src.pWaitDstStageMask) {
         pWaitDstStageMask = new VkPipelineStageFlags[copy_src.waitSemaphoreCount];
         memcpy((void*)pWaitDstStageMask, (void*)copy_src.pWaitDstStageMask,
                sizeof(VkPipelineStageFlags) * copy_src.waitSemaphoreCount);
     }
+
     if (copy_src.pCommandBuffers) {
         pCommandBuffers = new VkCommandBuffer[copy_src.commandBufferCount];
         memcpy((void*)pCommandBuffers, (void*)copy_src.pCommandBuffers, sizeof(VkCommandBuffer) * copy_src.commandBufferCount);
@@ -1000,11 +1032,13 @@ void safe_VkSubmitInfo::initialize(const VkSubmitInfo* in_struct, [[maybe_unused
             pWaitSemaphores[i] = in_struct->pWaitSemaphores[i];
         }
     }
+
     if (in_struct->pWaitDstStageMask) {
         pWaitDstStageMask = new VkPipelineStageFlags[in_struct->waitSemaphoreCount];
         memcpy((void*)pWaitDstStageMask, (void*)in_struct->pWaitDstStageMask,
                sizeof(VkPipelineStageFlags) * in_struct->waitSemaphoreCount);
     }
+
     if (in_struct->pCommandBuffers) {
         pCommandBuffers = new VkCommandBuffer[in_struct->commandBufferCount];
         memcpy((void*)pCommandBuffers, (void*)in_struct->pCommandBuffers, sizeof(VkCommandBuffer) * in_struct->commandBufferCount);
@@ -1033,11 +1067,13 @@ void safe_VkSubmitInfo::initialize(const safe_VkSubmitInfo* copy_src, [[maybe_un
             pWaitSemaphores[i] = copy_src->pWaitSemaphores[i];
         }
     }
+
     if (copy_src->pWaitDstStageMask) {
         pWaitDstStageMask = new VkPipelineStageFlags[copy_src->waitSemaphoreCount];
         memcpy((void*)pWaitDstStageMask, (void*)copy_src->pWaitDstStageMask,
                sizeof(VkPipelineStageFlags) * copy_src->waitSemaphoreCount);
     }
+
     if (copy_src->pCommandBuffers) {
         pCommandBuffers = new VkCommandBuffer[copy_src->commandBufferCount];
         memcpy((void*)pCommandBuffers, (void*)copy_src->pCommandBuffers, sizeof(VkCommandBuffer) * copy_src->commandBufferCount);
@@ -1838,6 +1874,7 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_st
       queueFamilyIndexCount(0),
       pQueueFamilyIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -1866,6 +1903,7 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const safe_VkBufferCreateInfo& 
     sharingMode = copy_src.sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -1888,6 +1926,7 @@ safe_VkBufferCreateInfo& safe_VkBufferCreateInfo::operator=(const safe_VkBufferC
     sharingMode = copy_src.sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -1914,6 +1953,7 @@ void safe_VkBufferCreateInfo::initialize(const VkBufferCreateInfo* in_struct, [[
     sharingMode = in_struct->sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -1932,6 +1972,7 @@ void safe_VkBufferCreateInfo::initialize(const safe_VkBufferCreateInfo* copy_src
     sharingMode = copy_src->sharingMode;
     pQueueFamilyIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src->pQueueFamilyIndices,
@@ -2024,6 +2065,7 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const VkImageCreateInfo* in_struc
       pQueueFamilyIndices(nullptr),
       initialLayout(in_struct->initialLayout) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -2066,6 +2108,7 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const safe_VkImageCreateInfo& cop
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src.initialLayout;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -2095,6 +2138,7 @@ safe_VkImageCreateInfo& safe_VkImageCreateInfo::operator=(const safe_VkImageCrea
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src.initialLayout;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if ((copy_src.sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src.pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src.queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src.pQueueFamilyIndices, sizeof(uint32_t) * copy_src.queueFamilyIndexCount);
@@ -2128,6 +2172,7 @@ void safe_VkImageCreateInfo::initialize(const VkImageCreateInfo* in_struct, [[ma
     pQueueFamilyIndices = nullptr;
     initialLayout = in_struct->initialLayout;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if ((in_struct->sharingMode == VK_SHARING_MODE_CONCURRENT) && in_struct->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[in_struct->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)in_struct->pQueueFamilyIndices,
@@ -2153,6 +2198,7 @@ void safe_VkImageCreateInfo::initialize(const safe_VkImageCreateInfo* copy_src, 
     pQueueFamilyIndices = nullptr;
     initialLayout = copy_src->initialLayout;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if ((copy_src->sharingMode == VK_SHARING_MODE_CONCURRENT) && copy_src->pQueueFamilyIndices) {
         pQueueFamilyIndices = new uint32_t[copy_src->queueFamilyIndexCount];
         memcpy((void*)pQueueFamilyIndices, (void*)copy_src->pQueueFamilyIndices,
@@ -2382,6 +2428,7 @@ safe_VkSpecializationInfo::safe_VkSpecializationInfo(const VkSpecializationInfo*
         pMapEntries = new VkSpecializationMapEntry[in_struct->mapEntryCount];
         memcpy((void*)pMapEntries, (void*)in_struct->pMapEntries, sizeof(VkSpecializationMapEntry) * in_struct->mapEntryCount);
     }
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -2395,10 +2442,12 @@ safe_VkSpecializationInfo::safe_VkSpecializationInfo(const safe_VkSpecialization
     mapEntryCount = copy_src.mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src.dataSize;
+
     if (copy_src.pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src.mapEntryCount];
         memcpy((void*)pMapEntries, (void*)copy_src.pMapEntries, sizeof(VkSpecializationMapEntry) * copy_src.mapEntryCount);
     }
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -2410,6 +2459,7 @@ safe_VkSpecializationInfo& safe_VkSpecializationInfo::operator=(const safe_VkSpe
     if (&copy_src == this) return *this;
 
     if (pMapEntries) delete[] pMapEntries;
+
     if (pData != nullptr) {
         auto temp = reinterpret_cast<const std::byte*>(pData);
         delete[] temp;
@@ -2418,10 +2468,12 @@ safe_VkSpecializationInfo& safe_VkSpecializationInfo::operator=(const safe_VkSpe
     mapEntryCount = copy_src.mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src.dataSize;
+
     if (copy_src.pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src.mapEntryCount];
         memcpy((void*)pMapEntries, (void*)copy_src.pMapEntries, sizeof(VkSpecializationMapEntry) * copy_src.mapEntryCount);
     }
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -2433,6 +2485,7 @@ safe_VkSpecializationInfo& safe_VkSpecializationInfo::operator=(const safe_VkSpe
 
 safe_VkSpecializationInfo::~safe_VkSpecializationInfo() {
     if (pMapEntries) delete[] pMapEntries;
+
     if (pData != nullptr) {
         auto temp = reinterpret_cast<const std::byte*>(pData);
         delete[] temp;
@@ -2441,6 +2494,7 @@ safe_VkSpecializationInfo::~safe_VkSpecializationInfo() {
 
 void safe_VkSpecializationInfo::initialize(const VkSpecializationInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state) {
     if (pMapEntries) delete[] pMapEntries;
+
     if (pData != nullptr) {
         auto temp = reinterpret_cast<const std::byte*>(pData);
         delete[] temp;
@@ -2448,10 +2502,12 @@ void safe_VkSpecializationInfo::initialize(const VkSpecializationInfo* in_struct
     mapEntryCount = in_struct->mapEntryCount;
     pMapEntries = nullptr;
     dataSize = in_struct->dataSize;
+
     if (in_struct->pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[in_struct->mapEntryCount];
         memcpy((void*)pMapEntries, (void*)in_struct->pMapEntries, sizeof(VkSpecializationMapEntry) * in_struct->mapEntryCount);
     }
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -2463,10 +2519,12 @@ void safe_VkSpecializationInfo::initialize(const safe_VkSpecializationInfo* copy
     mapEntryCount = copy_src->mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src->dataSize;
+
     if (copy_src->pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src->mapEntryCount];
         memcpy((void*)pMapEntries, (void*)copy_src->pMapEntries, sizeof(VkSpecializationMapEntry) * copy_src->mapEntryCount);
     }
+
     if (copy_src->pData != nullptr) {
         auto temp = new std::byte[copy_src->dataSize];
         std::memcpy(temp, copy_src->pData, copy_src->dataSize);
@@ -2640,11 +2698,13 @@ safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreate
       vertexAttributeDescriptionCount(in_struct->vertexAttributeDescriptionCount),
       pVertexAttributeDescriptions(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVertexBindingDescriptions) {
         pVertexBindingDescriptions = new VkVertexInputBindingDescription[in_struct->vertexBindingDescriptionCount];
         memcpy((void*)pVertexBindingDescriptions, (void*)in_struct->pVertexBindingDescriptions,
                sizeof(VkVertexInputBindingDescription) * in_struct->vertexBindingDescriptionCount);
     }
+
     if (in_struct->pVertexAttributeDescriptions) {
         pVertexAttributeDescriptions = new VkVertexInputAttributeDescription[in_struct->vertexAttributeDescriptionCount];
         memcpy((void*)pVertexAttributeDescriptions, (void*)in_struct->pVertexAttributeDescriptions,
@@ -2670,11 +2730,13 @@ safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreate
     vertexAttributeDescriptionCount = copy_src.vertexAttributeDescriptionCount;
     pVertexAttributeDescriptions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVertexBindingDescriptions) {
         pVertexBindingDescriptions = new VkVertexInputBindingDescription[copy_src.vertexBindingDescriptionCount];
         memcpy((void*)pVertexBindingDescriptions, (void*)copy_src.pVertexBindingDescriptions,
                sizeof(VkVertexInputBindingDescription) * copy_src.vertexBindingDescriptionCount);
     }
+
     if (copy_src.pVertexAttributeDescriptions) {
         pVertexAttributeDescriptions = new VkVertexInputAttributeDescription[copy_src.vertexAttributeDescriptionCount];
         memcpy((void*)pVertexAttributeDescriptions, (void*)copy_src.pVertexAttributeDescriptions,
@@ -2697,11 +2759,13 @@ safe_VkPipelineVertexInputStateCreateInfo& safe_VkPipelineVertexInputStateCreate
     vertexAttributeDescriptionCount = copy_src.vertexAttributeDescriptionCount;
     pVertexAttributeDescriptions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pVertexBindingDescriptions) {
         pVertexBindingDescriptions = new VkVertexInputBindingDescription[copy_src.vertexBindingDescriptionCount];
         memcpy((void*)pVertexBindingDescriptions, (void*)copy_src.pVertexBindingDescriptions,
                sizeof(VkVertexInputBindingDescription) * copy_src.vertexBindingDescriptionCount);
     }
+
     if (copy_src.pVertexAttributeDescriptions) {
         pVertexAttributeDescriptions = new VkVertexInputAttributeDescription[copy_src.vertexAttributeDescriptionCount];
         memcpy((void*)pVertexAttributeDescriptions, (void*)copy_src.pVertexAttributeDescriptions,
@@ -2729,11 +2793,13 @@ void safe_VkPipelineVertexInputStateCreateInfo::initialize(const VkPipelineVerte
     vertexAttributeDescriptionCount = in_struct->vertexAttributeDescriptionCount;
     pVertexAttributeDescriptions = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pVertexBindingDescriptions) {
         pVertexBindingDescriptions = new VkVertexInputBindingDescription[in_struct->vertexBindingDescriptionCount];
         memcpy((void*)pVertexBindingDescriptions, (void*)in_struct->pVertexBindingDescriptions,
                sizeof(VkVertexInputBindingDescription) * in_struct->vertexBindingDescriptionCount);
     }
+
     if (in_struct->pVertexAttributeDescriptions) {
         pVertexAttributeDescriptions = new VkVertexInputAttributeDescription[in_struct->vertexAttributeDescriptionCount];
         memcpy((void*)pVertexAttributeDescriptions, (void*)in_struct->pVertexAttributeDescriptions,
@@ -2750,11 +2816,13 @@ void safe_VkPipelineVertexInputStateCreateInfo::initialize(const safe_VkPipeline
     vertexAttributeDescriptionCount = copy_src->vertexAttributeDescriptionCount;
     pVertexAttributeDescriptions = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pVertexBindingDescriptions) {
         pVertexBindingDescriptions = new VkVertexInputBindingDescription[copy_src->vertexBindingDescriptionCount];
         memcpy((void*)pVertexBindingDescriptions, (void*)copy_src->pVertexBindingDescriptions,
                sizeof(VkVertexInputBindingDescription) * copy_src->vertexBindingDescriptionCount);
     }
+
     if (copy_src->pVertexAttributeDescriptions) {
         pVertexAttributeDescriptions = new VkVertexInputAttributeDescription[copy_src->vertexAttributeDescriptionCount];
         memcpy((void*)pVertexAttributeDescriptions, (void*)copy_src->pVertexAttributeDescriptions,
@@ -3133,6 +3201,7 @@ safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreate
       alphaToCoverageEnable(in_struct->alphaToCoverageEnable),
       alphaToOneEnable(in_struct->alphaToOneEnable) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSampleMask) {
         pSampleMask = new VkSampleMask(*in_struct->pSampleMask);
     }
@@ -3160,6 +3229,7 @@ safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreate
     alphaToCoverageEnable = copy_src.alphaToCoverageEnable;
     alphaToOneEnable = copy_src.alphaToOneEnable;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSampleMask) {
         pSampleMask = new VkSampleMask(*copy_src.pSampleMask);
     }
@@ -3181,6 +3251,7 @@ safe_VkPipelineMultisampleStateCreateInfo& safe_VkPipelineMultisampleStateCreate
     alphaToCoverageEnable = copy_src.alphaToCoverageEnable;
     alphaToOneEnable = copy_src.alphaToOneEnable;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pSampleMask) {
         pSampleMask = new VkSampleMask(*copy_src.pSampleMask);
     }
@@ -3206,6 +3277,7 @@ void safe_VkPipelineMultisampleStateCreateInfo::initialize(const VkPipelineMulti
     alphaToCoverageEnable = in_struct->alphaToCoverageEnable;
     alphaToOneEnable = in_struct->alphaToOneEnable;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pSampleMask) {
         pSampleMask = new VkSampleMask(*in_struct->pSampleMask);
     }
@@ -3222,6 +3294,7 @@ void safe_VkPipelineMultisampleStateCreateInfo::initialize(const safe_VkPipeline
     alphaToCoverageEnable = copy_src->alphaToCoverageEnable;
     alphaToOneEnable = copy_src->alphaToOneEnable;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pSampleMask) {
         pSampleMask = new VkSampleMask(*copy_src->pSampleMask);
     }
@@ -3341,11 +3414,13 @@ safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateIn
       attachmentCount(in_struct->attachmentCount),
       pAttachments(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachments) {
         pAttachments = new VkPipelineColorBlendAttachmentState[in_struct->attachmentCount];
         memcpy((void*)pAttachments, (void*)in_struct->pAttachments,
                sizeof(VkPipelineColorBlendAttachmentState) * in_struct->attachmentCount);
     }
+
     for (uint32_t i = 0; i < 4; ++i) {
         blendConstants[i] = in_struct->blendConstants[i];
     }
@@ -3369,11 +3444,13 @@ safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateIn
     attachmentCount = copy_src.attachmentCount;
     pAttachments = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachments) {
         pAttachments = new VkPipelineColorBlendAttachmentState[copy_src.attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src.pAttachments,
                sizeof(VkPipelineColorBlendAttachmentState) * copy_src.attachmentCount);
     }
+
     for (uint32_t i = 0; i < 4; ++i) {
         blendConstants[i] = copy_src.blendConstants[i];
     }
@@ -3393,11 +3470,13 @@ safe_VkPipelineColorBlendStateCreateInfo& safe_VkPipelineColorBlendStateCreateIn
     attachmentCount = copy_src.attachmentCount;
     pAttachments = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachments) {
         pAttachments = new VkPipelineColorBlendAttachmentState[copy_src.attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src.pAttachments,
                sizeof(VkPipelineColorBlendAttachmentState) * copy_src.attachmentCount);
     }
+
     for (uint32_t i = 0; i < 4; ++i) {
         blendConstants[i] = copy_src.blendConstants[i];
     }
@@ -3421,11 +3500,13 @@ void safe_VkPipelineColorBlendStateCreateInfo::initialize(const VkPipelineColorB
     attachmentCount = in_struct->attachmentCount;
     pAttachments = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachments) {
         pAttachments = new VkPipelineColorBlendAttachmentState[in_struct->attachmentCount];
         memcpy((void*)pAttachments, (void*)in_struct->pAttachments,
                sizeof(VkPipelineColorBlendAttachmentState) * in_struct->attachmentCount);
     }
+
     for (uint32_t i = 0; i < 4; ++i) {
         blendConstants[i] = in_struct->blendConstants[i];
     }
@@ -3440,11 +3521,13 @@ void safe_VkPipelineColorBlendStateCreateInfo::initialize(const safe_VkPipelineC
     attachmentCount = copy_src->attachmentCount;
     pAttachments = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pAttachments) {
         pAttachments = new VkPipelineColorBlendAttachmentState[copy_src->attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src->pAttachments,
                sizeof(VkPipelineColorBlendAttachmentState) * copy_src->attachmentCount);
     }
+
     for (uint32_t i = 0; i < 4; ++i) {
         blendConstants[i] = copy_src->blendConstants[i];
     }
@@ -3454,6 +3537,7 @@ safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo(con
                                                                              [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), flags(in_struct->flags), dynamicStateCount(in_struct->dynamicStateCount), pDynamicStates(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDynamicStates) {
         pDynamicStates = new VkDynamicState[in_struct->dynamicStateCount];
         memcpy((void*)pDynamicStates, (void*)in_struct->pDynamicStates, sizeof(VkDynamicState) * in_struct->dynamicStateCount);
@@ -3474,6 +3558,7 @@ safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo(
     dynamicStateCount = copy_src.dynamicStateCount;
     pDynamicStates = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDynamicStates) {
         pDynamicStates = new VkDynamicState[copy_src.dynamicStateCount];
         memcpy((void*)pDynamicStates, (void*)copy_src.pDynamicStates, sizeof(VkDynamicState) * copy_src.dynamicStateCount);
@@ -3492,6 +3577,7 @@ safe_VkPipelineDynamicStateCreateInfo& safe_VkPipelineDynamicStateCreateInfo::op
     dynamicStateCount = copy_src.dynamicStateCount;
     pDynamicStates = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDynamicStates) {
         pDynamicStates = new VkDynamicState[copy_src.dynamicStateCount];
         memcpy((void*)pDynamicStates, (void*)copy_src.pDynamicStates, sizeof(VkDynamicState) * copy_src.dynamicStateCount);
@@ -3514,6 +3600,7 @@ void safe_VkPipelineDynamicStateCreateInfo::initialize(const VkPipelineDynamicSt
     dynamicStateCount = in_struct->dynamicStateCount;
     pDynamicStates = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDynamicStates) {
         pDynamicStates = new VkDynamicState[in_struct->dynamicStateCount];
         memcpy((void*)pDynamicStates, (void*)in_struct->pDynamicStates, sizeof(VkDynamicState) * in_struct->dynamicStateCount);
@@ -3527,6 +3614,7 @@ void safe_VkPipelineDynamicStateCreateInfo::initialize(const safe_VkPipelineDyna
     dynamicStateCount = copy_src->dynamicStateCount;
     pDynamicStates = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDynamicStates) {
         pDynamicStates = new VkDynamicState[copy_src->dynamicStateCount];
         memcpy((void*)pDynamicStates, (void*)copy_src->pDynamicStates, sizeof(VkDynamicState) * copy_src->dynamicStateCount);
@@ -4038,6 +4126,7 @@ safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo(const VkPipelin
             pSetLayouts[i] = in_struct->pSetLayouts[i];
         }
     }
+
     if (in_struct->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)in_struct->pPushConstantRanges,
@@ -4068,6 +4157,7 @@ safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo(const safe_VkPi
             pSetLayouts[i] = copy_src.pSetLayouts[i];
         }
     }
+
     if (copy_src.pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src.pPushConstantRanges,
@@ -4095,6 +4185,7 @@ safe_VkPipelineLayoutCreateInfo& safe_VkPipelineLayoutCreateInfo::operator=(cons
             pSetLayouts[i] = copy_src.pSetLayouts[i];
         }
     }
+
     if (copy_src.pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src.pPushConstantRanges,
@@ -4128,6 +4219,7 @@ void safe_VkPipelineLayoutCreateInfo::initialize(const VkPipelineLayoutCreateInf
             pSetLayouts[i] = in_struct->pSetLayouts[i];
         }
     }
+
     if (in_struct->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)in_struct->pPushConstantRanges,
@@ -4150,6 +4242,7 @@ void safe_VkPipelineLayoutCreateInfo::initialize(const safe_VkPipelineLayoutCrea
             pSetLayouts[i] = copy_src->pSetLayouts[i];
         }
     }
+
     if (copy_src->pPushConstantRanges) {
         pPushConstantRanges = new VkPushConstantRange[copy_src->pushConstantRangeCount];
         memcpy((void*)pPushConstantRanges, (void*)copy_src->pPushConstantRanges,
@@ -4385,6 +4478,7 @@ safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo(const VkDescrip
       poolSizeCount(in_struct->poolSizeCount),
       pPoolSizes(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPoolSizes) {
         pPoolSizes = new VkDescriptorPoolSize[in_struct->poolSizeCount];
         memcpy((void*)pPoolSizes, (void*)in_struct->pPoolSizes, sizeof(VkDescriptorPoolSize) * in_struct->poolSizeCount);
@@ -4406,6 +4500,7 @@ safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo(const safe_VkDe
     poolSizeCount = copy_src.poolSizeCount;
     pPoolSizes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPoolSizes) {
         pPoolSizes = new VkDescriptorPoolSize[copy_src.poolSizeCount];
         memcpy((void*)pPoolSizes, (void*)copy_src.pPoolSizes, sizeof(VkDescriptorPoolSize) * copy_src.poolSizeCount);
@@ -4424,6 +4519,7 @@ safe_VkDescriptorPoolCreateInfo& safe_VkDescriptorPoolCreateInfo::operator=(cons
     poolSizeCount = copy_src.poolSizeCount;
     pPoolSizes = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPoolSizes) {
         pPoolSizes = new VkDescriptorPoolSize[copy_src.poolSizeCount];
         memcpy((void*)pPoolSizes, (void*)copy_src.pPoolSizes, sizeof(VkDescriptorPoolSize) * copy_src.poolSizeCount);
@@ -4447,6 +4543,7 @@ void safe_VkDescriptorPoolCreateInfo::initialize(const VkDescriptorPoolCreateInf
     poolSizeCount = in_struct->poolSizeCount;
     pPoolSizes = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPoolSizes) {
         pPoolSizes = new VkDescriptorPoolSize[in_struct->poolSizeCount];
         memcpy((void*)pPoolSizes, (void*)in_struct->pPoolSizes, sizeof(VkDescriptorPoolSize) * in_struct->poolSizeCount);
@@ -4461,6 +4558,7 @@ void safe_VkDescriptorPoolCreateInfo::initialize(const safe_VkDescriptorPoolCrea
     poolSizeCount = copy_src->poolSizeCount;
     pPoolSizes = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPoolSizes) {
         pPoolSizes = new VkDescriptorPoolSize[copy_src->poolSizeCount];
         memcpy((void*)pPoolSizes, (void*)copy_src->pPoolSizes, sizeof(VkDescriptorPoolSize) * copy_src->poolSizeCount);
@@ -5169,19 +5267,23 @@ safe_VkSubpassDescription::safe_VkSubpassDescription(const VkSubpassDescription*
         memcpy((void*)pInputAttachments, (void*)in_struct->pInputAttachments,
                sizeof(VkAttachmentReference) * in_struct->inputAttachmentCount);
     }
+
     if (in_struct->pColorAttachments) {
         pColorAttachments = new VkAttachmentReference[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachments, (void*)in_struct->pColorAttachments,
                sizeof(VkAttachmentReference) * in_struct->colorAttachmentCount);
     }
+
     if (in_struct->pResolveAttachments) {
         pResolveAttachments = new VkAttachmentReference[in_struct->colorAttachmentCount];
         memcpy((void*)pResolveAttachments, (void*)in_struct->pResolveAttachments,
                sizeof(VkAttachmentReference) * in_struct->colorAttachmentCount);
     }
+
     if (in_struct->pDepthStencilAttachment) {
         pDepthStencilAttachment = new VkAttachmentReference(*in_struct->pDepthStencilAttachment);
     }
+
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)in_struct->pPreserveAttachments,
@@ -5212,24 +5314,29 @@ safe_VkSubpassDescription::safe_VkSubpassDescription(const safe_VkSubpassDescrip
     pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = copy_src.preserveAttachmentCount;
     pPreserveAttachments = nullptr;
+
     if (copy_src.pInputAttachments) {
         pInputAttachments = new VkAttachmentReference[copy_src.inputAttachmentCount];
         memcpy((void*)pInputAttachments, (void*)copy_src.pInputAttachments,
                sizeof(VkAttachmentReference) * copy_src.inputAttachmentCount);
     }
+
     if (copy_src.pColorAttachments) {
         pColorAttachments = new VkAttachmentReference[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachments, (void*)copy_src.pColorAttachments,
                sizeof(VkAttachmentReference) * copy_src.colorAttachmentCount);
     }
+
     if (copy_src.pResolveAttachments) {
         pResolveAttachments = new VkAttachmentReference[copy_src.colorAttachmentCount];
         memcpy((void*)pResolveAttachments, (void*)copy_src.pResolveAttachments,
                sizeof(VkAttachmentReference) * copy_src.colorAttachmentCount);
     }
+
     if (copy_src.pDepthStencilAttachment) {
         pDepthStencilAttachment = new VkAttachmentReference(*copy_src.pDepthStencilAttachment);
     }
+
     if (copy_src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src.preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src.pPreserveAttachments,
@@ -5256,24 +5363,29 @@ safe_VkSubpassDescription& safe_VkSubpassDescription::operator=(const safe_VkSub
     pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = copy_src.preserveAttachmentCount;
     pPreserveAttachments = nullptr;
+
     if (copy_src.pInputAttachments) {
         pInputAttachments = new VkAttachmentReference[copy_src.inputAttachmentCount];
         memcpy((void*)pInputAttachments, (void*)copy_src.pInputAttachments,
                sizeof(VkAttachmentReference) * copy_src.inputAttachmentCount);
     }
+
     if (copy_src.pColorAttachments) {
         pColorAttachments = new VkAttachmentReference[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachments, (void*)copy_src.pColorAttachments,
                sizeof(VkAttachmentReference) * copy_src.colorAttachmentCount);
     }
+
     if (copy_src.pResolveAttachments) {
         pResolveAttachments = new VkAttachmentReference[copy_src.colorAttachmentCount];
         memcpy((void*)pResolveAttachments, (void*)copy_src.pResolveAttachments,
                sizeof(VkAttachmentReference) * copy_src.colorAttachmentCount);
     }
+
     if (copy_src.pDepthStencilAttachment) {
         pDepthStencilAttachment = new VkAttachmentReference(*copy_src.pDepthStencilAttachment);
     }
+
     if (copy_src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src.preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src.pPreserveAttachments,
@@ -5307,24 +5419,29 @@ void safe_VkSubpassDescription::initialize(const VkSubpassDescription* in_struct
     pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = in_struct->preserveAttachmentCount;
     pPreserveAttachments = nullptr;
+
     if (in_struct->pInputAttachments) {
         pInputAttachments = new VkAttachmentReference[in_struct->inputAttachmentCount];
         memcpy((void*)pInputAttachments, (void*)in_struct->pInputAttachments,
                sizeof(VkAttachmentReference) * in_struct->inputAttachmentCount);
     }
+
     if (in_struct->pColorAttachments) {
         pColorAttachments = new VkAttachmentReference[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachments, (void*)in_struct->pColorAttachments,
                sizeof(VkAttachmentReference) * in_struct->colorAttachmentCount);
     }
+
     if (in_struct->pResolveAttachments) {
         pResolveAttachments = new VkAttachmentReference[in_struct->colorAttachmentCount];
         memcpy((void*)pResolveAttachments, (void*)in_struct->pResolveAttachments,
                sizeof(VkAttachmentReference) * in_struct->colorAttachmentCount);
     }
+
     if (in_struct->pDepthStencilAttachment) {
         pDepthStencilAttachment = new VkAttachmentReference(*in_struct->pDepthStencilAttachment);
     }
+
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)in_struct->pPreserveAttachments,
@@ -5343,24 +5460,29 @@ void safe_VkSubpassDescription::initialize(const safe_VkSubpassDescription* copy
     pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = copy_src->preserveAttachmentCount;
     pPreserveAttachments = nullptr;
+
     if (copy_src->pInputAttachments) {
         pInputAttachments = new VkAttachmentReference[copy_src->inputAttachmentCount];
         memcpy((void*)pInputAttachments, (void*)copy_src->pInputAttachments,
                sizeof(VkAttachmentReference) * copy_src->inputAttachmentCount);
     }
+
     if (copy_src->pColorAttachments) {
         pColorAttachments = new VkAttachmentReference[copy_src->colorAttachmentCount];
         memcpy((void*)pColorAttachments, (void*)copy_src->pColorAttachments,
                sizeof(VkAttachmentReference) * copy_src->colorAttachmentCount);
     }
+
     if (copy_src->pResolveAttachments) {
         pResolveAttachments = new VkAttachmentReference[copy_src->colorAttachmentCount];
         memcpy((void*)pResolveAttachments, (void*)copy_src->pResolveAttachments,
                sizeof(VkAttachmentReference) * copy_src->colorAttachmentCount);
     }
+
     if (copy_src->pDepthStencilAttachment) {
         pDepthStencilAttachment = new VkAttachmentReference(*copy_src->pDepthStencilAttachment);
     }
+
     if (copy_src->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src->pPreserveAttachments,
@@ -5379,6 +5501,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const VkRenderPassCreat
       dependencyCount(in_struct->dependencyCount),
       pDependencies(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachments) {
         pAttachments = new VkAttachmentDescription[in_struct->attachmentCount];
         memcpy((void*)pAttachments, (void*)in_struct->pAttachments, sizeof(VkAttachmentDescription) * in_struct->attachmentCount);
@@ -5389,6 +5512,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const VkRenderPassCreat
             pSubpasses[i].initialize(&in_struct->pSubpasses[i]);
         }
     }
+
     if (in_struct->pDependencies) {
         pDependencies = new VkSubpassDependency[in_struct->dependencyCount];
         memcpy((void*)pDependencies, (void*)in_struct->pDependencies, sizeof(VkSubpassDependency) * in_struct->dependencyCount);
@@ -5416,6 +5540,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const safe_VkRenderPass
     dependencyCount = copy_src.dependencyCount;
     pDependencies = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachments) {
         pAttachments = new VkAttachmentDescription[copy_src.attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src.pAttachments, sizeof(VkAttachmentDescription) * copy_src.attachmentCount);
@@ -5426,6 +5551,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const safe_VkRenderPass
             pSubpasses[i].initialize(&copy_src.pSubpasses[i]);
         }
     }
+
     if (copy_src.pDependencies) {
         pDependencies = new VkSubpassDependency[copy_src.dependencyCount];
         memcpy((void*)pDependencies, (void*)copy_src.pDependencies, sizeof(VkSubpassDependency) * copy_src.dependencyCount);
@@ -5449,6 +5575,7 @@ safe_VkRenderPassCreateInfo& safe_VkRenderPassCreateInfo::operator=(const safe_V
     dependencyCount = copy_src.dependencyCount;
     pDependencies = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAttachments) {
         pAttachments = new VkAttachmentDescription[copy_src.attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src.pAttachments, sizeof(VkAttachmentDescription) * copy_src.attachmentCount);
@@ -5459,6 +5586,7 @@ safe_VkRenderPassCreateInfo& safe_VkRenderPassCreateInfo::operator=(const safe_V
             pSubpasses[i].initialize(&copy_src.pSubpasses[i]);
         }
     }
+
     if (copy_src.pDependencies) {
         pDependencies = new VkSubpassDependency[copy_src.dependencyCount];
         memcpy((void*)pDependencies, (void*)copy_src.pDependencies, sizeof(VkSubpassDependency) * copy_src.dependencyCount);
@@ -5488,6 +5616,7 @@ void safe_VkRenderPassCreateInfo::initialize(const VkRenderPassCreateInfo* in_st
     dependencyCount = in_struct->dependencyCount;
     pDependencies = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAttachments) {
         pAttachments = new VkAttachmentDescription[in_struct->attachmentCount];
         memcpy((void*)pAttachments, (void*)in_struct->pAttachments, sizeof(VkAttachmentDescription) * in_struct->attachmentCount);
@@ -5498,6 +5627,7 @@ void safe_VkRenderPassCreateInfo::initialize(const VkRenderPassCreateInfo* in_st
             pSubpasses[i].initialize(&in_struct->pSubpasses[i]);
         }
     }
+
     if (in_struct->pDependencies) {
         pDependencies = new VkSubpassDependency[in_struct->dependencyCount];
         memcpy((void*)pDependencies, (void*)in_struct->pDependencies, sizeof(VkSubpassDependency) * in_struct->dependencyCount);
@@ -5515,6 +5645,7 @@ void safe_VkRenderPassCreateInfo::initialize(const safe_VkRenderPassCreateInfo* 
     dependencyCount = copy_src->dependencyCount;
     pDependencies = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pAttachments) {
         pAttachments = new VkAttachmentDescription[copy_src->attachmentCount];
         memcpy((void*)pAttachments, (void*)copy_src->pAttachments, sizeof(VkAttachmentDescription) * copy_src->attachmentCount);
@@ -5525,6 +5656,7 @@ void safe_VkRenderPassCreateInfo::initialize(const safe_VkRenderPassCreateInfo* 
             pSubpasses[i].initialize(&copy_src->pSubpasses[i]);
         }
     }
+
     if (copy_src->pDependencies) {
         pDependencies = new VkSubpassDependency[copy_src->dependencyCount];
         memcpy((void*)pDependencies, (void*)copy_src->pDependencies, sizeof(VkSubpassDependency) * copy_src->dependencyCount);
@@ -5785,6 +5917,7 @@ safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo(const VkRenderPassBeginIn
       clearValueCount(in_struct->clearValueCount),
       pClearValues(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pClearValues) {
         pClearValues = new VkClearValue[in_struct->clearValueCount];
         memcpy((void*)pClearValues, (void*)in_struct->pClearValues, sizeof(VkClearValue) * in_struct->clearValueCount);
@@ -5808,6 +5941,7 @@ safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo(const safe_VkRenderPassBe
     clearValueCount = copy_src.clearValueCount;
     pClearValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pClearValues) {
         pClearValues = new VkClearValue[copy_src.clearValueCount];
         memcpy((void*)pClearValues, (void*)copy_src.pClearValues, sizeof(VkClearValue) * copy_src.clearValueCount);
@@ -5827,6 +5961,7 @@ safe_VkRenderPassBeginInfo& safe_VkRenderPassBeginInfo::operator=(const safe_VkR
     clearValueCount = copy_src.clearValueCount;
     pClearValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pClearValues) {
         pClearValues = new VkClearValue[copy_src.clearValueCount];
         memcpy((void*)pClearValues, (void*)copy_src.pClearValues, sizeof(VkClearValue) * copy_src.clearValueCount);
@@ -5850,6 +5985,7 @@ void safe_VkRenderPassBeginInfo::initialize(const VkRenderPassBeginInfo* in_stru
     clearValueCount = in_struct->clearValueCount;
     pClearValues = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pClearValues) {
         pClearValues = new VkClearValue[in_struct->clearValueCount];
         memcpy((void*)pClearValues, (void*)in_struct->pClearValues, sizeof(VkClearValue) * in_struct->clearValueCount);
@@ -5865,6 +6001,7 @@ void safe_VkRenderPassBeginInfo::initialize(const safe_VkRenderPassBeginInfo* co
     clearValueCount = copy_src->clearValueCount;
     pClearValues = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pClearValues) {
         pClearValues = new VkClearValue[copy_src->clearValueCount];
         memcpy((void*)pClearValues, (void*)copy_src->pClearValues, sizeof(VkClearValue) * copy_src->clearValueCount);
@@ -6279,6 +6416,7 @@ safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo(con
       deviceRenderAreaCount(in_struct->deviceRenderAreaCount),
       pDeviceRenderAreas(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceRenderAreas) {
         pDeviceRenderAreas = new VkRect2D[in_struct->deviceRenderAreaCount];
         memcpy((void*)pDeviceRenderAreas, (void*)in_struct->pDeviceRenderAreas,
@@ -6300,6 +6438,7 @@ safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo(
     deviceRenderAreaCount = copy_src.deviceRenderAreaCount;
     pDeviceRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceRenderAreas) {
         pDeviceRenderAreas = new VkRect2D[copy_src.deviceRenderAreaCount];
         memcpy((void*)pDeviceRenderAreas, (void*)copy_src.pDeviceRenderAreas, sizeof(VkRect2D) * copy_src.deviceRenderAreaCount);
@@ -6318,6 +6457,7 @@ safe_VkDeviceGroupRenderPassBeginInfo& safe_VkDeviceGroupRenderPassBeginInfo::op
     deviceRenderAreaCount = copy_src.deviceRenderAreaCount;
     pDeviceRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceRenderAreas) {
         pDeviceRenderAreas = new VkRect2D[copy_src.deviceRenderAreaCount];
         memcpy((void*)pDeviceRenderAreas, (void*)copy_src.pDeviceRenderAreas, sizeof(VkRect2D) * copy_src.deviceRenderAreaCount);
@@ -6340,6 +6480,7 @@ void safe_VkDeviceGroupRenderPassBeginInfo::initialize(const VkDeviceGroupRender
     deviceRenderAreaCount = in_struct->deviceRenderAreaCount;
     pDeviceRenderAreas = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceRenderAreas) {
         pDeviceRenderAreas = new VkRect2D[in_struct->deviceRenderAreaCount];
         memcpy((void*)pDeviceRenderAreas, (void*)in_struct->pDeviceRenderAreas,
@@ -6354,6 +6495,7 @@ void safe_VkDeviceGroupRenderPassBeginInfo::initialize(const safe_VkDeviceGroupR
     deviceRenderAreaCount = copy_src->deviceRenderAreaCount;
     pDeviceRenderAreas = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDeviceRenderAreas) {
         pDeviceRenderAreas = new VkRect2D[copy_src->deviceRenderAreaCount];
         memcpy((void*)pDeviceRenderAreas, (void*)copy_src->pDeviceRenderAreas, sizeof(VkRect2D) * copy_src->deviceRenderAreaCount);
@@ -6418,16 +6560,19 @@ safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo(const VkDeviceGroupSu
       signalSemaphoreCount(in_struct->signalSemaphoreCount),
       pSignalSemaphoreDeviceIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pWaitSemaphoreDeviceIndices) {
         pWaitSemaphoreDeviceIndices = new uint32_t[in_struct->waitSemaphoreCount];
         memcpy((void*)pWaitSemaphoreDeviceIndices, (void*)in_struct->pWaitSemaphoreDeviceIndices,
                sizeof(uint32_t) * in_struct->waitSemaphoreCount);
     }
+
     if (in_struct->pCommandBufferDeviceMasks) {
         pCommandBufferDeviceMasks = new uint32_t[in_struct->commandBufferCount];
         memcpy((void*)pCommandBufferDeviceMasks, (void*)in_struct->pCommandBufferDeviceMasks,
                sizeof(uint32_t) * in_struct->commandBufferCount);
     }
+
     if (in_struct->pSignalSemaphoreDeviceIndices) {
         pSignalSemaphoreDeviceIndices = new uint32_t[in_struct->signalSemaphoreCount];
         memcpy((void*)pSignalSemaphoreDeviceIndices, (void*)in_struct->pSignalSemaphoreDeviceIndices,
@@ -6454,16 +6599,19 @@ safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo(const safe_VkDeviceGr
     signalSemaphoreCount = copy_src.signalSemaphoreCount;
     pSignalSemaphoreDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pWaitSemaphoreDeviceIndices) {
         pWaitSemaphoreDeviceIndices = new uint32_t[copy_src.waitSemaphoreCount];
         memcpy((void*)pWaitSemaphoreDeviceIndices, (void*)copy_src.pWaitSemaphoreDeviceIndices,
                sizeof(uint32_t) * copy_src.waitSemaphoreCount);
     }
+
     if (copy_src.pCommandBufferDeviceMasks) {
         pCommandBufferDeviceMasks = new uint32_t[copy_src.commandBufferCount];
         memcpy((void*)pCommandBufferDeviceMasks, (void*)copy_src.pCommandBufferDeviceMasks,
                sizeof(uint32_t) * copy_src.commandBufferCount);
     }
+
     if (copy_src.pSignalSemaphoreDeviceIndices) {
         pSignalSemaphoreDeviceIndices = new uint32_t[copy_src.signalSemaphoreCount];
         memcpy((void*)pSignalSemaphoreDeviceIndices, (void*)copy_src.pSignalSemaphoreDeviceIndices,
@@ -6487,16 +6635,19 @@ safe_VkDeviceGroupSubmitInfo& safe_VkDeviceGroupSubmitInfo::operator=(const safe
     signalSemaphoreCount = copy_src.signalSemaphoreCount;
     pSignalSemaphoreDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pWaitSemaphoreDeviceIndices) {
         pWaitSemaphoreDeviceIndices = new uint32_t[copy_src.waitSemaphoreCount];
         memcpy((void*)pWaitSemaphoreDeviceIndices, (void*)copy_src.pWaitSemaphoreDeviceIndices,
                sizeof(uint32_t) * copy_src.waitSemaphoreCount);
     }
+
     if (copy_src.pCommandBufferDeviceMasks) {
         pCommandBufferDeviceMasks = new uint32_t[copy_src.commandBufferCount];
         memcpy((void*)pCommandBufferDeviceMasks, (void*)copy_src.pCommandBufferDeviceMasks,
                sizeof(uint32_t) * copy_src.commandBufferCount);
     }
+
     if (copy_src.pSignalSemaphoreDeviceIndices) {
         pSignalSemaphoreDeviceIndices = new uint32_t[copy_src.signalSemaphoreCount];
         memcpy((void*)pSignalSemaphoreDeviceIndices, (void*)copy_src.pSignalSemaphoreDeviceIndices,
@@ -6527,16 +6678,19 @@ void safe_VkDeviceGroupSubmitInfo::initialize(const VkDeviceGroupSubmitInfo* in_
     signalSemaphoreCount = in_struct->signalSemaphoreCount;
     pSignalSemaphoreDeviceIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pWaitSemaphoreDeviceIndices) {
         pWaitSemaphoreDeviceIndices = new uint32_t[in_struct->waitSemaphoreCount];
         memcpy((void*)pWaitSemaphoreDeviceIndices, (void*)in_struct->pWaitSemaphoreDeviceIndices,
                sizeof(uint32_t) * in_struct->waitSemaphoreCount);
     }
+
     if (in_struct->pCommandBufferDeviceMasks) {
         pCommandBufferDeviceMasks = new uint32_t[in_struct->commandBufferCount];
         memcpy((void*)pCommandBufferDeviceMasks, (void*)in_struct->pCommandBufferDeviceMasks,
                sizeof(uint32_t) * in_struct->commandBufferCount);
     }
+
     if (in_struct->pSignalSemaphoreDeviceIndices) {
         pSignalSemaphoreDeviceIndices = new uint32_t[in_struct->signalSemaphoreCount];
         memcpy((void*)pSignalSemaphoreDeviceIndices, (void*)in_struct->pSignalSemaphoreDeviceIndices,
@@ -6554,16 +6708,19 @@ void safe_VkDeviceGroupSubmitInfo::initialize(const safe_VkDeviceGroupSubmitInfo
     signalSemaphoreCount = copy_src->signalSemaphoreCount;
     pSignalSemaphoreDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pWaitSemaphoreDeviceIndices) {
         pWaitSemaphoreDeviceIndices = new uint32_t[copy_src->waitSemaphoreCount];
         memcpy((void*)pWaitSemaphoreDeviceIndices, (void*)copy_src->pWaitSemaphoreDeviceIndices,
                sizeof(uint32_t) * copy_src->waitSemaphoreCount);
     }
+
     if (copy_src->pCommandBufferDeviceMasks) {
         pCommandBufferDeviceMasks = new uint32_t[copy_src->commandBufferCount];
         memcpy((void*)pCommandBufferDeviceMasks, (void*)copy_src->pCommandBufferDeviceMasks,
                sizeof(uint32_t) * copy_src->commandBufferCount);
     }
+
     if (copy_src->pSignalSemaphoreDeviceIndices) {
         pSignalSemaphoreDeviceIndices = new uint32_t[copy_src->signalSemaphoreCount];
         memcpy((void*)pSignalSemaphoreDeviceIndices, (void*)copy_src->pSignalSemaphoreDeviceIndices,
@@ -6627,6 +6784,7 @@ safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo(c
                                                                                [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), deviceIndexCount(in_struct->deviceIndexCount), pDeviceIndices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
@@ -6642,6 +6800,7 @@ safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo(
     deviceIndexCount = copy_src.deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
@@ -6659,6 +6818,7 @@ safe_VkBindBufferMemoryDeviceGroupInfo& safe_VkBindBufferMemoryDeviceGroupInfo::
     deviceIndexCount = copy_src.deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
@@ -6680,6 +6840,7 @@ void safe_VkBindBufferMemoryDeviceGroupInfo::initialize(const VkBindBufferMemory
     deviceIndexCount = in_struct->deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
@@ -6692,6 +6853,7 @@ void safe_VkBindBufferMemoryDeviceGroupInfo::initialize(const safe_VkBindBufferM
     deviceIndexCount = copy_src->deviceIndexCount;
     pDeviceIndices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src->pDeviceIndices, sizeof(uint32_t) * copy_src->deviceIndexCount);
@@ -6706,10 +6868,12 @@ safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo(con
       splitInstanceBindRegionCount(in_struct->splitInstanceBindRegionCount),
       pSplitInstanceBindRegions(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
     }
+
     if (in_struct->pSplitInstanceBindRegions) {
         pSplitInstanceBindRegions = new VkRect2D[in_struct->splitInstanceBindRegionCount];
         memcpy((void*)pSplitInstanceBindRegions, (void*)in_struct->pSplitInstanceBindRegions,
@@ -6733,10 +6897,12 @@ safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo(
     splitInstanceBindRegionCount = copy_src.splitInstanceBindRegionCount;
     pSplitInstanceBindRegions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
     }
+
     if (copy_src.pSplitInstanceBindRegions) {
         pSplitInstanceBindRegions = new VkRect2D[copy_src.splitInstanceBindRegionCount];
         memcpy((void*)pSplitInstanceBindRegions, (void*)copy_src.pSplitInstanceBindRegions,
@@ -6758,10 +6924,12 @@ safe_VkBindImageMemoryDeviceGroupInfo& safe_VkBindImageMemoryDeviceGroupInfo::op
     splitInstanceBindRegionCount = copy_src.splitInstanceBindRegionCount;
     pSplitInstanceBindRegions = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src.pDeviceIndices, sizeof(uint32_t) * copy_src.deviceIndexCount);
     }
+
     if (copy_src.pSplitInstanceBindRegions) {
         pSplitInstanceBindRegions = new VkRect2D[copy_src.splitInstanceBindRegionCount];
         memcpy((void*)pSplitInstanceBindRegions, (void*)copy_src.pSplitInstanceBindRegions,
@@ -6788,10 +6956,12 @@ void safe_VkBindImageMemoryDeviceGroupInfo::initialize(const VkBindImageMemoryDe
     splitInstanceBindRegionCount = in_struct->splitInstanceBindRegionCount;
     pSplitInstanceBindRegions = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDeviceIndices) {
         pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)in_struct->pDeviceIndices, sizeof(uint32_t) * in_struct->deviceIndexCount);
     }
+
     if (in_struct->pSplitInstanceBindRegions) {
         pSplitInstanceBindRegions = new VkRect2D[in_struct->splitInstanceBindRegionCount];
         memcpy((void*)pSplitInstanceBindRegions, (void*)in_struct->pSplitInstanceBindRegions,
@@ -6807,10 +6977,12 @@ void safe_VkBindImageMemoryDeviceGroupInfo::initialize(const safe_VkBindImageMem
     splitInstanceBindRegionCount = copy_src->splitInstanceBindRegionCount;
     pSplitInstanceBindRegions = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDeviceIndices) {
         pDeviceIndices = new uint32_t[copy_src->deviceIndexCount];
         memcpy((void*)pDeviceIndices, (void*)copy_src->pDeviceIndices, sizeof(uint32_t) * copy_src->deviceIndexCount);
     }
+
     if (copy_src->pSplitInstanceBindRegions) {
         pSplitInstanceBindRegions = new VkRect2D[copy_src->splitInstanceBindRegionCount];
         memcpy((void*)pSplitInstanceBindRegions, (void*)copy_src->pSplitInstanceBindRegions,
@@ -6822,6 +6994,7 @@ safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties(const
                                                                            [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), physicalDeviceCount(in_struct->physicalDeviceCount), subsetAllocation(in_struct->subsetAllocation) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DEVICE_GROUP_SIZE; ++i) {
         physicalDevices[i] = in_struct->physicalDevices[i];
     }
@@ -6835,6 +7008,7 @@ safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties(const
     physicalDeviceCount = copy_src.physicalDeviceCount;
     subsetAllocation = copy_src.subsetAllocation;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DEVICE_GROUP_SIZE; ++i) {
         physicalDevices[i] = copy_src.physicalDevices[i];
     }
@@ -6850,6 +7024,7 @@ safe_VkPhysicalDeviceGroupProperties& safe_VkPhysicalDeviceGroupProperties::oper
     physicalDeviceCount = copy_src.physicalDeviceCount;
     subsetAllocation = copy_src.subsetAllocation;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DEVICE_GROUP_SIZE; ++i) {
         physicalDevices[i] = copy_src.physicalDevices[i];
     }
@@ -6868,6 +7043,7 @@ void safe_VkPhysicalDeviceGroupProperties::initialize(const VkPhysicalDeviceGrou
     physicalDeviceCount = in_struct->physicalDeviceCount;
     subsetAllocation = in_struct->subsetAllocation;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DEVICE_GROUP_SIZE; ++i) {
         physicalDevices[i] = in_struct->physicalDevices[i];
     }
@@ -6879,6 +7055,7 @@ void safe_VkPhysicalDeviceGroupProperties::initialize(const safe_VkPhysicalDevic
     physicalDeviceCount = copy_src->physicalDeviceCount;
     subsetAllocation = copy_src->subsetAllocation;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DEVICE_GROUP_SIZE; ++i) {
         physicalDevices[i] = copy_src->physicalDevices[i];
     }
@@ -6888,6 +7065,7 @@ safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo(const VkD
                                                                        [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), physicalDeviceCount(in_struct->physicalDeviceCount), pPhysicalDevices(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPhysicalDevices) {
         pPhysicalDevices = new VkPhysicalDevice[in_struct->physicalDeviceCount];
         memcpy((void*)pPhysicalDevices, (void*)in_struct->pPhysicalDevices,
@@ -6903,6 +7081,7 @@ safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo(const saf
     physicalDeviceCount = copy_src.physicalDeviceCount;
     pPhysicalDevices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPhysicalDevices) {
         pPhysicalDevices = new VkPhysicalDevice[copy_src.physicalDeviceCount];
         memcpy((void*)pPhysicalDevices, (void*)copy_src.pPhysicalDevices, sizeof(VkPhysicalDevice) * copy_src.physicalDeviceCount);
@@ -6920,6 +7099,7 @@ safe_VkDeviceGroupDeviceCreateInfo& safe_VkDeviceGroupDeviceCreateInfo::operator
     physicalDeviceCount = copy_src.physicalDeviceCount;
     pPhysicalDevices = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPhysicalDevices) {
         pPhysicalDevices = new VkPhysicalDevice[copy_src.physicalDeviceCount];
         memcpy((void*)pPhysicalDevices, (void*)copy_src.pPhysicalDevices, sizeof(VkPhysicalDevice) * copy_src.physicalDeviceCount);
@@ -6941,6 +7121,7 @@ void safe_VkDeviceGroupDeviceCreateInfo::initialize(const VkDeviceGroupDeviceCre
     physicalDeviceCount = in_struct->physicalDeviceCount;
     pPhysicalDevices = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPhysicalDevices) {
         pPhysicalDevices = new VkPhysicalDevice[in_struct->physicalDeviceCount];
         memcpy((void*)pPhysicalDevices, (void*)in_struct->pPhysicalDevices,
@@ -6954,6 +7135,7 @@ void safe_VkDeviceGroupDeviceCreateInfo::initialize(const safe_VkDeviceGroupDevi
     physicalDeviceCount = copy_src->physicalDeviceCount;
     pPhysicalDevices = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPhysicalDevices) {
         pPhysicalDevices = new VkPhysicalDevice[copy_src->physicalDeviceCount];
         memcpy((void*)pPhysicalDevices, (void*)copy_src->pPhysicalDevices,
@@ -7715,6 +7897,7 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachme
     const VkRenderPassInputAttachmentAspectCreateInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), aspectReferenceCount(in_struct->aspectReferenceCount), pAspectReferences(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAspectReferences) {
         pAspectReferences = new VkInputAttachmentAspectReference[in_struct->aspectReferenceCount];
         memcpy((void*)pAspectReferences, (void*)in_struct->pAspectReferences,
@@ -7734,6 +7917,7 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachme
     aspectReferenceCount = copy_src.aspectReferenceCount;
     pAspectReferences = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAspectReferences) {
         pAspectReferences = new VkInputAttachmentAspectReference[copy_src.aspectReferenceCount];
         memcpy((void*)pAspectReferences, (void*)copy_src.pAspectReferences,
@@ -7752,6 +7936,7 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo& safe_VkRenderPassInputAttachme
     aspectReferenceCount = copy_src.aspectReferenceCount;
     pAspectReferences = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pAspectReferences) {
         pAspectReferences = new VkInputAttachmentAspectReference[copy_src.aspectReferenceCount];
         memcpy((void*)pAspectReferences, (void*)copy_src.pAspectReferences,
@@ -7774,6 +7959,7 @@ void safe_VkRenderPassInputAttachmentAspectCreateInfo::initialize(const VkRender
     aspectReferenceCount = in_struct->aspectReferenceCount;
     pAspectReferences = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pAspectReferences) {
         pAspectReferences = new VkInputAttachmentAspectReference[in_struct->aspectReferenceCount];
         memcpy((void*)pAspectReferences, (void*)in_struct->pAspectReferences,
@@ -7787,6 +7973,7 @@ void safe_VkRenderPassInputAttachmentAspectCreateInfo::initialize(const safe_VkR
     aspectReferenceCount = copy_src->aspectReferenceCount;
     pAspectReferences = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pAspectReferences) {
         pAspectReferences = new VkInputAttachmentAspectReference[copy_src->aspectReferenceCount];
         memcpy((void*)pAspectReferences, (void*)copy_src->pAspectReferences,
@@ -7898,14 +8085,17 @@ safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo(const
       correlationMaskCount(in_struct->correlationMaskCount),
       pCorrelationMasks(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewMasks) {
         pViewMasks = new uint32_t[in_struct->subpassCount];
         memcpy((void*)pViewMasks, (void*)in_struct->pViewMasks, sizeof(uint32_t) * in_struct->subpassCount);
     }
+
     if (in_struct->pViewOffsets) {
         pViewOffsets = new int32_t[in_struct->dependencyCount];
         memcpy((void*)pViewOffsets, (void*)in_struct->pViewOffsets, sizeof(int32_t) * in_struct->dependencyCount);
     }
+
     if (in_struct->pCorrelationMasks) {
         pCorrelationMasks = new uint32_t[in_struct->correlationMaskCount];
         memcpy((void*)pCorrelationMasks, (void*)in_struct->pCorrelationMasks, sizeof(uint32_t) * in_struct->correlationMaskCount);
@@ -7931,14 +8121,17 @@ safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo(const
     correlationMaskCount = copy_src.correlationMaskCount;
     pCorrelationMasks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewMasks) {
         pViewMasks = new uint32_t[copy_src.subpassCount];
         memcpy((void*)pViewMasks, (void*)copy_src.pViewMasks, sizeof(uint32_t) * copy_src.subpassCount);
     }
+
     if (copy_src.pViewOffsets) {
         pViewOffsets = new int32_t[copy_src.dependencyCount];
         memcpy((void*)pViewOffsets, (void*)copy_src.pViewOffsets, sizeof(int32_t) * copy_src.dependencyCount);
     }
+
     if (copy_src.pCorrelationMasks) {
         pCorrelationMasks = new uint32_t[copy_src.correlationMaskCount];
         memcpy((void*)pCorrelationMasks, (void*)copy_src.pCorrelationMasks, sizeof(uint32_t) * copy_src.correlationMaskCount);
@@ -7962,14 +8155,17 @@ safe_VkRenderPassMultiviewCreateInfo& safe_VkRenderPassMultiviewCreateInfo::oper
     correlationMaskCount = copy_src.correlationMaskCount;
     pCorrelationMasks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewMasks) {
         pViewMasks = new uint32_t[copy_src.subpassCount];
         memcpy((void*)pViewMasks, (void*)copy_src.pViewMasks, sizeof(uint32_t) * copy_src.subpassCount);
     }
+
     if (copy_src.pViewOffsets) {
         pViewOffsets = new int32_t[copy_src.dependencyCount];
         memcpy((void*)pViewOffsets, (void*)copy_src.pViewOffsets, sizeof(int32_t) * copy_src.dependencyCount);
     }
+
     if (copy_src.pCorrelationMasks) {
         pCorrelationMasks = new uint32_t[copy_src.correlationMaskCount];
         memcpy((void*)pCorrelationMasks, (void*)copy_src.pCorrelationMasks, sizeof(uint32_t) * copy_src.correlationMaskCount);
@@ -7999,14 +8195,17 @@ void safe_VkRenderPassMultiviewCreateInfo::initialize(const VkRenderPassMultivie
     correlationMaskCount = in_struct->correlationMaskCount;
     pCorrelationMasks = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewMasks) {
         pViewMasks = new uint32_t[in_struct->subpassCount];
         memcpy((void*)pViewMasks, (void*)in_struct->pViewMasks, sizeof(uint32_t) * in_struct->subpassCount);
     }
+
     if (in_struct->pViewOffsets) {
         pViewOffsets = new int32_t[in_struct->dependencyCount];
         memcpy((void*)pViewOffsets, (void*)in_struct->pViewOffsets, sizeof(int32_t) * in_struct->dependencyCount);
     }
+
     if (in_struct->pCorrelationMasks) {
         pCorrelationMasks = new uint32_t[in_struct->correlationMaskCount];
         memcpy((void*)pCorrelationMasks, (void*)in_struct->pCorrelationMasks, sizeof(uint32_t) * in_struct->correlationMaskCount);
@@ -8023,14 +8222,17 @@ void safe_VkRenderPassMultiviewCreateInfo::initialize(const safe_VkRenderPassMul
     correlationMaskCount = copy_src->correlationMaskCount;
     pCorrelationMasks = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewMasks) {
         pViewMasks = new uint32_t[copy_src->subpassCount];
         memcpy((void*)pViewMasks, (void*)copy_src->pViewMasks, sizeof(uint32_t) * copy_src->subpassCount);
     }
+
     if (copy_src->pViewOffsets) {
         pViewOffsets = new int32_t[copy_src->dependencyCount];
         memcpy((void*)pViewOffsets, (void*)copy_src->pViewOffsets, sizeof(int32_t) * copy_src->dependencyCount);
     }
+
     if (copy_src->pCorrelationMasks) {
         pCorrelationMasks = new uint32_t[copy_src->correlationMaskCount];
         memcpy((void*)pCorrelationMasks, (void*)copy_src->pCorrelationMasks, sizeof(uint32_t) * copy_src->correlationMaskCount);
@@ -8752,6 +8954,7 @@ safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreate
       pipelineLayout(in_struct->pipelineLayout),
       set(in_struct->set) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDescriptorUpdateEntries) {
         pDescriptorUpdateEntries = new VkDescriptorUpdateTemplateEntry[in_struct->descriptorUpdateEntryCount];
         memcpy((void*)pDescriptorUpdateEntries, (void*)in_struct->pDescriptorUpdateEntries,
@@ -8783,6 +8986,7 @@ safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreate
     pipelineLayout = copy_src.pipelineLayout;
     set = copy_src.set;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDescriptorUpdateEntries) {
         pDescriptorUpdateEntries = new VkDescriptorUpdateTemplateEntry[copy_src.descriptorUpdateEntryCount];
         memcpy((void*)pDescriptorUpdateEntries, (void*)copy_src.pDescriptorUpdateEntries,
@@ -8807,6 +9011,7 @@ safe_VkDescriptorUpdateTemplateCreateInfo& safe_VkDescriptorUpdateTemplateCreate
     pipelineLayout = copy_src.pipelineLayout;
     set = copy_src.set;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDescriptorUpdateEntries) {
         pDescriptorUpdateEntries = new VkDescriptorUpdateTemplateEntry[copy_src.descriptorUpdateEntryCount];
         memcpy((void*)pDescriptorUpdateEntries, (void*)copy_src.pDescriptorUpdateEntries,
@@ -8835,6 +9040,7 @@ void safe_VkDescriptorUpdateTemplateCreateInfo::initialize(const VkDescriptorUpd
     pipelineLayout = in_struct->pipelineLayout;
     set = in_struct->set;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDescriptorUpdateEntries) {
         pDescriptorUpdateEntries = new VkDescriptorUpdateTemplateEntry[in_struct->descriptorUpdateEntryCount];
         memcpy((void*)pDescriptorUpdateEntries, (void*)in_struct->pDescriptorUpdateEntries,
@@ -8854,6 +9060,7 @@ void safe_VkDescriptorUpdateTemplateCreateInfo::initialize(const safe_VkDescript
     pipelineLayout = copy_src->pipelineLayout;
     set = copy_src->set;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDescriptorUpdateEntries) {
         pDescriptorUpdateEntries = new VkDescriptorUpdateTemplateEntry[copy_src->descriptorUpdateEntryCount];
         memcpy((void*)pDescriptorUpdateEntries, (void*)copy_src->pDescriptorUpdateEntries,
@@ -9062,12 +9269,15 @@ safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties(const VkPhy
                                                                      [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), deviceNodeMask(in_struct->deviceNodeMask), deviceLUIDValid(in_struct->deviceLUIDValid) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = in_struct->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = in_struct->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = in_struct->deviceLUID[i];
     }
@@ -9081,12 +9291,15 @@ safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties(const safe_
     deviceNodeMask = copy_src.deviceNodeMask;
     deviceLUIDValid = copy_src.deviceLUIDValid;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src.deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src.driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src.deviceLUID[i];
     }
@@ -9101,12 +9314,15 @@ safe_VkPhysicalDeviceIDProperties& safe_VkPhysicalDeviceIDProperties::operator=(
     deviceNodeMask = copy_src.deviceNodeMask;
     deviceLUIDValid = copy_src.deviceLUIDValid;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src.deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src.driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src.deviceLUID[i];
     }
@@ -9125,12 +9341,15 @@ void safe_VkPhysicalDeviceIDProperties::initialize(const VkPhysicalDeviceIDPrope
     deviceNodeMask = in_struct->deviceNodeMask;
     deviceLUIDValid = in_struct->deviceLUIDValid;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = in_struct->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = in_struct->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = in_struct->deviceLUID[i];
     }
@@ -9142,12 +9361,15 @@ void safe_VkPhysicalDeviceIDProperties::initialize(const safe_VkPhysicalDeviceID
     deviceNodeMask = copy_src->deviceNodeMask;
     deviceLUIDValid = copy_src->deviceLUIDValid;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src->deviceLUID[i];
     }
@@ -9889,12 +10111,15 @@ safe_VkPhysicalDeviceVulkan11Properties::safe_VkPhysicalDeviceVulkan11Properties
       maxPerSetDescriptors(in_struct->maxPerSetDescriptors),
       maxMemoryAllocationSize(in_struct->maxMemoryAllocationSize) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = in_struct->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = in_struct->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = in_struct->deviceLUID[i];
     }
@@ -9932,12 +10157,15 @@ safe_VkPhysicalDeviceVulkan11Properties::safe_VkPhysicalDeviceVulkan11Properties
     maxPerSetDescriptors = copy_src.maxPerSetDescriptors;
     maxMemoryAllocationSize = copy_src.maxMemoryAllocationSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src.deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src.driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src.deviceLUID[i];
     }
@@ -9963,12 +10191,15 @@ safe_VkPhysicalDeviceVulkan11Properties& safe_VkPhysicalDeviceVulkan11Properties
     maxPerSetDescriptors = copy_src.maxPerSetDescriptors;
     maxMemoryAllocationSize = copy_src.maxMemoryAllocationSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src.deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src.driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src.deviceLUID[i];
     }
@@ -9997,12 +10228,15 @@ void safe_VkPhysicalDeviceVulkan11Properties::initialize(const VkPhysicalDeviceV
     maxPerSetDescriptors = in_struct->maxPerSetDescriptors;
     maxMemoryAllocationSize = in_struct->maxMemoryAllocationSize;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = in_struct->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = in_struct->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = in_struct->deviceLUID[i];
     }
@@ -10024,12 +10258,15 @@ void safe_VkPhysicalDeviceVulkan11Properties::initialize(const safe_VkPhysicalDe
     maxPerSetDescriptors = copy_src->maxPerSetDescriptors;
     maxMemoryAllocationSize = copy_src->maxMemoryAllocationSize;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         deviceUUID[i] = copy_src->deviceUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
         driverUUID[i] = copy_src->driverUUID[i];
     }
+
     for (uint32_t i = 0; i < VK_LUID_SIZE; ++i) {
         deviceLUID[i] = copy_src->deviceLUID[i];
     }
@@ -10416,9 +10653,11 @@ safe_VkPhysicalDeviceVulkan12Properties::safe_VkPhysicalDeviceVulkan12Properties
       maxTimelineSemaphoreValueDifference(in_struct->maxTimelineSemaphoreValueDifference),
       framebufferIntegerColorSampleCounts(in_struct->framebufferIntegerColorSampleCounts) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = in_struct->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = in_struct->driverInfo[i];
     }
@@ -10532,9 +10771,11 @@ safe_VkPhysicalDeviceVulkan12Properties::safe_VkPhysicalDeviceVulkan12Properties
     maxTimelineSemaphoreValueDifference = copy_src.maxTimelineSemaphoreValueDifference;
     framebufferIntegerColorSampleCounts = copy_src.framebufferIntegerColorSampleCounts;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src.driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src.driverInfo[i];
     }
@@ -10598,9 +10839,11 @@ safe_VkPhysicalDeviceVulkan12Properties& safe_VkPhysicalDeviceVulkan12Properties
     maxTimelineSemaphoreValueDifference = copy_src.maxTimelineSemaphoreValueDifference;
     framebufferIntegerColorSampleCounts = copy_src.framebufferIntegerColorSampleCounts;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src.driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src.driverInfo[i];
     }
@@ -10667,9 +10910,11 @@ void safe_VkPhysicalDeviceVulkan12Properties::initialize(const VkPhysicalDeviceV
     maxTimelineSemaphoreValueDifference = in_struct->maxTimelineSemaphoreValueDifference;
     framebufferIntegerColorSampleCounts = in_struct->framebufferIntegerColorSampleCounts;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = in_struct->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = in_struct->driverInfo[i];
     }
@@ -10729,9 +10974,11 @@ void safe_VkPhysicalDeviceVulkan12Properties::initialize(const safe_VkPhysicalDe
     maxTimelineSemaphoreValueDifference = copy_src->maxTimelineSemaphoreValueDifference;
     framebufferIntegerColorSampleCounts = copy_src->framebufferIntegerColorSampleCounts;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src->driverInfo[i];
     }
@@ -10741,6 +10988,7 @@ safe_VkImageFormatListCreateInfo::safe_VkImageFormatListCreateInfo(const VkImage
                                                                    [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), viewFormatCount(in_struct->viewFormatCount), pViewFormats(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewFormats) {
         pViewFormats = new VkFormat[in_struct->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)in_struct->pViewFormats, sizeof(VkFormat) * in_struct->viewFormatCount);
@@ -10755,6 +11003,7 @@ safe_VkImageFormatListCreateInfo::safe_VkImageFormatListCreateInfo(const safe_Vk
     viewFormatCount = copy_src.viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewFormats) {
         pViewFormats = new VkFormat[copy_src.viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src.pViewFormats, sizeof(VkFormat) * copy_src.viewFormatCount);
@@ -10771,6 +11020,7 @@ safe_VkImageFormatListCreateInfo& safe_VkImageFormatListCreateInfo::operator=(co
     viewFormatCount = copy_src.viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewFormats) {
         pViewFormats = new VkFormat[copy_src.viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src.pViewFormats, sizeof(VkFormat) * copy_src.viewFormatCount);
@@ -10792,6 +11042,7 @@ void safe_VkImageFormatListCreateInfo::initialize(const VkImageFormatListCreateI
     viewFormatCount = in_struct->viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewFormats) {
         pViewFormats = new VkFormat[in_struct->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)in_struct->pViewFormats, sizeof(VkFormat) * in_struct->viewFormatCount);
@@ -10804,6 +11055,7 @@ void safe_VkImageFormatListCreateInfo::initialize(const safe_VkImageFormatListCr
     viewFormatCount = copy_src->viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewFormats) {
         pViewFormats = new VkFormat[copy_src->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src->pViewFormats, sizeof(VkFormat) * copy_src->viewFormatCount);
@@ -10995,6 +11247,7 @@ safe_VkSubpassDescription2::safe_VkSubpassDescription2(const VkSubpassDescriptio
     }
     if (in_struct->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2(in_struct->pDepthStencilAttachment);
+
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)in_struct->pPreserveAttachments,
@@ -11051,6 +11304,7 @@ safe_VkSubpassDescription2::safe_VkSubpassDescription2(const safe_VkSubpassDescr
     }
     if (copy_src.pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2(*copy_src.pDepthStencilAttachment);
+
     if (copy_src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src.preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src.pPreserveAttachments,
@@ -11101,6 +11355,7 @@ safe_VkSubpassDescription2& safe_VkSubpassDescription2::operator=(const safe_VkS
     }
     if (copy_src.pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2(*copy_src.pDepthStencilAttachment);
+
     if (copy_src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src.preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src.pPreserveAttachments,
@@ -11159,6 +11414,7 @@ void safe_VkSubpassDescription2::initialize(const VkSubpassDescription2* in_stru
     }
     if (in_struct->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2(in_struct->pDepthStencilAttachment);
+
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)in_struct->pPreserveAttachments,
@@ -11201,6 +11457,7 @@ void safe_VkSubpassDescription2::initialize(const safe_VkSubpassDescription2* co
     }
     if (copy_src->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2(*copy_src->pDepthStencilAttachment);
+
     if (copy_src->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[copy_src->preserveAttachmentCount];
         memcpy((void*)pPreserveAttachments, (void*)copy_src->pPreserveAttachments,
@@ -11328,6 +11585,7 @@ safe_VkRenderPassCreateInfo2::safe_VkRenderPassCreateInfo2(const VkRenderPassCre
             pDependencies[i].initialize(&in_struct->pDependencies[i]);
         }
     }
+
     if (in_struct->pCorrelatedViewMasks) {
         pCorrelatedViewMasks = new uint32_t[in_struct->correlatedViewMaskCount];
         memcpy((void*)pCorrelatedViewMasks, (void*)in_struct->pCorrelatedViewMasks,
@@ -11378,6 +11636,7 @@ safe_VkRenderPassCreateInfo2::safe_VkRenderPassCreateInfo2(const safe_VkRenderPa
             pDependencies[i].initialize(&copy_src.pDependencies[i]);
         }
     }
+
     if (copy_src.pCorrelatedViewMasks) {
         pCorrelatedViewMasks = new uint32_t[copy_src.correlatedViewMaskCount];
         memcpy((void*)pCorrelatedViewMasks, (void*)copy_src.pCorrelatedViewMasks,
@@ -11423,6 +11682,7 @@ safe_VkRenderPassCreateInfo2& safe_VkRenderPassCreateInfo2::operator=(const safe
             pDependencies[i].initialize(&copy_src.pDependencies[i]);
         }
     }
+
     if (copy_src.pCorrelatedViewMasks) {
         pCorrelatedViewMasks = new uint32_t[copy_src.correlatedViewMaskCount];
         memcpy((void*)pCorrelatedViewMasks, (void*)copy_src.pCorrelatedViewMasks,
@@ -11476,6 +11736,7 @@ void safe_VkRenderPassCreateInfo2::initialize(const VkRenderPassCreateInfo2* in_
             pDependencies[i].initialize(&in_struct->pDependencies[i]);
         }
     }
+
     if (in_struct->pCorrelatedViewMasks) {
         pCorrelatedViewMasks = new uint32_t[in_struct->correlatedViewMaskCount];
         memcpy((void*)pCorrelatedViewMasks, (void*)in_struct->pCorrelatedViewMasks,
@@ -11514,6 +11775,7 @@ void safe_VkRenderPassCreateInfo2::initialize(const safe_VkRenderPassCreateInfo2
             pDependencies[i].initialize(&copy_src->pDependencies[i]);
         }
     }
+
     if (copy_src->pCorrelatedViewMasks) {
         pCorrelatedViewMasks = new uint32_t[copy_src->correlatedViewMaskCount];
         memcpy((void*)pCorrelatedViewMasks, (void*)copy_src->pCorrelatedViewMasks,
@@ -11668,9 +11930,11 @@ safe_VkPhysicalDeviceDriverProperties::safe_VkPhysicalDeviceDriverProperties(con
                                                                              [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), driverID(in_struct->driverID), conformanceVersion(in_struct->conformanceVersion) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = in_struct->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = in_struct->driverInfo[i];
     }
@@ -11685,9 +11949,11 @@ safe_VkPhysicalDeviceDriverProperties::safe_VkPhysicalDeviceDriverProperties(
     driverID = copy_src.driverID;
     conformanceVersion = copy_src.conformanceVersion;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src.driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src.driverInfo[i];
     }
@@ -11703,9 +11969,11 @@ safe_VkPhysicalDeviceDriverProperties& safe_VkPhysicalDeviceDriverProperties::op
     driverID = copy_src.driverID;
     conformanceVersion = copy_src.conformanceVersion;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src.driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src.driverInfo[i];
     }
@@ -11724,9 +11992,11 @@ void safe_VkPhysicalDeviceDriverProperties::initialize(const VkPhysicalDeviceDri
     driverID = in_struct->driverID;
     conformanceVersion = in_struct->conformanceVersion;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = in_struct->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = in_struct->driverInfo[i];
     }
@@ -11738,9 +12008,11 @@ void safe_VkPhysicalDeviceDriverProperties::initialize(const safe_VkPhysicalDevi
     driverID = copy_src->driverID;
     conformanceVersion = copy_src->conformanceVersion;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_NAME_SIZE; ++i) {
         driverName[i] = copy_src->driverName[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DRIVER_INFO_SIZE; ++i) {
         driverInfo[i] = copy_src->driverInfo[i];
     }
@@ -12006,6 +12278,7 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::safe_VkDescriptorSetLayoutBind
     const VkDescriptorSetLayoutBindingFlagsCreateInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), bindingCount(in_struct->bindingCount), pBindingFlags(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pBindingFlags) {
         pBindingFlags = new VkDescriptorBindingFlags[in_struct->bindingCount];
         memcpy((void*)pBindingFlags, (void*)in_struct->pBindingFlags, sizeof(VkDescriptorBindingFlags) * in_struct->bindingCount);
@@ -12024,6 +12297,7 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::safe_VkDescriptorSetLayoutBind
     bindingCount = copy_src.bindingCount;
     pBindingFlags = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pBindingFlags) {
         pBindingFlags = new VkDescriptorBindingFlags[copy_src.bindingCount];
         memcpy((void*)pBindingFlags, (void*)copy_src.pBindingFlags, sizeof(VkDescriptorBindingFlags) * copy_src.bindingCount);
@@ -12041,6 +12315,7 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfo& safe_VkDescriptorSetLayoutBind
     bindingCount = copy_src.bindingCount;
     pBindingFlags = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pBindingFlags) {
         pBindingFlags = new VkDescriptorBindingFlags[copy_src.bindingCount];
         memcpy((void*)pBindingFlags, (void*)copy_src.pBindingFlags, sizeof(VkDescriptorBindingFlags) * copy_src.bindingCount);
@@ -12062,6 +12337,7 @@ void safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::initialize(const VkDescri
     bindingCount = in_struct->bindingCount;
     pBindingFlags = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pBindingFlags) {
         pBindingFlags = new VkDescriptorBindingFlags[in_struct->bindingCount];
         memcpy((void*)pBindingFlags, (void*)in_struct->pBindingFlags, sizeof(VkDescriptorBindingFlags) * in_struct->bindingCount);
@@ -12074,6 +12350,7 @@ void safe_VkDescriptorSetLayoutBindingFlagsCreateInfo::initialize(const safe_VkD
     bindingCount = copy_src->bindingCount;
     pBindingFlags = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pBindingFlags) {
         pBindingFlags = new VkDescriptorBindingFlags[copy_src->bindingCount];
         memcpy((void*)pBindingFlags, (void*)copy_src->pBindingFlags, sizeof(VkDescriptorBindingFlags) * copy_src->bindingCount);
@@ -12432,6 +12709,7 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::safe_VkDescriptorSetVar
     const VkDescriptorSetVariableDescriptorCountAllocateInfo* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), descriptorSetCount(in_struct->descriptorSetCount), pDescriptorCounts(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDescriptorCounts) {
         pDescriptorCounts = new uint32_t[in_struct->descriptorSetCount];
         memcpy((void*)pDescriptorCounts, (void*)in_struct->pDescriptorCounts, sizeof(uint32_t) * in_struct->descriptorSetCount);
@@ -12450,6 +12728,7 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::safe_VkDescriptorSetVar
     descriptorSetCount = copy_src.descriptorSetCount;
     pDescriptorCounts = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDescriptorCounts) {
         pDescriptorCounts = new uint32_t[copy_src.descriptorSetCount];
         memcpy((void*)pDescriptorCounts, (void*)copy_src.pDescriptorCounts, sizeof(uint32_t) * copy_src.descriptorSetCount);
@@ -12467,6 +12746,7 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfo& safe_VkDescriptorSetVar
     descriptorSetCount = copy_src.descriptorSetCount;
     pDescriptorCounts = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pDescriptorCounts) {
         pDescriptorCounts = new uint32_t[copy_src.descriptorSetCount];
         memcpy((void*)pDescriptorCounts, (void*)copy_src.pDescriptorCounts, sizeof(uint32_t) * copy_src.descriptorSetCount);
@@ -12488,6 +12768,7 @@ void safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::initialize(
     descriptorSetCount = in_struct->descriptorSetCount;
     pDescriptorCounts = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pDescriptorCounts) {
         pDescriptorCounts = new uint32_t[in_struct->descriptorSetCount];
         memcpy((void*)pDescriptorCounts, (void*)in_struct->pDescriptorCounts, sizeof(uint32_t) * in_struct->descriptorSetCount);
@@ -12500,6 +12781,7 @@ void safe_VkDescriptorSetVariableDescriptorCountAllocateInfo::initialize(
     descriptorSetCount = copy_src->descriptorSetCount;
     pDescriptorCounts = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pDescriptorCounts) {
         pDescriptorCounts = new uint32_t[copy_src->descriptorSetCount];
         memcpy((void*)pDescriptorCounts, (void*)copy_src->pDescriptorCounts, sizeof(uint32_t) * copy_src->descriptorSetCount);
@@ -13023,6 +13305,7 @@ safe_VkFramebufferAttachmentImageInfo::safe_VkFramebufferAttachmentImageInfo(con
       viewFormatCount(in_struct->viewFormatCount),
       pViewFormats(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewFormats) {
         pViewFormats = new VkFormat[in_struct->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)in_struct->pViewFormats, sizeof(VkFormat) * in_struct->viewFormatCount);
@@ -13051,6 +13334,7 @@ safe_VkFramebufferAttachmentImageInfo::safe_VkFramebufferAttachmentImageInfo(
     viewFormatCount = copy_src.viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewFormats) {
         pViewFormats = new VkFormat[copy_src.viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src.pViewFormats, sizeof(VkFormat) * copy_src.viewFormatCount);
@@ -13073,6 +13357,7 @@ safe_VkFramebufferAttachmentImageInfo& safe_VkFramebufferAttachmentImageInfo::op
     viewFormatCount = copy_src.viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pViewFormats) {
         pViewFormats = new VkFormat[copy_src.viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src.pViewFormats, sizeof(VkFormat) * copy_src.viewFormatCount);
@@ -13099,6 +13384,7 @@ void safe_VkFramebufferAttachmentImageInfo::initialize(const VkFramebufferAttach
     viewFormatCount = in_struct->viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pViewFormats) {
         pViewFormats = new VkFormat[in_struct->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)in_struct->pViewFormats, sizeof(VkFormat) * in_struct->viewFormatCount);
@@ -13116,6 +13402,7 @@ void safe_VkFramebufferAttachmentImageInfo::initialize(const safe_VkFramebufferA
     viewFormatCount = copy_src->viewFormatCount;
     pViewFormats = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pViewFormats) {
         pViewFormats = new VkFormat[copy_src->viewFormatCount];
         memcpy((void*)pViewFormats, (void*)copy_src->pViewFormats, sizeof(VkFormat) * copy_src->viewFormatCount);
@@ -13753,11 +14040,13 @@ safe_VkTimelineSemaphoreSubmitInfo::safe_VkTimelineSemaphoreSubmitInfo(const VkT
       signalSemaphoreValueCount(in_struct->signalSemaphoreValueCount),
       pSignalSemaphoreValues(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pWaitSemaphoreValues) {
         pWaitSemaphoreValues = new uint64_t[in_struct->waitSemaphoreValueCount];
         memcpy((void*)pWaitSemaphoreValues, (void*)in_struct->pWaitSemaphoreValues,
                sizeof(uint64_t) * in_struct->waitSemaphoreValueCount);
     }
+
     if (in_struct->pSignalSemaphoreValues) {
         pSignalSemaphoreValues = new uint64_t[in_struct->signalSemaphoreValueCount];
         memcpy((void*)pSignalSemaphoreValues, (void*)in_struct->pSignalSemaphoreValues,
@@ -13780,11 +14069,13 @@ safe_VkTimelineSemaphoreSubmitInfo::safe_VkTimelineSemaphoreSubmitInfo(const saf
     signalSemaphoreValueCount = copy_src.signalSemaphoreValueCount;
     pSignalSemaphoreValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pWaitSemaphoreValues) {
         pWaitSemaphoreValues = new uint64_t[copy_src.waitSemaphoreValueCount];
         memcpy((void*)pWaitSemaphoreValues, (void*)copy_src.pWaitSemaphoreValues,
                sizeof(uint64_t) * copy_src.waitSemaphoreValueCount);
     }
+
     if (copy_src.pSignalSemaphoreValues) {
         pSignalSemaphoreValues = new uint64_t[copy_src.signalSemaphoreValueCount];
         memcpy((void*)pSignalSemaphoreValues, (void*)copy_src.pSignalSemaphoreValues,
@@ -13806,11 +14097,13 @@ safe_VkTimelineSemaphoreSubmitInfo& safe_VkTimelineSemaphoreSubmitInfo::operator
     signalSemaphoreValueCount = copy_src.signalSemaphoreValueCount;
     pSignalSemaphoreValues = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pWaitSemaphoreValues) {
         pWaitSemaphoreValues = new uint64_t[copy_src.waitSemaphoreValueCount];
         memcpy((void*)pWaitSemaphoreValues, (void*)copy_src.pWaitSemaphoreValues,
                sizeof(uint64_t) * copy_src.waitSemaphoreValueCount);
     }
+
     if (copy_src.pSignalSemaphoreValues) {
         pSignalSemaphoreValues = new uint64_t[copy_src.signalSemaphoreValueCount];
         memcpy((void*)pSignalSemaphoreValues, (void*)copy_src.pSignalSemaphoreValues,
@@ -13837,11 +14130,13 @@ void safe_VkTimelineSemaphoreSubmitInfo::initialize(const VkTimelineSemaphoreSub
     signalSemaphoreValueCount = in_struct->signalSemaphoreValueCount;
     pSignalSemaphoreValues = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pWaitSemaphoreValues) {
         pWaitSemaphoreValues = new uint64_t[in_struct->waitSemaphoreValueCount];
         memcpy((void*)pWaitSemaphoreValues, (void*)in_struct->pWaitSemaphoreValues,
                sizeof(uint64_t) * in_struct->waitSemaphoreValueCount);
     }
+
     if (in_struct->pSignalSemaphoreValues) {
         pSignalSemaphoreValues = new uint64_t[in_struct->signalSemaphoreValueCount];
         memcpy((void*)pSignalSemaphoreValues, (void*)in_struct->pSignalSemaphoreValues,
@@ -13857,11 +14152,13 @@ void safe_VkTimelineSemaphoreSubmitInfo::initialize(const safe_VkTimelineSemapho
     signalSemaphoreValueCount = copy_src->signalSemaphoreValueCount;
     pSignalSemaphoreValues = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pWaitSemaphoreValues) {
         pWaitSemaphoreValues = new uint64_t[copy_src->waitSemaphoreValueCount];
         memcpy((void*)pWaitSemaphoreValues, (void*)copy_src->pWaitSemaphoreValues,
                sizeof(uint64_t) * copy_src->waitSemaphoreValueCount);
     }
+
     if (copy_src->pSignalSemaphoreValues) {
         pSignalSemaphoreValues = new uint64_t[copy_src->signalSemaphoreValueCount];
         memcpy((void*)pSignalSemaphoreValues, (void*)copy_src->pSignalSemaphoreValues,
@@ -13883,6 +14180,7 @@ safe_VkSemaphoreWaitInfo::safe_VkSemaphoreWaitInfo(const VkSemaphoreWaitInfo* in
             pSemaphores[i] = in_struct->pSemaphores[i];
         }
     }
+
     if (in_struct->pValues) {
         pValues = new uint64_t[in_struct->semaphoreCount];
         memcpy((void*)pValues, (void*)in_struct->pValues, sizeof(uint64_t) * in_struct->semaphoreCount);
@@ -13910,6 +14208,7 @@ safe_VkSemaphoreWaitInfo::safe_VkSemaphoreWaitInfo(const safe_VkSemaphoreWaitInf
             pSemaphores[i] = copy_src.pSemaphores[i];
         }
     }
+
     if (copy_src.pValues) {
         pValues = new uint64_t[copy_src.semaphoreCount];
         memcpy((void*)pValues, (void*)copy_src.pValues, sizeof(uint64_t) * copy_src.semaphoreCount);
@@ -13935,6 +14234,7 @@ safe_VkSemaphoreWaitInfo& safe_VkSemaphoreWaitInfo::operator=(const safe_VkSemap
             pSemaphores[i] = copy_src.pSemaphores[i];
         }
     }
+
     if (copy_src.pValues) {
         pValues = new uint64_t[copy_src.semaphoreCount];
         memcpy((void*)pValues, (void*)copy_src.pValues, sizeof(uint64_t) * copy_src.semaphoreCount);
@@ -13965,6 +14265,7 @@ void safe_VkSemaphoreWaitInfo::initialize(const VkSemaphoreWaitInfo* in_struct, 
             pSemaphores[i] = in_struct->pSemaphores[i];
         }
     }
+
     if (in_struct->pValues) {
         pValues = new uint64_t[in_struct->semaphoreCount];
         memcpy((void*)pValues, (void*)in_struct->pValues, sizeof(uint64_t) * in_struct->semaphoreCount);
@@ -13984,6 +14285,7 @@ void safe_VkSemaphoreWaitInfo::initialize(const safe_VkSemaphoreWaitInfo* copy_s
             pSemaphores[i] = copy_src->pSemaphores[i];
         }
     }
+
     if (copy_src->pValues) {
         pValues = new uint64_t[copy_src->semaphoreCount];
         memcpy((void*)pValues, (void*)copy_src->pValues, sizeof(uint64_t) * copy_src->semaphoreCount);
@@ -14824,9 +15126,11 @@ safe_VkPipelineCreationFeedbackCreateInfo::safe_VkPipelineCreationFeedbackCreate
       pipelineStageCreationFeedbackCount(in_struct->pipelineStageCreationFeedbackCount),
       pPipelineStageCreationFeedbacks(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPipelineCreationFeedback) {
         pPipelineCreationFeedback = new VkPipelineCreationFeedback(*in_struct->pPipelineCreationFeedback);
     }
+
     if (in_struct->pPipelineStageCreationFeedbacks) {
         pPipelineStageCreationFeedbacks = new VkPipelineCreationFeedback[in_struct->pipelineStageCreationFeedbackCount];
         memcpy((void*)pPipelineStageCreationFeedbacks, (void*)in_struct->pPipelineStageCreationFeedbacks,
@@ -14848,9 +15152,11 @@ safe_VkPipelineCreationFeedbackCreateInfo::safe_VkPipelineCreationFeedbackCreate
     pipelineStageCreationFeedbackCount = copy_src.pipelineStageCreationFeedbackCount;
     pPipelineStageCreationFeedbacks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPipelineCreationFeedback) {
         pPipelineCreationFeedback = new VkPipelineCreationFeedback(*copy_src.pPipelineCreationFeedback);
     }
+
     if (copy_src.pPipelineStageCreationFeedbacks) {
         pPipelineStageCreationFeedbacks = new VkPipelineCreationFeedback[copy_src.pipelineStageCreationFeedbackCount];
         memcpy((void*)pPipelineStageCreationFeedbacks, (void*)copy_src.pPipelineStageCreationFeedbacks,
@@ -14871,9 +15177,11 @@ safe_VkPipelineCreationFeedbackCreateInfo& safe_VkPipelineCreationFeedbackCreate
     pipelineStageCreationFeedbackCount = copy_src.pipelineStageCreationFeedbackCount;
     pPipelineStageCreationFeedbacks = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pPipelineCreationFeedback) {
         pPipelineCreationFeedback = new VkPipelineCreationFeedback(*copy_src.pPipelineCreationFeedback);
     }
+
     if (copy_src.pPipelineStageCreationFeedbacks) {
         pPipelineStageCreationFeedbacks = new VkPipelineCreationFeedback[copy_src.pipelineStageCreationFeedbackCount];
         memcpy((void*)pPipelineStageCreationFeedbacks, (void*)copy_src.pPipelineStageCreationFeedbacks,
@@ -14899,9 +15207,11 @@ void safe_VkPipelineCreationFeedbackCreateInfo::initialize(const VkPipelineCreat
     pipelineStageCreationFeedbackCount = in_struct->pipelineStageCreationFeedbackCount;
     pPipelineStageCreationFeedbacks = nullptr;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pPipelineCreationFeedback) {
         pPipelineCreationFeedback = new VkPipelineCreationFeedback(*in_struct->pPipelineCreationFeedback);
     }
+
     if (in_struct->pPipelineStageCreationFeedbacks) {
         pPipelineStageCreationFeedbacks = new VkPipelineCreationFeedback[in_struct->pipelineStageCreationFeedbackCount];
         memcpy((void*)pPipelineStageCreationFeedbacks, (void*)in_struct->pPipelineStageCreationFeedbacks,
@@ -14916,9 +15226,11 @@ void safe_VkPipelineCreationFeedbackCreateInfo::initialize(const safe_VkPipeline
     pipelineStageCreationFeedbackCount = copy_src->pipelineStageCreationFeedbackCount;
     pPipelineStageCreationFeedbacks = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pPipelineCreationFeedback) {
         pPipelineCreationFeedback = new VkPipelineCreationFeedback(*copy_src->pPipelineCreationFeedback);
     }
+
     if (copy_src->pPipelineStageCreationFeedbacks) {
         pPipelineStageCreationFeedbacks = new VkPipelineCreationFeedback[copy_src->pipelineStageCreationFeedbackCount];
         memcpy((void*)pPipelineStageCreationFeedbacks, (void*)copy_src->pPipelineStageCreationFeedbacks,
@@ -14978,15 +15290,19 @@ safe_VkPhysicalDeviceToolProperties::safe_VkPhysicalDeviceToolProperties(const V
                                                                          [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), purposes(in_struct->purposes) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         name[i] = in_struct->name[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         version[i] = in_struct->version[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         layer[i] = in_struct->layer[i];
     }
@@ -14999,15 +15315,19 @@ safe_VkPhysicalDeviceToolProperties::safe_VkPhysicalDeviceToolProperties(const s
     sType = copy_src.sType;
     purposes = copy_src.purposes;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         name[i] = copy_src.name[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         version[i] = copy_src.version[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         layer[i] = copy_src.layer[i];
     }
@@ -15022,15 +15342,19 @@ safe_VkPhysicalDeviceToolProperties& safe_VkPhysicalDeviceToolProperties::operat
     sType = copy_src.sType;
     purposes = copy_src.purposes;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         name[i] = copy_src.name[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         version[i] = copy_src.version[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         layer[i] = copy_src.layer[i];
     }
@@ -15048,15 +15372,19 @@ void safe_VkPhysicalDeviceToolProperties::initialize(const VkPhysicalDeviceToolP
     sType = in_struct->sType;
     purposes = in_struct->purposes;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         name[i] = in_struct->name[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         version[i] = in_struct->version[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         layer[i] = in_struct->layer[i];
     }
@@ -15067,15 +15395,19 @@ void safe_VkPhysicalDeviceToolProperties::initialize(const safe_VkPhysicalDevice
     sType = copy_src->sType;
     purposes = copy_src->purposes;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         name[i] = copy_src->name[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         version[i] = copy_src->version[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src->description[i];
     }
+
     for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
         layer[i] = copy_src->layer[i];
     }
@@ -16811,9 +17143,11 @@ void safe_VkCopyImageToBufferInfo2::initialize(const safe_VkCopyImageToBufferInf
 safe_VkImageBlit2::safe_VkImageBlit2(const VkImageBlit2* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), srcSubresource(in_struct->srcSubresource), dstSubresource(in_struct->dstSubresource) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         srcOffsets[i] = in_struct->srcOffsets[i];
     }
+
     for (uint32_t i = 0; i < 2; ++i) {
         dstOffsets[i] = in_struct->dstOffsets[i];
     }
@@ -16827,9 +17161,11 @@ safe_VkImageBlit2::safe_VkImageBlit2(const safe_VkImageBlit2& copy_src) {
     srcSubresource = copy_src.srcSubresource;
     dstSubresource = copy_src.dstSubresource;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         srcOffsets[i] = copy_src.srcOffsets[i];
     }
+
     for (uint32_t i = 0; i < 2; ++i) {
         dstOffsets[i] = copy_src.dstOffsets[i];
     }
@@ -16844,9 +17180,11 @@ safe_VkImageBlit2& safe_VkImageBlit2::operator=(const safe_VkImageBlit2& copy_sr
     srcSubresource = copy_src.srcSubresource;
     dstSubresource = copy_src.dstSubresource;
     pNext = SafePnextCopy(copy_src.pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         srcOffsets[i] = copy_src.srcOffsets[i];
     }
+
     for (uint32_t i = 0; i < 2; ++i) {
         dstOffsets[i] = copy_src.dstOffsets[i];
     }
@@ -16864,9 +17202,11 @@ void safe_VkImageBlit2::initialize(const VkImageBlit2* in_struct, [[maybe_unused
     srcSubresource = in_struct->srcSubresource;
     dstSubresource = in_struct->dstSubresource;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     for (uint32_t i = 0; i < 2; ++i) {
         srcOffsets[i] = in_struct->srcOffsets[i];
     }
+
     for (uint32_t i = 0; i < 2; ++i) {
         dstOffsets[i] = in_struct->dstOffsets[i];
     }
@@ -16877,9 +17217,11 @@ void safe_VkImageBlit2::initialize(const safe_VkImageBlit2* copy_src, [[maybe_un
     srcSubresource = copy_src->srcSubresource;
     dstSubresource = copy_src->dstSubresource;
     pNext = SafePnextCopy(copy_src->pNext);
+
     for (uint32_t i = 0; i < 2; ++i) {
         srcOffsets[i] = copy_src->srcOffsets[i];
     }
+
     for (uint32_t i = 0; i < 2; ++i) {
         dstOffsets[i] = copy_src->dstOffsets[i];
     }
@@ -17490,6 +17832,7 @@ safe_VkWriteDescriptorSetInlineUniformBlock::safe_VkWriteDescriptorSetInlineUnif
     const VkWriteDescriptorSetInlineUniformBlock* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
     : sType(in_struct->sType), dataSize(in_struct->dataSize), pData(nullptr) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -17505,6 +17848,7 @@ safe_VkWriteDescriptorSetInlineUniformBlock::safe_VkWriteDescriptorSetInlineUnif
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -17525,6 +17869,7 @@ safe_VkWriteDescriptorSetInlineUniformBlock& safe_VkWriteDescriptorSetInlineUnif
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pData != nullptr) {
         auto temp = new std::byte[copy_src.dataSize];
         std::memcpy(temp, copy_src.pData, copy_src.dataSize);
@@ -17552,6 +17897,7 @@ void safe_VkWriteDescriptorSetInlineUniformBlock::initialize(const VkWriteDescri
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pData != nullptr) {
         auto temp = new std::byte[in_struct->dataSize];
         std::memcpy(temp, in_struct->pData, in_struct->dataSize);
@@ -17564,6 +17910,7 @@ void safe_VkWriteDescriptorSetInlineUniformBlock::initialize(const safe_VkWriteD
     sType = copy_src->sType;
     dataSize = copy_src->dataSize;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pData != nullptr) {
         auto temp = new std::byte[copy_src->dataSize];
         std::memcpy(temp, copy_src->pData, copy_src->dataSize);
@@ -18076,6 +18423,7 @@ safe_VkCommandBufferInheritanceRenderingInfo::safe_VkCommandBufferInheritanceRen
       stencilAttachmentFormat(in_struct->stencilAttachmentFormat),
       rasterizationSamples(in_struct->rasterizationSamples) {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorAttachmentFormats) {
         pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachmentFormats, (void*)in_struct->pColorAttachmentFormats,
@@ -18105,6 +18453,7 @@ safe_VkCommandBufferInheritanceRenderingInfo::safe_VkCommandBufferInheritanceRen
     stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
     rasterizationSamples = copy_src.rasterizationSamples;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorAttachmentFormats) {
         pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachmentFormats, (void*)copy_src.pColorAttachmentFormats,
@@ -18128,6 +18477,7 @@ safe_VkCommandBufferInheritanceRenderingInfo& safe_VkCommandBufferInheritanceRen
     stencilAttachmentFormat = copy_src.stencilAttachmentFormat;
     rasterizationSamples = copy_src.rasterizationSamples;
     pNext = SafePnextCopy(copy_src.pNext);
+
     if (copy_src.pColorAttachmentFormats) {
         pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
         memcpy((void*)pColorAttachmentFormats, (void*)copy_src.pColorAttachmentFormats,
@@ -18155,6 +18505,7 @@ void safe_VkCommandBufferInheritanceRenderingInfo::initialize(const VkCommandBuf
     stencilAttachmentFormat = in_struct->stencilAttachmentFormat;
     rasterizationSamples = in_struct->rasterizationSamples;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
+
     if (in_struct->pColorAttachmentFormats) {
         pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
         memcpy((void*)pColorAttachmentFormats, (void*)in_struct->pColorAttachmentFormats,
@@ -18173,6 +18524,7 @@ void safe_VkCommandBufferInheritanceRenderingInfo::initialize(const safe_VkComma
     stencilAttachmentFormat = copy_src->stencilAttachmentFormat;
     rasterizationSamples = copy_src->rasterizationSamples;
     pNext = SafePnextCopy(copy_src->pNext);
+
     if (copy_src->pColorAttachmentFormats) {
         pColorAttachmentFormats = new VkFormat[copy_src->colorAttachmentCount];
         memcpy((void*)pColorAttachmentFormats, (void*)copy_src->pColorAttachmentFormats,
