@@ -138,7 +138,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         const PipelineStageState* fragment_stage = nullptr;
         for (auto& stage_state : pipeline.stage_states) {
-            if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
                 fragment_stage = &stage_state;
                 break;
             }

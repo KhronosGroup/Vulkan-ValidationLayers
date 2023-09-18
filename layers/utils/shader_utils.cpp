@@ -138,32 +138,20 @@ uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots) {
     return max_active_slot;
 }
 
-const char *PipelineStageState::getPName() const {
-    if (pipeline_create_info) {
-        return pipeline_create_info->pName;
-    }
-    return shader_object_create_info->pName;
+const char *PipelineStageState::GetPName() const {
+    return (pipeline_create_info) ? pipeline_create_info->pName : shader_object_create_info->pName;
 }
 
-VkShaderStageFlagBits PipelineStageState::getStage() const {
-    if (pipeline_create_info) {
-        return pipeline_create_info->stage;
-    }
-    return shader_object_create_info->stage;
+VkShaderStageFlagBits PipelineStageState::GetStage() const {
+    return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info->stage;
 }
 
-safe_VkSpecializationInfo *PipelineStageState::getSpecializationInfo() const {
-    if (pipeline_create_info) {
-        return pipeline_create_info->pSpecializationInfo;
-    }
-    return shader_object_create_info->pSpecializationInfo;
+safe_VkSpecializationInfo *PipelineStageState::GetSpecializationInfo() const {
+    return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info->pSpecializationInfo;
 }
 
-const void *PipelineStageState::getPNext() const {
-    if (pipeline_create_info) {
-        return pipeline_create_info->pNext;
-    }
-    return shader_object_create_info->pNext;
+const void *PipelineStageState::GetPNext() const {
+    return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
@@ -174,4 +162,4 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),
       shader_object_create_info(shader_object_create_info),
-      entrypoint(spirv_state ? spirv_state->FindEntrypoint(getPName(), getStage()) : nullptr) {}
+      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}

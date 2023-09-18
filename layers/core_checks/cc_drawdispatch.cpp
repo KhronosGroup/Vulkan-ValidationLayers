@@ -5850,7 +5850,7 @@ bool CoreChecks::ValidateActionState(const CMD_BUFFER_STATE &cb_state, const VkP
                     skip |= LogError(vuid.push_constants_set_08602, objlist, loc,
                                      "Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                      "pipeline layout %s.",
-                                     string_VkShaderStageFlags(stage.getStage()).c_str(),
+                                     string_VkShaderStageFlags(stage.GetStage()).c_str(),
                                      FormatHandle(pipeline_layout->layout()).c_str());
                 }
             }

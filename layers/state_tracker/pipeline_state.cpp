@@ -386,7 +386,7 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const StageStateVec &st
         if (!stage_state.entrypoint) {
             continue;
         }
-        if (stage_state.getStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
             for (const auto *variable : stage_state.entrypoint->user_defined_interface_variables) {
                 if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
                     continue;  // not an output interface

@@ -138,10 +138,10 @@ struct PipelineStageState {
                        std::shared_ptr<const SHADER_MODULE_STATE> module_state,
                        std::shared_ptr<const SPIRV_MODULE_STATE> spirv_state);
 
-    const char *getPName() const;
-    VkShaderStageFlagBits getStage() const;
-    safe_VkSpecializationInfo *getSpecializationInfo() const;
-    const void *getPNext() const;
+    const char *GetPName() const;
+    VkShaderStageFlagBits GetStage() const;
+    safe_VkSpecializationInfo *GetSpecializationInfo() const;
+    const void *GetPNext() const;
 };
 
 using StageStateVec = std::vector<PipelineStageState>;

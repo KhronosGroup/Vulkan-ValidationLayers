@@ -507,7 +507,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SPIRV_MODULE_STATE &module_stat
                                            const Location &loc) const {
     bool skip = false;
 
-    const safe_VkSpecializationInfo *spec = stage_state.getSpecializationInfo();
+    const safe_VkSpecializationInfo *spec = stage_state.GetSpecializationInfo();
 
     struct CoopMatType {
         VkScopeKHR scope;
@@ -2049,14 +2049,14 @@ bool CoreChecks::ValidateShaderTileImage(const SPIRV_MODULE_STATE &module_state,
 bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create_info, const PipelineStageState &stage_state,
                                              const Location &loc) const {
     bool skip = false;
-    const VkShaderStageFlagBits stage = stage_state.getStage();
+    const VkShaderStageFlagBits stage = stage_state.GetStage();
 
     // First validate all things that don't require valid SPIR-V
     // this is found when using VK_EXT_shader_module_identifier
     skip |= ValidateShaderSubgroupSizeControl(stage_create_info, stage, stage_state, loc);
-    skip |= ValidateSpecializations(stage_state.getSpecializationInfo(), stage_create_info, loc.dot(Field::pSpecializationInfo));
+    skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), stage_create_info, loc.dot(Field::pSpecializationInfo));
     skip |= ValidateShaderStageMaxResources(stage, stage_create_info, loc);
-    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.getPNext());
+    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext());
         pipeline_robustness_info) {
         skip |= ValidatePipelineRobustnessCreateInfo(*stage_create_info.pipeline, *pipeline_robustness_info, loc);
     }
@@ -2067,7 +2067,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     if (!stage_state.entrypoint) {
         const char *vuid = stage_create_info.pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707"
                                                       : "VUID-VkShaderCreateInfoEXT-pName-08440";
-        return LogError(vuid, device, loc.dot(Field::pName), "`%s` entrypoint not found for stage %s.", stage_state.getPName(),
+        return LogError(vuid, device, loc.dot(Field::pName), "`%s` entrypoint not found for stage %s.", stage_state.GetPName(),
                         string_VkShaderStageFlagBits(stage));
     }
 
@@ -2100,7 +2100,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
 
         // The app might be using the default spec constant values, but if they pass values at runtime to the pipeline then need to
         // use those values to apply to the spec constants
-        auto const &specialization_info = stage_state.getSpecializationInfo();
+        auto const &specialization_info = stage_state.GetSpecializationInfo();
         if (specialization_info != nullptr && specialization_info->mapEntryCount > 0 &&
             specialization_info->pMapEntries != nullptr) {
             // Gather the specialization-constant values.
@@ -2498,15 +2498,15 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE &module_
         const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
                                     VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         const auto *required_subgroup_size_features =
-            LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.getPNext());
+            LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (required_subgroup_size_features) {
             const uint32_t requiredSubgroupSize = required_subgroup_size_features->requiredSubgroupSize;
             skip |= RequireFeature(module_state, enabled_features.core13.subgroupSizeControl, "subgroupSizeControl",
                                    "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
-            if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.getStage()) == 0) {
+            if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.GetStage()) == 0) {
                 skip |= LogError(
                     "VUID-VkPipelineShaderStageCreateInfo-pNext-02755", module_state.handle(), loc,
-                    "SPIR-V  (%s) is not in requiredSubgroupSizeStages (%s).", string_VkShaderStageFlagBits(stage_state.getStage()),
+                    "SPIR-V  (%s) is not in requiredSubgroupSizeStages (%s).", string_VkShaderStageFlagBits(stage_state.GetStage()),
                     string_VkShaderStageFlags(phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages).c_str());
             }
             if ((invocations >
@@ -2574,7 +2574,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE &module_
     } else {
         const bool varying = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         const bool full = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-        const auto *required_subgroup_size = LvlFindInChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.getPNext());
+        const auto *required_subgroup_size = LvlFindInChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (varying && full) {
             if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
                 skip |= LogError(

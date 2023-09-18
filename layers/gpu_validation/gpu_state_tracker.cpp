@@ -973,7 +973,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         if (cgpl_state.shader_states.size() <= pipeline) {
                             cgpl_state.shader_states.resize(pipeline + 1);
                         }
-                        const VkShaderStageFlagBits stage = stage_state.getStage();
+                        const VkShaderStageFlagBits stage = stage_state.GetStage();
                         auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         const auto pass =
                             InstrumentShader(module_state->spirv->words_, csm_state.instrumented_spirv, &csm_state.unique_shader_id);
@@ -1027,7 +1027,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
                 if (pipeline_state->active_slots.find(desc_set_bind_index) != pipeline_state->active_slots.end() ||
                     (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
-                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.getStage());
+                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
                     assert(uninstrumented_module != shader_module.Cast<VkShaderModule>());
                     DispatchDestroyShaderModule(device, uninstrumented_module, pAllocator);
                 }
