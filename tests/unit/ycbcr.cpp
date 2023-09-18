@@ -31,7 +31,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     }
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
-    VkSamplerYcbcrConversionCreateInfo sycci = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo sycci = vku::InitStructHelper();
     sycci.format = VK_FORMAT_UNDEFINED;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -113,7 +113,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     // Try to create a Sampler with non-matching filters without feature bit set
-    VkSamplerYcbcrConversionInfo sampler_ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo sampler_ycbcr_info = vku::InitStructHelper();
     sampler_ycbcr_info.conversion = conversion.handle();
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.minFilter = VK_FILTER_NEAREST;  // Different than chromaFilter
@@ -146,7 +146,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
                                          VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
-    VkSamplerYcbcrConversionCreateInfo sycci = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo sycci = vku::InitStructHelper();
     sycci.format = mp_format;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -260,10 +260,10 @@ TEST_F(NegativeYcbcr, Swizzle) {
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkSamplerYcbcrConversionInfo conversion_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo conversion_info = vku::InitStructHelper();
     conversion_info.conversion = conversion.handle();
 
-    VkImageViewCreateInfo image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>(&conversion_info);
+    VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper(&conversion_info);
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -302,7 +302,7 @@ TEST_F(NegativeYcbcr, Formats) {
 
     // Create ycbcr image with all valid values
     // Each test changes needed values and returns them back after
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = mp_format;
     image_create_info.extent.width = 32;
@@ -377,7 +377,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     if (::testing::Test::IsSkipped()) return;
 
     // Select a _422 format and verify support
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8B8G8R8_422_UNORM_KHR;
@@ -467,7 +467,7 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     VkFormat mp3_format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
     VkFormat mp2_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR;
 
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = mp2_format;
@@ -577,7 +577,7 @@ TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     // Explictly not enable Ycbcr Conversion Features
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper();
     ycbcr_features.samplerYcbcrConversion = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
 
@@ -609,7 +609,7 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     VkImageObj mp_image(m_device);
     VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = mp_format;
     image_create_info.extent.width = 32;
@@ -654,7 +654,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
 
     // Create Ycbcr conversion
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // guaranteed sampling support
-    auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>(
+    auto ycbcr_create_info = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>(
         nullptr, mp_format, VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY, VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
         VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                            VK_COMPONENT_SWIZZLE_IDENTITY},
@@ -666,17 +666,17 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
                                                  });
 
     VkImageObj image_obj(m_device);
-    auto image_ci = LvlInitStruct<VkImageCreateInfo>(
+    auto image_ci = vku::InitStruct<VkImageCreateInfo>(
         nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT},  // need for multi-planar
         VK_IMAGE_TYPE_2D, mp_format, VkExtent3D{64, 64u, 1u}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
     image_obj.init(&image_ci);
     ASSERT_TRUE(image_obj.initialized());
 
-    auto ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    auto ycbcr_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion.handle();
 
-    auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
+    auto image_view_create_info = vku::InitStruct<VkImageViewCreateInfo>(&ycbcr_info);
     image_view_create_info.image = image_obj.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = mp_format;
@@ -698,7 +698,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     InitBasicYcbcr();
     if (::testing::Test::IsSkipped()) return;
 
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
@@ -765,7 +765,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
     if (disjoint_sampled != (format_properties.optimalTilingFeatures & disjoint_sampled)) {
         printf("test requires disjoint and sampled feature bit on format.  Skipping.\n");
     } else {
-        VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = mp_format;
         image_create_info.extent.width = 64;
@@ -781,16 +781,16 @@ TEST_F(NegativeYcbcr, BindMemory) {
         VkImage image;
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
 
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
         mem_req_info2.image = image;
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         // Find a valid memory type index to memory to be allocated from
-        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = mem_req2.memoryRequirements.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
@@ -803,11 +803,11 @@ TEST_F(NegativeYcbcr, BindMemory) {
         vk::BindImageMemory(device(), image, image_memory, 0);
         m_errorMonitor->VerifyFound();
 
-        VkBindImagePlaneMemoryInfo plane_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        VkBindImagePlaneMemoryInfo plane_memory_info = vku::InitStructHelper();
         ASSERT_TRUE(vkuFormatPlaneCount(mp_format) == 2);
         plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
-        VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info);
+        VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper(&plane_memory_info);
         bind_image_info.image = image;
         bind_image_info.memory = image_memory;
         bind_image_info.memoryOffset = 0;
@@ -832,7 +832,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
     if (0 == (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         printf("test requires sampled feature bit on multi-planar format.  Skipping.\n");
     } else {
-        VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+        VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = mp_format;
         image_create_info.extent.width = 64;
@@ -848,22 +848,22 @@ TEST_F(NegativeYcbcr, BindMemory) {
         VkImage image;
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image;
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         // Find a valid memory type index to memory to be allocated from
-        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = mem_req2.memoryRequirements.size;
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
         ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
 
-        VkBindImagePlaneMemoryInfo plane_memory_info = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+        VkBindImagePlaneMemoryInfo plane_memory_info = vku::InitStructHelper();
         plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info);
+        VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper(&plane_memory_info);
         bind_image_info.image = image;
         bind_image_info.memory = image_memory;
         bind_image_info.memoryOffset = 0;
@@ -894,7 +894,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     bool amd_coherent_mem = IsExtensionsEnabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
 
     if (amd_coherent_mem) {
-        auto coherent_mem_features = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+        auto coherent_mem_features = vku::InitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
         GetPhysicalDeviceFeatures2(coherent_mem_features);
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_mem_features));
     } else {
@@ -904,7 +904,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
     image_create_info.extent.width = 256;
@@ -941,7 +941,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     ASSERT_TRUE(image.initialized());
     VkMemoryRequirements image_mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    VkMemoryAllocateInfo image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     // Leave some extra space for alignment wiggle room
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
     ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
@@ -957,20 +957,20 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         mp_image.init_no_mem(*m_device, mp_image_create_info);
         ASSERT_TRUE(mp_image.initialized());
 
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
         mem_req_info2.image = mp_image.handle();
-        mp_image_mem_reqs2[0] = LvlInitStruct<VkMemoryRequirements2>();
+        mp_image_mem_reqs2[0] = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        mp_image_mem_reqs2[1] = LvlInitStruct<VkMemoryRequirements2>();
+        mp_image_mem_reqs2[1] = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
 
-        mp_image_alloc_info[0] = LvlInitStruct<VkMemoryAllocateInfo>();
-        mp_image_alloc_info[1] = LvlInitStruct<VkMemoryAllocateInfo>();
+        mp_image_alloc_info[0] = vku::InitStructHelper();
+        mp_image_alloc_info[1] = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         // plane 0
         mp_image_alloc_info[0].allocationSize =
@@ -991,23 +991,23 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
     // All planes must be bound at once the same here
     VkBindImagePlaneMemoryInfo plane_memory_info[2];
-    plane_memory_info[0] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+    plane_memory_info[0] = vku::InitStructHelper();
     plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    plane_memory_info[1] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+    plane_memory_info[1] = vku::InitStructHelper();
     plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
 
     // Test unaligned memory offset
 
     // single-plane image
-    VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
     bind_image_info.memory = image_mem.handle();
     bind_image_info.memoryOffset = 1;  // off alignment
 
     if (mp_disjoint_support == true) {
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image.handle();
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         if (mem_req2.memoryRequirements.alignment > 1) {
@@ -1028,11 +1028,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     if (mp_disjoint_support == true) {
         if (mp_image_mem_reqs2[0].memoryRequirements.alignment > 1) {
             VkBindImageMemoryInfo bind_image_infos[2];
-            bind_image_infos[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[0]);
+            bind_image_infos[0] = vku::InitStructHelper(&plane_memory_info[0]);
             bind_image_infos[0].image = mp_image.handle();
             bind_image_infos[0].memory = mp_image_mem[0].handle();
             bind_image_infos[0].memoryOffset = 1;  // off alignment
-            bind_image_infos[1] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[1]);
+            bind_image_infos[1] = vku::InitStructHelper(&plane_memory_info[1]);
             bind_image_infos[1].image = mp_image.handle();
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
@@ -1046,14 +1046,14 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     // Test memory offsets within the memory allocation, but which leave too little memory for
     // the resource.
     // single-plane image
-    bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
     bind_image_info.memory = image_mem.handle();
 
     if (mp_disjoint_support == true) {
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image.handle();
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         VkDeviceSize image2_offset = (mem_req2.memoryRequirements.size - 1) & ~(mem_req2.memoryRequirements.alignment - 1);
@@ -1083,11 +1083,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             (mp_image_mem_reqs2[0].memoryRequirements.size <
              (mp_image_alloc_info[0].allocationSize - mp_image_mem_reqs2[0].memoryRequirements.alignment))) {
             VkBindImageMemoryInfo bind_image_infos[2];
-            bind_image_infos[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[0]);
+            bind_image_infos[0] = vku::InitStructHelper(&plane_memory_info[0]);
             bind_image_infos[0].image = mp_image.handle();
             bind_image_infos[0].memory = mp_image_mem[0].handle();
             bind_image_infos[0].memoryOffset = mp_image_offset;  // mis-offset
-            bind_image_infos[1] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[1]);
+            bind_image_infos[1] = vku::InitStructHelper(&plane_memory_info[1]);
             bind_image_infos[1].image = mp_image.handle();
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
@@ -1105,14 +1105,14 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memory_properties);
 
     // single-plane image
-    bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
     bind_image_info.memoryOffset = 0;
 
     if (mp_disjoint_support == true) {
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
         mem_req_info2.image = image.handle();
-        VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
+        VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
         uint32_t image2_unsupported_mem_type_bits =
@@ -1143,10 +1143,10 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     // Multi-plane image
     if (mp_disjoint_support == true) {
         // Get plane 0 memory requirements
-        VkImagePlaneMemoryRequirementsInfo image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-        VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
         mem_req_info2.image = mp_image.handle();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
 
@@ -1159,11 +1159,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             ASSERT_TRUE(mp_image_mem_tmp.initialized());
 
             VkBindImageMemoryInfo bind_image_infos[2];
-            bind_image_infos[0] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[0]);
+            bind_image_infos[0] = vku::InitStructHelper(&plane_memory_info[0]);
             bind_image_infos[0].image = mp_image.handle();
             bind_image_infos[0].memory = mp_image_mem_tmp.handle();
             bind_image_infos[0].memoryOffset = 0;
-            bind_image_infos[1] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_memory_info[1]);
+            bind_image_infos[1] = vku::InitStructHelper(&plane_memory_info[1]);
             bind_image_infos[1].image = mp_image.handle();
             bind_image_infos[1].memory = mp_image_mem[1].handle();
             bind_image_infos[1].memoryOffset = 0;
@@ -1185,7 +1185,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    auto sampler_conversion_ci = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    auto sampler_conversion_ci = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
     sampler_conversion_ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     sampler_conversion_ci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sampler_conversion_ci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1198,10 +1198,10 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
 
     vk_testing::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
 
-    auto sampler_ycbcr_conversion_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    auto sampler_ycbcr_conversion_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
     sampler_ycbcr_conversion_info.conversion = sampler_conversion.handle();
 
-    VkImageViewCreateInfo view_info = LvlInitStruct<VkImageViewCreateInfo>(&sampler_ycbcr_conversion_info);
+    VkImageViewCreateInfo view_info = vku::InitStructHelper(&sampler_ycbcr_conversion_info);
     view_info.flags = 0;
     view_info.image = image.handle();
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1232,7 +1232,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1245,10 +1245,10 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
 
     vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
 
-    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion;
 
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
@@ -1271,7 +1271,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         image_obj.init(&ci);
         ASSERT_TRUE(image_obj.initialized());
 
-        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+        VkImageViewCreateInfo ivci = vku::InitStructHelper();
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.format = VK_FORMAT_R8G8_UNORM;  // Compat is VK_FORMAT_R8_UNORM
@@ -1311,7 +1311,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
         image_obj.init(&ci);
         ASSERT_TRUE(image_obj.initialized());
 
-        VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+        VkImageViewCreateInfo ivci = vku::InitStructHelper();
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.subresourceRange.layerCount = 1;
@@ -1352,7 +1352,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, can hit issues with imageViewFormatReinterpretation";
     }
 
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -1364,7 +1364,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.baseMipLevel = 0;
@@ -1391,7 +1391,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         image.init(&ci);
         ASSERT_TRUE(image.initialized());
 
-        VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+        VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
         ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
         ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
         ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1403,7 +1403,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         ycbcr_create_info.forceExplicitReconstruction = false;
 
         vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
-        VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+        VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
         ycbcr_info.conversion = conversion;
 
         ivci.image = image.image();
@@ -1433,14 +1433,14 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
         GTEST_SKIP() << "multi-planar format cannot be sampled for optimalTiling.";
     }
 
-    auto image_ci = LvlInitStruct<VkImageCreateInfo>(
+    auto image_ci = vku::InitStruct<VkImageCreateInfo>(
         nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT},  // need for multi-planar
         VK_IMAGE_TYPE_2D, mp_format, VkExtent3D{64, 64, 1}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
         VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
     image_obj.init(&image_ci);
     ASSERT_TRUE(image_obj.initialized());
 
-    auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    auto ycbcr_create_info = vku::InitStruct<VkSamplerYcbcrConversionCreateInfo>();
     ycbcr_create_info.format = mp_format;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -1453,7 +1453,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
 
     vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
-    auto ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    auto ycbcr_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion.handle();
 
     auto image_view_ci = image_obj.BasicViewCreatInfo();

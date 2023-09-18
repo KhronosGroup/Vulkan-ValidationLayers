@@ -70,7 +70,7 @@ VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescripto
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             pool_count * num_bindings_in_set,
         };
-        auto desc_pool_info = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+        auto desc_pool_info = vku::InitStruct<VkDescriptorPoolCreateInfo>();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         desc_pool_info.maxSets = pool_count;
         desc_pool_info.poolSizeCount = 1;
@@ -264,7 +264,7 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
         features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
     } else {
         auto *features2 =
-            const_cast<VkPhysicalDeviceFeatures2 *>(LvlFindInChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
+            const_cast<VkPhysicalDeviceFeatures2 *>(vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
         if (features2) features = &features2->features;
     }
     VkPhysicalDeviceFeatures new_features = {};
@@ -292,16 +292,16 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
         // TODO How to handle multi-device
         if (api_version > VK_API_VERSION_1_1) {
             auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-                LvlFindInChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
             if (features12) {
                 features12->bufferDeviceAddress = VK_TRUE;
             } else {
                 auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                    LvlFindInChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext));
+                    vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext));
                 if (bda_features) {
                     bda_features->bufferDeviceAddress = VK_TRUE;
                 } else {
-                    auto new_bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+                    auto new_bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
                     new_bda_features.bufferDeviceAddress = VK_TRUE;
                     new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
                     modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
@@ -332,11 +332,11 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
                 modified_create_info->enabledExtensionCount++;
             }
             auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                LvlFindInChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
+                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
             if (bda_features) {
                 bda_features->bufferDeviceAddress = VK_TRUE;
             } else {
-                auto new_bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+                auto new_bda_features = vku::InitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
                 new_bda_features.bufferDeviceAddress = VK_TRUE;
                 new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
                 modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
@@ -456,7 +456,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
-        auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+        auto pool_create_info = vku::InitStruct<VkCommandPoolCreateInfo>();
         pool_create_info.queueFamilyIndex = queueFamilyIndex;
         result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
@@ -465,7 +465,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
             return;
         }
 
-        auto buffer_alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+        auto buffer_alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
         buffer_alloc_info.commandPool = barrier_command_pool_;
         buffer_alloc_info.commandBufferCount = 1;
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -482,10 +482,10 @@ void gpu_utils_state::Queue::SubmitBarrier() {
         state_.vkSetDeviceLoaderData(state_.device, barrier_command_buffer_);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
-        auto command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        auto command_buffer_begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
         result = DispatchBeginCommandBuffer(barrier_command_buffer_, &command_buffer_begin_info);
         if (result == VK_SUCCESS) {
-            auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
+            auto memory_barrier = vku::InitStruct<VkMemoryBarrier>();
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
             memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
             DispatchCmdPipelineBarrier(barrier_command_buffer_, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
@@ -494,7 +494,7 @@ void gpu_utils_state::Queue::SubmitBarrier() {
         }
     }
     if (barrier_command_buffer_ != VK_NULL_HANDLE) {
-        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        auto submit_info = vku::InitStruct<VkSubmitInfo>();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &barrier_command_buffer_;
         DispatchQueueSubmit(QUEUE_STATE::Queue(), 1, &submit_info, VK_NULL_HANDLE);
@@ -792,10 +792,10 @@ void GpuAssistedBase::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device,
 template <typename CreateInfos, typename SafeCreateInfos>
 static void UtilCopyCreatePipelineFeedbackData(const uint32_t count, CreateInfos *pCreateInfos, SafeCreateInfos *pSafeCreateInfos) {
     for (uint32_t i = 0; i < count; i++) {
-        auto src_feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pSafeCreateInfos[i].pNext);
+        auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(pSafeCreateInfos[i].pNext);
         if (!src_feedback_struct) return;
         auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
-            LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext));
+            vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext));
         *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
         for (uint32_t j = 0; j < src_feedback_struct->pipelineStageCreationFeedbackCount; j++) {
             dst_feedback_struct->pPipelineStageCreationFeedbacks[j] = src_feedback_struct->pPipelineStageCreationFeedbacks[j];
@@ -949,7 +949,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                 const auto &spirv_state = stage.spirv_state;
 
                 VkShaderModule shader_module;
-                auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+                auto create_info = vku::InitStruct<VkShaderModuleCreateInfo>();
                 create_info.pCode = spirv_state->words_.data();
                 create_info.codeSize = spirv_state->words_.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
@@ -986,7 +986,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                             // We're modifying the copied, safe create info, which is ok to be non-const
                             auto sm_ci =
                                 const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
-                                    LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
+                                    vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
                                 sm_ci->SetCode(csm_state.instrumented_spirv);

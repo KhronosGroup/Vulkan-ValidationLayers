@@ -50,7 +50,7 @@ void DESCRIPTOR_POOL_STATE::Allocate(const VkDescriptorSetAllocateInfo *alloc_in
         available_counts_[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
     }
 
-    const auto *variable_count_info = LvlFindInChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
+    const auto *variable_count_info = vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
     const bool variable_count_valid =
         variable_count_info && variable_count_info->descriptorSetCount == alloc_info->descriptorSetCount;
 
@@ -182,7 +182,7 @@ DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_cr
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
     : flags_(p_create_info->flags), binding_count_(0), descriptor_count_(0), dynamic_descriptor_count_(0) {
-    const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
+    const auto *flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0};
     std::set<ExtendedBinding, BindingNumCmp> sorted_bindings;
@@ -196,7 +196,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         sorted_bindings.emplace(p_create_info->pBindings + i, flags);
     }
 
-    const auto *mutable_descriptor_type_create_info = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext);
+    const auto *mutable_descriptor_type_create_info = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext);
     if (mutable_descriptor_type_create_info) {
         mutable_types_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
         for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
@@ -846,8 +846,8 @@ void cvdescriptorset::TexelDescriptor::CopyUpdate(DescriptorSet &set_state, cons
 void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                                    const VkWriteDescriptorSet &update, const uint32_t index,
                                                                    bool is_bindless) {
-    const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
-    const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
+    const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
+    const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
     assert(acc_info || acc_info_nv);
     is_khr_ = (acc_info != NULL);
     if (is_khr_) {
@@ -946,8 +946,8 @@ void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, c
             break;
         }
         case DescriptorClass::AccelerationStructure: {
-            const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
-            const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
+            const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
+            const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
             assert(acc_info || acc_info_nv);
             is_khr_ = (acc_info != NULL);
             if (is_khr_) {

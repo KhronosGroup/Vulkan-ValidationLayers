@@ -151,7 +151,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *vertex_attribute_divisor_features =
-        LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
 
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791", commandBuffer,

@@ -30,14 +30,14 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     multiview_features.multiview = VK_TRUE;
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
+    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&multiview_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(multiview_props);
     if (multiview_props.maxMultiviewInstanceIndex == std::numeric_limits<uint32_t>::max()) {
         GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
@@ -67,7 +67,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (!multiview_features.multiview) {
         GTEST_SKIP() << "VkPhysicalDeviceMultiviewFeatures::multiview not supported";
@@ -90,11 +90,11 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     subpassDescription.pColorAttachments = &colorAttachmentReference;
 
     uint32_t viewMask = 0x1u;
-    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
 
-    VkRenderPassCreateInfo renderPassCreateInfo = LvlInitStruct<VkRenderPassCreateInfo>(&renderPassMultiviewCreateInfo);
+    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
     renderPassCreateInfo.attachmentCount = 1;
     renderPassCreateInfo.pAttachments = &attachmentDescription;
     renderPassCreateInfo.subpassCount = 1;
@@ -103,7 +103,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     vk_testing::RenderPass renderPass(*m_device, renderPassCreateInfo);
     ASSERT_TRUE(renderPass.initialized());
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -121,7 +121,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
                                              VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = 32;
     framebufferCreateInfo.height = 32;
     framebufferCreateInfo.layers = 1;
@@ -147,7 +147,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     clear_rect.rect.extent.width = 32;
     clear_rect.rect.extent.height = 32;
 
-    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = renderPass.handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
@@ -181,7 +181,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "Device does not support multiview.";
@@ -209,11 +209,11 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     for (unsigned i = 0; i < multiview_count; ++i) {
         viewMasks[i] = 1u << i;
     }
-    auto renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    auto renderPassMultiviewCreateInfo = vku::InitStruct<VkRenderPassMultiviewCreateInfo>();
     renderPassMultiviewCreateInfo.subpassCount = multiview_count;
     renderPassMultiviewCreateInfo.pViewMasks = viewMasks;
 
-    m_renderPass_info = LvlInitStruct<VkRenderPassCreateInfo>(&renderPassMultiviewCreateInfo);
+    m_renderPass_info = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
     m_renderPass_info.attachmentCount = 1;
     m_renderPass_info.pAttachments = &attachmentDescription;
     m_renderPass_info.subpassCount = m_renderPass_subpasses.size();
@@ -247,7 +247,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     vk::CreateRenderPass(m_device->handle(), &m_renderPass_info, nullptr, &m_renderPass);
 
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = m_width;
@@ -266,7 +266,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
                                              VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    auto framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto framebufferCreateInfo = vku::InitStruct<VkFramebufferCreateInfo>();
     framebufferCreateInfo.width = m_width;
     framebufferCreateInfo.height = m_height;
     framebufferCreateInfo.layers = 1;
@@ -378,7 +378,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 36};
-        auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_info.pushConstantRangeCount = 1;
         pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
@@ -433,7 +433,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     {
         OneOffDescriptorSet descriptor_set{m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}}};
 
-        auto bci = LvlInitStruct<VkBufferCreateInfo>();
+        auto bci = vku::InitStruct<VkBufferCreateInfo>();
         bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bci.size = 8;
         VkBufferObj buffer(*m_device, bci);
@@ -441,7 +441,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
         buffer_info.range = VK_WHOLE_SIZE;
-        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -449,7 +449,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         descriptor_write.pBufferInfo = &buffer_info;
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
-        auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
 
@@ -667,8 +667,8 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto mv_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
-    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(&mv_features);
+    auto mv_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
+    auto tf_features = vku::InitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(&mv_features);
     auto pd_features = GetPhysicalDeviceFeatures2(tf_features);
 
     if (!tf_features.transformFeedback) {
@@ -696,11 +696,11 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     subpassDescription.pColorAttachments = &colorAttachmentReference;
 
     uint32_t viewMask = 0x1u;
-    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
 
-    VkRenderPassCreateInfo renderPassCreateInfo = LvlInitStruct<VkRenderPassCreateInfo>(&renderPassMultiviewCreateInfo);
+    VkRenderPassCreateInfo renderPassCreateInfo = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
     renderPassCreateInfo.attachmentCount = 1;
     renderPassCreateInfo.pAttachments = &attachmentDescription;
     renderPassCreateInfo.subpassCount = 1;
@@ -709,7 +709,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, renderPassCreateInfo);
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -728,7 +728,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     VkImageView imageView = image.targetView(image_view_ci);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper();
     framebufferCreateInfo.width = 32;
     framebufferCreateInfo.height = 32;
     framebufferCreateInfo.layers = 1;
@@ -738,7 +738,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
-    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = render_pass.handle();
     render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
@@ -772,7 +772,7 @@ TEST_F(NegativeMultiview, Features) {
     std::vector<const char *> device_extensions;
     device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
 
     // Set false to trigger VUs
@@ -788,7 +788,7 @@ TEST_F(NegativeMultiview, Features) {
         }
     }
 
-    VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features2);
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.ppEnabledExtensionNames = device_extensions.data();
@@ -821,7 +821,7 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported";
@@ -831,9 +831,9 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
     const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     std::array viewMasks = {0x3u};
     std::array correlationMasks = {0x1u, 0x2u};
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(
         nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<uint32_t>(correlationMasks.size()), correlationMasks.data());
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, false);
 
@@ -862,7 +862,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported";
@@ -874,8 +874,8 @@ TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
     };
     uint32_t viewMasks[] = {0x3u, 0u};
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 0u, nullptr);
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
     // Not enough view masks
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-01928",
@@ -901,7 +901,7 @@ TEST_F(NegativeMultiview, RenderPassCreateSubpassMissingAttributesBitNVX) {
          nullptr, 0, nullptr},
     };
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-flags-00856",
                          "VUID-VkSubpassDescription2-flags-03076");
@@ -922,7 +922,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto multiview_features = vku::InitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (!features2.features.multiViewport) {
         GTEST_SKIP() << "multiViewport feature is not supported, skipping test.\n";
@@ -958,33 +958,33 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     subpass.pColorAttachments = &color_att;
 
     uint32_t viewMasks[] = {0x3u};
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>();
     rpmvci.subpassCount = 1;
     rpmvci.pViewMasks = viewMasks;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci);
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
     // Set up VkRenderPassCreateInfo2 struct used with VK_VERSION_1_2
-    auto color_att2 = LvlInitStruct<VkAttachmentReference2>();
+    auto color_att2 = vku::InitStruct<VkAttachmentReference2>();
     color_att2.layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto attach2 = LvlInitStruct<VkAttachmentDescription2>();
+    auto attach2 = vku::InitStruct<VkAttachmentDescription2>();
     attach2.samples = VK_SAMPLE_COUNT_1_BIT;
     attach2.format = VK_FORMAT_B8G8R8A8_UNORM;
     attach2.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach2.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto subpass2 = LvlInitStruct<VkSubpassDescription2>();
+    auto subpass2 = vku::InitStruct<VkSubpassDescription2>();
     subpass2.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass2.viewMask = 0x3u;
     subpass2.colorAttachmentCount = 1;
     subpass2.pColorAttachments = &color_att2;
 
-    auto rpci2 = LvlInitStruct<VkRenderPassCreateInfo2>();
+    auto rpci2 = vku::InitStruct<VkRenderPassCreateInfo2>();
     rpci2.attachmentCount = 1;
     rpci2.pAttachments = &attach2;
     rpci2.subpassCount = 1;
@@ -1021,7 +1021,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     image.Init(ici2d);
     ASSERT_TRUE(image.initialized());
 
-    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1031,7 +1031,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     vk_testing::ImageView iv(*m_device, ivci);
 
     // Create framebuffers for rp[0] and rp2[0]
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.renderPass = rp[0].handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = &iv.handle();
@@ -1046,7 +1046,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         fb2.init(*m_device, fbci);
     }
 
-    auto rp_begin = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>();
     rp_begin.renderPass = rp[0].handle();
     rp_begin.framebuffer = fb.handle();
     rp_begin.renderArea = {{0, 0}, {128, 128}};
@@ -1099,10 +1099,10 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         pipe2_2.CreateVKPipeline(pipeline_layout.handle(), rp2[2].handle());
     }
 
-    auto cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    auto cbii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
     cbii.renderPass = rp[0].handle();
     cbii.subpass = 0;
-    auto cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    auto cbbi = vku::InitStruct<VkCommandBufferBeginInfo>();
     cbbi.pInheritanceInfo = &cbii;
 
     // Begin rp[0] for VK_VERSION_1_0 test cases
@@ -1171,7 +1171,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto render_pass_multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
     if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
         GTEST_SKIP() << "maxMultiviewViewCount lower than required";
@@ -1182,9 +1182,9 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     uint32_t viewMasks[] = {0x3u, 0x0};
     uint32_t correlationMasks[] = {0x1u, 0x3u};
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 0u, nullptr, 2u, correlationMasks);
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 0u, nullptr, 2u, correlationMasks);
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02513", nullptr);
 }
@@ -1201,7 +1201,7 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto render_pass_multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
     if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
         GTEST_SKIP() << "maxMultiviewViewCount lower than required";
@@ -1213,10 +1213,10 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     uint32_t viewMasks[] = {0x1u, 0x2u};
     uint32_t correlationMasks[] = {0x1u, 0x2u};
     int32_t view_offset = 1;
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 1u, &view_offset, 2u, correlationMasks);
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 1u, &view_offset, 2u, correlationMasks);
 
     VkSubpassDependency dependency = {};
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02512", nullptr);
 }
@@ -1237,7 +1237,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto render_pass_multiview_props = vku::InitStruct<VkPhysicalDeviceMultiviewProperties>();
     GetPhysicalDeviceProperties2(render_pass_multiview_props);
 
     if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
@@ -1247,9 +1247,9 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     uint32_t viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
     uint32_t correlationMask = 0x1u;
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, &viewMask, 0u, nullptr, 1u, &correlationMask);
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, &viewMask, 0u, nullptr, 1u, &correlationMask);
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", nullptr);
 }
@@ -1263,29 +1263,29 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    VkPhysicalDeviceMultiviewFeatures multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     multiview_features.multiviewTessellationShader = VK_FALSE;
     multiview_features.multiviewGeometryShader = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkAttachmentReference2 color_attachment = LvlInitStruct<VkAttachmentReference2>();
+    VkAttachmentReference2 color_attachment = vku::InitStructHelper();
     color_attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkAttachmentDescription2 description = LvlInitStruct<VkAttachmentDescription2>();
+    VkAttachmentDescription2 description = vku::InitStructHelper();
     description.samples = VK_SAMPLE_COUNT_1_BIT;
     description.format = VK_FORMAT_B8G8R8A8_UNORM;
     description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>();
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.viewMask = 0x3u;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment;
 
-    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
     rpci.pAttachments = &description;
     rpci.subpassCount = 1;
@@ -1374,19 +1374,19 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&dynamic_rendering_features);
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>(&dynamic_rendering_features);
     GetPhysicalDeviceFeatures2(features11);
     if (!features11.multiview) {
         GTEST_SKIP() << "multiview not supported.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11));
 
-    VkPhysicalDeviceMultiviewProperties multiview_properties = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    VkPhysicalDeviceMultiviewProperties multiview_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_properties);
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.viewMask = 0x1;
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
@@ -1400,13 +1400,13 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     img.Init(m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
     VkImageView view = img.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkRenderingAttachmentInfo color_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    VkRenderingInfoKHR renderingInfo = LvlInitStruct<VkRenderingInfoKHR>();
+    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
     renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 1u;

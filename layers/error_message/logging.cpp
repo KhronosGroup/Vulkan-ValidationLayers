@@ -104,7 +104,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
             continue;
         }
 
-        auto object_name_info = LvlInitStruct<VkDebugUtilsObjectNameInfoEXT>();
+        auto object_name_info = vku::InitStruct<VkDebugUtilsObjectNameInfoEXT>();
         object_name_info.objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
         object_name_info.objectHandle = objects.object_list[i].handle;
         object_name_info.pObjectName = nullptr;
@@ -142,7 +142,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
 
     const uint32_t message_id_number = text_vuid ? vvl_vuid_hash(text_vuid) : 0U;
 
-    auto callback_data = LvlInitStruct<VkDebugUtilsMessengerCallbackDataEXT>();
+    auto callback_data = vku::InitStruct<VkDebugUtilsMessengerCallbackDataEXT>();
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
     callback_data.messageIdNumber = vvl_bit_cast<int32_t>(message_id_number);
@@ -295,14 +295,14 @@ VKAPI_ATTR VkResult LayerCreateReportCallback(debug_report_data *debug_data, boo
 VKAPI_ATTR void ActivateInstanceDebugCallbacks(debug_report_data *debug_data) {
     auto current = debug_data->instance_pnext_chain;
     for (;;) {
-        auto create_info = LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(current);
+        auto create_info = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(current);
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugUtilsMessengerEXT utils_callback{};
         LayerCreateCallback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, &utils_callback);
     }
     for (;;) {
-        auto create_info = LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(current);
+        auto create_info = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(current);
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugReportCallbackEXT report_callback{};
@@ -311,8 +311,8 @@ VKAPI_ATTR void ActivateInstanceDebugCallbacks(debug_report_data *debug_data) {
 }
 
 VKAPI_ATTR void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) {
-    if (!LvlFindInChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
-        !LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
+    if (!vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
+        !vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
         return;
     std::vector<VkDebugUtilsMessengerEXT> instance_utils_callback_handles{};
     std::vector<VkDebugReportCallbackEXT> instance_report_callback_handles{};

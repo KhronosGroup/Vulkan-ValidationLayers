@@ -147,11 +147,11 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                                      : VK_API_VERSION_1_0;
     skip |= ValidateApiVersion(local_api_version, api_version);
     skip |= ValidateInstanceExtensions(pCreateInfo);
-    const auto *validation_features = LvlFindInChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
     if (validation_features) skip |= ValidateValidationFeatures(pCreateInfo, validation_features);
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
     while (export_metal_object_info) {
         if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) &&
             (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT)) {
@@ -162,7 +162,7 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                              "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT are allowed",
                              string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
         }
-        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -271,94 +271,94 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     if (IsExtEnabled(device_extensions.vk_nv_shading_rate_image)) {
         // Get the needed shading rate image limits
-        auto shading_rate_image_props = LvlInitStruct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
+        auto shading_rate_image_props = vku::InitStruct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&shading_rate_image_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
         // Get the needed mesh shader limits
-        auto mesh_shader_props = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
+        auto mesh_shader_props = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesNV>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
         // Get the needed mesh shader EXT limits
-        auto mesh_shader_props_ext = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props_ext);
+        auto mesh_shader_props_ext = vku::InitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_props_ext);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
     }
 
     if (IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        auto ray_tracing_props = vku::InitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
         // Get the needed ray tracing limits
-        auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
+        auto ray_tracing_props = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&ray_tracing_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
         // Get the needed ray tracing acc structure limits
-        auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&acc_structure_props);
+        auto acc_structure_props = vku::InitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&acc_structure_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_transform_feedback)) {
         // Get the needed transform feedback limits
-        auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
+        auto transform_feedback_props = vku::InitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
-        auto vertex_attribute_divisor_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_props);
+        auto vertex_attribute_divisor_props = vku::InitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
         // Get the needed blend operation advanced properties
-        auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
+        auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&blend_operation_advanced_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.blend_operation_advanced_props = blend_operation_advanced_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
         // Get the needed maintenance4 properties
-        auto maintance4_props = LvlInitStruct<VkPhysicalDeviceMaintenance4PropertiesKHR>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&maintance4_props);
+        auto maintance4_props = vku::InitStruct<VkPhysicalDeviceMaintenance4PropertiesKHR>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&maintance4_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.maintenance4_props = maintance4_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
-        auto fragment_shading_rate_props = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fragment_shading_rate_props);
+        auto fragment_shading_rate_props = vku::InitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&fragment_shading_rate_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
-        auto depth_stencil_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_props);
+        auto depth_stencil_resolve_props = vku::InitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+        auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
@@ -367,7 +367,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     // Save app-enabled features in this device's validation object
     // The enabled features can come from either pEnabledFeatures, or from the pNext chain
-    const auto *features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+    const auto *features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
     safe_VkPhysicalDeviceFeatures2 tmp_features2_state;
     tmp_features2_state.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     if (features2) {
@@ -440,7 +440,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        const auto *descriptor_buffer_features = LvlFindInChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
+        const auto *descriptor_buffer_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
         if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer && fragmentmask_requested) {
             skip |= LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, error_obj.location,
                              "If the descriptorBuffer feature is enabled, ppEnabledExtensionNames must not "
@@ -462,7 +462,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {
         // Check for get_physical_device_properties2 struct
-        const auto *features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+        const auto *features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
         if (features2) {
             // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
             skip |= LogError("VUID-VkDeviceCreateInfo-pNext-00373", physicalDevice, error_obj.location,
@@ -471,14 +471,14 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
-    auto features2 = LvlFindInChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+    auto features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
     const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
-    const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
+    const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
     if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
         skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
                          error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
     }
-    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
+    const auto *raytracing_features = vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
     if (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
         !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
         skip |= LogError(
@@ -488,14 +488,14 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             "rayTracingPipelineShaderGroupHandleCaptureReplay "
             "must also be VK_TRUE.");
     }
-    auto vertex_attribute_divisor_features = LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
+    auto vertex_attribute_divisor_features = vku::FindStructInPNextChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_attribute_divisor_features && (!IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor))) {
         skip |= LogError(kVUID_PVError_ExtensionNotEnabled, physicalDevice, error_obj.location,
                          "pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
                          "struct, VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
     }
 
-    const auto *vulkan_11_features = LvlFindInChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
+    const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
     if (vulkan_11_features) {
         const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
         while (current) {
@@ -526,7 +526,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
-    const auto *vulkan_12_features = LvlFindInChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
+    const auto *vulkan_12_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
         const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
         while (current) {
@@ -597,7 +597,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
-    const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
+    const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
     if (vulkan_13_features) {
         const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
         while (current) {
@@ -653,7 +653,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             // Need to know if protectedMemory feature is passed in preCall to creating the device
             VkBool32 protected_memory = VK_FALSE;
             const VkPhysicalDeviceProtectedMemoryFeatures *protected_features =
-                LvlFindInChain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
+                vku::FindStructInPNextChain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
             if (protected_features) {
                 protected_memory = protected_features->protectedMemory;
             } else if (vulkan_11_features) {
@@ -668,7 +668,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     // feature dependencies for VK_KHR_variable_pointers
-    const auto *variable_pointers_features = LvlFindInChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+    const auto *variable_pointers_features = vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
     VkBool32 variable_pointers = VK_FALSE;
     VkBool32 variable_pointers_storage_buffer = VK_FALSE;
     if (vulkan_11_features) {
@@ -684,7 +684,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     // feature dependencies for VK_KHR_multiview
-    const auto *multiview_features = LvlFindInChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+    const auto *multiview_features = vku::FindStructInPNextChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
     VkBool32 multiview = VK_FALSE;
     VkBool32 multiview_geometry_shader = VK_FALSE;
     VkBool32 multiview_tessellation_shader = VK_FALSE;
@@ -716,7 +716,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
 
     if (pImageFormatInfo != nullptr) {
         const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
-        const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext);
+        const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pImageFormatInfo->pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
                 VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -729,7 +729,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                 }
             }
         }
-        const auto image_drm_format = LvlFindInChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
+        const auto image_drm_format = vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
         if (image_drm_format) {
             if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
@@ -785,7 +785,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
         }
         if (pImageFormatInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
             (pImageFormatInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-            const auto format_list = LvlFindInChain<VkImageFormatListCreateInfo>(pImageFormatInfo->pNext);
+            const auto format_list = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pImageFormatInfo->pNext);
             if (!format_list || format_list->viewFormatCount == 0) {
                 skip |= LogError(
                     "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313", physicalDevice, format_info_loc,

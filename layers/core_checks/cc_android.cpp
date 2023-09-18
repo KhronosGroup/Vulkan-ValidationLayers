@@ -170,9 +170,9 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 //
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *allocate_info, const Location &allocate_info_loc) const {
     bool skip = false;
-    auto import_ahb_info = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(allocate_info->pNext);
-    auto exp_mem_alloc_info = LvlFindInChain<VkExportMemoryAllocateInfo>(allocate_info->pNext);
-    auto mem_ded_alloc_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(allocate_info->pNext);
+    auto import_ahb_info = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(allocate_info->pNext);
+    auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info->pNext);
+    auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info->pNext);
 
     if ((import_ahb_info) && (NULL != import_ahb_info->buffer)) {
         const Location ahb_loc = allocate_info_loc.dot(Struct::VkImportAndroidHardwareBufferInfoANDROID, Field::buffer);
@@ -198,7 +198,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Collect external buffer info
-        auto pdebi = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        auto pdebi = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
         pdebi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
         if (AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE];
@@ -206,16 +206,16 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         if (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER & ahb_desc.usage) {
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
-        auto ext_buf_props = LvlInitStruct<VkExternalBufferProperties>();
+        auto ext_buf_props = vku::InitStruct<VkExternalBufferProperties>();
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
         if (0 == (ext_buf_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
             // Collect external format info
-            auto pdeifi = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+            auto pdeifi = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
             pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-            auto pdifi2 = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&pdeifi);
+            auto pdifi2 = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&pdeifi);
             if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
             pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
             pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
@@ -232,8 +232,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                 pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT];
             }
 
-            auto ext_img_fmt_props = LvlInitStruct<VkExternalImageFormatProperties>();
-            auto ifp2 = LvlInitStruct<VkImageFormatProperties2>(&ext_img_fmt_props);
+            auto ext_img_fmt_props = vku::InitStruct<VkExternalImageFormatProperties>();
+            auto ifp2 = vku::InitStruct<VkImageFormatProperties2>(&ext_img_fmt_props);
 
             VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
 
@@ -248,7 +248,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Retrieve buffer and format properties of the provided AHardwareBuffer
-        auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+        auto ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
         DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
@@ -301,8 +301,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             if (VK_FORMAT_UNDEFINED != ici->format) {
                 // Mali drivers will not return a valid VkAndroidHardwareBufferPropertiesANDROID::allocationSize if the
                 // FormatPropertiesANDROID is passed in as well so need to query again for the format
-                auto ahb_format_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
-                auto dummy_ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
+                auto ahb_format_props = vku::InitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+                auto dummy_ahb_props = vku::InitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
                 DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &dummy_ahb_props);
                 if (ici->format != ahb_format_props.format) {
                     skip |= LogError(
@@ -414,9 +414,9 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const Vk
                                                                         const VkImageFormatProperties2 *pImageFormatProperties,
                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *ahb_usage = LvlFindInChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
+    const auto *ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
-        const auto *pdeifi = LvlFindInChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
+        const auto *pdeifi = vku::FindStructInPNextChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext);
         if ((!pdeifi) || (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID != pdeifi->handleType)) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868", physical_device,
                              error_obj.location.dot(Field::pImageFormatProperties),
@@ -467,7 +467,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
 bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info, const Location &create_info_loc) const {
     bool skip = false;
 
-    const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
+    const VkExternalFormatANDROID *ext_fmt_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-01974", device,
@@ -516,7 +516,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
         }
     }
 
-    const VkExternalMemoryImageCreateInfo *emici = LvlFindInChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
+    const VkExternalMemoryImageCreateInfo *emici = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         if (create_info->imageType != VK_IMAGE_TYPE_2D) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02393", device,
@@ -553,7 +553,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         // Chain must include a compatible ycbcr conversion
         bool conv_found = false;
         uint64_t external_format = 0;
-        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
+        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
             auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conv_info->conversion);
             if (ycbcr_state) {

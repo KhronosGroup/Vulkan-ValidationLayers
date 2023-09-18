@@ -187,7 +187,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     }
 
     // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
-    const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+    const auto *sampler_reduction = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
     if (pCreateInfo->compareEnable == VK_TRUE) {
         skip |= ValidateRangedEnum(create_info_loc.dot(Field::compareOp), "VkCompareOp", pCreateInfo->compareOp,
                                    "VUID-VkSamplerCreateInfo-compareEnable-01080");
@@ -245,7 +245,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                          "(%f) is greater than maxSamplerLodBias (%f)", pCreateInfo->mipLodBias, limits.maxSamplerLodBias);
     }
 
-    const auto *sampler_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    const auto *sampler_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
     if (sampler_conversion != nullptr) {
         if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
             (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
@@ -316,7 +316,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                              "is %s but %s is not enabled.", string_VkBorderColor(pCreateInfo->borderColor),
                              VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
         }
-        auto custom_create_info = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
+        auto custom_create_info = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (!custom_create_info) {
             skip |= LogError("VUID-VkSamplerCreateInfo-borderColor-04011", device, create_info_loc.dot(Field::borderColor),
                              "is %s but there is no VkSamplerCustomBorderColorCreateInfoEXT "
@@ -336,10 +336,10 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     }
 
     const auto *border_color_component_mapping =
-        LvlFindInChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(pCreateInfo->pNext);
+        vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(pCreateInfo->pNext);
     if (border_color_component_mapping) {
         const auto *border_color_swizzle_features =
-            LvlFindInChain<VkPhysicalDeviceBorderColorSwizzleFeaturesEXT>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceBorderColorSwizzleFeaturesEXT>(device_createinfo_pnext);
         bool border_color_swizzle_features_enabled =
             border_color_swizzle_features && border_color_swizzle_features->borderColorSwizzle;
         if (!border_color_swizzle_features_enabled) {
@@ -485,9 +485,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                                                           const ErrorObject &error_obj) const {
     bool skip = false;
 
-    const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
+    const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     const auto *mutable_descriptor_type_features =
-        LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
     bool mutable_descriptor_type_features_enabled =
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -716,7 +716,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                                  "pDescriptorWrites[%" PRIu32 "].pBufferInfo must not be NULL.",
                                  vkCallingFunction, i, i);
             } else {
-                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
                 if (robustness2_features && robustness2_features->nullDescriptor) {
                     for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
                          ++descriptor_index) {
@@ -768,7 +768,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
         // or VkWriteDescriptorSetInlineUniformBlockEX
         if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-            const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
+            const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
             if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
                 skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
                                  "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
@@ -792,7 +792,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                         LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
                                  "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
                 }
-                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
                 if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
                     for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
@@ -806,7 +806,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 }
             }
         } else if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-            const auto *pnext_struct = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
+            const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(pDescriptorWrites[i].pNext);
             if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
                 skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-03817",
                                  "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
@@ -830,7 +830,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                         LogError(device, "VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength",
                                  "%s(): accelerationStructureCount must be greater than 0 .", vkCallingFunction);
                 }
-                const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
                 if (robustness2_features && robustness2_features->nullDescriptor == VK_FALSE) {
                     for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
@@ -876,7 +876,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
     };
 
-    const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
+    const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     if (mutable_descriptor_type) {
         vvl::span<const VkDescriptorType> first_types, second_types;
 
@@ -936,7 +936,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
     }
 
     const auto *mutable_descriptor_type_features =
-        LvlFindInChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(device_createinfo_pnext);
     bool mutable_descriptor_type_enabled =
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
 
@@ -1022,9 +1022,9 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
-    const auto *ycbcr_features = LvlFindInChain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(device_createinfo_pnext);
+    const auto *ycbcr_features = vku::FindStructInPNextChain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(device_createinfo_pnext);
     if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
-        const auto *vulkan_11_features = LvlFindInChain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
+        const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(device_createinfo_pnext);
         if ((vulkan_11_features == nullptr) || (vulkan_11_features->samplerYcbcrConversion == VK_FALSE)) {
             skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-None-01648", device, error_obj.location,
                              "samplerYcbcrConversion feature must be enabled.");
@@ -1032,7 +1032,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
     }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const VkExternalFormatANDROID *external_format_android = LvlFindInChain<VkExternalFormatANDROID>(pCreateInfo);
+    const VkExternalFormatANDROID *external_format_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pCreateInfo);
     const bool is_external_format = external_format_android != nullptr && external_format_android->externalFormat != 0;
 #else
     const bool is_external_format = false;

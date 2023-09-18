@@ -46,7 +46,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
@@ -70,7 +70,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -211,7 +211,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -237,7 +237,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
+        auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2KHR>();
         buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         buffer_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
@@ -245,7 +245,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
         buffer_barrier.buffer = buffer_a.handle();
         buffer_barrier.offset = 0;
         buffer_barrier.size = 256;
-        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+        auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
         dep_info.bufferMemoryBarrierCount = 1;
         dep_info.pBufferMemoryBarriers = &buffer_barrier;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
@@ -267,12 +267,12 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto mem_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
+        auto mem_barrier = vku::InitStruct<VkMemoryBarrier2KHR>();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+        auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
@@ -354,14 +354,14 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     subpass.pColorAttachments = &color_ref;
     subpass.pDepthStencilAttachment = &depth_ref;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = size32(attachments);
     rpci.pAttachments = attachments;
     vk_testing::RenderPass render_pass(*m_device, rpci);
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.flags = 0;
     fbci.renderPass = render_pass;
     fbci.attachmentCount = size32(views);
@@ -371,13 +371,13 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     fbci.layers = 1;
     vk_testing::Framebuffer framebuffer(*m_device, fbci);
 
-    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer;
     rpbi.renderPass = render_pass;
     rpbi.renderArea.extent.width = width;
     rpbi.renderArea.extent.height = height;
 
-    const auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    const auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = render_pass;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
@@ -580,7 +580,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -605,7 +605,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -749,7 +749,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -800,7 +800,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto image_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
+        auto image_barrier = vku::InitStruct<VkImageMemoryBarrier2KHR>();
         image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         image_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
@@ -809,7 +809,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
         image_barrier.subresourceRange = full_subresource_range;
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+        auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
         dep_info.imageMemoryBarrierCount = 1;
         dep_info.pImageMemoryBarriers = &image_barrier;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
@@ -831,12 +831,12 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto mem_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
+        auto mem_barrier = vku::InitStruct<VkMemoryBarrier2KHR>();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+        auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
@@ -925,7 +925,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -954,7 +954,7 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -1025,7 +1025,7 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_b.handle();
@@ -1114,7 +1114,7 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_a.handle();
@@ -1143,7 +1143,7 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    auto mem_barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
@@ -1240,7 +1240,7 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
 
     vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_0_back);
 
-    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
@@ -1401,7 +1401,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     VkImageSubresourceRange rt_full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     image_barrier.image = rt_0->handle();
@@ -1433,7 +1433,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     const bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     if (has_khr_indirect) {
         if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
             features12.drawIndirectCount = VK_TRUE;
@@ -1475,7 +1475,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
 
     vk_testing::BufferView bufferview;
-    auto bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    auto bvci = vku::InitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.offset = 0;
@@ -1662,7 +1662,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     vk::CmdCopyBuffer(m_commandBuffer->handle(), vbo2.handle(), vbo.handle(), 1, &buffer_region);
 
-    auto vbo_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto vbo_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
     vbo_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     vbo_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
     vbo_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -2005,7 +2005,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
@@ -2072,7 +2072,7 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -2346,7 +2346,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -2630,7 +2630,7 @@ struct CreateRenderPassHelper {
     }
 
     void InitBeginInfo() {
-        render_pass_begin = LvlInitStruct<VkRenderPassBeginInfo>();
+        render_pass_begin = vku::InitStructHelper();
         render_pass_begin.renderArea = {{0, 0}, {width, height}};
         render_pass_begin.renderPass = render_pass->handle();
         render_pass_begin.framebuffer = framebuffer->handle();
@@ -2947,7 +2947,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     constexpr uint32_t kWidth = 32, kHeight = 32;
     constexpr uint32_t kNumImages = 4;
 
-    VkImageCreateInfo src_img_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo src_img_info = vku::InitStructHelper();
     src_img_info.flags = 0;
     src_img_info.imageType = VK_IMAGE_TYPE_2D;
     src_img_info.format = kFormat;
@@ -2962,7 +2962,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     src_img_info.pQueueFamilyIndices = nullptr;
     src_img_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageCreateInfo dst_img_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo dst_img_info = vku::InitStructHelper();
     dst_img_info.flags = 0;
     dst_img_info.imageType = VK_IMAGE_TYPE_2D;
     dst_img_info.format = kFormat;
@@ -3007,7 +3007,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         color_refs[i] = {i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
-        img_barriers[i] = LvlInitStruct<VkImageMemoryBarrier>();
+        img_barriers[i] = vku::InitStructHelper();
         img_barriers[i].srcAccessMask = 0;
         img_barriers[i].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         img_barriers[i].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -3040,7 +3040,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         subpasses[i].pPreserveAttachments = preserve_subpass[i - 1].data();
     }
 
-    VkRenderPassCreateInfo renderpass_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo renderpass_info = vku::InitStructHelper();
     renderpass_info.flags = 0;
     renderpass_info.attachmentCount = attachment_descriptions.size();
     renderpass_info.pAttachments = attachment_descriptions.data();
@@ -3049,7 +3049,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.dependencyCount = 0;
     renderpass_info.pDependencies = nullptr;
 
-    VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.flags = 0;
     fbci.attachmentCount = attachments.size();
     fbci.pAttachments = attachments.data();
@@ -3351,7 +3351,7 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     m_commandBuffer->begin();
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    auto mem_barrier_waw = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier_waw = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
@@ -3363,7 +3363,7 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     m_commandBuffer->end();
 
     // Barrier range check for WAW
-    auto buffer_barrier_front_waw = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buffer_barrier_front_waw = vku::InitStruct<VkBufferMemoryBarrier>();
     buffer_barrier_front_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.buffer = buffer_b.handle();
@@ -3471,7 +3471,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     set_layouts();
     copy_general(image_a, image_b, full_region);
     m_commandBuffer->SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    auto mem_barrier_waw = LvlInitStruct<VkMemoryBarrier>();
+    auto mem_barrier_waw = vku::InitStruct<VkMemoryBarrier>();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     m_commandBuffer->WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
@@ -3483,7 +3483,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     m_commandBuffer->end();
 
     // Barrier range check for WAW
-    auto image_barrier_region0_waw = LvlInitStruct<VkImageMemoryBarrier>();
+    auto image_barrier_region0_waw = vku::InitStruct<VkImageMemoryBarrier>();
     image_barrier_region0_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier_region0_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier_region0_waw.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -3576,7 +3576,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     VkBufferCopy front2front = {0, 0, 128};
 
     // Barrier range check for WAW
-    auto buffer_barrier_front_waw = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buffer_barrier_front_waw = vku::InitStruct<VkBufferMemoryBarrier>();
     buffer_barrier_front_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier_front_waw.buffer = buffer_b.handle();
@@ -3626,7 +3626,7 @@ TEST_F(NegativeSyncVal, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     event.init(*m_device, VkEventObj::create_info(0));
     VkEvent event_handle = event.handle();
 
-    VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
@@ -3653,7 +3653,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = vku::InitStructHelper();
     synchronization2.synchronization2 = VK_FALSE;  // Invalid
     GetPhysicalDeviceFeatures2(synchronization2);
 
@@ -3669,7 +3669,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
 
     m_commandBuffer->begin();
 
-    VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-synchronization2-03848");
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
@@ -3688,7 +3688,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
     m_errorMonitor->VerifyFound();
 
     if (timestamp) {
-        VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
         qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
         qpci.queryCount = 1;
 
@@ -3732,7 +3732,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (!indexing_features.descriptorBindingPartiallyBound) {
@@ -3746,7 +3746,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
-        LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+        vku::InitStructHelper();
     constexpr size_t kNumDescriptors = 6;
 
     std::array<VkDescriptorBindingFlagsEXT, kNumDescriptors> ds_binding_flags;
@@ -3770,7 +3770,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
                                        0, &layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
-    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -3792,7 +3792,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     VkBufferObj texel_buffer(*m_device, buffer_create_info);
 
-    auto bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    auto bvci = vku::InitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.offset = 0;
@@ -3801,7 +3801,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     auto texel_bufferview = std::make_unique<vk_testing::BufferView>();
     texel_bufferview->init(*m_device, bvci);
 
-    auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto index_buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBufferObj index_buffer(*m_device, index_buffer_create_info);
@@ -3837,42 +3837,42 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     // Update all descriptors
     std::array<VkWriteDescriptorSet, kNumDescriptors> descriptor_writes;
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[0].pBufferInfo = &buffer_info[0];
 
-    descriptor_writes[1] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[1] = vku::InitStructHelper();
     descriptor_writes[1].dstSet = descriptor_set.set_;
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].descriptorCount = 1;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_writes[1].pBufferInfo = &buffer_info[1];
 
-    descriptor_writes[2] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[2] = vku::InitStructHelper();
     descriptor_writes[2].dstSet = descriptor_set.set_;
     descriptor_writes[2].dstBinding = 2;
     descriptor_writes[2].descriptorCount = 1;
     descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     descriptor_writes[2].pTexelBufferView = &texel_bufferview->handle();
 
-    descriptor_writes[3] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[3] = vku::InitStructHelper();
     descriptor_writes[3].dstSet = descriptor_set.set_;
     descriptor_writes[3].dstBinding = 3;
     descriptor_writes[3].descriptorCount = 1;
     descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptor_writes[3].pImageInfo = &image_info[0];
 
-    descriptor_writes[4] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[4] = vku::InitStructHelper();
     descriptor_writes[4].dstSet = descriptor_set.set_;
     descriptor_writes[4].dstBinding = 4;
     descriptor_writes[4].descriptorCount = 1;
     descriptor_writes[4].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_writes[4].pImageInfo = &image_info[1];
 
-    descriptor_writes[5] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[5] = vku::InitStructHelper();
     descriptor_writes[5].dstSet = descriptor_set.set_;
     descriptor_writes[5].dstBinding = 5;
     descriptor_writes[5].descriptorCount = 1;
@@ -3914,7 +3914,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -3977,7 +3977,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attachment_description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rp_ci = vku::InitStruct<VkRenderPassCreateInfo>();
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = subpass_descriptions;
     rp_ci.attachmentCount = 1;
@@ -3990,7 +3990,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     VkClearValue clear_value = {};
     clear_value.color = {{0, 0, 0, 0}};
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_D32_SFLOAT;
     image_ci.extent.width = 32;
@@ -4006,7 +4006,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     image1.init(&image_ci);
     ASSERT_TRUE(image1.initialized());
 
-    VkImageViewCreateInfo iv_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
     iv_ci.image = image1.handle();
     iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     iv_ci.format = VK_FORMAT_D32_SFLOAT;
@@ -4019,7 +4019,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
 
     VkImageView framebuffer_attachments[1] = {image_view1.handle()};
 
-    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fb_ci = vku::InitStruct<VkFramebufferCreateInfo>();
     fb_ci.renderPass = render_pass.handle();
     fb_ci.attachmentCount = 1;
     fb_ci.pAttachments = framebuffer_attachments;
@@ -4029,7 +4029,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
 
     vk_testing::Framebuffer framebuffer(*m_device, fb_ci);
 
-    auto rp_bi = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rp_bi = vku::InitStruct<VkRenderPassBeginInfo>();
     rp_bi.renderPass = render_pass.handle();
     rp_bi.framebuffer = framebuffer.handle();
     rp_bi.renderArea.extent.width = 32;
@@ -4037,7 +4037,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     rp_bi.clearValueCount = 1;
     rp_bi.pClearValues = &clear_value;
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.depthWriteEnable = VK_FALSE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -4122,7 +4122,7 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
         m_commandBuffer->reset();
 
         VkImageCopy2KHR copy_regions2[2];
-        copy_regions2[0] = LvlInitStruct<VkImageCopy2KHR>();
+        copy_regions2[0] = vku::InitStructHelper();
         copy_regions2[0].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_regions2[0].srcSubresource.mipLevel = 0;
         copy_regions2[0].srcSubresource.baseArrayLayer = 0;
@@ -4134,7 +4134,7 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
         copy_regions2[0].dstSubresource.layerCount = 1;
         copy_regions2[0].dstOffset = {0, 0, 0};
         copy_regions2[0].extent = {1, 1, 1};
-        copy_regions2[1] = LvlInitStruct<VkImageCopy2KHR>();
+        copy_regions2[1] = vku::InitStructHelper();
         copy_regions2[1].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_regions2[1].srcSubresource.mipLevel = 0;
         copy_regions2[1].srcSubresource.baseArrayLayer = 0;
@@ -4147,7 +4147,7 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
         copy_regions2[1].dstOffset = {4, 0, 0};
         copy_regions2[1].extent = {1, 1, 1};
 
-        auto copy_image_info = LvlInitStruct<VkCopyImageInfo2KHR>();
+        auto copy_image_info = vku::InitStruct<VkCopyImageInfo2KHR>();
         copy_image_info.srcImage = src_image.handle();
         copy_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
         copy_image_info.dstImage = dst_image.handle();
@@ -4209,7 +4209,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
 
     vk_testing::BufferView bufferview;
-    auto bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    auto bvci = vku::InitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.offset = 0;
@@ -4282,7 +4282,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     vk::CmdCopyImage(m_commandBuffer->handle(), image_s_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s_a.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
 
-    auto barrier = LvlInitStruct<VkMemoryBarrier>();
+    auto barrier = vku::InitStruct<VkMemoryBarrier>();
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -4502,10 +4502,10 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
     h_cbb = InitFromPool(cbb);
     h_cbc = InitFromPool(cbc);
 
-    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    auto semaphore_ci = vku::InitStruct<VkSemaphoreCreateInfo>();
     semaphore.init(*device, semaphore_ci);
 
-    VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo eci = vku::InitStructHelper();
     event.init(*device, eci);
 }
 
@@ -4515,7 +4515,7 @@ VkCommandBuffer QSTestContext::InitFromPool(VkCommandBufferObj& cb_obj) {
 }
 
 void QSTestContext::Begin(VkCommandBufferObj& cb) {
-    VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo info = vku::InitStructHelper();
     info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     info.pInheritanceInfo = nullptr;
 
@@ -4530,7 +4530,7 @@ void QSTestContext::End() {
 }
 
 VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const VkBufferObj& buffer, VkAccessFlags src, VkAccessFlags dst) {
-    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier>();
     buffer_barrier.srcAccessMask = src;
     buffer_barrier.dstAccessMask = dst;
     buffer_barrier.buffer = buffer.handle();
@@ -4557,7 +4557,7 @@ void QSTestContext::TransferBarrierRAW(const VkBufferObj& buffer) { TransferBarr
 
 void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                            VkFence fence) {
-    auto submit1 = LvlInitStruct<VkSubmitInfo>();
+    auto submit1 = vku::InitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 1;
     VkCommandBuffer h_cb = cb.handle();
     submit1.pCommandBuffers = &h_cb;
@@ -4575,10 +4575,10 @@ void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, 
 
 void QSTestContext::SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                             VkPipelineStageFlags signal_mask, VkFence fence) {
-    auto submit1 = LvlInitStruct<VkSubmitInfo2>();
-    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
-    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
-    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto submit1 = vku::InitStruct<VkSubmitInfo2>();
+    auto cb_info = vku::InitStruct<VkCommandBufferSubmitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
+    auto signal_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
 
     cb_info.commandBuffer = cb.handle();
     submit1.commandBufferInfoCount = 1;
@@ -4618,7 +4618,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
     test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
     test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
 
-    auto submit1 = LvlInitStruct<VkSubmitInfo>();
+    auto submit1 = vku::InitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 2;
     VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
     submit1.pCommandBuffers = two_cbs;
@@ -4629,7 +4629,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
     test.DeviceWait();
 
-    VkSubmitInfo submit2[2] = {LvlInitStruct<VkSubmitInfo>(), LvlInitStruct<VkSubmitInfo>()};
+    VkSubmitInfo submit2[2] = {vku::InitStruct<VkSubmitInfo>(), vku::InitStruct<VkSubmitInfo>()};
     submit2[0].commandBufferCount = 1;
     submit2[0].pCommandBuffers = &test.h_cba;
     submit2[1].commandBufferCount = 1;
@@ -4671,7 +4671,7 @@ TEST_F(NegativeSyncVal, QSSubmit2) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     GetPhysicalDeviceFeatures2(sync2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -5090,7 +5090,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     cb1.EndRenderPass();
     cb1.end();
 
-    auto submit2 = LvlInitStruct<VkSubmitInfo>();
+    auto submit2 = vku::InitStruct<VkSubmitInfo>();
     VkCommandBuffer two_cbs[2] = {cb0.handle(), cb1.handle()};
     submit2.commandBufferCount = 2;
     submit2.pCommandBuffers = two_cbs;
@@ -5194,7 +5194,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     const VkQueue q = m_device->m_queue;
     const VkDevice dev = m_device->handle();
 
-    auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
+    auto fence_ci = vku::InitStruct<VkFenceCreateInfo>();
     VkFenceObj fence(*m_device, fence_ci);
     VkFence h_fence = fence.handle();
 
@@ -5213,7 +5213,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
         }
 
         if (VK_SUCCESS == result) {
-            auto present_info = LvlInitStruct<VkPresentInfoKHR>();
+            auto present_info = vku::InitStruct<VkPresentInfoKHR>();
             present_info.swapchainCount = 1;
             present_info.pSwapchains = &m_swapchain;
             present_info.pImageIndices = &index;
@@ -5250,7 +5250,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
 
     auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
         VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+        auto image_barrier = vku::InitStruct<VkImageMemoryBarrier>();
         image_barrier.srcAccessMask = 0U;
         image_barrier.dstAccessMask = 0U;
         image_barrier.oldLayout = from;
@@ -5266,7 +5266,7 @@ TEST_F(NegativeSyncVal, QSPresentAcquire) {
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // Look for errors between the acquire and first use...
-    auto submit1 = LvlInitStruct<VkSubmitInfo>();
+    auto submit1 = vku::InitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 1;
     submit1.pCommandBuffers = &cb;
     // No sync operations...
@@ -5353,7 +5353,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     sync2_features.synchronization2 = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
     if (!InitSwapchain()) {
@@ -5367,7 +5367,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
-    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier2>();
+    auto layout_transition = vku::InitStruct<VkImageMemoryBarrier2>();
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     layout_transition.srcAccessMask = 0;
     layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -5381,7 +5381,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
@@ -5389,18 +5389,18 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
     m_commandBuffer->end();
 
-    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     wait_info.semaphore = acquire_semaphore;
     wait_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    auto command_buffer_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    auto command_buffer_info = vku::InitStruct<VkCommandBufferSubmitInfo>();
     command_buffer_info.commandBuffer = *m_commandBuffer;
 
-    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto signal_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     signal_info.semaphore = submit_semaphore;
     signal_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    auto submit = LvlInitStruct<VkSubmitInfo2>();
+    auto submit = vku::InitStruct<VkSubmitInfo2>();
     submit.waitSemaphoreInfoCount = 1;
     submit.pWaitSemaphoreInfos = &wait_info;
     submit.commandBufferInfoCount = 1;
@@ -5409,7 +5409,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     submit.pSignalSemaphoreInfos = &signal_info;
     ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
 
-    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    auto present = vku::InitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
     present.pWaitSemaphores = nullptr;
     present.swapchainCount = 1;
@@ -5440,7 +5440,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
-    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier>();
+    auto layout_transition = vku::InitStruct<VkImageMemoryBarrier>();
     layout_transition.srcAccessMask = 0;
     layout_transition.dstAccessMask = 0;
 
@@ -5459,7 +5459,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     m_commandBuffer->end();
 
     constexpr VkPipelineStageFlags semaphore_wait_stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    auto submit = LvlInitStruct<VkSubmitInfo>();
+    auto submit = vku::InitStruct<VkSubmitInfo>();
     submit.waitSemaphoreCount = 1;
     submit.pWaitSemaphores = &acquire_semaphore.handle();
     submit.pWaitDstStageMask = &semaphore_wait_stage;
@@ -5469,7 +5469,7 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     submit.pSignalSemaphores = &submit_semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
 
-    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    auto present = vku::InitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
     present.pWaitSemaphores = nullptr;
     present.swapchainCount = 1;

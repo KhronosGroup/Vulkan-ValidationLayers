@@ -23,7 +23,7 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
     ASSERT_NO_FATAL_FAILURE(Init(&device_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo rs_ci = vku::InitStructHelper();
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
@@ -94,7 +94,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    auto dynamic_state_3_props = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
     if (dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
@@ -122,7 +122,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    auto dynamic_state_3_props = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
     if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
@@ -148,7 +148,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
@@ -157,7 +157,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    auto dynamic_state_3_props = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
     if (dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
@@ -166,7 +166,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY;
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    auto dyn_state_ci = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
 
@@ -246,7 +246,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto ptl_restart_features = LvlInitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
+    auto ptl_restart_features = vku::InitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
     GetPhysicalDeviceFeatures2(ptl_restart_features);
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {

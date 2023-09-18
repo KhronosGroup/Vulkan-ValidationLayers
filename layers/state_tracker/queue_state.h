@@ -76,7 +76,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
   private:
     static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
-        auto export_info = LvlFindInChain<VkExportFenceCreateInfo>(info->pNext);
+        auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
         return export_info ? export_info->handleTypes : 0;
     }
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
@@ -165,24 +165,24 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     static bool GetMetalExport(const VkSemaphoreCreateInfo *info) {
         bool retval = false;
-        auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+        auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
         while (export_metal_object_info) {
             if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
                 retval = true;
                 break;
             }
-            export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+            export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
         }
         return retval;
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
     VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
-        auto export_info = LvlFindInChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
+        auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
         return export_info ? export_info->handleTypes : 0;
     }
 
     SEMAPHORE_STATE(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreCreateInfo *pCreateInfo)
-        : SEMAPHORE_STATE(dev, sem, LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
+        : SEMAPHORE_STATE(dev, sem, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
     SEMAPHORE_STATE(ValidationStateTracker &dev, VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
                     const VkSemaphoreCreateInfo *pCreateInfo)

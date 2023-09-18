@@ -62,7 +62,7 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(VkDevice device, cons
         // Check whether any binding uses read_only
         bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
         if (!read_only) {
-            const auto* flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
+            const auto* flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
             if (flags_create_info) {
                 for (uint32_t i = 0; i < flags_create_info->bindingCount; ++i) {
                     if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {

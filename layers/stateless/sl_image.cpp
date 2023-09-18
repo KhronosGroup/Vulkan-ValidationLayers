@@ -233,7 +233,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              string_VkSampleCountFlagBits(pCreateInfo->samples));
         }
         const auto *shading_rate_image_features =
-            LvlFindInChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(device_createinfo_pnext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(device_createinfo_pnext);
         if (shading_rate_image_features && shading_rate_image_features->shadingRateImage &&
             pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
             // KHR flag can be non-optimal
@@ -281,7 +281,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkFormat(image_format));
     }
 
-    const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(pCreateInfo->pNext);
+    const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(pCreateInfo->pNext);
     if (image_stencil_struct != nullptr) {
         if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
             VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
@@ -367,12 +367,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
-    const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
+    const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
 
     std::vector<uint64_t> image_create_drm_format_modifiers;
     if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
-        const auto drm_format_mod_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        const auto drm_format_mod_explict = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        const auto drm_format_mod_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+        const auto drm_format_mod_explict = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             if ((!drm_format_mod_list) && (!drm_format_mod_explict)) {
                 skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
@@ -437,7 +437,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        const auto compression_control = LvlFindInChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+        const auto compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
         if (drm_format_mod_explict && compression_control) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-06746", device, create_info_loc.dot(Field::pNext),
                              "has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.");
@@ -521,7 +521,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    const auto swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_create_info != nullptr) {
         if (swapchain_create_info->swapchain != VK_NULL_HANDLE) {
             // All the following fall under the same VU that checks that the swapchain image uses parameters limited by the
@@ -611,7 +611,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    const auto image_compression_control = LvlFindInChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
+    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
     if (image_compression_control) {
         skip |= ValidateFlags(create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
                               "VkImageCompressionFlagsEXT", AllVkImageCompressionFlagBitsEXT, image_compression_control->flags,
@@ -626,7 +626,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
     while (export_metal_object_info) {
         if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) &&
             (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)) {
@@ -637,9 +637,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT are allowed",
                              string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
         }
-        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
-    auto import_metal_texture_info = LvlFindInChain<VkImportMetalTextureInfoEXT>(pCreateInfo->pNext);
+    auto import_metal_texture_info = vku::FindStructInPNextChain<VkImportMetalTextureInfoEXT>(pCreateInfo->pNext);
     while (import_metal_texture_info) {
         const Location texture_info_loc = create_info_loc.pNext(Struct::VkImportMetalTextureInfoEXT, Field::plane);
         if ((import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_0_BIT) &&
@@ -664,7 +664,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "which has only 2 planes",
                              string_VkFormat(pCreateInfo->format));
         }
-        import_metal_texture_info = LvlFindInChain<VkImportMetalTextureInfoEXT>(import_metal_texture_info->pNext);
+        import_metal_texture_info = vku::FindStructInPNextChain<VkImportMetalTextureInfoEXT>(import_metal_texture_info->pNext);
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -700,7 +700,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
         }
     }
 
-    auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
+    auto astc_decode_mode = vku::FindStructInPNextChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
     if (astc_decode_mode != nullptr) {
         if ((astc_decode_mode->decodeMode != VK_FORMAT_R16G16B16A16_SFLOAT) &&
             (astc_decode_mode->decodeMode != VK_FORMAT_R8G8B8A8_UNORM) &&
@@ -718,7 +718,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
         }
     }
 
-    auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    auto ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
     if (ycbcr_conversion != nullptr) {
         if (ycbcr_conversion->conversion != VK_NULL_HANDLE) {
             if (IsIdentitySwizzle(pCreateInfo->components) == false) {

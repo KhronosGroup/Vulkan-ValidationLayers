@@ -529,7 +529,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features11 = vku::InitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features11);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         GTEST_SKIP() << "SamplerYcbcrConversion not supported";
@@ -565,7 +565,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     }
 
     // Create Ycbcr conversion
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -580,7 +580,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
     conversions[1].init(*m_device, ycbcr_create_info, false);
 
-    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversions[0].handle();
 
     // Create a sampler using conversion
@@ -620,7 +620,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     mpimage.init(&ci);
 
     ycbcr_info.conversion = conversions[0].handle();  // Need two samplers with different conversions
-    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
+    VkImageViewCreateInfo ivci = vku::InitStructHelper(&ycbcr_info);
     ivci.image = mpimage.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
@@ -651,7 +651,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     image_infos[1] = image_infos[0];
 
     // Update the descriptor set expecting to get an error
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 2;
@@ -688,7 +688,7 @@ TEST_F(NegativeSampler, FilterMinmax) {
     }
 
     // Enable Ycbcr Conversion Features
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper();
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
 
@@ -698,7 +698,7 @@ TEST_F(NegativeSampler, FilterMinmax) {
     }
 
     // Create Ycbcr conversion
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
     ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -712,10 +712,10 @@ TEST_F(NegativeSampler, FilterMinmax) {
     VkSamplerYcbcrConversion conversion;
     vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
 
-    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion;
 
-    VkSamplerReductionModeCreateInfo reduction_info = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
+    VkSamplerReductionModeCreateInfo reduction_info = vku::InitStructHelper();
     reduction_info.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -742,7 +742,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto border_color_features = LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    auto border_color_features = vku::InitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
     GetPhysicalDeviceFeatures2(border_color_features);
     if (border_color_features.customBorderColors != VK_TRUE) {
         GTEST_SKIP() << "customBorderColors feature not supported";
@@ -758,7 +758,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     // No SCBCCreateInfo in pNext
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-borderColor-04011");
 
-    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
     // Format mismatch
@@ -778,7 +778,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    auto custom_properties = LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
+    auto custom_properties = vku::InitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
     auto prop2 = GetPhysicalDeviceProperties2(custom_properties);
 
     if ((custom_properties.maxCustomBorderColorSamplers <= 0xFFFF) &&
@@ -808,7 +808,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto border_color_features = LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    auto border_color_features = vku::InitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
     GetPhysicalDeviceFeatures2(border_color_features);
     if (!border_color_features.customBorderColors || !border_color_features.customBorderColorWithoutFormat) {
         GTEST_SKIP() << "Custom border color feature not supported";
@@ -820,7 +820,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
-    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     sampler_info.pNext = &custom_color_cinfo;
     vk_testing::Sampler sampler(*m_device, sampler_info);
@@ -842,7 +842,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;
     descriptor_writes[0].dstBinding = 0;
     descriptor_writes[0].descriptorCount = 1;
@@ -893,8 +893,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
@@ -993,8 +993,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     // Verify that it is allowed on this implementation if
     // VK_KHR_format_feature_flags2 is available.
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
         vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
@@ -1345,7 +1345,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
         GTEST_SKIP() << "Test requires at least Vulkan 1.2";
     }
 
-    auto sampler_reduction_mode_ci = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
+    auto sampler_reduction_mode_ci = vku::InitStruct<VkSamplerReductionModeCreateInfo>();
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
     auto sampler_ci = SafeSaneSamplerCreateInfo();
@@ -1362,9 +1362,9 @@ TEST_F(NegativeSampler, DISABLED_ReductionMode) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
+    VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = vku::InitStructHelper();
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
-    VkSamplerCreateInfo sampler_ci = LvlInitStruct<VkSamplerCreateInfo>(&sampler_reduction_mode_ci);
+    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper(&sampler_reduction_mode_ci);
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
@@ -1383,7 +1383,7 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto non_seamless_cube_map_features = LvlInitStruct<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>();
+    auto non_seamless_cube_map_features = vku::InitStruct<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(non_seamless_cube_map_features);
     non_seamless_cube_map_features.nonSeamlessCubeMap = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1400,7 +1400,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping =
-        LvlInitStruct<VkSamplerBorderColorComponentMappingCreateInfoEXT>();
+        vku::InitStructHelper();
     border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 
@@ -1444,7 +1444,7 @@ TEST_F(NegativeSampler, CustomBorderColorsFeature) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
 
-    auto custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
+    auto custom_color_cinfo = vku::InitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
 

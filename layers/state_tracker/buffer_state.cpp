@@ -22,7 +22,7 @@
 #include "state_tracker/state_tracker.h"
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo *create_info) {
-    const auto *external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
+    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
@@ -33,7 +33,7 @@ static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *dev_da
 }
 
 static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferCreateInfo &create_info) {
-    const auto *usage_flags2 = LvlFindInChain<VkBufferUsageFlags2CreateInfoKHR>(create_info.pNext);
+    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(create_info.pNext);
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
 }
 
@@ -44,7 +44,7 @@ BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, cons
       createInfo(*safe_create_info.ptr()),
       requirements(GetMemoryRequirements(dev_data, buff)),
       usage(GetBufferUsageFlags(createInfo)),
-      supported_video_profiles(dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+      supported_video_profiles(dev_data->video_profile_cache_.Get(dev_data, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
         tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
                                                       (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);
@@ -58,13 +58,13 @@ BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, cons
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
     bool retval = false;
-    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
         if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
             retval = true;
             break;
         }
-        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
     return retval;
 }

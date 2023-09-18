@@ -24,7 +24,7 @@
 // NOLINTBEGIN
 
 #include "vk_safe_struct.h"
-#include "vk_typemap_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include "utils/vk_layer_utils.h"
 
 #include <cstddef>

@@ -22,7 +22,7 @@ void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(pNextFeatures);
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(pNextFeatures);
     GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -163,11 +163,11 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -198,7 +198,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, ds2.set_};
 
-    auto ub_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
     VkBufferObj uniform_buffer(*m_device, ub_ci);
@@ -249,11 +249,11 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pipeline_layout_null.handle();
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -323,7 +323,7 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
     VkVertexInputBindingDivisorDescriptionEXT divisor_description = {};
     divisor_description.binding = 0;
     divisor_description.divisor = 0;
-    auto divisor_state_create_info = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
+    auto divisor_state_create_info = vku::InitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
     divisor_state_create_info.vertexBindingDivisorCount = 1;
     divisor_state_create_info.pVertexBindingDivisors = &divisor_description;
     VkVertexInputBindingDescription vertex_input_binding_description = {divisor_description.binding, 12,
@@ -353,7 +353,7 @@ TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto extended_dynamic_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     InitBasicGraphicsLibrary(&extended_dynamic_state3_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -390,13 +390,13 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
 
     VkPipelineLayout layout = VK_NULL_HANDLE;
 
-    auto ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    auto ia_state = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     ia_state.primitiveRestartEnable = false;
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
@@ -446,11 +446,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
@@ -477,7 +477,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
-    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
 
@@ -486,7 +486,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     uint32_t subpass = 0;
 
-    auto ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    auto ia_state = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     ia_state.primitiveRestartEnable = false;
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
@@ -536,11 +536,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
     exe_pipe_ci.layout = layout;
@@ -571,7 +571,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     uint32_t subpass = 0;
 
-    auto ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    auto ia_state = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     ia_state.primitiveRestartEnable = false;
     ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
@@ -621,11 +621,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -646,7 +646,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
 
-    auto dyn_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto dyn_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     InitBasicGraphicsLibrary(&dyn_state3_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -702,11 +702,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -727,7 +727,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
 
-    auto dyn_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto dyn_state3_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     InitBasicGraphicsLibrary(&dyn_state3_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -783,11 +783,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -870,11 +870,11 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
         frag_shader_lib.pipeline_,
         frag_out_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -898,19 +898,19 @@ TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
     VkPipelineShaderStageCreateInfo stages[2];
 
     const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-    auto tcs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    auto tcs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
     tcs_ci.codeSize = tcs_spv.size() * sizeof(decltype(tcs_spv)::value_type);
     tcs_ci.pCode = tcs_spv.data();
-    stages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&tcs_ci);
+    stages[0] = vku::InitStructHelper(&tcs_ci);
     stages[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     stages[0].module = VK_NULL_HANDLE;
     stages[0].pName = "main";
 
     const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
-    auto tes_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    auto tes_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
     tes_ci.codeSize = tes_spv.size() * sizeof(decltype(tes_spv)::value_type);
     tes_ci.pCode = tes_spv.data();
-    stages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&tes_ci);
+    stages[1] = vku::InitStructHelper(&tes_ci);
     stages[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     stages[1].module = VK_NULL_HANDLE;
     stages[1].pName = "main";
@@ -924,7 +924,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -944,7 +944,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
 
     // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
     pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
 
     CreatePipelineHelper fs_lib(*this);
@@ -955,7 +955,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
         stencil.depthFailOp = VK_STENCIL_OP_KEEP;
         stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         ds_ci.depthTestEnable = VK_FALSE;
         ds_ci.depthWriteEnable = VK_TRUE;
         ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -988,11 +988,11 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
         vi_lib.pipeline_, pr_lib.pipeline_, fs_lib.pipeline_,
         // fragment output not needed due to rasterization being disabled
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -1002,7 +1002,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -1029,7 +1029,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
         stencil.depthFailOp = VK_STENCIL_OP_KEEP;
         stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         ds_ci.depthTestEnable = VK_FALSE;
         ds_ci.depthWriteEnable = VK_TRUE;
         ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -1057,7 +1057,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     pr_lib.CreateGraphicsPipeline();
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
     pipeline_rendering_info.depthAttachmentFormat = m_depth_stencil_fmt;
@@ -1075,23 +1075,23 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
         fs_lib.pipeline_,
         fo_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    auto color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    auto color_attachment = vku::InitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    auto depth_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    auto depth_attachment = vku::InitStruct<VkRenderingAttachmentInfo>();
     depth_attachment.imageView = *m_depthStencil->BindInfo();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    auto begin_rendering_info = vku::InitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;
@@ -1110,7 +1110,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     TEST_DESCRIPTION("Create a GPL with depth state");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    auto dyn_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto dyn_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     InitBasicGraphicsLibrary(&dyn_state2_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -1130,7 +1130,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
         stencil.depthFailOp = VK_STENCIL_OP_KEEP;
         stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         ds_ci.depthTestEnable = VK_FALSE;
         ds_ci.depthWriteEnable = VK_TRUE;
         ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -1176,11 +1176,11 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
             fs_lib.pipeline_,
             fo_lib.pipeline_,
         };
-        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = size32(libraries);
         link_info.pLibraries = libraries;
 
-        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
         vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         ASSERT_TRUE(exe_pipe.initialized());
@@ -1206,11 +1206,11 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
         fs_lib.pipeline_,
         fo_lib.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
-    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -1220,7 +1220,7 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and no fragment output state");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -1234,10 +1234,10 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
 
     // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
     pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
 
-    auto lib_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
+    auto lib_info = vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
     lib_info.flags =
         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
@@ -1247,7 +1247,7 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     stencil.depthFailOp = VK_STENCIL_OP_KEEP;
     stencil.compareOp = VK_COMPARE_OP_NEVER;
 
-    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_FALSE;
     ds_ci.depthWriteEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
@@ -1291,10 +1291,10 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-    auto pipeline_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>(&gpl_features);
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto pipeline_cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>(&gpl_features);
     auto shader_module_id_features =
-        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&pipeline_cache_control_features);
+        vku::InitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&pipeline_cache_control_features);
     GetPhysicalDeviceFeatures2(shader_module_id_features);
 
     if (!gpl_features.graphicsPipelineLibrary) {
@@ -1311,14 +1311,14 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     ASSERT_TRUE(vs.initialized());
 
-    auto vs_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    auto vs_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &vs_identifier);
 
-    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    auto sm_id_create_info = vku::InitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
     sm_id_create_info.identifierSize = vs_identifier.identifierSize;
     sm_id_create_info.pIdentifier = vs_identifier.identifier;
 
-    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    auto stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = VK_NULL_HANDLE;
     stage_ci.pName = "main";
@@ -1331,17 +1331,17 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
 
     // Create a fragment shader library with FS referencing an identifier queried from VkShaderModuleCreateInfo
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    auto fs_ci = vku::InitStruct<VkShaderModuleCreateInfo>();
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
 
-    auto fs_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    auto fs_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
     vk::GetShaderModuleCreateInfoIdentifierEXT(device(), &fs_ci, &fs_identifier);
 
     sm_id_create_info.identifierSize = fs_identifier.identifierSize;
     sm_id_create_info.pIdentifier = fs_identifier.identifier;
 
-    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
+    auto fs_stage_ci = vku::InitStruct<VkPipelineShaderStageCreateInfo>(&sm_id_create_info);
     fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fs_stage_ci.module = VK_NULL_HANDLE;
     fs_stage_ci.pName = "main";
@@ -1368,11 +1368,11 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
         fs_pipe.pipeline_,
         fo_pipe.pipeline_,
     };
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
 
-    auto pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    auto pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe_ci.layout = pipe.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, pipe_ci);
@@ -1385,8 +1385,8 @@ TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state_features);
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state_features);
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
 
@@ -1417,10 +1417,10 @@ TEST_F(PositiveGraphicsLibrary, ColorBlendStateIgnored) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto extended_dynamic_state2_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto extended_dynamic_state3_features =
-        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state3_features);
+        vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&extended_dynamic_state2_features);
+    auto dynamic_rendering_features = vku::InitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&extended_dynamic_state3_features);
     InitBasicGraphicsLibrary(&dynamic_rendering_features);
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1438,12 +1438,12 @@ TEST_F(PositiveGraphicsLibrary, ColorBlendStateIgnored) {
         GTEST_SKIP() << "extendedDynamicState3ColorWriteMask not supported";
     }
 
-    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfo>();
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
 
     CreatePipelineHelper pre_raster_lib(*this);
     {

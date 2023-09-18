@@ -330,7 +330,7 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     VkImageObj srcImage(m_device);
     VkImageObj dstImage(m_device);
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 32;
@@ -516,12 +516,12 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
         GTEST_SKIP() << "No queue family found without support for secondary command buffers";
     }
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = queue_family_index;
     vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    VkCommandBufferAllocateInfo alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.commandPool = command_pool.handle();
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     alloc_info.commandBufferCount = 1;
@@ -677,7 +677,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
 
     VkSubpassDescription sd{};
 
-    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -1362,7 +1362,7 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1395,7 +1395,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     }
 
     // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
-    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto indexing_features = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
 
     if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
@@ -1408,7 +1408,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
-    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    auto flags_create_info = vku::InitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     flags_create_info.bindingCount = (uint32_t)flags.size();
     flags_create_info.pBindingFlags = flags.data();
 
@@ -1469,7 +1469,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     clear_range.layerCount = 1;
     clear_range.levelCount = 1;
 
-    VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1556,7 +1556,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     vk_testing::Semaphore semaphore(*m_device);
     VkSemaphore semaphore_handle = semaphore.handle();
 
-    VkSubmitInfo signal_submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo signal_submit_info = vku::InitStructHelper();
     signal_submit_info.signalSemaphoreCount = 0;
     signal_submit_info.pSignalSemaphores = &semaphore_handle;
 
@@ -1567,7 +1567,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     signal_submit_info.signalSemaphoreCount = 1;
     vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
 
-    VkSubmitInfo wait_submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo wait_submit_info = vku::InitStructHelper();
     wait_submit_info.waitSemaphoreCount = 0;
     wait_submit_info.pWaitSemaphores = &semaphore_handle;
 
@@ -1595,7 +1595,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
     ds_type_count.descriptorCount = 2;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -1615,7 +1615,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
-    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
@@ -1637,7 +1637,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     const unsigned int h = 1080;
 
     // Setup Image
-    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_info = vku::InitStructHelper();
     image_info.extent = {w, h, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1670,7 +1670,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     spd.colorAttachmentCount = 1;
     spd.pColorAttachments = &ar;
 
-    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -1679,7 +1679,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     vk_testing::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.width = w;
     fb_info.height = h;
     fb_info.layers = 1;
@@ -1696,7 +1696,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     cv.color = VkClearColorValue{};
     std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 0.0f);
 
-    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
     begin_info.clearValueCount = 1;  // Pass one clearValue, in conflict with attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE
     begin_info.pClearValues = &cv;
     begin_info.renderPass = rp.handle();
@@ -1732,7 +1732,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     const unsigned int h = 1080;
 
     // Setup Image
-    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_info = vku::InitStructHelper();
     image_info.extent = {w, h, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1765,7 +1765,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     spd.colorAttachmentCount = 1;
     spd.pColorAttachments = &ar;
 
-    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;  // There is only one attachment
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -1774,7 +1774,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     vk_testing::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.width = w;
     fb_info.height = h;
     fb_info.layers = 1;
@@ -1797,7 +1797,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     cv[1].color = VkClearColorValue{};
     std::fill(std::begin(cv[1].color.float32), std::begin(cv[1].color.float32) + 4, 0.0f);
 
-    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
     begin_info.clearValueCount = 2;  // Pass 2 clearValues, in conflict with VkRenderPassCreateInfo.attachmentCount == 1 meaning the
                                      // second clearValue will be ignored
     begin_info.pClearValues = cv;
@@ -1832,7 +1832,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     const unsigned int h = 100;
 
     // Setup Image
-    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_info = vku::InitStructHelper();
     image_info.extent = {w, h, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1865,7 +1865,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     spd.colorAttachmentCount = 1;
     spd.pColorAttachments = &ar;
 
-    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -1882,7 +1882,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     vk_testing::RenderPass rp2(*m_device, rp_info);
 
     // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.width = w;
     fb_info.height = h;
     fb_info.layers = 1;
@@ -1900,7 +1900,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
 
     // Begin first renderpass
-    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
     begin_info.clearValueCount = 1;
     begin_info.pClearValues = &cv;
     begin_info.renderPass = rp1.handle();
@@ -1923,7 +1923,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
 
     m_commandBuffer->end();
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
@@ -1953,13 +1953,13 @@ TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
         GTEST_SKIP() << extension << " not supported.";
     }
 
-    VkDeviceQueueCreateInfo qci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    VkDeviceQueueCreateInfo qci = vku::InitStructHelper();
     qci.queueFamilyIndex = 0;
     float priority = 1;
     qci.pQueuePriorities = &priority;
     qci.queueCount = 1;
 
-    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &qci;
     dev_info.enabledExtensionCount = 1;
@@ -2006,7 +2006,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     const unsigned int h = 100;
 
     // Setup Image
-    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_info = vku::InitStructHelper();
     image_info.extent = {w, h, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -2041,7 +2041,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     spd.colorAttachmentCount = 1;
     spd.pColorAttachments = &ar;
 
-    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -2050,7 +2050,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     vk_testing::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
-    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.width = w;
     fb_info.height = h;
     fb_info.layers = 1;
@@ -2068,7 +2068,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     cv.color = VkClearColorValue{};
     std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
 
-    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
     begin_info.clearValueCount = 1;
     begin_info.pClearValues = &cv;
     begin_info.renderPass = rp.handle();
@@ -2139,7 +2139,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     // Record command buffers with queue transition
 
     // Queue transition barrier, same for release and acquire
-    VkImageMemoryBarrier barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.image = image.handle();
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  // only matters for release
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;             // only matters for acquire
@@ -2209,7 +2209,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     clear_range.layerCount = 1;
     clear_range.levelCount = 1;
 
-    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto img_barrier = vku::InitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2262,7 +2262,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     if (sync2) {
-        auto img_barrier2 = LvlInitStruct<VkImageMemoryBarrier2KHR>();
+        auto img_barrier2 = vku::InitStruct<VkImageMemoryBarrier2KHR>();
         img_barrier2.srcAccessMask = 0;
         img_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         img_barrier2.image = image.handle();
@@ -2272,7 +2272,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.subresourceRange.layerCount = 1;
         img_barrier2.subresourceRange.levelCount = 1;
 
-        auto dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+        auto dependency_info = vku::InitStruct<VkDependencyInfoKHR>();
         dependency_info.imageMemoryBarrierCount = 1;
         dependency_info.pImageMemoryBarriers = &img_barrier2;
 
@@ -2320,7 +2320,7 @@ TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
     ds_type_count.descriptorCount = 2;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
@@ -2345,7 +2345,7 @@ TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding_sampler, dsl_binding_uniform});
 
     VkDescriptorSet descriptor_set;
-    VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();

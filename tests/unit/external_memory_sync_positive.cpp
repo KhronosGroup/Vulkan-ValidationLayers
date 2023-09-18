@@ -17,44 +17,44 @@
 
 VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(const VkBufferCreateInfo &buffer_create_info,
                                                                                  VkExternalMemoryHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
     external_info.flags = buffer_create_info.flags;
     external_info.usage = buffer_create_info.usage;
     external_info.handleType = handle_type;
-    auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+    auto external_buffer_properties = vku::InitStruct<VkExternalBufferProperties>();
     vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_buffer_properties);
     return external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 }
 
 VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(const VkImageCreateInfo &image_create_info,
                                                                                  VkExternalMemoryHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
     external_info.handleType = handle_type;
-    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
     image_info.format = image_create_info.format;
     image_info.type = image_create_info.imageType;
     image_info.tiling = image_create_info.tiling;
     image_info.usage = image_create_info.usage;
     image_info.flags = image_create_info.flags;
-    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+    auto external_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_properties);
     if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) return 0;
     return external_properties.externalMemoryProperties.compatibleHandleTypes;
 }
 
 VkExternalFenceHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalFenceInfo>();
     external_info.handleType = handle_type;
-    auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+    auto external_properties = vku::InitStruct<VkExternalFenceProperties>();
     vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
     return external_properties.compatibleHandleTypes;
 }
 
 VkExternalSemaphoreHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(
     VkExternalSemaphoreHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
     external_info.handleType = handle_type;
-    auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    auto external_properties = vku::InitStruct<VkExternalSemaphoreProperties>();
     vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
     return external_properties.compatibleHandleTypes;
 }
@@ -64,9 +64,9 @@ VkExternalFenceHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalFenc
     VkExternalFenceHandleTypeFlags supported_types = 0;
     IterateFlags<VkExternalFenceHandleTypeFlagBits>(
         AllVkExternalFenceHandleTypeFlagBits, [&](VkExternalFenceHandleTypeFlagBits flag) {
-            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalFenceInfo>();
             external_info.handleType = flag;
-            auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+            auto external_properties = vku::InitStruct<VkExternalFenceProperties>();
             vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
             if ((external_properties.externalFenceFeatures & requested_features) == requested_features) {
                 supported_types |= flag;
@@ -80,9 +80,9 @@ VkExternalSemaphoreHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternal
     VkExternalSemaphoreHandleTypeFlags supported_types = 0;
     IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(
         AllVkExternalSemaphoreHandleTypeFlagBits, [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
-            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            auto external_info = vku::InitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
             external_info.handleType = flag;
-            auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+            auto external_properties = vku::InitStruct<VkExternalSemaphoreProperties>();
             vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
             if ((external_properties.externalSemaphoreFeatures & requested_features) == requested_features) {
                 supported_types |= flag;
@@ -93,7 +93,7 @@ VkExternalSemaphoreHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternal
 
 VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalMemoryHandleTypes(
     const VkBufferCreateInfo &buffer_create_info, VkExternalMemoryFeatureFlags requested_features) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
     external_info.flags = buffer_create_info.flags;
     external_info.usage = buffer_create_info.usage;
 
@@ -101,7 +101,7 @@ VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalMem
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
         AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
             external_info.handleType = flag;
-            auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
+            auto external_properties = vku::InitStruct<VkExternalBufferProperties>();
             vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_properties);
             const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
             if ((external_features & requested_features) == requested_features) {
@@ -113,8 +113,8 @@ VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalMem
 
 VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalMemoryHandleTypes(
     const VkImageCreateInfo &image_create_info, VkExternalMemoryFeatureFlags requested_features) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
-    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
     image_info.format = image_create_info.format;
     image_info.type = image_create_info.imageType;
     image_info.tiling = image_create_info.tiling;
@@ -125,8 +125,8 @@ VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalMem
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
         AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
             external_info.handleType = flag;
-            auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-            auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+            auto external_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+            auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_properties);
             VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
             const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
             if (result == VK_SUCCESS && (external_features & requested_features) == requested_features) {
@@ -155,12 +155,12 @@ VkExternalMemoryHandleTypeFlagsNV ExternalMemorySyncTest::FindSupportedExternalM
 
 bool ExternalMemorySyncTest::HandleTypeNeedsDedicatedAllocation(const VkBufferCreateInfo &buffer_create_info,
                                                                 VkExternalMemoryHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalBufferInfo>();
     external_info.flags = buffer_create_info.flags;
     external_info.usage = buffer_create_info.usage;
     external_info.handleType = handle_type;
 
-    auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
+    auto external_properties = vku::InitStruct<VkExternalBufferProperties>();
     vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_properties);
 
     const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
@@ -169,17 +169,17 @@ bool ExternalMemorySyncTest::HandleTypeNeedsDedicatedAllocation(const VkBufferCr
 
 bool ExternalMemorySyncTest::HandleTypeNeedsDedicatedAllocation(const VkImageCreateInfo &image_create_info,
                                                                 VkExternalMemoryHandleTypeFlagBits handle_type) {
-    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    auto external_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
     external_info.handleType = handle_type;
-    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
     image_info.format = image_create_info.format;
     image_info.type = image_create_info.imageType;
     image_info.tiling = image_create_info.tiling;
     image_info.usage = image_create_info.usage;
     image_info.flags = image_create_info.flags;
 
-    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+    auto external_properties = vku::InitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_properties);
     VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     if (result != VK_SUCCESS) return false;
 
@@ -200,16 +200,16 @@ TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    auto export_info = vku::InitStruct<VkExportMemoryAllocateInfo>();
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_info);
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>(&export_info);
     alloc_info.allocationSize = 1024;
     alloc_info.memoryTypeIndex = 0;
 
     vk_testing::DeviceMemory memory;
     memory.init(*m_device, alloc_info);
-    auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+    auto get_handle_info = vku::InitStruct<VkMemoryGetFdInfoKHR>();
     get_handle_info.memory = memory;
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
@@ -351,7 +351,7 @@ TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    auto external_buffer_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
     const auto buffer_info =
         vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
@@ -369,10 +369,10 @@ TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
     external_buffer_info.handleTypes = handle_type;
     vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::no_mem);
 
-    auto dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    auto dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfo>();
     dedicated_info.buffer = buffer;
 
-    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&dedicated_info);
+    auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(&dedicated_info);
     export_memory_info.handleTypes = handle_type;
 
     buffer.allocate_and_bind_memory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);

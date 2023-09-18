@@ -145,7 +145,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1) &&
-        !LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext)) {
+        !vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext)) {
         skip |= LogWarning(device, kVUID_BestPractices_NoVkSwapchainPresentModesCreateInfoEXTProvided,
                            "No VkSwapchainPresentModesCreateInfoEXT was provided to VkCreateSwapchainKHR. "
                            "When VK_EXT_swapchain_maintenance1 is enabled, a VkSwapchainPresentModesCreateInfoEXT should "

@@ -2052,7 +2052,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     skip |= ValidateShaderSubgroupSizeControl(stage_create_info, stage, stage_state, loc);
     skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), stage_create_info, loc.dot(Field::pSpecializationInfo));
     skip |= ValidateShaderStageMaxResources(stage, stage_create_info, loc);
-    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext());
+    if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext());
         pipeline_robustness_info) {
         skip |= ValidatePipelineRobustnessCreateInfo(*stage_create_info.pipeline, *pipeline_robustness_info, loc);
     }
@@ -2335,7 +2335,7 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
 
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
-    const auto validation_cache_ci = LvlFindInChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
+    const auto validation_cache_ci = vku::FindStructInPNextChain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
     if (validation_cache_ci) {
         return CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache);
     }
@@ -2494,7 +2494,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE &module_
         const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
                                     VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         const auto *required_subgroup_size_features =
-            LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
+            vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (required_subgroup_size_features) {
             const uint32_t requiredSubgroupSize = required_subgroup_size_features->requiredSubgroupSize;
             skip |= RequireFeature(module_state, enabled_features.core13.subgroupSizeControl, "subgroupSizeControl",
@@ -2570,7 +2570,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SPIRV_MODULE_STATE &module_
     } else {
         const bool varying = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         const bool full = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-        const auto *required_subgroup_size = LvlFindInChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
+        const auto *required_subgroup_size = vku::FindStructInPNextChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (varying && full) {
             if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
                 skip |= LogError(

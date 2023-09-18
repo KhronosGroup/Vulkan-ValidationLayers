@@ -43,13 +43,13 @@ bool CoreChecks::OutsideVideoCodingScope(const CMD_BUFFER_STATE &cb_state, const
 
 std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                              const VkVideoProfileListInfoKHR *profile_list) const {
-    auto format_info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+    auto format_info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
     format_info.imageUsage = image_usage;
     format_info.pNext = profile_list;
 
     uint32_t format_count = 0;
     DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physical_device, &format_info, &format_count, nullptr);
-    std::vector<VkVideoFormatPropertiesKHR> format_props(format_count, LvlInitStruct<VkVideoFormatPropertiesKHR>());
+    std::vector<VkVideoFormatPropertiesKHR> format_props(format_count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
     DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physical_device, &format_info, &format_count, format_props.data());
 
     return format_props;
@@ -57,7 +57,7 @@ std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkI
 
 std::vector<VkVideoFormatPropertiesKHR> CoreChecks::GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                              const VkVideoProfileInfoKHR *profile) const {
-    auto profile_list = LvlInitStruct<VkVideoProfileListInfoKHR>();
+    auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
     profile_list.profileCount = 1;
     profile_list.pProfiles = profile;
 
@@ -157,7 +157,7 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
 
     switch (profile->videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            const auto decode_h264 = LvlFindInChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
+            const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
             if (decode_h264 == nullptr) {
                 skip |= LogError(object, "VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", profile_pnext_msg, api_name,
                                  "VkVideoDecodeH264ProfileInfoKHR", where);
@@ -166,7 +166,7 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            const auto decode_h265 = LvlFindInChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
+            const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
             if (decode_h265 == nullptr) {
                 skip |= LogError(object, "VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", profile_pnext_msg, api_name,
                                  "VkVideoDecodeH265ProfileInfoKHR", where);
@@ -420,7 +420,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
     bool interlaced_frame_support =
         (vs_state.profile->GetH264PictureLayout() != VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_KHR);
 
-    auto picture_info = LvlFindInChain<VkVideoDecodeH264PictureInfoKHR>(decode_info.pNext);
+    auto picture_info = vku::FindStructInPNextChain<VkVideoDecodeH264PictureInfoKHR>(decode_info.pNext);
     if (picture_info) {
         auto std_picture_info = picture_info->pStdPictureInfo;
 
@@ -466,7 +466,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
     }
 
     if (decode_info.pSetupReferenceSlot) {
-        auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pSetupReferenceSlot->pNext);
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pSetupReferenceSlot->pNext);
         if (dpb_slot_info) {
             VideoPictureID picture_id(*vs_state.profile, *decode_info.pSetupReferenceSlot);
             if (!interlaced_frame_support && !picture_id.IsFrame()) {
@@ -507,7 +507,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE &cb_state, c
     }
 
     for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
-        auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
         if (dpb_slot_info) {
             VideoPictureID picture_id(*vs_state.profile, decode_info.pReferenceSlots[i]);
             if (!interlaced_frame_support && !picture_id.IsFrame()) {
@@ -538,7 +538,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
     const auto &vsp_state = *cb_state.bound_video_session_parameters;
     const auto session_params = vsp_state.Lock();
 
-    auto picture_info = LvlFindInChain<VkVideoDecodeH265PictureInfoKHR>(decode_info.pNext);
+    auto picture_info = vku::FindStructInPNextChain<VkVideoDecodeH265PictureInfoKHR>(decode_info.pNext);
     if (picture_info) {
         auto std_picture_info = picture_info->pStdPictureInfo;
 
@@ -589,7 +589,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
     }
 
     if (decode_info.pSetupReferenceSlot) {
-        auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH265DpbSlotInfoKHR>(decode_info.pSetupReferenceSlot->pNext);
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH265DpbSlotInfoKHR>(decode_info.pSetupReferenceSlot->pNext);
         if (!dpb_slot_info) {
             skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07163", pnext_msg,
                              "vkCmdDecodeVideoKHR()", "VkVideoDecodeH265DpbSlotInfoKHR", "pDecodeInfo->pSetupReferenceSlot");
@@ -597,7 +597,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE &cb_state, c
     }
 
     for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
-        auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH265DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
+        auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH265DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
         if (!dpb_slot_info) {
             skip |= LogError(cb_state.commandBuffer(), "VUID-vkCmdDecodeVideoKHR-pNext-07164",
                              "vkCmdDecodeVideoKHR(): missing VkVideoDecodeH265DpbSlotInfoKHR from the "
@@ -619,7 +619,7 @@ bool CoreChecks::ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE &cb_
 
     if (vs_state.GetCodecOp() == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR) {
         for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
-            auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
+            auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH264DpbSlotInfoKHR>(decode_info.pReferenceSlots[i].pNext);
             if (!dpb_slot_info) continue;
 
             auto std_reference_info = dpb_slot_info->pStdReferenceInfo;
@@ -676,7 +676,7 @@ bool CoreChecks::ValidateReferencePictureUseCount(const CMD_BUFFER_STATE &cb_sta
         if (!interlaced_frame_support) continue;
 
         if (vs_state.GetCodecOp() == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR) {
-            auto dpb_slot_info = LvlFindInChain<VkVideoDecodeH264DpbSlotInfoKHR>(slot->pNext);
+            auto dpb_slot_info = vku::FindStructInPNextChain<VkVideoDecodeH264DpbSlotInfoKHR>(slot->pNext);
             if (!dpb_slot_info) continue;
 
             auto std_reference_info = dpb_slot_info->pStdReferenceInfo;
@@ -737,7 +737,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
     switch (pVideoProfile->videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
             is_decode = true;
-            if (!LvlFindInChain<VkVideoDecodeH264CapabilitiesKHR>(pCapabilities->pNext)) {
+            if (!vku::FindStructInPNextChain<VkVideoDecodeH264CapabilitiesKHR>(pCapabilities->pNext)) {
                 skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07184", caps_pnext_msg,
                                  "VkVideoDecodeH264CapabilitiesKHR");
             }
@@ -745,7 +745,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
             is_decode = true;
-            if (!LvlFindInChain<VkVideoDecodeH265CapabilitiesKHR>(pCapabilities->pNext)) {
+            if (!vku::FindStructInPNextChain<VkVideoDecodeH265CapabilitiesKHR>(pCapabilities->pNext)) {
                 skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07185", caps_pnext_msg,
                                  "VkVideoDecodeH265CapabilitiesKHR");
             }
@@ -755,7 +755,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
             break;
     }
 
-    if (is_decode && !LvlFindInChain<VkVideoDecodeCapabilitiesKHR>(pCapabilities->pNext)) {
+    if (is_decode && !vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(pCapabilities->pNext)) {
         skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183", caps_pnext_msg,
                          "VkVideoDecodeCapabilitiesKHR");
     }
@@ -768,7 +768,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
+    const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
     if (video_profiles && video_profiles->profileCount != 0) {
         skip |= ValidateVideoProfileListInfo(video_profiles, physicalDevice, "vkGetPhysicalDeviceVideoFormatPropertiesKHR", false,
                                              nullptr, false, nullptr);
@@ -1019,7 +1019,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
     const char *pnext_chain_msg = "vkCreateVideoSessionParametersKHR(): missing %s from pCreateInfo pNext chain";
     switch (vs_state->GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            auto codec_info = LvlFindInChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
+            auto codec_info = vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
             if (codec_info) {
                 skip |= ValidateDecodeH264ParametersAddInfo(
                     codec_info->pParametersAddInfo, device, "vkCreateVideoSessionParametersKHR",
@@ -1032,7 +1032,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            auto codec_info = LvlFindInChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
+            auto codec_info = vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(pCreateInfo->pNext);
             if (codec_info) {
                 skip |= ValidateDecodeH265ParametersAddInfo(
                     codec_info->pParametersAddInfo, device, "vkCreateVideoSessionParametersKHR",
@@ -1068,7 +1068,7 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
 
     switch (vsp_state->GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            auto add_info = LvlFindInChain<VkVideoDecodeH264SessionParametersAddInfoKHR>(pUpdateInfo->pNext);
+            auto add_info = vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersAddInfoKHR>(pUpdateInfo->pNext);
             if (add_info) {
                 skip |= ValidateDecodeH264ParametersAddInfo(add_info, device, "vkUpdateVideoSessionParametersKHR",
                                                             "VkVideoDecodeH264SessionParametersAddInfoKHR");
@@ -1117,7 +1117,7 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            auto add_info = LvlFindInChain<VkVideoDecodeH265SessionParametersAddInfoKHR>(pUpdateInfo->pNext);
+            auto add_info = vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersAddInfoKHR>(pUpdateInfo->pNext);
             if (add_info) {
                 skip |= ValidateDecodeH265ParametersAddInfo(add_info, device, "vkUpdateVideoSessionParametersKHR",
                                                             "VkVideoDecodeH265SessionParametersAddInfoKHR");

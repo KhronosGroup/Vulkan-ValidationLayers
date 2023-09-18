@@ -28,14 +28,14 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    auto blend_operation_advanced = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced);
 
     if (!blend_operation_advanced.advancedBlendAllOperations) {
         GTEST_SKIP() << "advancedBlendAllOperations is not supported.";
     }
 
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
     VkPipelineColorBlendAttachmentState attachment_states[2];
     memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
 
@@ -87,13 +87,13 @@ TEST_F(NegativePipelineAdvancedBlend, MaxBlendAttachment) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced_props);
     if (blend_operation_advanced_props.advancedBlendMaxColorAttachments > 2) {
         GTEST_SKIP() << "advancedBlendMaxColorAttachments is too high";
     }
 
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
     VkPipelineColorBlendAttachmentState attachment_states[3];
     memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 3);
 
@@ -124,7 +124,7 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    auto blend_operation_advanced_props = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced_props);
 
     if (blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
@@ -133,7 +133,7 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
         GTEST_SKIP() << "All VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT properties are enabled; nothing to test";
     }
 
-    auto color_blend_advanced = LvlInitStruct<VkPipelineColorBlendAdvancedStateCreateInfoEXT>();
+    auto color_blend_advanced = vku::InitStruct<VkPipelineColorBlendAdvancedStateCreateInfoEXT>();
     color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_DISJOINT_EXT;
     color_blend_advanced.dstPremultiplied = VK_FALSE;
     color_blend_advanced.srcPremultiplied = VK_FALSE;
@@ -170,7 +170,7 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    auto blend_operation_advanced = vku::InitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced);
 
     if (blend_operation_advanced.advancedBlendAllOperations) {
@@ -184,7 +184,7 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     attachment_state.colorBlendOp = VK_BLEND_OP_XOR_EXT;
     attachment_state.alphaBlendOp = VK_BLEND_OP_XOR_EXT;
 
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
     color_blend_state.attachmentCount = 1;
     color_blend_state.pAttachments = &attachment_state;
     pipe.gp_ci_.pColorBlendState = &color_blend_state;

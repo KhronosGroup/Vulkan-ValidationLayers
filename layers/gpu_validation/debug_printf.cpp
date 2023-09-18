@@ -679,7 +679,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     DPFDeviceMemoryBlock output_block = {};
-    VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = output_buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
@@ -699,7 +699,7 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
-    auto desc_writes = LvlInitStruct<VkWriteDescriptorSet>();
+    auto desc_writes = vku::InitStruct<VkWriteDescriptorSet>();
     const uint32_t desc_count = 1;
 
     // Write the descriptor

@@ -43,28 +43,28 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
 
         switch (profile->videoCodecOperation) {
             case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-                auto decode_h264 = LvlFindInChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
+                auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
                 if (decode_h264) {
                     profile_.valid = true;
                     profile_.decode_h264 = *decode_h264;
                     profile_.decode_h264.pNext = nullptr;
                 } else {
                     profile_.valid = false;
-                    profile_.decode_h264 = LvlInitStruct<VkVideoDecodeH264ProfileInfoKHR>();
+                    profile_.decode_h264 = vku::InitStructHelper();
                 }
                 profile_.is_decode = true;
                 profile_.base.pNext = &profile_.decode_h264;
                 break;
             }
             case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-                auto decode_h265 = LvlFindInChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
+                auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
                 if (decode_h265) {
                     profile_.valid = true;
                     profile_.decode_h265 = *decode_h265;
                     profile_.decode_h265.pNext = nullptr;
                 } else {
                     profile_.valid = false;
-                    profile_.decode_h265 = LvlInitStruct<VkVideoDecodeH265ProfileInfoKHR>();
+                    profile_.decode_h265 = vku::InitStructHelper();
                 }
                 profile_.is_decode = true;
                 profile_.base.pNext = &profile_.decode_h265;
@@ -76,38 +76,38 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
         }
 
         if (profile_.is_decode) {
-            auto usage = LvlFindInChain<VkVideoDecodeUsageInfoKHR>(profile->pNext);
+            auto usage = vku::FindStructInPNextChain<VkVideoDecodeUsageInfoKHR>(profile->pNext);
             if (usage) {
                 profile_.decode_usage = *usage;
                 profile_.decode_usage.pNext = profile_.base.pNext;
                 profile_.base.pNext = &profile_.decode_usage;
             } else {
-                profile_.decode_usage = LvlInitStruct<VkVideoDecodeUsageInfoKHR>();
+                profile_.decode_usage = vku::InitStructHelper();
             }
         }
     } else {
         profile_.valid = false;
-        profile_.base = LvlInitStruct<VkVideoProfileInfoKHR>();
+        profile_.base = vku::InitStructHelper();
     }
 
     return profile_.valid;
 }
 
 void VideoProfileDesc::InitCapabilities(const ValidationStateTracker *dev_data) {
-    capabilities_.base = LvlInitStruct<VkVideoCapabilitiesKHR>();
+    capabilities_.base = vku::InitStructHelper();
     switch (profile_.base.videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
             capabilities_.base.pNext = &capabilities_.decode;
-            capabilities_.decode = LvlInitStruct<VkVideoDecodeCapabilitiesKHR>();
+            capabilities_.decode = vku::InitStructHelper();
             capabilities_.decode.pNext = &capabilities_.decode_h264;
-            capabilities_.decode_h264 = LvlInitStruct<VkVideoDecodeH264CapabilitiesKHR>();
+            capabilities_.decode_h264 = vku::InitStructHelper();
             break;
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
             capabilities_.base.pNext = &capabilities_.decode;
-            capabilities_.decode = LvlInitStruct<VkVideoDecodeCapabilitiesKHR>();
+            capabilities_.decode = vku::InitStructHelper();
             capabilities_.decode.pNext = &capabilities_.decode_h265;
-            capabilities_.decode_h265 = LvlInitStruct<VkVideoDecodeH265CapabilitiesKHR>();
+            capabilities_.decode_h265 = vku::InitStructHelper();
             break;
 
         default:
@@ -191,7 +191,7 @@ VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(IMAGE_VIE
 VideoPictureID::VideoPictureID(VideoProfileDesc const &profile, VkVideoReferenceSlotInfoKHR const &slot) {
     switch (profile.GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            auto slot_info = LvlFindInChain<VkVideoDecodeH264DpbSlotInfoKHR>(slot.pNext);
+            auto slot_info = vku::FindStructInPNextChain<VkVideoDecodeH264DpbSlotInfoKHR>(slot.pNext);
             if (slot_info && slot_info->pStdReferenceInfo) {
                 top_field = slot_info->pStdReferenceInfo->flags.top_field_flag;
                 bottom_field = slot_info->pStdReferenceInfo->flags.bottom_field_flag;
@@ -262,7 +262,7 @@ VIDEO_SESSION_STATE::MemoryBindingMap VIDEO_SESSION_STATE::GetMemoryBindings(Val
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data->device, vs, &memory_requirement_count, nullptr);
 
     std::vector<VkVideoSessionMemoryRequirementsKHR> memory_requirements(memory_requirement_count,
-                                                                         LvlInitStruct<VkVideoSessionMemoryRequirementsKHR>());
+                                                                         vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data->device, vs, &memory_requirement_count, memory_requirements.data());
 
     MemoryBindingMap memory_bindings;
@@ -282,7 +282,7 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
 
     switch (vs_state->GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            const auto decode_h264 = LvlFindInChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(createInfo.pNext);
+            const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersCreateInfoKHR>(createInfo.pNext);
             if (vsp_template) {
                 auto template_data = vsp_template->Lock();
                 data_.h264.sps = template_data->h264.sps;
@@ -297,7 +297,7 @@ VIDEO_SESSION_PARAMETERS_STATE::VIDEO_SESSION_PARAMETERS_STATE(VkVideoSessionPar
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            const auto decode_h265 = LvlFindInChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(createInfo.pNext);
+            const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersCreateInfoKHR>(createInfo.pNext);
             if (vsp_template) {
                 auto template_data = vsp_template->Lock();
                 data_.h265.vps = template_data->h265.vps;
@@ -325,7 +325,7 @@ void VIDEO_SESSION_PARAMETERS_STATE::Update(VkVideoSessionParametersUpdateInfoKH
 
     switch (vs_state->GetCodecOp()) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
-            auto add_info = LvlFindInChain<VkVideoDecodeH264SessionParametersAddInfoKHR>(info->pNext);
+            auto add_info = vku::FindStructInPNextChain<VkVideoDecodeH264SessionParametersAddInfoKHR>(info->pNext);
             if (add_info) {
                 AddDecodeH264(add_info);
             }
@@ -333,7 +333,7 @@ void VIDEO_SESSION_PARAMETERS_STATE::Update(VkVideoSessionParametersUpdateInfoKH
         }
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
-            auto add_info = LvlFindInChain<VkVideoDecodeH265SessionParametersAddInfoKHR>(info->pNext);
+            auto add_info = vku::FindStructInPNextChain<VkVideoDecodeH265SessionParametersAddInfoKHR>(info->pNext);
             if (add_info) {
                 AddDecodeH265(add_info);
             }

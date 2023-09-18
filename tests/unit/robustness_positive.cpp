@@ -24,7 +24,7 @@ TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescript
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (robustness2_features.nullDescriptor != VK_TRUE) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -37,11 +37,11 @@ TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescript
 
     VkAccelerationStructureNV top_level_as = VK_NULL_HANDLE;
 
-    VkWriteDescriptorSetAccelerationStructureNV acc = LvlInitStruct<VkWriteDescriptorSetAccelerationStructureNV>();
+    VkWriteDescriptorSetAccelerationStructureNV acc = vku::InitStructHelper();
     acc.accelerationStructureCount = 1;
     acc.pAccelerationStructures = &top_level_as;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>(&acc);
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&acc);
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -61,7 +61,7 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (!robustness2_features.nullDescriptor) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
@@ -106,7 +106,7 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
     GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness is not supported";
@@ -115,7 +115,7 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
-    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
     pipe.CreateComputePipeline();

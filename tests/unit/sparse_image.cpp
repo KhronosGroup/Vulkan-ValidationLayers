@@ -21,7 +21,7 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buf_info = vku::InitStructHelper();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 2048;
     buf_info.queueFamilyIndexCount = 0;
@@ -42,7 +42,7 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyAliased feature";
     }
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 512;
@@ -90,7 +90,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
         GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
     }
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 512;
@@ -141,7 +141,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     device_features.sparseResidency16Samples = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = 64;
@@ -185,7 +185,7 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
         GTEST_SKIP() << "Test requires unsupported SparseResidencyImage2D feature";
     }
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -213,7 +213,7 @@ TEST_F(NegativeSparseImage, ResidencyFlag) {
     image_memory_bind_info.bindCount = 1;
     image_memory_bind_info.pBinds = &image_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
@@ -234,7 +234,7 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
         GTEST_SKIP() << "No sparseBinding feature";
     }
 
-    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -258,7 +258,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
     buffer_create_info.queueFamilyIndexCount = 0;
@@ -271,7 +271,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(nullptr);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -300,7 +300,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_create_info);
 
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(nullptr);
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper(nullptr);
     mem_alloc.allocationSize = 1024;
 
     vk_testing::DeviceMemory mem;
@@ -331,7 +331,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     image_memory_bind_info.bindCount = 1;
     image_memory_bind_info.pBinds = &image_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.bufferBindCount = 1;
     bind_info.pBufferBinds = &buffer_memory_bind_info;
     bind_info.imageOpaqueBindCount = 1;
@@ -370,12 +370,12 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         GTEST_SKIP() << "Did not find memory with VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT";
     }
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.size = 1024;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(nullptr);
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -397,13 +397,13 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
-    auto buffer_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto buffer_mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
     buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
     buffer_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    auto image_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto image_mem_alloc = vku::InitStruct<VkMemoryAllocateInfo>();
     image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
@@ -431,7 +431,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_opaque_memory_bind_info.bindCount = 1;
     image_opaque_memory_bind_info.pBinds = &image_memory_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.pBufferBinds = &buffer_memory_bind_info;
     bind_info.pImageOpaqueBinds = &image_opaque_memory_bind_info;
 
@@ -519,7 +519,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     image_bind_info.bindCount = 1u;
     image_bind_info.pBinds = &image_bind;
 
-    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
     bind_info.imageBindCount = 1u;
     bind_info.pImageBinds = &image_bind_info;
 

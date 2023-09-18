@@ -200,7 +200,7 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         }
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
-            const auto *acc_info = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext);
+            const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext);
             for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                 skip |= ValidateObject(acc_info->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureKHR, true,
                                        "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
@@ -645,7 +645,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
 
     object_tracking->device_createinfo_pnext = SafePnextCopy(pCreateInfo->pNext);
     const auto *robustness2_features =
-        LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(object_tracking->device_createinfo_pnext);
+        vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(object_tracking->device_createinfo_pnext);
     object_tracking->null_descriptor_enabled = robustness2_features && robustness2_features->nullDescriptor;
 }
 

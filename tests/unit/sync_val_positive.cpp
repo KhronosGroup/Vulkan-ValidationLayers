@@ -66,14 +66,14 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_ref;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attachment;
     vk_testing::RenderPass render_pass(*m_device, rpci);
 
-    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.flags = 0;
     fbci.renderPass = render_pass;
     fbci.attachmentCount = 1;
@@ -83,7 +83,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     fbci.layers = layers;
     vk_testing::Framebuffer framebuffer(*m_device, fbci);
 
-    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer;
     rpbi.renderPass = render_pass;
     rpbi.renderArea.extent.width = width;
@@ -138,7 +138,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
 
-    auto barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    auto barrier = vku::InitStruct<VkImageMemoryBarrier>();
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -177,15 +177,15 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 10'000;
 
-    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
     vk_testing::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
@@ -195,7 +195,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     auto signaling_thread = std::thread{[&] {
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
-            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
             ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
@@ -207,7 +207,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     // Wait for each signal
     uint64_t wait_value = 1;
     while (wait_value <= max_signal_value) {
-        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        auto wait_info = vku::InitStruct<VkSemaphoreWaitInfo>();
         wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &semaphore.handle();
@@ -235,15 +235,15 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 1'000;
 
-    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
     vk_testing::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
@@ -253,7 +253,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     auto signaling_thread = std::thread{[&] {
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
-            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
             ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
@@ -284,15 +284,15 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto timeline_semaphore_features = vku::InitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     constexpr uint64_t max_signal_value = 15'000;
 
-    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
     vk_testing::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
@@ -321,7 +321,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         auto timeout_guard = timeout_helper.ThreadGuard();
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
-            auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+            auto signal_info = vku::InitStruct<VkSemaphoreSignalInfo>();
             signal_info.semaphore = semaphore;
             signal_info.value = ++last_signalled_value;
             ASSERT_VK_SUCCESS(vk::SignalSemaphore(*m_device, &signal_info));
@@ -414,7 +414,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     sync2_features.synchronization2 = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
     if (!InitSwapchain()) {
@@ -428,7 +428,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
-    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier2>();
+    auto layout_transition = vku::InitStruct<VkImageMemoryBarrier2>();
     // this creates execution dependency with submit's wait semaphore, so layout
     // transition does not start before image is acquired.
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -453,7 +453,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    auto dep_info = vku::InitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
@@ -461,18 +461,18 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
     m_commandBuffer->end();
 
-    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto wait_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     wait_info.semaphore = acquire_semaphore;
     wait_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    auto command_buffer_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    auto command_buffer_info = vku::InitStruct<VkCommandBufferSubmitInfo>();
     command_buffer_info.commandBuffer = *m_commandBuffer;
 
-    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto signal_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     signal_info.semaphore = submit_semaphore;
     signal_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    auto submit = LvlInitStruct<VkSubmitInfo2>();
+    auto submit = vku::InitStruct<VkSubmitInfo2>();
     submit.waitSemaphoreInfoCount = 1;
     submit.pWaitSemaphoreInfos = &wait_info;
     submit.commandBufferInfoCount = 1;
@@ -481,7 +481,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     submit.pSignalSemaphoreInfos = &signal_info;
     ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
 
-    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    auto present = vku::InitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 1;
     present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;
@@ -510,7 +510,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
 
-    auto layout_transition = LvlInitStruct<VkImageMemoryBarrier>();
+    auto layout_transition = vku::InitStruct<VkImageMemoryBarrier>();
     layout_transition.srcAccessMask = 0;
 
     // dstAccessMask makes accesses visible only to the device.
@@ -534,7 +534,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     m_commandBuffer->end();
 
     constexpr VkPipelineStageFlags semaphore_wait_stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    auto submit = LvlInitStruct<VkSubmitInfo>();
+    auto submit = vku::InitStruct<VkSubmitInfo>();
     submit.waitSemaphoreCount = 1;
     submit.pWaitSemaphores = &acquire_semaphore.handle();
     submit.pWaitDstStageMask = &semaphore_wait_stage;
@@ -544,7 +544,7 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     submit.pSignalSemaphores = &submit_semaphore.handle();
     ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE));
 
-    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    auto present = vku::InitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 1;
     present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;

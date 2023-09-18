@@ -130,7 +130,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo &submit = pSubmits[submit_idx];
-        const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
+        const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
@@ -167,7 +167,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         }
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
-        auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupSubmitInfo>(submit.pNext);
+        auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupSubmitInfo>(submit.pNext);
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
             for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
                 const LogObjectList objlist(queue);
@@ -198,7 +198,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
 
         bool protected_submit = false;
 
-        auto protected_submit_info = LvlFindInChain<VkProtectedSubmitInfo>(submit.pNext);
+        auto protected_submit_info = vku::FindStructInPNextChain<VkProtectedSubmitInfo>(submit.pNext);
         if (protected_submit_info) {
             protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
             if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
@@ -263,7 +263,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
         const VkSubmitInfo2KHR &submit = pSubmits[submit_idx];
-        const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
+        const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);

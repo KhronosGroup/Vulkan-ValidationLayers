@@ -44,23 +44,23 @@ TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     ahb_desc.stride = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
-    VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    VkExternalMemoryBufferCreateInfo ext_buf_info = vku::InitStructHelper();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&ext_buf_info);
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 512;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
     VkBufferObj buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
-    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>();
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
     import_ahb_Info.buffer = ahb;
 
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No valid memory type index could be found";
@@ -106,11 +106,11 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
     // Incase it hits the below driver bug, catch the false VUID error thrown from driver not creating valid AHB
     m_errorMonitor->SetUnexpectedError("VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
 
-    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
-    VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper();
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     if (ahb_fmt_props.format != VK_FORMAT_D16_UNORM) {
@@ -119,7 +119,7 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
 
     // Create a Depth/Stencil image
     VkImageObj ds_image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&ext_image_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = ahb_fmt_props.format;
@@ -136,15 +136,15 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
         GTEST_SKIP() << "Was not able to create a D16 AHB framebuffer";
     }
 
-    VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = ds_image.handle();
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
-        LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>(&memory_dedicated_info);
+        vku::InitStructHelper(&memory_dedicated_info);
     import_ahb_Info.buffer = ahb;
 
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No valid memory type index could be found";
@@ -169,10 +169,10 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    VkExternalMemoryBufferCreateInfo ext_buf_info = vku::InitStructHelper();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&ext_buf_info);
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 8192;  // greater than the 4k AHB usually are
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
@@ -184,9 +184,9 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
     // Test bind memory 2 extension
-    VkBufferMemoryRequirementsInfo2 buffer_mem_reqs2 = LvlInitStruct<VkBufferMemoryRequirementsInfo2>();
+    VkBufferMemoryRequirementsInfo2 buffer_mem_reqs2 = vku::InitStructHelper();
     buffer_mem_reqs2.buffer = buffer.handle();
-    VkMemoryRequirements2 mem_reqs2 = LvlInitStruct<VkMemoryRequirements2>();
+    VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
     vk::GetBufferMemoryRequirements2(m_device->device(), &buffer_mem_reqs2, &mem_reqs2);
 
     // Allocate an AHardwareBuffer to match the size
@@ -201,13 +201,13 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
     // Get real values
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
-    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>();
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
     import_ahb_Info.buffer = ahb;
 
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No valid memory type index could be found";
@@ -233,10 +233,10 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create VkBuffer to be exported to an AHB
-    VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    VkExternalMemoryBufferCreateInfo ext_buf_info = vku::InitStructHelper();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&ext_buf_info);
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&ext_buf_info);
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
@@ -246,10 +246,10 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
-    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper();
     export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_memory_info);
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&export_memory_info);
     memory_info.allocationSize = mem_reqs.size;
 
     bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -263,7 +263,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     // Export memory to AHB
     AHardwareBuffer *ahb = nullptr;
 
-    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
+    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = vku::InitStructHelper();
     get_ahb_info.memory = memory;
     vk::GetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
 
@@ -285,11 +285,11 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create VkImage to be exported to an AHB
-    VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper();
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     VkImageObj image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&ext_image_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -303,14 +303,14 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image.init_no_mem(*m_device, image_create_info);
 
-    VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
-    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&memory_dedicated_info);
+    VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&memory_dedicated_info);
     export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_memory_info);
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&export_memory_info);
 
     // "When allocating new memory for an image that can be exported to an Android hardware buffer, the memory’s allocationSize must
     // be zero":
@@ -328,7 +328,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     // Export memory to AHB
     AHardwareBuffer *ahb = nullptr;
 
-    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
+    VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = vku::InitStructHelper();
     get_ahb_info.memory = memory;
     vk::GetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
 
@@ -370,9 +370,9 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
         GTEST_SKIP() << "could not allocate AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420";
     }
 
-    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
 
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     // The spec says the driver must not return zero, even if a VkFormat is returned with it, some older drivers do as a driver bug
@@ -381,14 +381,14 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     }
 
     // Create an image w/ external format
-    VkExternalFormatANDROID ext_format = LvlInitStruct<VkExternalFormatANDROID>();
+    VkExternalFormatANDROID ext_format = vku::InitStructHelper();
     ext_format.externalFormat = ahb_fmt_props.externalFormat;
 
-    VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&ext_format);
+    VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper(&ext_format);
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     VkImageObj image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&ext_image_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_UNDEFINED;
@@ -402,18 +402,18 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     {
-        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
         external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
         image_info.format = image_create_info.format;
         image_info.type = image_create_info.imageType;
         image_info.tiling = image_create_info.tiling;
         image_info.usage = image_create_info.usage;
         image_info.flags = image_create_info.flags;
 
-        auto ahb_usage = LvlInitStruct<VkAndroidHardwareBufferUsageANDROID>();
-        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>(&ahb_usage);
-        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+        auto ahb_usage = vku::InitStruct<VkAndroidHardwareBufferUsageANDROID>();
+        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>(&ahb_usage);
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
 
         if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             AHardwareBuffer_release(ahb);
@@ -423,15 +423,15 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
 
     image.init_no_mem(*m_device, image_create_info);
 
-    VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
-        LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>(&memory_dedicated_info);
+        vku::InitStructHelper(&memory_dedicated_info);
     import_ahb_Info.buffer = ahb;
 
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No valid memory type index could be found";
@@ -477,9 +477,9 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
         GTEST_SKIP() << "could not allocate AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED";
     }
 
-    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
 
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     // The spec says the driver must not return zero, even if a VkFormat is returned with it, some older drivers do as a driver bug
@@ -488,14 +488,14 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     }
 
     // Create an image w/ external format
-    VkExternalFormatANDROID ext_format = LvlInitStruct<VkExternalFormatANDROID>();
+    VkExternalFormatANDROID ext_format = vku::InitStructHelper();
     ext_format.externalFormat = ahb_fmt_props.externalFormat;
 
-    VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&ext_format);
+    VkExternalMemoryImageCreateInfo ext_image_info = vku::InitStructHelper(&ext_format);
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     VkImageObj image(m_device);
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(&ext_image_info);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&ext_image_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_UNDEFINED;
@@ -508,18 +508,18 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     {
-        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        auto external_image_info = vku::InitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
         external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
         image_info.format = image_create_info.format;
         image_info.type = image_create_info.imageType;
         image_info.tiling = image_create_info.tiling;
         image_info.usage = image_create_info.usage;
         image_info.flags = image_create_info.flags;
 
-        auto ahb_usage = LvlInitStruct<VkAndroidHardwareBufferUsageANDROID>();
-        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>(&ahb_usage);
-        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+        auto ahb_usage = vku::InitStruct<VkAndroidHardwareBufferUsageANDROID>();
+        auto external_image_properties = vku::InitStruct<VkExternalImageFormatProperties>(&ahb_usage);
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>(&external_image_properties);
 
         if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             AHardwareBuffer_release(ahb);
@@ -529,15 +529,15 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
 
     image.init_no_mem(*m_device, image_create_info);
 
-    VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
     memory_dedicated_info.image = image.handle();
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
-        LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>(&memory_dedicated_info);
+        vku::InitStructHelper(&memory_dedicated_info);
     import_ahb_Info.buffer = ahb;
 
-    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No valid memory type index could be found";

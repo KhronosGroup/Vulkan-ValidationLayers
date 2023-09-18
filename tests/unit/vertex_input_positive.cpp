@@ -370,7 +370,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     subpass.pColorAttachments = attachments;
     subpass.colorAttachmentCount = 2;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 2;

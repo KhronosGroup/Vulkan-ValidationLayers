@@ -58,12 +58,12 @@ class VideoConfig {
 
     VkVideoCapabilitiesKHR* Caps() { return caps_.ptr(); }
     const VkVideoCapabilitiesKHR* Caps() const { return caps_.ptr(); }
-    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const { return LvlFindInChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext); }
+    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const { return vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext); }
     const VkVideoDecodeH264CapabilitiesKHR* DecodeCapsH264() const {
-        return LvlFindInChain<VkVideoDecodeH264CapabilitiesKHR>(caps_.pNext);
+        return vku::FindStructInPNextChain<VkVideoDecodeH264CapabilitiesKHR>(caps_.pNext);
     }
     const VkVideoDecodeH265CapabilitiesKHR* DecodeCapsH265() const {
-        return LvlFindInChain<VkVideoDecodeH265CapabilitiesKHR>(caps_.pNext);
+        return vku::FindStructInPNextChain<VkVideoDecodeH265CapabilitiesKHR>(caps_.pNext);
     }
 
     bool SupportsDecodeOutputDistinct() const {
@@ -107,7 +107,7 @@ class BitstreamBuffer {
   public:
     BitstreamBuffer(VkDeviceObj* device, const VideoConfig& config, VkDeviceSize size, bool is_protected = false)
         : device_(device), size_(size), memory_(VK_NULL_HANDLE), buffer_(VK_NULL_HANDLE) {
-        VkVideoProfileListInfoKHR profile_list = LvlInitStruct<VkVideoProfileListInfoKHR>();
+        VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
         profile_list.pProfiles = config.Profile();
 
@@ -134,7 +134,7 @@ class BitstreamBuffer {
         }
 
         {
-            VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
+            VkBufferCreateInfo create_info = vku::InitStructHelper();
             create_info.flags = is_protected ? VK_BUFFER_CREATE_PROTECTED_BIT : 0;
             create_info.pNext = &profile_list;
             create_info.size = size;
@@ -148,7 +148,7 @@ class BitstreamBuffer {
             VkMemoryRequirements mem_req;
             vk::GetBufferMemoryRequirements(device_->device(), buffer_, &mem_req);
 
-            VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+            VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, 0));
             alloc_info.allocationSize = mem_req.size;
 
@@ -189,13 +189,13 @@ class VideoPictureResource {
           memory_(VK_NULL_HANDLE),
           image_(VK_NULL_HANDLE),
           image_view_(VK_NULL_HANDLE),
-          dep_info_(LvlInitStruct<VkDependencyInfo>()),
-          barrier_(LvlInitStruct<VkImageMemoryBarrier2>()) {}
+          dep_info_(vku::InitStruct<VkDependencyInfo>()),
+          barrier_(vku::InitStruct<VkImageMemoryBarrier2>()) {}
 
     void Init(const VkVideoProfileListInfoKHR& profile_list, VkExtent2D extent, uint32_t layers,
               const VkVideoFormatPropertiesKHR& format_props, bool is_protected) {
         {
-            VkImageCreateInfo create_info = LvlInitStruct<VkImageCreateInfo>();
+            VkImageCreateInfo create_info = vku::InitStructHelper();
             create_info.flags = is_protected ? VK_IMAGE_CREATE_PROTECTED_BIT : 0;
             create_info.pNext = &profile_list;
             create_info.imageType = format_props.imageType;
@@ -216,7 +216,7 @@ class VideoPictureResource {
             VkMemoryRequirements mem_req;
             vk::GetImageMemoryRequirements(device_->device(), image_, &mem_req);
 
-            VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+            VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, 0));
             alloc_info.allocationSize = mem_req.size;
 
@@ -225,7 +225,7 @@ class VideoPictureResource {
         }
 
         {
-            VkImageViewCreateInfo create_info = LvlInitStruct<VkImageViewCreateInfo>();
+            VkImageViewCreateInfo create_info = vku::InitStructHelper();
             create_info.image = image_;
             create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
             create_info.format = format_props.format;
@@ -277,8 +277,8 @@ class VideoPictureResource {
 class VideoDecodeOutput : public VideoPictureResource {
   public:
     VideoDecodeOutput(VkDeviceObj* device, const VideoConfig& config, bool is_protected = false)
-        : VideoPictureResource(device), picture_(LvlInitStruct<VkVideoPictureResourceInfoKHR>()) {
-        VkVideoProfileListInfoKHR profile_list = LvlInitStruct<VkVideoProfileListInfoKHR>();
+        : VideoPictureResource(device), picture_(vku::InitStruct<VkVideoPictureResourceInfoKHR>()) {
+        VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
         profile_list.pProfiles = config.Profile();
 
@@ -299,7 +299,7 @@ class VideoDecodeOutput : public VideoPictureResource {
 class VideoDPB : public VideoPictureResource {
   public:
     VideoDPB(VkDeviceObj* device, const VideoConfig& config, bool is_protected = false) : VideoPictureResource(device) {
-        VkVideoProfileListInfoKHR profile_list = LvlInitStruct<VkVideoProfileListInfoKHR>();
+        VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
         profile_list.profileCount = 1;
         profile_list.pProfiles = config.Profile();
 
@@ -307,7 +307,7 @@ class VideoDPB : public VideoPictureResource {
 
         reference_pictures_.resize(config.DpbSlotCount());
         for (uint32_t i = 0; i < config.DpbSlotCount(); ++i) {
-            reference_pictures_[i] = LvlInitStruct<VkVideoPictureResourceInfoKHR>();
+            reference_pictures_[i] = vku::InitStructHelper();
             reference_pictures_[i].codedOffset = {0, 0};
             reference_pictures_[i].codedExtent = config.MaxCodedExtent();
             reference_pictures_[i].baseArrayLayer = i;
@@ -325,7 +325,7 @@ class VideoDPB : public VideoPictureResource {
 class VideoBeginCodingInfo {
   public:
     VideoBeginCodingInfo(VideoDPB* dpb, VkVideoSessionKHR session, VkVideoSessionParametersKHR session_params)
-        : dpb_(dpb), info_(LvlInitStruct<VkVideoBeginCodingInfoKHR>()), slot_resources_() {
+        : dpb_(dpb), info_(vku::InitStruct<VkVideoBeginCodingInfoKHR>()), slot_resources_() {
         info_.videoSession = session;
         info_.videoSessionParameters = session_params;
     }
@@ -338,7 +338,7 @@ class VideoBeginCodingInfo {
     }
 
     VideoBeginCodingInfo& AddResource(int32_t slot_index, const VkVideoPictureResourceInfoKHR& resource) {
-        slot_resources_.push_back(LvlInitStruct<VkVideoReferenceSlotInfoKHR>());
+        slot_resources_.push_back(vku::InitStruct<VkVideoReferenceSlotInfoKHR>());
         auto& res = slot_resources_[info_.referenceSlotCount++];
 
         res.slotIndex = slot_index;
@@ -354,7 +354,7 @@ class VideoBeginCodingInfo {
     }
 
     VideoBeginCodingInfo& InvalidateSlot(int32_t slot_index) {
-        slot_resources_.push_back(LvlInitStruct<VkVideoReferenceSlotInfoKHR>());
+        slot_resources_.push_back(vku::InitStruct<VkVideoReferenceSlotInfoKHR>());
         auto& res = slot_resources_[info_.referenceSlotCount++];
 
         res.slotIndex = slot_index;
@@ -383,7 +383,7 @@ class VideoBeginCodingInfo {
 
 class VideoCodingControlInfo {
   public:
-    VideoCodingControlInfo() : info_(LvlInitStruct<VkVideoCodingControlInfoKHR>()) {}
+    VideoCodingControlInfo() : info_(vku::InitStruct<VkVideoCodingControlInfoKHR>()) {}
 
     VideoCodingControlInfo& Reset() {
         info_.flags |= VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR;
@@ -399,7 +399,7 @@ class VideoCodingControlInfo {
 
 class VideoEndCodingInfo {
   public:
-    VideoEndCodingInfo() : info_(LvlInitStruct<VkVideoEndCodingInfoKHR>()) {}
+    VideoEndCodingInfo() : info_(vku::InitStruct<VkVideoEndCodingInfoKHR>()) {}
 
     operator const VkVideoEndCodingInfoKHR&() const { return info_; }
     VkVideoEndCodingInfoKHR* operator->() { return &info_; }
@@ -414,9 +414,9 @@ class VideoDecodeInfo {
         : output_distinct_(config.SupportsDecodeOutputDistinct()),
           codec_op_(config.Profile()->videoCodecOperation),
           dpb_(dpb),
-          info_(LvlInitStruct<VkVideoDecodeInfoKHR>()),
-          reconstructed_(LvlInitStruct<VkVideoReferenceSlotInfoKHR>()),
-          references_(dpb ? dpb->PictureCount() : 0, LvlInitStruct<VkVideoReferenceSlotInfoKHR>()) {
+          info_(vku::InitStruct<VkVideoDecodeInfoKHR>()),
+          reconstructed_(vku::InitStruct<VkVideoReferenceSlotInfoKHR>()),
+          references_(dpb ? dpb->PictureCount() : 0, vku::InitStruct<VkVideoReferenceSlotInfoKHR>()) {
         assert(output != nullptr);
         info_.srcBuffer = bitstream.Buffer();
         info_.srcBufferOffset = 0;
@@ -429,7 +429,7 @@ class VideoDecodeInfo {
 
                 codec_info_.decode_h264.slice_offsets = {0};
 
-                codec_info_.decode_h264.picture_info = LvlInitStruct<VkVideoDecodeH264PictureInfoKHR>();
+                codec_info_.decode_h264.picture_info = vku::InitStructHelper();
                 codec_info_.decode_h264.picture_info.pStdPictureInfo = &codec_info_.decode_h264.std_picture_info;
                 codec_info_.decode_h264.picture_info.sliceCount = (uint32_t)codec_info_.decode_h264.slice_offsets.size();
                 codec_info_.decode_h264.picture_info.pSliceOffsets = codec_info_.decode_h264.slice_offsets.data();
@@ -438,12 +438,12 @@ class VideoDecodeInfo {
 
                 reconstructed_.pNext = &codec_info_.decode_h264.setup_slot_info;
 
-                codec_info_.decode_h264.setup_slot_info = LvlInitStruct<VkVideoDecodeH264DpbSlotInfoKHR>();
+                codec_info_.decode_h264.setup_slot_info = vku::InitStructHelper();
                 codec_info_.decode_h264.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h264.std_setup_reference_info;
 
                 codec_info_.decode_h264.std_setup_reference_info = {};
 
-                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(), LvlInitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
+                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
                 codec_info_.decode_h264.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -457,7 +457,7 @@ class VideoDecodeInfo {
 
                 codec_info_.decode_h265.slice_segment_offsets = {0};
 
-                codec_info_.decode_h265.picture_info = LvlInitStruct<VkVideoDecodeH265PictureInfoKHR>();
+                codec_info_.decode_h265.picture_info = vku::InitStructHelper();
                 codec_info_.decode_h265.picture_info.pStdPictureInfo = &codec_info_.decode_h265.std_picture_info;
                 codec_info_.decode_h265.picture_info.sliceSegmentCount =
                     (uint32_t)codec_info_.decode_h265.slice_segment_offsets.size();
@@ -467,12 +467,12 @@ class VideoDecodeInfo {
 
                 reconstructed_.pNext = &codec_info_.decode_h265.setup_slot_info;
 
-                codec_info_.decode_h265.setup_slot_info = LvlInitStruct<VkVideoDecodeH265DpbSlotInfoKHR>();
+                codec_info_.decode_h265.setup_slot_info = vku::InitStructHelper();
                 codec_info_.decode_h265.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h265.std_setup_reference_info;
 
                 codec_info_.decode_h265.std_setup_reference_info = {};
 
-                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(), LvlInitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
+                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
                 codec_info_.decode_h265.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -898,12 +898,12 @@ class VideoContext {
         if (mem_req_count == 0) return;
 
         std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
-                                                                  LvlInitStruct<VkVideoSessionMemoryRequirementsKHR>());
+                                                                  vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
         ASSERT_VK_SUCCESS(vk.GetVideoSessionMemoryRequirementsKHR(device_->device(), session_, &mem_req_count, mem_reqs.data()));
 
-        std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, LvlInitStruct<VkBindVideoSessionMemoryInfoKHR>());
+        std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
         for (uint32_t i = 0; i < mem_req_count; ++i) {
-            VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+            VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             ASSERT_TRUE(device_->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
             alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
@@ -932,7 +932,7 @@ class VideoContext {
     }
 
     void CreateStatusQueryPool(uint32_t query_count = 1) {
-        auto create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+        auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
         create_info.pNext = config_.Profile();
         create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
         create_info.queryCount = query_count;
@@ -1080,9 +1080,9 @@ class VkVideoLayerTest : public VkLayerTest {
             GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
         }
 
-        auto prot_mem_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
-        auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&prot_mem_features);
-        auto features = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
+        auto prot_mem_features = vku::InitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+        auto sync2_features = vku::InitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&prot_mem_features);
+        auto features = vku::InitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
         vk::GetPhysicalDeviceFeatures2(gpu(), &features);
 
         if (!enable_protected_memory) {
@@ -1093,8 +1093,8 @@ class VkVideoLayerTest : public VkLayerTest {
             GTEST_SKIP() << "Test requires synchronization2.";
         }
 
-        auto prot_mem_props = LvlInitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
-        auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&prot_mem_props);
+        auto prot_mem_props = vku::InitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
+        auto props = vku::InitStruct<VkPhysicalDeviceProperties2>(&prot_mem_props);
         vk::GetPhysicalDeviceProperties2(gpu(), &props);
 
         protected_memory_enabled_ = (prot_mem_features.protectedMemory == VK_TRUE);
@@ -1113,9 +1113,9 @@ class VkVideoLayerTest : public VkLayerTest {
         uint32_t qf_count;
         vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &qf_count, nullptr);
 
-        queue_family_props_.resize(qf_count, LvlInitStruct<VkQueueFamilyProperties2>());
-        queue_family_video_props_.resize(qf_count, LvlInitStruct<VkQueueFamilyVideoPropertiesKHR>());
-        queue_family_query_result_status_props_.resize(qf_count, LvlInitStruct<VkQueueFamilyQueryResultStatusPropertiesKHR>());
+        queue_family_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyProperties2>());
+        queue_family_video_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyVideoPropertiesKHR>());
+        queue_family_query_result_status_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyQueryResultStatusPropertiesKHR>());
         for (uint32_t i = 0; i < qf_count; ++i) {
             queue_family_props_[i].pNext = &queue_family_video_props_[i];
             queue_family_video_props_[i].pNext = &queue_family_query_result_status_props_[i];
@@ -1261,11 +1261,11 @@ class VkVideoLayerTest : public VkLayerTest {
     }
 
     bool GetCodecFormats(VideoConfig& config) {
-        auto video_profiles = LvlInitStruct<VkVideoProfileListInfoKHR>();
+        auto video_profiles = vku::InitStruct<VkVideoProfileListInfoKHR>();
         video_profiles.profileCount = 1;
         video_profiles.pProfiles = config.Profile();
 
-        auto info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
+        auto info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
         info.pNext = &video_profiles;
         uint32_t count = 0;
 
@@ -1287,7 +1287,7 @@ class VkVideoLayerTest : public VkLayerTest {
                     return false;
                 }
 
-                std::vector<VkVideoFormatPropertiesKHR> pic_props(count, LvlInitStruct<VkVideoFormatPropertiesKHR>());
+                std::vector<VkVideoFormatPropertiesKHR> pic_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
                 result = vk.GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, pic_props.data());
                 if (result != VK_SUCCESS) {
                     return false;
@@ -1303,7 +1303,7 @@ class VkVideoLayerTest : public VkLayerTest {
                 if (result != VK_SUCCESS || count == 0) {
                     return false;
                 }
-                std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, LvlInitStruct<VkVideoFormatPropertiesKHR>());
+                std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
 
                 result = vk.GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, dpb_props.data());
                 if (result != VK_SUCCESS) {
@@ -1323,7 +1323,7 @@ class VkVideoLayerTest : public VkLayerTest {
                 if (result != VK_SUCCESS || count == 0) {
                     return false;
                 }
-                std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, LvlInitStruct<VkVideoFormatPropertiesKHR>());
+                std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
 
                 result = vk.GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, dpb_props.data());
                 if (result != VK_SUCCESS) {

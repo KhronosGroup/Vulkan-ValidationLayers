@@ -36,7 +36,7 @@ TEST_F(PositiveTooling, BasicUsage) {
 
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tool_properties(tool_count);
     for (uint32_t i = 0; i < tool_count; i++) {
-        tool_properties[i] = LvlInitStruct<VkPhysicalDeviceToolPropertiesEXT>();
+        tool_properties[i] = vku::InitStructHelper();
     }
 
     bool found_validation_layer = false;

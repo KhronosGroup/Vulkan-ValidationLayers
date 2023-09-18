@@ -90,13 +90,13 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state
             image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
     } else {
         command = Func::vkGetPhysicalDeviceImageFormatProperties2;
-        auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
+        auto image_format_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>();
         image_format_info.type = image_create_info.imageType;
         image_format_info.format = image_create_info.format;
         image_format_info.tiling = image_create_info.tiling;
         image_format_info.usage = image_create_info.usage;
         image_format_info.flags = image_create_info.flags;
-        auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
+        auto image_format_properties = vku::InitStruct<VkImageFormatProperties2>();
         image_properties_result =
             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
@@ -249,7 +249,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
         }
 
         VkQueueGlobalPriorityKHR global_priority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;  // Implicit default value
-        const auto *global_priority_ci = LvlFindInChain<VkDeviceQueueGlobalPriorityCreateInfoKHR>(infos[i].pNext);
+        const auto *global_priority_ci = vku::FindStructInPNextChain<VkDeviceQueueGlobalPriorityCreateInfoKHR>(infos[i].pNext);
         if (global_priority_ci) {
             global_priority = global_priority_ci->globalPriority;
         }
@@ -321,11 +321,11 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                                                error_obj.location.dot(Field::pCreateInfo));
 
         const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =
-            LvlFindInChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
 
         if (fragment_shading_rate_features) {
             const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
-                LvlFindInChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+                vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
 
             if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
@@ -344,7 +344,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             }
 
             const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
-                LvlFindInChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+                vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
 
             if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
                 if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
@@ -366,7 +366,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         }
 
         const auto *shader_image_atomic_int64_features =
-            LvlFindInChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
         if (shader_image_atomic_int64_features) {
             if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
                 !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
@@ -375,7 +375,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                                  "feature must also be enabled.");
             }
         }
-        const auto *shader_atomic_float_features = LvlFindInChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
+        const auto *shader_atomic_float_features = vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
         if (shader_atomic_float_features) {
             if (shader_atomic_float_features->sparseImageFloat32Atomics &&
                 !shader_atomic_float_features->shaderImageFloat32Atomics) {
@@ -391,7 +391,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
             }
         }
         const auto *shader_atomic_float2_features =
-            LvlFindInChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
         if (shader_atomic_float2_features) {
             if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
                 !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
@@ -401,7 +401,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                              "feature must also be enabled.");
             }
         }
-        const auto *device_group_ci = LvlFindInChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
+        const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
         if (device_group_ci) {
             for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
                 for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
@@ -464,7 +464,7 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                     "Cannot open shader validation cache at %s for reading (it may not exist yet)", validation_cache_path.c_str());
         }
 
-        VkValidationCacheCreateInfoEXT cacheCreateInfo = LvlInitStruct<VkValidationCacheCreateInfoEXT>();
+        VkValidationCacheCreateInfoEXT cacheCreateInfo = vku::InitStructHelper();
         cacheCreateInfo.initialDataSize = validation_cache_data.size();
         cacheCreateInfo.pInitialData = validation_cache_data.data();
         cacheCreateInfo.flags = 0;
@@ -599,7 +599,7 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysica
                                                                  VkImageFormatProperties2 *pImageFormatProperties,
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *copy_perf_query = LvlFindInChain<VkHostImageCopyDevicePerformanceQueryEXT>(pImageFormatProperties->pNext);
+    const auto *copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQueryEXT>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
         if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", physical_device, error_obj.location,
@@ -632,8 +632,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
 
 // Access helper functions for external modules
 VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) const {
-    auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-    auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+    auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>();
+    auto fmt_props_2 = vku::InitStruct<VkFormatProperties2>(&fmt_props_3);
 
     if (has_format_feature2) {
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);

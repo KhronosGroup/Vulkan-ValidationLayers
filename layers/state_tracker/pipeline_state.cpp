@@ -57,7 +57,7 @@ StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state
                 if (!module_state || !module_state->spirv) {
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
-                    const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
+                    const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
                     const uint32_t unique_shader_id = (csm_states) ? (*csm_states)[stage].unique_shader_id : 0;
                     if (shader_ci) {
                         // don't need to worry about GroupDecoration in GPL
@@ -325,7 +325,7 @@ static CBDynamicFlags GetGraphicsDynamicState(PIPELINE_STATE &pipe_state) {
 
 static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE &pipe_state) {
     bool result = false;
-    const auto robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
+    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
     if (!robustness_info) {
         return false;
     }
@@ -335,7 +335,7 @@ static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE &pipe
               (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
     if (!result) {
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
-            const auto stage_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(stage_ci.pNext);
+            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_ci.pNext);
             if (stage_robustness_info) {
                 result |=
                     (stage_robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
@@ -372,7 +372,7 @@ static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, PIP
 
 static bool UsesShaderModuleId(const PIPELINE_STATE &pipe_state) {
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
-        const auto module_id_info = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+        const auto module_id_info = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
         if (module_id_info && (module_id_info->identifierSize > 0)) {
             return true;
         }
@@ -662,8 +662,8 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       rp_state(rpstate),
       create_info(*pCreateInfo, rpstate, state_data),
       create_index(create_index),
-      rendering_create_info(LvlFindInChain<VkPipelineRenderingCreateInfo>(PNext())),
-      library_create_info(LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
+      rendering_create_info(vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(PNext())),
+      library_create_info(vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
       pipeline_type(VK_PIPELINE_BIND_POINT_GRAPHICS),
       create_flags(create_info.graphics.flags),

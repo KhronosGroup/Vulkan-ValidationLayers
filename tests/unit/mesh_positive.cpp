@@ -24,7 +24,7 @@ TEST_F(PositiveMesh, BasicUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (mesh_shader_features.meshShader == VK_FALSE) {
         GTEST_SKIP() << "Mesh shader feature not supported";
@@ -78,7 +78,7 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (mesh_shader_features.meshShader != VK_TRUE) {
@@ -132,7 +132,7 @@ TEST_F(PositiveMesh, PointSize) {
     }
 
     // Create a device that enables mesh_shader
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
     auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (mesh_shader_features.meshShader != VK_TRUE) {
@@ -184,7 +184,7 @@ TEST_F(PositiveMesh, TaskAndMeshShader) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Test requires (unsupported) meshShader and taskShader features, skipping test.";
@@ -192,7 +192,7 @@ TEST_F(PositiveMesh, TaskAndMeshShader) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceVulkan11Properties vulkan11_props = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
+    VkPhysicalDeviceVulkan11Properties vulkan11_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(vulkan11_props);
 
     if ((vulkan11_props.subgroupSupportedStages & VK_SHADER_STAGE_TASK_BIT_NV) == 0) {
@@ -276,7 +276,7 @@ TEST_F(PositiveMesh, MeshPerTaskNV) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Test requires (unsupported) meshShader and taskShader features, skipping test.";

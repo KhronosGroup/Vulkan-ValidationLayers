@@ -321,7 +321,7 @@ void FreePnextChain(const void *pNext) {
         out = []
         out.append('''
             #include "vk_safe_struct.h"
-            #include "vk_typemap_helper.h"
+            #include <vulkan/utility/vk_struct_helper.hpp>
             #include "utils/vk_layer_utils.h"
 
             #include <cstddef>
@@ -408,7 +408,7 @@ void FreePnextChain(const void *pNext) {
                     '    }\n',
                 # VkGraphicsPipelineCreateInfo is special case because its pointers may be non-null but ignored
                 'VkGraphicsPipelineCreateInfo' :
-                    '    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;\n'
+                    '    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;\n'
                     '    if (stageCount && in_struct->pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
@@ -625,7 +625,7 @@ void FreePnextChain(const void *pNext) {
                 # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
                 'VkGraphicsPipelineCreateInfo' :
                     '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);\n'
+                    '    const bool is_graphics_library = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);\n'
                     '    if (stageCount && copy_src.pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i = 0; i < stageCount; ++i) {\n'

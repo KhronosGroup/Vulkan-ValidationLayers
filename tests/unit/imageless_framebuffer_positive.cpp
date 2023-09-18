@@ -20,7 +20,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
+    auto imageless_features = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
     GetPhysicalDeviceFeatures2(imageless_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -40,24 +40,24 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     VkSubpassDescription subpass = {};
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &attachment_reference;
-    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rp_ci = vku::InitStruct<VkRenderPassCreateInfo>();
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass;
     rp_ci.attachmentCount = 1;
     rp_ci.pAttachments = &attachment_description;
     vk_testing::RenderPass render_pass(*m_device, rp_ci);
 
-    auto fb_attachment_image_info = LvlInitStruct<VkFramebufferAttachmentImageInfoKHR>();
+    auto fb_attachment_image_info = vku::InitStruct<VkFramebufferAttachmentImageInfoKHR>();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     fb_attachment_image_info.width = attachment_width;
     fb_attachment_image_info.height = attachment_height;
     fb_attachment_image_info.layerCount = 1;
     fb_attachment_image_info.viewFormatCount = 1;
     fb_attachment_image_info.pViewFormats = &format;
-    auto fb_attachment_ci = LvlInitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
+    auto fb_attachment_ci = vku::InitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
     fb_attachment_ci.attachmentImageInfoCount = 1;
     fb_attachment_ci.pAttachmentImageInfos = &fb_attachment_image_info;
-    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>(&fb_attachment_ci);
+    auto fb_ci = vku::InitStruct<VkFramebufferCreateInfo>(&fb_attachment_ci);
     fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
@@ -84,7 +84,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    auto imageless_framebuffer = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
+    auto imageless_framebuffer = vku::InitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
     GetPhysicalDeviceFeatures2(imageless_framebuffer);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_framebuffer));
 
@@ -106,7 +106,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rp_ci = vku::InitStruct<VkRenderPassCreateInfo>();
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass;
     rp_ci.attachmentCount = 1;
@@ -115,7 +115,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, rp_ci);
 
-    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    auto image_ci = vku::InitStruct<VkImageCreateInfo>();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = format;
@@ -132,7 +132,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     image.Init(image_ci);
     VkImageView imageView = image.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    auto framebuffer_attachment_image_info = LvlInitStruct<VkFramebufferAttachmentImageInfo>();
+    auto framebuffer_attachment_image_info = vku::InitStruct<VkFramebufferAttachmentImageInfo>();
     framebuffer_attachment_image_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     framebuffer_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebuffer_attachment_image_info.width = 32;
@@ -141,11 +141,11 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     framebuffer_attachment_image_info.viewFormatCount = 1;
     framebuffer_attachment_image_info.pViewFormats = &format;
 
-    auto framebuffer_attachments = LvlInitStruct<VkFramebufferAttachmentsCreateInfo>();
+    auto framebuffer_attachments = vku::InitStruct<VkFramebufferAttachmentsCreateInfo>();
     framebuffer_attachments.attachmentImageInfoCount = 1;
     framebuffer_attachments.pAttachmentImageInfos = &framebuffer_attachment_image_info;
 
-    auto framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>(&framebuffer_attachments);
+    auto framebuffer_ci = vku::InitStruct<VkFramebufferCreateInfo>(&framebuffer_attachments);
     framebuffer_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.attachmentCount = 1;
@@ -159,11 +159,11 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     VkClearValue clear_value = {};
     clear_value.color = {{0u, 0u, 0u, 0u}};
 
-    auto render_pass_attachment_bi = LvlInitStruct<VkRenderPassAttachmentBeginInfo>();
+    auto render_pass_attachment_bi = vku::InitStruct<VkRenderPassAttachmentBeginInfo>();
     render_pass_attachment_bi.attachmentCount = 1;
     render_pass_attachment_bi.pAttachments = &imageView;
 
-    auto render_pass_bi = LvlInitStruct<VkRenderPassBeginInfo>(&render_pass_attachment_bi);
+    auto render_pass_bi = vku::InitStruct<VkRenderPassBeginInfo>(&render_pass_attachment_bi);
     render_pass_bi.renderPass = render_pass.handle();
     render_pass_bi.framebuffer = framebuffer.handle();
     render_pass_bi.renderArea.extent = {1, 1};

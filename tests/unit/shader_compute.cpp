@@ -86,7 +86,7 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
+    auto explicit_layout_features = vku::InitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(explicit_layout_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -334,7 +334,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -378,7 +378,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -427,7 +427,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features13));
 
@@ -487,7 +487,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
+    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
     auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -662,8 +662,8 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool zero_initialize_workgroup_memory = AreRequiredExtensionsEnabled();
 
-    auto zero_initialize_work_group_memory_features = LvlInitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&zero_initialize_work_group_memory_features);
+    auto zero_initialize_work_group_memory_features = vku::InitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&zero_initialize_work_group_memory_features);
     if (zero_initialize_workgroup_memory) {
         features2.pNext = &zero_initialize_work_group_memory_features;
     }

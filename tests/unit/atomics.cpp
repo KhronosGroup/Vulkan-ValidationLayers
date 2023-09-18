@@ -330,7 +330,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -389,7 +389,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -448,7 +448,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (!features2.features.shaderInt64) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -483,14 +483,14 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 1024;
     VkBufferObj buffer(*m_device, buffer_ci);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R64_UINT;
@@ -527,8 +527,8 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
-    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(&mesh_shader_features);
+    auto mesh_shader_features = vku::InitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    auto image_atomic_int64_features = vku::InitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(&mesh_shader_features);
     auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
@@ -865,8 +865,8 @@ TEST_F(NegativeAtomic, Float2) {
     }
 
     // Still check for proper 16-bit storage/float support for most tests
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
-    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
+    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
+    auto storage_16_bit_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
     auto features2 = GetPhysicalDeviceFeatures2(storage_16_bit_features);
 
     const bool support_16_bit =
@@ -1175,10 +1175,10 @@ TEST_F(NegativeAtomic, Float2WidthMismatch) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();  // need maintenance4
-    auto atomic_float2_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(&features13);
-    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&atomic_float2_features);
-    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
+    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();  // need maintenance4
+    auto atomic_float2_features = vku::InitStruct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(&features13);
+    auto float16int8_features = vku::InitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&atomic_float2_features);
+    auto storage_16_bit_features = vku::InitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
     GetPhysicalDeviceFeatures2(storage_16_bit_features);
     if (!float16int8_features.shaderFloat16 || !storage_16_bit_features.storageBuffer16BitAccess ||
         !atomic_float2_features.shaderBufferFloat16AtomicMinMax) {
@@ -1243,7 +1243,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto atomic_float_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
+    auto atomic_float_features = vku::InitStruct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -1283,7 +1283,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
 
     VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
-    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = buffer.handle();
     bvci.format = buffer_view_format;
     bvci.range = VK_WHOLE_SIZE;

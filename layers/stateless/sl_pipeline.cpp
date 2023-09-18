@@ -103,7 +103,7 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipeline
     bool skip = false;
 
     const auto *required_subgroup_size_features =
-        LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(pCreateInfo->pNext);
+        vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(pCreateInfo->pNext);
 
     if (required_subgroup_size_features) {
         if ((pCreateInfo->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0) {
@@ -400,7 +400,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             bool has_pre_raster_state = true;
             // Create a copy of create_info and set non-included sub-state to null
             auto create_info = pCreateInfos[i];
-            const auto *graphics_lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+            const auto *graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
             if (graphics_lib_info) {
                 if (!(graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT)) {
                     create_info.pVertexInputState = nullptr;
@@ -439,7 +439,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
             if (!create_info.renderPass) {
                 if (create_info.pColorBlendState && create_info.pMultisampleState) {
-                    const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
+                    const auto rendering_struct = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
                     // Pipeline has fragment output state
                     if (rendering_struct) {
                         color_attachment_count = rendering_struct->colorAttachmentCount;
@@ -501,7 +501,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
 
                     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-                    auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
+                    auto attachment_sample_count_info = vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
                     if (attachment_sample_count_info && attachment_sample_count_info->pColorAttachmentSamples) {
                         color_attachment_count = attachment_sample_count_info->colorAttachmentCount;
 
@@ -613,7 +613,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     "is VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV  without support for version 2 of VK_NV_scissor_exclusive.");
             }
 
-            auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
+            auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
             if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0 &&
                                                  feedback_struct->pipelineStageCreationFeedbackCount != create_info.stageCount)) {
                 skip |=
@@ -795,17 +795,17 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     skip |= ValidatePipelineViewportStateCreateInfo(*create_info.pViewportState, i, viewport_loc);
 
                     const auto *exclusive_scissor_struct =
-                        LvlFindInChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(viewport_state.pNext);
                     const auto *shading_rate_image_struct =
-                        LvlFindInChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state.pNext);
                     const auto *coarse_sample_order_struct =
-                        LvlFindInChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(viewport_state.pNext);
                     const auto *vp_swizzle_struct =
-                        LvlFindInChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state.pNext);
                     const auto *vp_w_scaling_struct =
-                        LvlFindInChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state.pNext);
                     const auto *depth_clip_control_struct =
-                        LvlFindInChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
+                        vku::FindStructInPNextChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
 
                     if (!physical_device_features.multiViewport) {
                         if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
@@ -1088,7 +1088,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
 
                     if (depth_clip_control_struct) {
                         const auto *depth_clip_control_features =
-                            LvlFindInChain<VkPhysicalDeviceDepthClipControlFeaturesEXT>(device_createinfo_pnext);
+                            vku::FindStructInPNextChain<VkPhysicalDeviceDepthClipControlFeaturesEXT>(device_createinfo_pnext);
                         const bool enabled_depth_clip_control =
                             depth_clip_control_features && depth_clip_control_features->depthClipControl;
                         if (depth_clip_control_struct->negativeOneToOne && !enabled_depth_clip_control) {
@@ -1156,7 +1156,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     if ((create_info.pDepthStencilState->flags &
                          VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) != 0) {
                         const auto *rasterization_order_attachment_access_feature =
-                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                            vku::FindStructInPNextChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
                         const bool rasterization_order_depth_attachment_access_feature_enabled =
                             rasterization_order_attachment_access_feature &&
                             rasterization_order_attachment_access_feature->rasterizationOrderDepthAttachmentAccess == VK_TRUE;
@@ -1183,7 +1183,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     if ((create_info.pDepthStencilState->flags &
                          VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) != 0) {
                         const auto *rasterization_order_attachment_access_feature =
-                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                            vku::FindStructInPNextChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
                         const bool rasterization_order_stencil_attachment_access_feature_enabled =
                             rasterization_order_attachment_access_feature &&
                             rasterization_order_attachment_access_feature->rasterizationOrderStencilAttachmentAccess == VK_TRUE;
@@ -1216,7 +1216,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     if ((color_blend_state.flags &
                          VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) != 0) {
                         const auto *rasterization_order_attachment_access_feature =
-                            LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
+                            vku::FindStructInPNextChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
                         const bool rasterization_order_color_attachment_access_feature_enabled =
                             rasterization_order_attachment_access_feature &&
                             rasterization_order_attachment_access_feature->rasterizationOrderColorAttachmentAccess == VK_TRUE;
@@ -1374,7 +1374,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                               kVUIDUndefined, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
                     }
 
-                    auto color_write = LvlFindInChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state.pNext);
+                    auto color_write = vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state.pNext);
                     if (color_write && (color_write->attachmentCount != color_blend_state.attachmentCount) && dynamic_not_set) {
                         skip |= LogError("VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608", device,
                                          color_loc.pNext(Struct::VkPipelineColorWriteCreateInfoEXT, Field::attachmentCount),
@@ -1432,7 +1432,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 }
 
                 const auto *line_state =
-                    LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
+                    vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
                 const bool dynamic_line_raster_mode =
                     vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
                 const bool dynamic_line_stipple_enable = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
@@ -1477,7 +1477,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                         }
 
                         const auto *line_features =
-                            LvlFindInChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
+                            vku::FindStructInPNextChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
                             (!line_features || !line_features->rectangularLines)) {
                             skip |= LogError(
@@ -1608,7 +1608,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         skip |= ValidateString(create_info_loc.dot(Field::stage).dot(Field::pName),
                                "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
-        auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfo>(pCreateInfos[i].pNext);
+        auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(pCreateInfos[i].pNext);
         if (feedback_struct) {
             const uint32_t feedback_count = feedback_struct->pipelineStageCreationFeedbackCount;
             if ((feedback_count != 0) && (feedback_count != 1)) {

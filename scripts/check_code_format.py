@@ -20,7 +20,7 @@
 #   -- clang-format errors in the PR source code
 #   -- out-of-date copyrights in PR source files
 #   -- improperly formatted commit messages (using the function above)
-#   -- assigning stype instead of using LvlInitStruct
+#   -- assigning stype instead of using vku::InitStruct
 #
 # Notes:
 #    Exits with non 0 exit code if formatting is needed.
@@ -187,7 +187,7 @@ def VerifyCommitMessageFormat(commit, target_files):
 
 #
 #
-# Check for test code assigning sType instead of using LvlInitStruct in this PR/Branch
+# Check for test code assigning sType instead of using vku::InitStruc in this PR/Branch
 def VerifyTypeAssign(commit, target_files):
     retval = 0
     target_refspec = f'{commit}^...{commit}'
@@ -209,8 +209,8 @@ def VerifyTypeAssign(commit, target_files):
                 if off_regex.search(line, re.IGNORECASE):
                     checking = False
                 elif stype_regex.search(line):
-                    CPrint('ERR_MSG', "Test assigning sType instead of using LvlInitStruct")
-                    CPrint('ERR_MSG', "If this is a case where LvlInitStruct cannot be used, //stype-check off can be used to turn off sType checking")
+                    CPrint('ERR_MSG', "Test assigning sType instead of using vku::InitStruct")
+                    CPrint('ERR_MSG', "If this is a case where vku::InitStruct cannot be used, //stype-check off can be used to turn off sType checking")
                     CPrint('CONTENT', "     '" + line + "'\n")
                     retval = 1
             else:

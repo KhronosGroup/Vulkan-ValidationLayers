@@ -374,11 +374,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vlGetLayerSettingValues(layer_setting_set, SETTING_CUSTOM_STYPE_LIST, custom_stype_info);
     }
 
-    const auto *validation_features_ext = LvlFindInChain<VkValidationFeaturesEXT>(settings_data->create_info);
+    const auto *validation_features_ext = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(settings_data->create_info);
     if (validation_features_ext) {
         SetValidationFeatures(settings_data->disables, settings_data->enables, validation_features_ext);
     }
-    const auto *validation_flags_ext = LvlFindInChain<VkValidationFlagsEXT>(settings_data->create_info);
+    const auto *validation_flags_ext = vku::FindStructInPNextChain<VkValidationFlagsEXT>(settings_data->create_info);
     if (validation_flags_ext) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }

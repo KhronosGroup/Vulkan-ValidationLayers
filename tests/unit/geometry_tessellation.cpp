@@ -32,13 +32,13 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     // The sacrificial device object
     VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
 
-    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
 
     VkCommandPool command_pool;
     vk::CreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
 
-    VkCommandBufferAllocateInfo cmd = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    VkCommandBufferAllocateInfo cmd = vku::InitStructHelper();
     cmd.commandPool = command_pool;
     cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd.commandBufferCount = 1;
@@ -48,11 +48,11 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     ASSERT_VK_SUCCESS(err);
 
     VkEvent event;
-    VkEventCreateInfo evci = LvlInitStruct<VkEventCreateInfo>();
+    VkEventCreateInfo evci = vku::InitStructHelper();
     VkResult result = vk::CreateEvent(test_device.handle(), &evci, NULL, &event);
     ASSERT_VK_SUCCESS(result);
 
-    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     vk::BeginCommandBuffer(cmd_buffer, &cbbi);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-04090");
     vk::CmdSetEvent(cmd_buffer, event, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT);
@@ -470,12 +470,12 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vku::InitStructHelper();
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineTessellationStateCreateInfo tessInfo = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
+        VkPipelineTessellationStateCreateInfo tessInfo = vku::InitStructHelper();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
@@ -588,12 +588,12 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = vku::InitStructHelper();
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineTessellationStateCreateInfo tessInfo = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
+        VkPipelineTessellationStateCreateInfo tessInfo = vku::InitStructHelper();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
@@ -970,7 +970,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
         ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         ds_type_count.descriptorCount = 1;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
         ds_pool_ci.poolSizeCount = 1;
         ds_pool_ci.pPoolSizes = &ds_type_count;
     vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
@@ -982,7 +982,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
         dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
         dsl_binding.pImmutableSamplers = NULL;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
         ds_layout_ci.bindingCount = 1;
         ds_layout_ci.pBindings = &dsl_binding;
 
@@ -993,7 +993,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
 VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     ASSERT_VK_SUCCESS(err);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.pNext = NULL;
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
@@ -1008,23 +1008,23 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     VkShaderObj tc(this,kVertexMinimalGlsl,VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderObj te(this,kVertexMinimalGlsl,VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
-    shaderStages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    shaderStages[0] = vku::InitStructHelper();
     shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
     shaderStages[0].shader = vs.handle();
-    shaderStages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    shaderStages[1] = vku::InitStructHelper();
     shaderStages[1].stage  = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     shaderStages[1].shader = tc.handle();
-    shaderStages[2] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    shaderStages[2] = vku::InitStructHelper();
     shaderStages[2].stage  = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     shaderStages[2].shader = te.handle();
 
-    VkPipelineInputAssemblyStateCreateInfo iaCI = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    VkPipelineInputAssemblyStateCreateInfo iaCI = vku::InitStructHelper();
         iaCI.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 
-    VkPipelineTessellationStateCreateInfo tsCI = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
+    VkPipelineTessellationStateCreateInfo tsCI = vku::InitStructHelper();
         tsCI.patchControlPoints = 0; // This will cause an error
 
-    VkGraphicsPipelineCreateInfo gp_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    VkGraphicsPipelineCreateInfo gp_ci = vku::InitStructHelper();
         gp_ci.stageCount = 3;
         gp_ci.pStages = shaderStages;
         gp_ci.pVertexInputState = NULL;
@@ -1039,7 +1039,7 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
         gp_ci.layout = pipeline_layout.handle();
         gp_ci.renderPass = renderPass();
 
-    VkPipelineCacheCreateInfo pc_ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
+    VkPipelineCacheCreateInfo pc_ci = vku::InitStructHelper();
         pc_ci.initialSize = 0;
         pc_ci.initialData = 0;
         pc_ci.maxSize = 0;

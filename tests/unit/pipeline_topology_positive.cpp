@@ -189,7 +189,7 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
-    auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    auto maint4features = vku::InitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
     GetPhysicalDeviceFeatures2(maint4features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maint4features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -341,7 +341,7 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
 
     const VkPipelineLayoutObj pipeline_layout(&test_device);
 
-    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
+    VkPipelineRasterizationStateCreateInfo rs_ci = vku::InitStructHelper();
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = false;
 
@@ -440,7 +440,7 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.CreateGraphicsPipeline();
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
     rpbi.renderPass = m_renderPass;
     rpbi.framebuffer = m_framebuffer;
     rpbi.renderArea.offset.x = 0;
@@ -474,7 +474,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
 
     if (!extended_dynamic_state_features.extendedDynamicState) {
@@ -526,7 +526,7 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
@@ -535,7 +535,7 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    auto dynamic_state_3_props = vku::InitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
     GetPhysicalDeviceProperties2(dynamic_state_3_props);
     if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
@@ -550,7 +550,7 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY;
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    auto dyn_state_ci = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
 
@@ -576,7 +576,7 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
         GTEST_SKIP() << "At least Vulkan 1.1 is required";
     }
 
-    auto maintenance5_features = LvlInitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
+    auto maintenance5_features = vku::InitStruct<VkPhysicalDeviceMaintenance5FeaturesKHR>();
     GetPhysicalDeviceFeatures2(maintenance5_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance5_features));
 

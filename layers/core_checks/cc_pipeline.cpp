@@ -169,7 +169,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 
     // vkGetPipelineExecutablePropertiesKHR will not have struct to validate further
     if (pExecutableInfo) {
-        auto pi = LvlInitStruct<VkPipelineInfoKHR>();
+        auto pi = vku::InitStruct<VkPipelineInfoKHR>();
         pi.pipeline = pExecutableInfo->pipeline;
 
         // We could probably cache this instead of fetching it every time
@@ -281,11 +281,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 const auto &last_bound = cb_state->lastBound[lvl_bind_point];
                 if (last_bound.pipeline_state) {
                     auto last_bound_provoking_vertex_state_ci =
-                        LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
+                        vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
                             last_bound.pipeline_state->RasterizationState()->pNext);
 
                     auto current_provoking_vertex_state_ci =
-                        LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
+                        vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
                             pipeline_state.RasterizationState()->pNext);
 
                     if (last_bound_provoking_vertex_state_ci && !current_provoking_vertex_state_ci) {
@@ -321,11 +321,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
             if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
                 const auto *multisample_state = pipeline_state.MultisampleState();
-                const auto *sample_locations = LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
+                const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
                 if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
                     !pipeline_state.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                     const auto *sample_locations_begin_info =
-                        LvlFindInChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->active_render_pass_begin_info.pNext);
+                        vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->active_render_pass_begin_info.pNext);
                     bool found = false;
                     if (sample_locations_begin_info) {
                         for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
@@ -598,8 +598,8 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline, const Location &loc) const {
     bool skip = false;
     for (const auto &stage_ci : pipeline.shader_stages_ci) {
-        const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
-        const auto module_create_info = LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
+        const auto module_identifier = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+        const auto module_create_info = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
         if (module_identifier) {
             if (module_identifier->identifierSize > 0) {
                 if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {

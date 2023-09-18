@@ -61,7 +61,6 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.command_validation_generator import CommandValidationOutputGenerator
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
-    from generators.typemap_helper_generator import TypemapHelperOutputGenerator
     from generators.object_types_generator import ObjectTypesOutputGenerator
     from generators.safe_struct_generator import SafeStructOutputGenerator
     from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
@@ -193,10 +192,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ApiVersionOutputGenerator,
             'genCombined': True,
         },
-        'vk_typemap_helper.h' : {
-            'generator' : TypemapHelperOutputGenerator,
-            'genCombined': True,
-        },
+
         'chassis.h' : {
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,

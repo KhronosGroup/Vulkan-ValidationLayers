@@ -23,7 +23,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
@@ -35,23 +35,23 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
-    VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
     stage_create_info.module = chit_shader.handle();
     stage_create_info.pName = "main";
 
-    VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
     group_create_info.generalShader = VK_SHADER_UNUSED_KHR;
     group_create_info.closestHitShader = 0;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = LvlInitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = vku::InitStructHelper();
     interface_ci.maxPipelineRayHitAttributeSize = 4;
     interface_ci.maxPipelineRayPayloadSize = 4;
 
-    VkRayTracingPipelineCreateInfoKHR library_pipeline = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    VkRayTracingPipelineCreateInfoKHR library_pipeline = vku::InitStructHelper();
     library_pipeline.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     library_pipeline.stageCount = 1;
     library_pipeline.pStages = &stage_create_info;
@@ -63,37 +63,37 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     VkPipeline library = VK_NULL_HANDLE;
     vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
 
-    VkPipelineLibraryCreateInfoKHR library_info_one = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    VkPipelineLibraryCreateInfoKHR library_info_one = vku::InitStructHelper();
     library_info_one.libraryCount = 1;
     library_info_one.pLibraries = &library;
 
     VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
-    stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    stage_create_infos[0] = vku::InitStructHelper();
     stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_infos[0].module = rgen_shader.handle();
     stage_create_infos[0].pName = "main";
 
-    stage_create_infos[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    stage_create_infos[1] = vku::InitStructHelper();
     stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
     stage_create_infos[1].module = chit_shader.handle();
     stage_create_infos[1].pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
-    group_create_infos[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    group_create_infos[0] = vku::InitStructHelper();
     group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     group_create_infos[0].generalShader = 0;
     group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
     group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    group_create_infos[1] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    group_create_infos[1] = vku::InitStructHelper();
     group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
     group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
     group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to the closest hit shader from the library
     group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
     pipeline_ci.pLibraryInfo = &library_info_one;
     pipeline_ci.stageCount = 2;
     pipeline_ci.pStages = stage_create_infos;
@@ -122,8 +122,8 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
-    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&features13);
+    auto features13 = vku::InitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto ray_tracing_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&features13);
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
@@ -133,23 +133,23 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
-    VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
     stage_create_info.module = chit_shader.handle();
     stage_create_info.pName = "main";
 
-    VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
     group_create_info.generalShader = VK_SHADER_UNUSED_KHR;
     group_create_info.closestHitShader = 0;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = LvlInitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = vku::InitStructHelper();
     interface_ci.maxPipelineRayHitAttributeSize = 4;
     interface_ci.maxPipelineRayPayloadSize = 4;
 
-    VkRayTracingPipelineCreateInfoKHR library_pipeline = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    VkRayTracingPipelineCreateInfoKHR library_pipeline = vku::InitStructHelper();
     library_pipeline.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     library_pipeline.stageCount = 1;
     library_pipeline.pStages = &stage_create_info;
@@ -170,7 +170,7 @@ TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    auto rtnv_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+    auto rtnv_props = vku::InitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
     GetPhysicalDeviceProperties2(rtnv_props);
     if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
         GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";

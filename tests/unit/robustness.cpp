@@ -31,7 +31,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -43,7 +43,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -55,7 +55,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -67,7 +67,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -96,7 +96,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
     pipe.InitState();
     pipe.LateBindPipelineInfo();
 
-    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
     pipe.cp_ci_.stage.pNext = &pipeline_robustness_info;
 
@@ -119,9 +119,9 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
+    auto shader_cache_control_features = vku::InitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
     auto shader_module_id_features =
-        LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
+        vku::InitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
     GetPhysicalDeviceFeatures2(shader_module_id_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &shader_module_id_features));
 
@@ -130,15 +130,15 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
     pipe.InitState();
     pipe.LateBindPipelineInfo();
 
-    auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
+    auto sm_id_create_info = vku::InitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+    auto get_identifier = vku::InitStruct<VkShaderModuleIdentifierEXT>();
     vk::GetShaderModuleIdentifierEXT(device(), cs.handle(), &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 
-    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>(&sm_id_create_info);
+    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>(&sm_id_create_info);
     pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
     pipe.cp_ci_.stage.module = VK_NULL_HANDLE;
     pipe.cp_ci_.stage.pNext = &pipeline_robustness_info;
@@ -167,7 +167,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
     }
 
     if (IsExtensionsEnabled(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
-        auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+        auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
         GetPhysicalDeviceFeatures2(robustness2_features);
 
         if (robustness2_features.robustBufferAccess2) {
@@ -175,7 +175,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
         }
     }
 
-    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
 
     if (!pipeline_robustness_features.pipelineRobustness) {
@@ -187,7 +187,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -199,7 +199,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -211,7 +211,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.InitState();
-        auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+        auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
         pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT;
         pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -239,7 +239,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsuppor
     }
 
     if (IsExtensionsEnabled(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
-        auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+        auto robustness2_features = vku::InitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
         GetPhysicalDeviceFeatures2(robustness2_features);
 
         if (robustness2_features.robustImageAccess2) {
@@ -247,7 +247,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsuppor
         }
     }
 
-    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
 
     if (!pipeline_robustness_features.pipelineRobustness) {
@@ -258,7 +258,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsuppor
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
-    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
 
@@ -279,7 +279,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessRobustImageAccessNotExposed) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    auto pipeline_robustness_features = vku::InitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
     GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness is not supported";
@@ -291,7 +291,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessRobustImageAccessNotExposed) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitState();
-    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = vku::InitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
 

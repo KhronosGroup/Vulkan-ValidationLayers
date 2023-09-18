@@ -706,7 +706,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     m_errorMonitor->VerifyFound();
 
     constexpr int semaphore_warn_limit = 12;
-    const auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    const auto semaphore_ci = vku::InitStruct<VkSemaphoreCreateInfo>();
     std::vector<vk_testing::Semaphore> test_semaphores(semaphore_warn_limit);
     for (int i = 0; i < semaphore_warn_limit - 1; ++i) {
         test_semaphores[i].init(*m_device, semaphore_ci);
@@ -742,10 +742,10 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceInfo iinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    VkCommandBufferInheritanceInfo iinfo = vku::InitStructHelper();
     iinfo.renderPass = m_renderPassBeginInfo.renderPass;
 
-    VkCommandBufferBeginInfo binfo = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo binfo = vku::InitStructHelper();
     binfo.pInheritanceInfo = &iinfo;
     binfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     // record a secondary command buffer

@@ -79,7 +79,7 @@ class PIPELINE_STATE : public BASE_NODE {
             bool use_depth_stencil = false;
 
             if (ci.renderPass == VK_NULL_HANDLE) {
-                auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(ci.pNext);
+                auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(ci.pNext);
                 if (dynamic_rendering) {
                     use_color = (dynamic_rendering->colorAttachmentCount > 0);
                     use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
@@ -467,7 +467,7 @@ class PIPELINE_STATE : public BASE_NODE {
     static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
         // If this is an executable pipeline created from linking graphics libraries, we need to find the pre-raster library to
         // check if rasterization is enabled
-        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
         if (link_info) {
             const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
             for (const auto handle : libs) {
@@ -483,7 +483,7 @@ class PIPELINE_STATE : public BASE_NODE {
         }
 
         // Check if rasterization is enabled if this is a graphics library (only known in pre-raster libraries)
-        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (lib_info) {
             if (lib_info && (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
                 return EnablesRasterizationStates(create_info);
@@ -503,7 +503,7 @@ class PIPELINE_STATE : public BASE_NODE {
         VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
 
         // Check linked libraries
-        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
         if (link_info) {
             auto state_tracker = dynamic_cast<const ValidationStateTracker *>(vo);
             if (state_tracker) {
@@ -516,7 +516,7 @@ class PIPELINE_STATE : public BASE_NODE {
         }
 
         // Check if this is a graphics library
-        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (lib_info) {
             current_state |= lib_info->flags;
         }
@@ -535,11 +535,11 @@ class PIPELINE_STATE : public BASE_NODE {
         constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
         VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
 
-        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
         // Cannot check linked library state in stateless VO
 
         // Check if this is a graphics library
-        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
         if (lib_info) {
             current_state |= lib_info->flags;
         }

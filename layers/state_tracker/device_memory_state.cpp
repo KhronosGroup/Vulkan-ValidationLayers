@@ -26,7 +26,7 @@ using DeviceMemoryState = BindableMemoryTracker::DeviceMemoryState;
 // It is allowed to export memory into the handles of different types,
 // that's why we use set of flags (VkExternalMemoryHandleTypeFlags)
 static VkExternalMemoryHandleTypeFlags GetExportHandleTypes(const VkMemoryAllocateInfo *p_alloc_info) {
-    auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(p_alloc_info->pNext);
+    auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(p_alloc_info->pNext);
     return export_info ? export_info->handleTypes : 0;
 }
 
@@ -34,23 +34,23 @@ static VkExternalMemoryHandleTypeFlags GetExportHandleTypes(const VkMemoryAlloca
 // Since FlagBits-type cannot have a value of 0, we use std::optional to indicate the presense of an import operation.
 static std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    auto win32_import = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(p_alloc_info->pNext);
+    auto win32_import = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(p_alloc_info->pNext);
     if (win32_import) {
         return win32_import->handleType;
     }
 #endif
-    auto fd_import = LvlFindInChain<VkImportMemoryFdInfoKHR>(p_alloc_info->pNext);
+    auto fd_import = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(p_alloc_info->pNext);
     if (fd_import) {
         return fd_import->handleType;
     }
-    auto host_pointer_import = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(p_alloc_info->pNext);
+    auto host_pointer_import = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(p_alloc_info->pNext);
     if (host_pointer_import) {
         return host_pointer_import->handleType;
     }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     // AHB Import doesn't have handle in the pNext struct
     // It should be assumed that all imported AHB can only have the same, single handleType
-    auto ahb_import = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(p_alloc_info->pNext);
+    auto ahb_import = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(p_alloc_info->pNext);
     if ((ahb_import) && (ahb_import->buffer != nullptr)) {
         return VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
@@ -60,7 +60,7 @@ static std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(con
 
 static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap,
                             uint32_t physical_device_count) {
-    auto alloc_flags = LvlFindInChain<VkMemoryAllocateFlagsInfo>(p_alloc_info->pNext);
+    auto alloc_flags = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(p_alloc_info->pNext);
     if (alloc_flags && (alloc_flags->flags & VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT)) {
         auto dev_mask = alloc_flags->deviceMask;
         return ((dev_mask != 0) && (dev_mask & (dev_mask - 1))) != 0;
@@ -73,13 +73,13 @@ static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMe
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
     bool retval = false;
-    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
         if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT) {
             retval = true;
             break;
         }
-        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
     return retval;
 }

@@ -134,7 +134,7 @@ class ViewportInheritanceTestData {
 
     void CreatePipelineLayout() noexcept {
         assert(!m_pipelineLayout);
-        VkPipelineLayoutCreateInfo info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        VkPipelineLayoutCreateInfo info = vku::InitStructHelper();
         VkResult result = vk::CreatePipelineLayout(m_device, &info, nullptr, &m_pipelineLayout);
         if (result != VK_SUCCESS) m_failureReason = "Could not create pipeline layout";
     }
@@ -142,7 +142,7 @@ class ViewportInheritanceTestData {
     void CreateShaderStages() noexcept {
         VkShaderModuleCreateInfo vertex_info = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, nullptr, 0, sizeof kVertexSpirV,
                                                 kVertexSpirV};
-        m_shaderStages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        m_shaderStages[0] = vku::InitStructHelper();
         m_shaderStages[0].flags = 0;
         m_shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
         VkResult result = vk::CreateShaderModule(m_device, &vertex_info, nullptr, &m_shaderStages[0].module);
@@ -155,7 +155,7 @@ class ViewportInheritanceTestData {
 
         VkShaderModuleCreateInfo fragment_info = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, nullptr, 0, sizeof kFragmentSpirV,
                                                   kFragmentSpirV};
-        m_shaderStages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        m_shaderStages[1] = vku::InitStructHelper();
         m_shaderStages[1].flags = 0;
         m_shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         result = vk::CreateShaderModule(m_device, &fragment_info, nullptr, &m_shaderStages[1].module);
@@ -197,10 +197,10 @@ class ViewportInheritanceTestData {
     static bool InitState(VkRenderFramework* p_framework, AddDeviceExtension add_device_extension, const char** pp_reason,
                           bool inheritedViewportScissor2D, bool extended_dynamic_state_multi_viewport,
                           bool disable_multi_viewport = false) {
-        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext = vku::InitStructHelper();
         VkPhysicalDeviceInheritedViewportScissorFeaturesNV nv =
-            LvlInitStruct<VkPhysicalDeviceInheritedViewportScissorFeaturesNV>(&ext);
-        VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&nv);
+            vku::InitStructHelper(&ext);
+        VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&nv);
         VkPhysicalDevice gpu = p_framework->gpu();
 
         // Enable extended dynamic state if requested.
@@ -342,14 +342,14 @@ class ViewportInheritanceTestData {
 
     // Begin recording the primary command buffer.
     VkResult BeginPrimaryCommandBuffer(VkCommandBuffer cmd) const {
-        VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
+        VkCommandBufferBeginInfo info = vku::InitStructHelper();
         return vk::BeginCommandBuffer(cmd, &info);
     }
 
     // Begin the render pass, with subpass contents provided by secondary command buffers.
     void BeginRenderPass(VkCommandBuffer cmd) const {
         VkRenderPassBeginInfo info =
-            LvlInitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
+            vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
         vk::CmdBeginRenderPass(cmd, &info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     }
 
@@ -931,7 +931,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto discard_rect_props = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    auto discard_rect_props = vku::InitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
     GetPhysicalDeviceProperties2(discard_rect_props);
     if (discard_rect_props.maxDiscardRectangles < 1) {
         GTEST_SKIP() << "maxDiscardRectangles property is less than 1.";
@@ -958,26 +958,26 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     }
 
     VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor =
-        LvlInitStruct<VkCommandBufferInheritanceViewportScissorInfoNV>();
+        vku::InitStructHelper();
     viewport_scissor.viewportScissor2D = VK_TRUE;
     viewport_scissor.viewportDepthCount = 1;
     viewport_scissor.pViewportDepths = test_data.kViewportArray;
 
-    VkCommandBufferInheritanceInfo cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>(&viewport_scissor);
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper(&viewport_scissor);
     cbii.renderPass = m_renderPass;
 
-    VkCommandBufferBeginInfo cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     cbbi.pInheritanceInfo = &cbii;
 
     VkRect2D discard_rectangle = {};
     VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state =
-        LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+        vku::InitStructHelper();
     discard_rectangle_state.discardRectangleCount = 1;
     discard_rectangle_state.pDiscardRectangles = &discard_rectangle;
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
     dyn_state_ci.dynamicStateCount = 2;
     dyn_state_ci.pDynamicStates = dyn_states;
 
@@ -1056,7 +1056,7 @@ const VkPipelineMultisampleStateCreateInfo ViewportInheritanceTestData::kMultisa
 };
 
 const VkPipelineDepthStencilStateCreateInfo ViewportInheritanceTestData::kDepthStencilState =
-    LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    vku::InitStructHelper();
 
 const VkPipelineColorBlendAttachmentState ViewportInheritanceTestData::kBlendAttachmentState = {
     VK_FALSE,

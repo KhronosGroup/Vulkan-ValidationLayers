@@ -12847,25 +12847,25 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
                                         GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext",
                                         "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::srcStageMask), "VkPipelineStageFlagBits",
                                           AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask,
                                           kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::dstStageMask), "VkPipelineStageFlagBits",
                                           AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask,
                                           kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::srcAccessMask), "VkAccessFlagBits", AllVkAccessFlagBits,
                                           pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags,
                                           "VUID-VkSubpassDependency2-srcAccessMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::dstAccessMask), "VkAccessFlagBits", AllVkAccessFlagBits,
                                           pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags,
                                           "VUID-VkSubpassDependency2-dstAccessMask-parameter");
@@ -17611,25 +17611,25 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(VkDevice device, c
                                         GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext",
                                         "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::srcStageMask), "VkPipelineStageFlagBits",
                                           AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask,
                                           kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::dstStageMask), "VkPipelineStageFlagBits",
                                           AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask,
                                           kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::srcAccessMask), "VkAccessFlagBits", AllVkAccessFlagBits,
                                           pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags,
                                           "VUID-VkSubpassDependency2-srcAccessMask-parameter");
                 }
 
-                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
+                if (!vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)) {
                     skip |= ValidateFlags(pDependencies_loc.dot(Field::dstAccessMask), "VkAccessFlagBits", AllVkAccessFlagBits,
                                           pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags,
                                           "VUID-VkSubpassDependency2-dstAccessMask-parameter");

@@ -25,7 +25,7 @@ TEST_F(PositiveInstance, TwoInstances) {
 
     VkInstance i1, i2, i3;
 
-    VkInstanceCreateInfo ici = LvlInitStruct<VkInstanceCreateInfo>();
+    VkInstanceCreateInfo ici = vku::InitStructHelper();
     ici.enabledLayerCount = instance_layers_.size();
     ici.ppEnabledLayerNames = instance_layers_.data();
 
@@ -92,7 +92,7 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     }
     // ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR;

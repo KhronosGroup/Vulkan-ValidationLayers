@@ -29,10 +29,10 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "error_message/logging.h"
 #include "vulkan/vk_layer.h"
-#include "generated/vk_typemap_helper.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
 #include "containers/range_vector.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -1646,13 +1646,13 @@ class ValidationStateTracker : public ValidationObject {
         if (IsExtEnabled(enabled)) {
             // Extensions that use two calls to get properties don't want to init on the second call
             if constexpr (init) {
-                *ext_prop = LvlInitStruct<ExtProp>();
+                *ext_prop = vku::InitStructHelper();
             }
             if (api_version < VK_API_VERSION_1_1) {
-                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
             } else {
-                auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+                auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
                 DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
             }
         }
@@ -1661,12 +1661,12 @@ class ValidationStateTracker : public ValidationObject {
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtProp* ext_prop) {
         assert(ext_prop);
-        *ext_prop = LvlInitStruct<ExtProp>();
+        *ext_prop = vku::InitStructHelper();
         if (api_version < VK_API_VERSION_1_1) {
-            auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         } else {
-            auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(ext_prop);
+            auto prop2 = vku::InitStruct<VkPhysicalDeviceProperties2>(ext_prop);
             DispatchGetPhysicalDeviceProperties2(gpu, &prop2);
         }
     }
@@ -1682,7 +1682,7 @@ class ValidationStateTracker : public ValidationObject {
     inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(
         const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
         if (shader_stage_id.pIdentifier) {
-            auto shader_id = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+            auto shader_id = vku::InitStruct<VkShaderModuleIdentifierEXT>();
             shader_id.identifierSize = shader_stage_id.identifierSize;
             const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
             std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);

@@ -70,12 +70,12 @@ class SAMPLER_STATE : public BASE_NODE {
 
   private:
     static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pci) {
-        auto *conversionInfo = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
+        auto *conversionInfo = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pci->pNext);
         return conversionInfo ? conversionInfo->conversion : VK_NULL_HANDLE;
     }
     static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pci) {
         VkSamplerCustomBorderColorCreateInfoEXT result{};
-        auto cbci = LvlFindInChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
+        auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
         if (cbci) result = *cbci;
         return result;
     }
@@ -101,7 +101,7 @@ class SAMPLER_YCBCR_CONVERSION_STATE : public BASE_NODE {
   private:
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     uint64_t GetExternalFormat(const VkSamplerYcbcrConversionCreateInfo *info) {
-        const VkExternalFormatANDROID *ext_format_android = LvlFindInChain<VkExternalFormatANDROID>(info->pNext);
+        const VkExternalFormatANDROID *ext_format_android = vku::FindStructInPNextChain<VkExternalFormatANDROID>(info->pNext);
         return ext_format_android ? ext_format_android->externalFormat : 0;
     }
 #else
