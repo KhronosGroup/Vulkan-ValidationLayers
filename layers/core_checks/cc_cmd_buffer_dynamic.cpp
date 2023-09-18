@@ -256,7 +256,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_sta
     std::shared_ptr<const EntryPoint> entrypoint;
     if (last_bound_state.pipeline_state) {
         for (const auto &stage_state : last_bound_state.pipeline_state->stage_states) {
-            if (stage_state.getStage() == VK_SHADER_STAGE_VERTEX_BIT) {
+            if (stage_state.GetStage() == VK_SHADER_STAGE_VERTEX_BIT) {
                 spirv_state = stage_state.spirv_state;
                 entrypoint = stage_state.entrypoint;
             }

@@ -599,7 +599,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         auto &stage_state = pipeline.stage_states[i];
-        const VkShaderStageFlagBits stage = stage_state.getStage();
+        const VkShaderStageFlagBits stage = stage_state.GetStage();
         // Only validate the shader state once when added, not again when linked
         if ((stage & pipeline.linking_shaders) == 0) {
             StageCreateInfo stage_create_info(create_info_loc.function, &pipeline);
