@@ -53,29 +53,11 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
     }
 }
 
-// Look for this device object in any of the instance child devices lists.
-// NOTE: This is of dubious value. In most circumstances Vulkan will die a flaming death if a dispatchable object is invalid.
-// However, if this layer is loaded first and GetProcAddress is used to make API calls, it will detect bad DOs.
-bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
-                                           const Location &loc) const {
-    auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    auto instance_object_lifetime_data = instance_data->GetValidationObject<ObjectLifetimes>();
-    if (instance_object_lifetime_data->object_map[kVulkanObjectTypeDevice].contains(device_typed.handle)) {
-        return false;
-    }
-    return LogError(invalid_handle_code, instance, loc, "Invalid %s.", FormatHandle(device_typed).c_str());
-}
-
 bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed,
                                               const char *invalid_handle_code, const char *wrong_device_code,
                                               const Location &loc) const {
     if (null_allowed && (object == HandleToUint64(VK_NULL_HANDLE))) return false;
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-
-    if (object_type == kVulkanObjectTypeDevice) {
-        return ValidateDeviceObject(VulkanTypedHandle(reinterpret_cast<VkDevice>(object), object_type), invalid_handle_code, loc);
-    }
-
     return CheckObjectValidity(object, object_type, invalid_handle_code, wrong_device_code, loc);
 }
 
