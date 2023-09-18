@@ -28,6 +28,8 @@
 #include "external/xxhash.h"
 #include "error_location.h"
 
+[[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
+
 VKAPI_ATTR void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes
     for (const auto &item : callbacks) {

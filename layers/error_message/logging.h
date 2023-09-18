@@ -38,7 +38,7 @@
 [[maybe_unused]] static const char *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
 #endif
 
-[[maybe_unused]] static const char *kVUIDUndefined = "VUID_Undefined";
+extern const char *kVUIDUndefined;
 
 typedef enum DebugCallbackStatusBits {
     DEBUG_CALLBACK_UTILS = 0x00000001,     // This struct describes a VK_EXT_debug_utils callback
