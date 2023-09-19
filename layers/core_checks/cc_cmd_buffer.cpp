@@ -1433,6 +1433,19 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     if (!pipe) {
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-06233", commandBuffer, error_obj.location,
                          "No graphics pipeline has been bound yet.");
+    } else if (pipe->pre_raster_state) {
+        for (const auto &stage_state : pipe->stage_states) {
+            if (!stage_state.entrypoint || stage_state.GetStage() != pipe->pre_raster_state->last_stage) {
+                continue;
+            }
+            if (!stage_state.entrypoint->execution_mode.Has(ExecutionModeSet::xfb_bit)) {
+                const LogObjectList objlist(commandBuffer, pipe->Handle());
+                skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128", objlist, error_obj.location,
+                                 "The last bound pipeline (%s) has no Xfb Execution Mode for stage %s.",
+                                 FormatHandle(pipe->Handle()).c_str(),
+                                 string_VkShaderStageFlagBits(pipe->pre_raster_state->last_stage));
+            }
+        }
     }
 
     if (cb_state->transform_feedback_active) {

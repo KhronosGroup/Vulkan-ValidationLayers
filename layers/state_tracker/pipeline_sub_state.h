@@ -81,6 +81,8 @@ struct PreRasterState : public PipelineSubState {
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
 
+    VkShaderStageFlagBits last_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+
     std::shared_ptr<const SHADER_MODULE_STATE> tessc_shader, tesse_shader;
     const safe_VkPipelineShaderStageCreateInfo *tessc_shader_ci = nullptr, *tesse_shader_ci = nullptr;
     const safe_VkPipelineTessellationStateCreateInfo *tess_create_info = nullptr;

@@ -208,8 +208,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SPIRV_MODULE_STATE &module_state, c
 }
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                      const StageCreateInfo &create_info, const EntryPoint &entrypoint,
-                                                      const Location &loc) const {
+                                                      const EntryPoint &entrypoint, const Location &loc) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
@@ -221,16 +220,6 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE &
     const uint32_t num_primitives = entrypoint.execution_mode.output_primitives;
     const bool is_iso_lines = entrypoint.execution_mode.Has(ExecutionModeSet::iso_lines_bit);
     const bool is_point_mode = entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit);
-    const bool is_xfb_execution_mode = entrypoint.execution_mode.Has(ExecutionModeSet::xfb_bit);
-
-    if (create_info.pipeline) {
-        if (is_xfb_execution_mode &&
-            ((create_info.pipeline->create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-02322", module_state.handle(), loc,
-                             "SPIR-V has OpExecutionMode of Xfb and using mesh shaders (%s).",
-                             string_VkShaderStageFlags(create_info.pipeline->create_info_shaders).c_str());
-        }
-    }
 
     // The max is a combiniation of both the user defined variables largest values
     // and
