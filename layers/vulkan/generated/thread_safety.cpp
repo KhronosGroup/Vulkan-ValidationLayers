@@ -2518,7 +2518,7 @@ void ThreadSafety::PreCallRecordCreateSwapchainKHR(VkDevice device, const VkSwap
                                                    const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     StartReadObjectParentInstance(device, vvl::Func::vkCreateSwapchainKHR);
     StartWriteObjectParentInstance(pCreateInfo->surface, vvl::Func::vkCreateSwapchainKHR);
-    StartWriteObjectParentInstance(pCreateInfo->oldSwapchain, vvl::Func::vkCreateSwapchainKHR);
+    StartWriteObject(pCreateInfo->oldSwapchain, vvl::Func::vkCreateSwapchainKHR);
     // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
@@ -2527,9 +2527,9 @@ void ThreadSafety::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwa
                                                     const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkCreateSwapchainKHR);
     FinishWriteObjectParentInstance(pCreateInfo->surface, vvl::Func::vkCreateSwapchainKHR);
-    FinishWriteObjectParentInstance(pCreateInfo->oldSwapchain, vvl::Func::vkCreateSwapchainKHR);
+    FinishWriteObject(pCreateInfo->oldSwapchain, vvl::Func::vkCreateSwapchainKHR);
     if (record_obj.result == VK_SUCCESS) {
-        CreateObjectParentInstance(*pSwapchain);
+        CreateObject(*pSwapchain);
     }
     // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
@@ -2537,7 +2537,7 @@ void ThreadSafety::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwa
 void ThreadSafety::PreCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                     VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
     StartReadObjectParentInstance(device, vvl::Func::vkAcquireNextImageKHR);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkAcquireNextImageKHR);
+    StartWriteObject(swapchain, vvl::Func::vkAcquireNextImageKHR);
     StartWriteObject(semaphore, vvl::Func::vkAcquireNextImageKHR);
     StartWriteObject(fence, vvl::Func::vkAcquireNextImageKHR);
     // Host access to swapchain must be externally synchronized
@@ -2549,7 +2549,7 @@ void ThreadSafety::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchai
                                                      VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                      const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkAcquireNextImageKHR);
-    FinishWriteObjectParentInstance(swapchain, vvl::Func::vkAcquireNextImageKHR);
+    FinishWriteObject(swapchain, vvl::Func::vkAcquireNextImageKHR);
     FinishWriteObject(semaphore, vvl::Func::vkAcquireNextImageKHR);
     FinishWriteObject(fence, vvl::Func::vkAcquireNextImageKHR);
     // Host access to swapchain must be externally synchronized
@@ -2657,13 +2657,13 @@ void ThreadSafety::PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint3
     if (pCreateInfos) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             StartWriteObjectParentInstance(pCreateInfos[index].surface, vvl::Func::vkCreateSharedSwapchainsKHR);
-            StartWriteObjectParentInstance(pCreateInfos[index].oldSwapchain, vvl::Func::vkCreateSharedSwapchainsKHR);
+            StartWriteObject(pCreateInfos[index].oldSwapchain, vvl::Func::vkCreateSharedSwapchainsKHR);
         }
     }
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            StartReadObjectParentInstance(pSwapchains[index], vvl::Func::vkCreateSharedSwapchainsKHR);
+            StartReadObject(pSwapchains[index], vvl::Func::vkCreateSharedSwapchainsKHR);
         }
     }
     // Host access to pCreateInfos[].surface,pCreateInfos[].oldSwapchain must be externally synchronized
@@ -2677,13 +2677,13 @@ void ThreadSafety::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint
     if (pCreateInfos) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             FinishWriteObjectParentInstance(pCreateInfos[index].surface, vvl::Func::vkCreateSharedSwapchainsKHR);
-            FinishWriteObjectParentInstance(pCreateInfos[index].oldSwapchain, vvl::Func::vkCreateSharedSwapchainsKHR);
+            FinishWriteObject(pCreateInfos[index].oldSwapchain, vvl::Func::vkCreateSharedSwapchainsKHR);
         }
     }
     if (record_obj.result == VK_SUCCESS) {
         if (pSwapchains) {
             for (uint32_t index = 0; index < swapchainCount; index++) {
-                CreateObjectParentInstance(pSwapchains[index]);
+                CreateObject(pSwapchains[index]);
             }
         }
     }
@@ -3226,13 +3226,13 @@ void ThreadSafety::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuf
 
 void ThreadSafety::PreCallRecordGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetSwapchainStatusKHR);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkGetSwapchainStatusKHR);
+    StartWriteObject(swapchain, vvl::Func::vkGetSwapchainStatusKHR);
     // Host access to swapchain must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkGetSwapchainStatusKHR);
-    FinishWriteObjectParentInstance(swapchain, vvl::Func::vkGetSwapchainStatusKHR);
+    FinishWriteObject(swapchain, vvl::Func::vkGetSwapchainStatusKHR);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -3481,14 +3481,14 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateKHR(VkCommandBuffer co
 
 void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout) {
     StartReadObjectParentInstance(device, vvl::Func::vkWaitForPresentKHR);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkWaitForPresentKHR);
+    StartWriteObject(swapchain, vvl::Func::vkWaitForPresentKHR);
     // Host access to swapchain must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkWaitForPresentKHR);
-    FinishWriteObjectParentInstance(swapchain, vvl::Func::vkWaitForPresentKHR);
+    FinishWriteObject(swapchain, vvl::Func::vkWaitForPresentKHR);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -4399,20 +4399,20 @@ void ThreadSafety::PostCallRecordRegisterDeviceEventEXT(VkDevice device, const V
 void ThreadSafety::PreCallRecordGetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                        VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetSwapchainCounterEXT);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkGetSwapchainCounterEXT);
+    StartReadObject(swapchain, vvl::Func::vkGetSwapchainCounterEXT);
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                         VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue,
                                                         const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkGetSwapchainCounterEXT);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkGetSwapchainCounterEXT);
+    FinishReadObject(swapchain, vvl::Func::vkGetSwapchainCounterEXT);
 }
 
 void ThreadSafety::PreCallRecordGetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                               VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
+    StartWriteObject(swapchain, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -4420,7 +4420,7 @@ void ThreadSafety::PostCallRecordGetRefreshCycleDurationGOOGLE(VkDevice device, 
                                                                VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties,
                                                                const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
-    FinishWriteObjectParentInstance(swapchain, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
+    FinishWriteObject(swapchain, vvl::Func::vkGetRefreshCycleDurationGOOGLE);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -4428,7 +4428,7 @@ void ThreadSafety::PreCallRecordGetPastPresentationTimingGOOGLE(VkDevice device,
                                                                 uint32_t* pPresentationTimingCount,
                                                                 VkPastPresentationTimingGOOGLE* pPresentationTimings) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetPastPresentationTimingGOOGLE);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkGetPastPresentationTimingGOOGLE);
+    StartWriteObject(swapchain, vvl::Func::vkGetPastPresentationTimingGOOGLE);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -4437,7 +4437,7 @@ void ThreadSafety::PostCallRecordGetPastPresentationTimingGOOGLE(VkDevice device
                                                                  VkPastPresentationTimingGOOGLE* pPresentationTimings,
                                                                  const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkGetPastPresentationTimingGOOGLE);
-    FinishWriteObjectParentInstance(swapchain, vvl::Func::vkGetPastPresentationTimingGOOGLE);
+    FinishWriteObject(swapchain, vvl::Func::vkGetPastPresentationTimingGOOGLE);
     // Host access to swapchain must be externally synchronized
 }
 
@@ -4484,7 +4484,7 @@ void ThreadSafety::PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swap
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            StartReadObjectParentInstance(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
+            StartReadObject(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
         }
     }
 }
@@ -4495,7 +4495,7 @@ void ThreadSafety::PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swa
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            FinishReadObjectParentInstance(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
+            FinishReadObject(pSwapchains[index], vvl::Func::vkSetHdrMetadataEXT);
         }
     }
 }
@@ -5392,13 +5392,13 @@ void ThreadSafety::PostCallRecordGetPerformanceParameterINTEL(VkDevice device, V
 
 void ThreadSafety::PreCallRecordSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetLocalDimmingAMD);
-    StartReadObjectParentInstance(swapChain, vvl::Func::vkSetLocalDimmingAMD);
+    StartReadObject(swapChain, vvl::Func::vkSetLocalDimmingAMD);
 }
 
 void ThreadSafety::PostCallRecordSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable,
                                                     const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetLocalDimmingAMD);
-    FinishReadObjectParentInstance(swapChain, vvl::Func::vkSetLocalDimmingAMD);
+    FinishReadObject(swapChain, vvl::Func::vkSetLocalDimmingAMD);
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -5447,26 +5447,26 @@ void ThreadSafety::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, cons
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     StartReadObjectParentInstance(device, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
+    StartReadObject(swapchain, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
 }
 
 void ThreadSafety::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
+    FinishReadObject(swapchain, vvl::Func::vkAcquireFullScreenExclusiveModeEXT);
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain) {
     StartReadObjectParentInstance(device, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
+    StartReadObject(swapchain, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
 }
 
 void ThreadSafety::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
+    FinishReadObject(swapchain, vvl::Func::vkReleaseFullScreenExclusiveModeEXT);
 }
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
@@ -7349,48 +7349,48 @@ void ThreadSafety::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice 
 void ThreadSafety::PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                       VkLatencySleepModeInfoNV* pSleepModeInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencySleepModeNV);
+    StartReadObject(swapchain, vvl::Func::vkSetLatencySleepModeNV);
 }
 
 void ThreadSafety::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                        VkLatencySleepModeInfoNV* pSleepModeInfo, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencySleepModeNV);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencySleepModeNV);
+    FinishReadObject(swapchain, vvl::Func::vkSetLatencySleepModeNV);
 }
 
 void ThreadSafety::PreCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkLatencySleepNV);
+    StartReadObject(swapchain, vvl::Func::vkLatencySleepNV);
 }
 
 void ThreadSafety::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, VkLatencySleepInfoNV* pSleepInfo,
                                                 const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkLatencySleepNV);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkLatencySleepNV);
+    FinishReadObject(swapchain, vvl::Func::vkLatencySleepNV);
 }
 
 void ThreadSafety::PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                                    VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencyMarkerNV);
+    StartReadObject(swapchain, vvl::Func::vkSetLatencyMarkerNV);
 }
 
 void ThreadSafety::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
                                                     VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkSetLatencyMarkerNV);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkSetLatencyMarkerNV);
+    FinishReadObject(swapchain, vvl::Func::vkSetLatencyMarkerNV);
 }
 
 void ThreadSafety::PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
                                                     VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetLatencyTimingsNV);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkGetLatencyTimingsNV);
+    StartReadObject(swapchain, vvl::Func::vkGetLatencyTimingsNV);
 }
 
 void ThreadSafety::PostCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pTimingCount,
                                                      VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, vvl::Func::vkGetLatencyTimingsNV);
-    FinishReadObjectParentInstance(swapchain, vvl::Func::vkGetLatencyTimingsNV);
+    FinishReadObject(swapchain, vvl::Func::vkGetLatencyTimingsNV);
 }
 
 void ThreadSafety::PreCallRecordQueueNotifyOutOfBandNV(VkQueue queue, VkOutOfBandQueueTypeInfoNV pQueueTypeInfo) {
