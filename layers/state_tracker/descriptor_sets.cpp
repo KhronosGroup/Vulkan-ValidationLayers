@@ -476,6 +476,13 @@ void cvdescriptorset::DescriptorSet::LinkChildNodes() {
     }
 }
 
+void cvdescriptorset::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
+    BaseClass::NotifyInvalidate(invalid_nodes, unlink);
+    for (auto &binding : bindings_) {
+        binding->NotifyInvalidate(invalid_nodes, unlink);
+    }
+}
+
 void cvdescriptorset::DescriptorSet::Destroy() {
     for (auto &binding : bindings_) {
         binding->RemoveParent(this);
@@ -754,6 +761,7 @@ void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_sta
     }
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView), is_bindless);
+    UpdateKnownValidView(is_bindless);
 }
 
 void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
@@ -778,6 +786,7 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(DescriptorSet &set_state, con
     const auto &image_info = update.pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView), is_bindless);
+    UpdateKnownValidView(is_bindless);
 }
 
 void cvdescriptorset::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
@@ -787,12 +796,14 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, cons
 
         image_layout_ = image_src.GetImageLayout();
         ReplaceStatePtr(set_state, image_view_state_, image_src.GetSharedImageViewState(), is_bindless);
+        UpdateKnownValidView(is_bindless);
         return;
     }
     auto &image_src = static_cast<const ImageDescriptor &>(src);
 
     image_layout_ = image_src.image_layout_;
     ReplaceStatePtr(set_state, image_view_state_, image_src.image_view_state_, is_bindless);
+    UpdateKnownValidView(is_bindless);
 }
 
 void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_state) {
