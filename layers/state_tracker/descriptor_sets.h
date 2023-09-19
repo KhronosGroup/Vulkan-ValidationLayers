@@ -339,6 +339,10 @@ class DescriptorSet;
 
 class Descriptor {
   public:
+    static bool SupportsNotifyInvalidate() { return false; }
+    static bool IsNotifyInvalidateType(VulkanObjectType) { return false; }
+    virtual void InvalidateNode(const std::shared_ptr<BASE_NODE> &, bool) {}  // Most descriptor types will not call
+
     Descriptor() {}
     virtual ~Descriptor() {}
     virtual void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &,
@@ -407,6 +411,10 @@ class SamplerDescriptor : public Descriptor {
 
 class ImageDescriptor : public Descriptor {
   public:
+    static bool SupportsNotifyInvalidate() { return true; }
+    static bool IsNotifyInvalidateType(const VulkanObjectType node_type) {
+        return node_type == VulkanObjectType::kVulkanObjectTypeImageView;
+    }
     ImageDescriptor() = default;
     DescriptorClass GetClass() const override { return Image; }
     void WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const VkWriteDescriptorSet &, const uint32_t,
@@ -432,12 +440,24 @@ class ImageDescriptor : public Descriptor {
             image_view_state_->RemoveParent(base_node);
         }
     }
+    void InvalidateNode(const std::shared_ptr<BASE_NODE> &invalid_node, bool unlink) override {
+        if (invalid_node == image_view_state_) {
+            known_valid_view_ = false;
+            if (unlink) {
+                image_view_state_.reset();
+            }
+        }
+    }
 
-    bool Invalid() const override { return !image_view_state_ || image_view_state_->Invalid(); }
+    bool Invalid() const override { return !known_valid_view_ && ComputeInvalid(); }
 
   protected:
+    bool ComputeInvalid() const { return !image_view_state_ || image_view_state_->Invalid(); }
+    void UpdateKnownValidView(bool is_bindless) { known_valid_view_ = !is_bindless && !ComputeInvalid(); }
+
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
+    bool known_valid_view_ = false;
 };
 
 class ImageSamplerDescriptor : public ImageDescriptor {
@@ -717,6 +737,7 @@ void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWri
 
 class DescriptorBinding {
   public:
+    using NodeList = BASE_NODE::NodeList;
     DescriptorBinding(const VkDescriptorSetLayoutBinding &create_info, uint32_t count_, VkDescriptorBindingFlags binding_flags_)
         : binding(create_info.binding),
           type(create_info.descriptorType),
@@ -730,6 +751,7 @@ class DescriptorBinding {
 
     virtual void AddParent(DescriptorSet *ds) = 0;
     virtual void RemoveParent(DescriptorSet *ds) = 0;
+    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) = 0;
 
     virtual const Descriptor *GetDescriptor(const uint32_t index) const = 0;
     virtual Descriptor *GetDescriptor(const uint32_t index) = 0;
@@ -770,22 +792,37 @@ class DescriptorBindingImpl : public DescriptorBinding {
 
     Descriptor *GetDescriptor(const uint32_t index) override { return index < count ? &descriptors[index] : nullptr; }
 
+    template <typename Fn>
+    void ForAllUpdated(Fn &&op) {
+        auto size = updated.size();
+        for (uint32_t i = 0; i < size; i++) {
+            if (updated[i] != 0) {
+                op(descriptors[i]);
+            }
+        }
+    }
+
     void AddParent(DescriptorSet *ds) override {
-        auto size = updated.size();
-        for (uint32_t i = 0; i < size; i++) {
-            if (updated[i] != 0) {
-                descriptors[i].AddParent(ds);
-            }
-        }
+        auto add_parent = [ds](T &descriptor) { descriptor.AddParent(ds); };
+        ForAllUpdated(add_parent);
     }
+
     void RemoveParent(DescriptorSet *ds) override {
-        auto size = updated.size();
-        for (uint32_t i = 0; i < size; i++) {
-            if (updated[i] != 0) {
-                descriptors[i].RemoveParent(ds);
+        auto remove_parent = [ds](T &descriptor) { descriptor.RemoveParent(ds); };
+        ForAllUpdated(remove_parent);
+    }
+
+    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
+        if (!T::SupportsNotifyInvalidate()) return;
+
+        for (const auto &node : invalid_nodes) {
+            if (T::IsNotifyInvalidateType(node->Type())) {
+                auto notify_invalidate = [&node, unlink](T &descriptor) { descriptor.InvalidateNode(node, unlink); };
+                ForAllUpdated(notify_invalidate);
             }
         }
     }
+
     small_vector<T, 1, uint32_t> descriptors;
 };
 
@@ -829,6 +866,7 @@ struct DecodedTemplateUpdate {
  */
 class DescriptorSet : public BASE_NODE {
   public:
+    using BaseClass = BASE_NODE;
     // Given that we are providing placement new allocation for bindings, the deleter needs to *only* call the destructor
     struct BindingDeleter {
         void operator()(DescriptorBinding *binding) { binding->~DescriptorBinding(); }
@@ -842,6 +880,7 @@ class DescriptorSet : public BASE_NODE {
     DescriptorSet(const VkDescriptorSet, DESCRIPTOR_POOL_STATE *, const std::shared_ptr<DescriptorSetLayout const> &,
                   uint32_t variable_count, StateTracker *state_data);
     void LinkChildNodes() override;
+    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override;
     ~DescriptorSet() { Destroy(); }
 
     // A number of common Get* functions that return data based on layout from which this set was created
