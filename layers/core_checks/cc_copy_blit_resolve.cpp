@@ -2139,7 +2139,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
 
     skip |= ValidateCmd(cb_state, loc);
-    bool hit_error = false;
 
     const char *invalid_src_layout_vuid =
         is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-01917" : "VUID-vkCmdCopyImage-srcImageLayout-01917";
@@ -2157,11 +2156,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         VkImageLayout source_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         VkImageLayout destination_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-00128" : "VUID-vkCmdCopyImage-srcImageLayout-00128";
-        skip |= VerifyImageLayout(cb_state, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal, src_image_loc,
-                                  invalid_src_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal,
+                                             src_image_loc, invalid_src_layout_vuid, vuid);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00133" : "VUID-vkCmdCopyImage-dstImageLayout-00133";
-        skip |= VerifyImageLayout(cb_state, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
-                                  dst_image_loc, invalid_dst_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
+                                             dst_image_loc, invalid_dst_layout_vuid, vuid);
         skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, &region, region_loc);
     }
 
@@ -2482,7 +2481,6 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, *src_image_state, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT,
                                                 src_image_loc, vuid);
     }
-    bool hit_error = false;
 
     const char *src_invalid_layout_vuid =
         is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-01397" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397";
@@ -2493,8 +2491,8 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         const RegionType region = pRegions[i];
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.imageSubresource, subresource_loc);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
-        skip |= VerifyImageLayout(cb_state, *src_image_state, region.imageSubresource, srcImageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src_image_loc, src_invalid_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, region.imageSubresource, srcImageLayout,
+                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src_image_loc, src_invalid_layout_vuid, vuid);
         vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, &region, region_loc, vuid);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07967" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07967";
@@ -2629,7 +2627,6 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, *dst_image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT,
                                                 dst_image_loc, vuid);
     }
-    bool hit_error = false;
 
     const char *dst_invalid_layout_vuid =
         is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-01396" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396";
@@ -2640,8 +2637,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         const RegionType region = pRegions[i];
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.imageSubresource, subresource_loc);
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-00180" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180";
-        skip |= VerifyImageLayout(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst_image_loc, dst_invalid_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout,
+                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst_image_loc, dst_invalid_layout_vuid, vuid);
         vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-imageOffset-07738" : "VUID-vkCmdCopyBufferToImage-imageOffset-07738";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, &region, region_loc, vuid);
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07967" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07967";
@@ -3334,7 +3331,6 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
         const RegionType region = pRegions[i];
-        bool hit_error = false;
 
         // When performing blit from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
         const auto &src_sub = region.srcSubresource;
@@ -3345,11 +3341,11 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         VkImageLayout destination_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImageLayout-00221" : "VUID-vkCmdBlitImage-srcImageLayout-00221";
-        skip |= VerifyImageLayout(cb_state, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal, src_image_loc,
-                                  invalid_src_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal,
+                                             src_image_loc, invalid_src_layout_vuid, vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImageLayout-00226" : "VUID-vkCmdBlitImage-dstImageLayout-00226";
-        skip |= VerifyImageLayout(cb_state, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
-                                  dst_image_loc, invalid_dst_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
+                                             dst_image_loc, invalid_dst_layout_vuid, vuid);
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.srcSubresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &region.dstSubresource, dst_subresource_loc);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01705" : "VUID-vkCmdBlitImage-srcSubresource-01705";
@@ -3650,7 +3646,6 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
     }
 
-    bool hit_error = false;
     const char *invalid_src_layout_vuid =
         is_2 ? "VUID-VkResolveImageInfo2-srcImageLayout-01400" : "VUID-vkCmdResolveImage-srcImageLayout-01400";
     const char *invalid_dst_layout_vuid =
@@ -3668,11 +3663,11 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &src_subresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(cb_state.commandBuffer(), &dst_subresource, dst_subresource_loc);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImageLayout-00260" : "VUID-vkCmdResolveImage-srcImageLayout-00260";
-        skip |= VerifyImageLayout(cb_state, *src_image_state, src_subresource, srcImageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                  src_image_loc, invalid_src_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout,
+                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src_image_loc, invalid_src_layout_vuid, vuid);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImageLayout-00262" : "VUID-vkCmdResolveImage-dstImageLayout-00262";
-        skip |= VerifyImageLayout(cb_state, *dst_image_state, dst_subresource, dstImageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  dst_image_loc, invalid_dst_layout_vuid, vuid, &hit_error);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout,
+                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst_image_loc, invalid_dst_layout_vuid, vuid);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-01709" : "VUID-vkCmdResolveImage-srcSubresource-01709";
         skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, src_subresource.mipLevel,
                                       src_subresource_loc.dot(Field::mipLevel), vuid);

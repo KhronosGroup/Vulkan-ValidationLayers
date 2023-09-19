@@ -1093,31 +1093,19 @@ class CoreChecks : public ValidationStateTracker {
     template <typename RangeFactory>
     bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& image_loc,
-                                const char* layout_mismatch_msg_code, bool* error) const;
+                                const char* mismatch_layout_vuid, bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                           VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                           const Location& image_loc, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
-                           bool* error) const;
+    bool VerifyImageLayoutSubresource(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
+                                      const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout,
+                                      VkImageLayout optimal_layout, const Location& image_loc, const char* invalid_layout_vuid,
+                                      const char* mismatch_layout_vuid) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* layout_mismatch_msg_code,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const Location& image_loc,
-                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
-        return VerifyImageLayout(cb_state, image_state, range, 0, explicit_layout, optimal_layout, image_loc,
-                                 layout_invalid_msg_code, layout_mismatch_msg_code, error);
-    }
-
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
-                           const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                           const Location& image_loc, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
-                           bool* error) const;
-
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* layout_mismatch_msg_code,
+                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const;
 
     bool CheckItgExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,

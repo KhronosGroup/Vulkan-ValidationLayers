@@ -1718,8 +1718,6 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
                          "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.");
     }
 
-    bool hit_error = false;
-
     // XXX TODO: While the VUID says "each subresource", only the base mip level is
     // actually used. Since we don't have an existing convenience function to iterate
     // over all mip levels, just don't bother with non-base levels.
@@ -1727,9 +1725,10 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
     if (image_state) {
-        skip |= VerifyImageLayout(*cb_state, *image_state, subresource, imageLayout, VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV,
-                                  error_obj.location.dot(Field::imageView), "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
-                                  "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
+        skip |= VerifyImageLayoutSubresource(*cb_state, *image_state, subresource, imageLayout,
+                                             VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, error_obj.location.dot(Field::imageView),
+                                             "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                             "VUID-vkCmdBindShadingRateImageNV-imageView-02062");
     }
 
     return skip;
