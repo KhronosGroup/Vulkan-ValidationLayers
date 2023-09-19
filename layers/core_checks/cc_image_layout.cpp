@@ -143,22 +143,22 @@ struct LayoutUseCheckAndMessage {
 template <typename RangeFactory>
 bool CoreChecks::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
                                         VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
-                                        const RangeFactory &range_factory, const Location &loc,
-                                        const char *layout_mismatch_msg_code, bool *error) const {
+                                        const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
+                                        bool *error) const {
     bool skip = false;
     const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state);
     if (!subresource_map) return skip;
 
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
     skip |= subresource_map->AnyInRange(
-        range_factory(*subresource_map), [this, subresource_map, &cb_state, &image_state, &layout_check, layout_mismatch_msg_code,
-                                          loc, error](const LayoutRange &range, const LayoutEntry &state) {
+        range_factory(*subresource_map), [this, subresource_map, &cb_state, &image_state, &layout_check, mismatch_layout_vuid, loc,
+                                          error](const LayoutRange &range, const LayoutEntry &state) {
             bool subres_skip = false;
             if (!layout_check.Check(state)) {
                 *error = true;
                 auto subres = subresource_map->Decode(range.begin);
                 const LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-                subres_skip |= LogError(layout_mismatch_msg_code, objlist, loc,
+                subres_skip |= LogError(mismatch_layout_vuid, objlist, loc,
                                         "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
                                         ") with specific layout %s that doesn't match the "
                                         "%s layout %s.",
@@ -172,17 +172,20 @@ bool CoreChecks::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_state, const 
     return skip;
 }
 
-bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
-                                   const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
-                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, const Location &loc,
-                                   const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
+bool CoreChecks::VerifyImageLayoutSubresource(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
+                                              const VkImageSubresourceLayers &subresource_layers, VkImageLayout explicit_layout,
+                                              VkImageLayout optimal_layout, const Location &loc, const char *invalid_layout_vuid,
+                                              const char *mismatch_layout_vuid) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
 
+    const VkImageSubresourceRange range = RangeFromLayers(subresource_layers);
+
     VkImageSubresourceRange normalized_isr = image_state.NormalizeSubresourceRange(range);
     auto range_factory = [&normalized_isr](const ImageSubresourceLayoutMap &map) { return map.RangeGen(normalized_isr); };
-    skip |= VerifyImageLayoutRange(cb_state, image_state, aspect_mask, explicit_layout, range_factory, loc,
-                                   layout_mismatch_msg_code, error);
+    bool unused_error = false;
+    skip |= VerifyImageLayoutRange(cb_state, image_state, normalized_isr.aspectMask, explicit_layout, range_factory, loc,
+                                   mismatch_layout_vuid, &unused_error);
 
     // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
     if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout)) {
@@ -199,31 +202,23 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
             if (image_state.shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
                     const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
-                    skip |= LogError(layout_invalid_msg_code, objlist, loc,
+                    skip |= LogError(invalid_layout_vuid, objlist, loc,
                                      "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
                                      string_VkImageLayout(optimal_layout));
                 }
             }
         } else {
-            *error = true;
             const LogObjectList objlist(cb_state.commandBuffer(), image_state.Handle());
             skip |= LogError(
-                layout_invalid_msg_code, objlist, loc, "Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.",
+                invalid_layout_vuid, objlist, loc, "Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.",
                 FormatHandle(image_state).c_str(), string_VkImageLayout(explicit_layout), string_VkImageLayout(optimal_layout));
         }
     }
     return skip;
 }
-bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
-                                   const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
-                                   VkImageLayout optimal_layout, const Location &loc, const char *layout_invalid_msg_code,
-                                   const char *layout_mismatch_msg_code, bool *error) const {
-    return VerifyImageLayout(cb_state, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, loc,
-                             layout_invalid_msg_code, layout_mismatch_msg_code, error);
-}
 
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE &image_view_state,
-                                   VkImageLayout explicit_layout, const Location &loc, const char *layout_mismatch_msg_code,
+                                   VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
                                    bool *error) const {
     if (disabled[image_layout_validation]) return false;
     assert(image_view_state.image_state);
@@ -232,18 +227,18 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
     };
 
     return VerifyImageLayoutRange(cb_state, *image_view_state.image_state, image_view_state.create_info.subresourceRange.aspectMask,
-                                  explicit_layout, range_factory, loc, layout_mismatch_msg_code, error);
+                                  explicit_layout, range_factory, loc, mismatch_layout_vuid, error);
 }
 
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
                                    const VkImageSubresourceRange &range, VkImageLayout explicit_layout, const Location &loc,
-                                   const char *layout_mismatch_msg_code, bool *error) const {
+                                   const char *mismatch_layout_vuid, bool *error) const {
     if (disabled[image_layout_validation]) return false;
 
     auto range_factory = [&range](const ImageSubresourceLayoutMap &map) { return map.RangeGen(range); };
 
     return VerifyImageLayoutRange(cb_state, image_state, range.aspectMask, explicit_layout, range_factory, loc,
-                                  layout_mismatch_msg_code, error);
+                                  mismatch_layout_vuid, error);
 }
 
 void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state) {
