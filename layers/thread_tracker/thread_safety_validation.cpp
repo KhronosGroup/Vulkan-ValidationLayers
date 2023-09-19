@@ -433,13 +433,13 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                       VkImage* pSwapchainImages) {
     StartReadObjectParentInstance(device, vvl::Func::vkGetSwapchainImagesKHR);
-    StartReadObjectParentInstance(swapchain, vvl::Func::vkGetSwapchainImagesKHR);
+    StartReadObject(swapchain, vvl::Func::vkGetSwapchainImagesKHR);
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                        VkImage* pSwapchainImages, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location.function);
-    FinishReadObjectParentInstance(swapchain, record_obj.location.function);
+    FinishReadObject(swapchain, record_obj.location.function);
     if (pSwapchainImages != nullptr) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& wrapped_swapchain_image_handles = swapchain_wrapped_image_handle_map[swapchain];
@@ -453,7 +453,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
 void ThreadSafety::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                     const VkAllocationCallbacks* pAllocator) {
     StartReadObjectParentInstance(device, vvl::Func::vkDestroySwapchainKHR);
-    StartWriteObjectParentInstance(swapchain, vvl::Func::vkDestroySwapchainKHR);
+    StartWriteObject(swapchain, vvl::Func::vkDestroySwapchainKHR);
     // Host access to swapchain must be externally synchronized
     auto lock = ReadLockGuard(thread_safety_lock);
     for (auto& image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
@@ -464,8 +464,8 @@ void ThreadSafety::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchain
 void ThreadSafety::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location.function);
-    FinishWriteObjectParentInstance(swapchain, record_obj.location.function);
-    DestroyObjectParentInstance(swapchain);
+    FinishWriteObject(swapchain, record_obj.location.function);
+    DestroyObject(swapchain);
     // Host access to swapchain must be externally synchronized
     auto lock = WriteLockGuard(thread_safety_lock);
     for (auto& image_handle : swapchain_wrapped_image_handle_map[swapchain]) {

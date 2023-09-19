@@ -23,15 +23,14 @@ from generators.vulkan_object import Command, Param
 from generators.base_generator import BaseGenerator
 
 def GetParentInstance(param: Param) -> str:
-    wrapParenet = ['VkSurfaceKHR',
-                   'VkSwapchainKHR',
-                   'VkDebugReportCallbackEXT',
-                   'VkDebugUtilsMessengerEXT',
-                   'VkDisplayKHR',
-                   'VkDevice',
-                   'VkInstance',
-                   ]
-    return 'ParentInstance' if param.type in wrapParenet else ''
+    instanceParent = ['VkSurfaceKHR',
+                      'VkDebugReportCallbackEXT',
+                      'VkDebugUtilsMessengerEXT',
+                      'VkDisplayKHR',
+                      'VkDevice',
+                      'VkInstance',
+                      ]
+    return 'ParentInstance' if param.type in instanceParent else ''
 
 class ThreadSafetyOutputGenerator(BaseGenerator):
     def __init__(self):
@@ -135,7 +134,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
 
                         # XXX TODO: Can we do better to lookup types of externsync members?
                         suffix = ''
-                        if 'surface' in member or 'swapchain' in member.lower():
+                        if 'surface' in member:
                             suffix = 'ParentInstance'
 
                         if '[]' in element:
@@ -163,7 +162,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                     for member in param.externSyncPointer:
                         member = str(member).replace("::", "->")
                         member = str(member).replace(".", "->")
-                        suffix = 'ParentInstance' if 'surface' in member or 'swapchain' in member.lower() else ''
+                        suffix = 'ParentInstance' if 'surface' in member else ''
                         out.append(f'    {prefix}WriteObject{suffix}({member}, vvl::Func::{command.name});\n')
             elif param.externSync:
                 if param.length:
@@ -329,10 +328,10 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
     def generateCounterBodies(self):
         out = []
         out.append('// clang-format off\n')
-        wrapParenet = ['VkSurfaceKHR', 'VkSwapchainKHR', 'VkDebugReportCallbackEXT', 'VkDebugUtilsMessengerEXT', 'VkDisplayKHR']
+        instanceParent = ['VkSurfaceKHR', 'VkDebugReportCallbackEXT', 'VkDebugUtilsMessengerEXT', 'VkDisplayKHR']
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable]:
             out.extend([f'#ifdef {handle.protect}\n'] if handle.protect else [])
-            out.extend([f'WRAPPER_PARENT_INSTANCE({handle.name})\n'] if handle.name in wrapParenet else [f'WRAPPER({handle.name})\n'])
+            out.extend([f'WRAPPER_PARENT_INSTANCE({handle.name})\n'] if handle.name in instanceParent else [f'WRAPPER({handle.name})\n'])
             out.extend([f'#endif // {handle.protect}\n'] if handle.protect else [])
         out.append('// clang-format on\n')
         self.write("".join(out))
