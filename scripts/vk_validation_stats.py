@@ -633,7 +633,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     def export_header(self, filename):
         if verbose_mode:
             print("\n Exporting header file to: %s" % filename)
-        with open(filename, 'w', newline='\n', encoding='utf-8') as hfile:
+        # The validusage.json has text that might cause encoding issues (see PR 6334)
+        with open(filename, 'w', newline='\n', encoding='utf-8-sig') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
