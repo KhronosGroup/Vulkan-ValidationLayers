@@ -322,6 +322,14 @@ static std::string Merge(const std::vector<std::string> &strings) {
     return result;
 }
 
+static const char *GetDefaultPrefix() {
+#ifdef __ANDROID__
+    return "vvl";
+#else
+    return "LAYER";
+#endif
+}
+
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // If not cleared, garbage has been seen in some Android run effecting the error message
@@ -330,6 +338,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     VlLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
     vlCreateLayerSettingSet(OBJECT_LAYER_NAME, vlFindLayerSettingsCreateInfo(settings_data->create_info), nullptr, nullptr,
                             &layer_setting_set);
+
+    vlSetLayerSettingCompatibilityNamespace(layer_setting_set, GetDefaultPrefix());
 
     // Read legacy "enables" flags for backward compatibility
     std::vector<std::string> enables;
