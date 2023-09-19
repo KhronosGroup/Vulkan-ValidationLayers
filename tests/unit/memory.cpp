@@ -2186,9 +2186,6 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         m_errorMonitor->VerifyFound();
 
         vk::DestroyImage(m_device->device(), image, nullptr);
-
-        // TODO - Test needs to use a real drm format and not try using ALIAS_BIT
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4793#issuecomment-1312724486
     }
 }
 

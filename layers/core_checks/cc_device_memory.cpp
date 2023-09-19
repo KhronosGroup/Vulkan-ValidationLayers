@@ -763,12 +763,23 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
                              FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
         }
 
+        const VkImageAspectFlags aspect = image_plane_info->planeAspect;
         if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
             // Make sure planeAspect is only a single, valid plane
-            const VkImageAspectFlags aspect = image_plane_info->planeAspect;
             if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
                 skip |=
                     LogError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281", pInfo->image,
+                             info_loc.pNext(Struct::VkImagePlaneMemoryRequirementsInfo, Field::planeAspect),
+                             "%s but is invalid for %s.", string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(image_format));
+            }
+        } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            // TODO - Need to also check if lower then drmFormatModifierPlaneCount
+            if (GetBitSetCount(aspect) > 1 ||
+                !IsValueIn(VkImageAspectFlagBits(aspect),
+                           {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
+                            VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT})) {
+                skip |=
+                    LogError("VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02282", pInfo->image,
                              info_loc.pNext(Struct::VkImagePlaneMemoryRequirementsInfo, Field::planeAspect),
                              "%s but is invalid for %s.", string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(image_format));
             }
@@ -1011,6 +1022,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     // uint32_t[3] is which index in pBindInfos for max 3 planes
     // Non disjoint images act as a single plane
     vvl::unordered_map<VkImage, std::array<uint32_t, 3>> resources_bound;
+    bool is_drm = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const Location loc = bind_image_mem_2 ? error_obj.location.dot(Field::pBindInfos, i) : error_obj.location.function;
@@ -1028,6 +1040,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 skip |= LogError("VUID-VkBindImageMemoryInfo-image-07736", objlist, loc.dot(Field::image),
                                  "is disjoint, add a VkBindImagePlaneMemoryInfo structure to the pNext chain of "
                                  "VkBindImageMemoryInfo in order to bind planes of a disjoint image.");
+            }
+
+            // Currently disjoint planes only work with non-DRM
+            if (plane_info && IsValueIn(plane_info->planeAspect,
+                                        {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
+                                         VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT})) {
+                is_drm = true;
             }
 
             // Need extra check for disjoint flag incase called without bindImage2 and don't want false positive errors
@@ -1089,7 +1108,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          "is non-disjoint and is being bound twice at pBindInfos[%d]", it->second[0]);
                     }
                 }
-            } else if ((plane_info != nullptr) && (image_state->disjoint == true)) {
+            } else if ((plane_info != nullptr) && (image_state->disjoint == true) && !is_drm) {
                 // Check disjoint images VkMemoryRequirements for given plane
                 int plane = 0;
 
@@ -1460,12 +1479,28 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // Make sure planeAspect is only a single, valid plane
                 const VkFormat image_format = image_state->createInfo.format;
                 const VkImageAspectFlags aspect = plane_info->planeAspect;
-                if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
-                    const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |=
-                        LogError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283", objlist,
-                                 loc.pNext(Struct::VkBindImagePlaneMemoryInfo, Field::planeAspect), "is %s but is invalid for %s.",
-                                 string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(image_format));
+                const VkImageTiling image_tiling = image_state->createInfo.tiling;
+
+                if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
+                    if (vkuFormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283", objlist,
+                                         loc.pNext(Struct::VkBindImagePlaneMemoryInfo, Field::planeAspect),
+                                         "is %s but is invalid for %s.", string_VkImageAspectFlags(aspect).c_str(),
+                                         string_VkFormat(image_format));
+                    }
+                } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+                    // TODO - Need to also check if lower then drmFormatModifierPlaneCount
+                    if (GetBitSetCount(aspect) > 1 ||
+                        !IsValueIn(VkImageAspectFlagBits(aspect),
+                                   {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
+                                    VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT})) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError("VUID-VkBindImagePlaneMemoryInfo-planeAspect-02284", objlist,
+                                         loc.pNext(Struct::VkBindImagePlaneMemoryInfo, Field::planeAspect),
+                                         "is %s but is invalid for %s.", string_VkImageAspectFlags(aspect).c_str(),
+                                         string_VkFormat(image_format));
+                    }
                 }
             }
         }
@@ -1496,7 +1531,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     // Check to make sure all disjoint planes were bound
     for (auto &resource : resources_bound) {
         auto image_state = Get<IMAGE_STATE>(resource.first);
-        if (image_state->disjoint == true) {
+        if (image_state->disjoint == true && !is_drm) {
             uint32_t total_planes = vkuFormatPlaneCount(image_state->createInfo.format);
             for (uint32_t i = 0; i < total_planes; i++) {
                 if (resource.second[i] == vvl::kU32Max) {

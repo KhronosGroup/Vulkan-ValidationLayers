@@ -430,3 +430,169 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
+    InitBasicImageDrm();
+    if (::testing::Test::IsSkipped()) return;
+
+    VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+
+    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.pDrmFormatModifiers = mods.data();
+    auto create_info = vku::InitStruct<VkImageCreateInfo>(&list_create_info);
+    create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.format = format;
+    create_info.extent.width = 64;
+    create_info.extent.height = 64;
+    create_info.extent.depth = 1;
+    create_info.mipLevels = 1;
+    create_info.arrayLayers = 1;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    for (uint64_t mod : mods) {
+        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        drm_format_modifier.drmFormatModifier = mod;
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+        image_info.format = format;
+        image_info.type = create_info.imageType;
+        image_info.tiling = create_info.tiling;
+        image_info.usage = create_info.usage;
+        image_info.flags = create_info.flags;
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
+        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+            GTEST_SKIP() << "Required formats/features not supported";
+        }
+    }
+
+    VkImageObj image{m_device};
+    image.init_no_mem(*m_device, create_info);
+    if (image.initialized() == false) {
+        GTEST_SKIP() << "Failed to create image.";
+    }
+
+    auto image_plane_req = vku::InitStruct<VkImagePlaneMemoryRequirementsInfo>();
+    auto mem_req_info2 = vku::InitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+    mem_req_info2.image = image;
+
+    auto mem_reqs2 = vku::InitStruct<VkMemoryRequirements2>();
+
+    // should be VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT
+    image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02282");
+    vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
+    InitBasicImageDrm();
+    if (::testing::Test::IsSkipped()) return;
+
+    VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+
+    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.pDrmFormatModifiers = mods.data();
+    auto create_info = vku::InitStruct<VkImageCreateInfo>(&list_create_info);
+    create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.format = format;
+    create_info.extent.width = 64;
+    create_info.extent.height = 64;
+    create_info.extent.depth = 1;
+    create_info.mipLevels = 1;
+    create_info.arrayLayers = 1;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    for (uint64_t mod : mods) {
+        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        drm_format_modifier.drmFormatModifier = mod;
+        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
+        image_info.format = format;
+        image_info.type = create_info.imageType;
+        image_info.tiling = create_info.tiling;
+        image_info.usage = create_info.usage;
+        image_info.flags = create_info.flags;
+        auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
+        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+            GTEST_SKIP() << "Required formats/features not supported";
+        }
+    }
+
+    VkImageObj image{m_device};
+    image.init_no_mem(*m_device, create_info);
+    if (image.initialized() == false) {
+        GTEST_SKIP() << "Failed to create image.";
+    }
+
+    // Allocate & bind memory
+    auto image_plane_req = vku::InitStruct<VkImagePlaneMemoryRequirementsInfo>();
+    auto mem_req_info2 = vku::InitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+    mem_req_info2.image = image;
+    auto mem_reqs2 = vku::InitStruct<VkMemoryRequirements2>();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+
+    // Plane 0
+    image_plane_req.planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
+    vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+    uint32_t mem_type = 0;
+    auto phys_mem_props2 = vku::InitStruct<VkPhysicalDeviceMemoryProperties2>();
+    vk::GetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
+    for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
+        if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
+            ((phys_mem_props2.memoryProperties.memoryTypes[mem_type].propertyFlags & mem_props) == mem_props)) {
+            alloc_info.memoryTypeIndex = mem_type;
+            break;
+        }
+    }
+    alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+    vkt::DeviceMemory p0_mem(*m_device, alloc_info);
+
+    // Plane 1 & 2 use same memory type
+    image_plane_req.planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+    alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+    vkt::DeviceMemory p1_mem(*m_device, alloc_info);
+
+    image_plane_req.planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+    vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+    alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+    vkt::DeviceMemory p2_mem(*m_device, alloc_info);
+
+    // Set up 3-plane binding
+    VkBindImageMemoryInfo bind_info[3];
+    VkBindImagePlaneMemoryInfo plane_info[3];
+    for (int plane = 0; plane < 3; plane++) {
+        plane_info[plane] = vku::InitStruct<VkBindImagePlaneMemoryInfo>();
+        bind_info[plane] = vku::InitStruct<VkBindImageMemoryInfo>(&plane_info[plane]);
+        bind_info[plane].image = image;
+        bind_info[plane].memoryOffset = 0;
+    }
+    bind_info[0].memory = p0_mem.handle();
+    bind_info[1].memory = p1_mem.handle();
+    bind_info[2].memory = p2_mem.handle();
+    plane_info[0].planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
+    plane_info[1].planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02284");
+    vk::BindImageMemory2(device(), 3, bind_info);
+    m_errorMonitor->VerifyFound();
+}
