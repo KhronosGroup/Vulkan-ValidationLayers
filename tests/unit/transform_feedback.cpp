@@ -16,6 +16,41 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
+// Basic Vertex shader with Xfb OpExecutionMode added
+static const char *kXfbVsSource = R"asm(
+               OpCapability Shader
+               OpCapability TransformFeedback
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %_
+               OpExecutionMode %main Xfb
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
 void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -71,6 +106,7 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     }
 
     {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366");
         vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
         m_errorMonitor->VerifyFound();
@@ -113,6 +149,8 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -267,6 +305,8 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -356,6 +396,8 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -489,6 +531,8 @@ TEST_F(NegativeTransformFeedback, BindPipeline) {
 
     CreatePipelineHelper pipe_one(*this);
     pipe_one.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe_one.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe_one.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_two(*this);
@@ -517,6 +561,8 @@ TEST_F(NegativeTransformFeedback, EndRenderPass) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1137,6 +1183,8 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.InitState();
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.shader_stages_[0] = vs->GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
@@ -1176,5 +1224,46 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-renderpass");
     vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), offsets);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTransformFeedback, XfbExecutionModeCommand) {
+    TEST_DESCRIPTION("missing Xfb execution mode");
+    InitBasicTransformFeedback();
+    if (::testing::Test::IsSkipped()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // default Vertex shader will not have Xfb
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
+    vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeTransformFeedback, XfbExecutionModePipeline) {
+    TEST_DESCRIPTION("missing Xfb execution mode");
+    InitBasicTransformFeedback();
+    if (::testing::Test::IsSkipped()) return;
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02318");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

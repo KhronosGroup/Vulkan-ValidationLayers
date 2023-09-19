@@ -69,63 +69,82 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
 
     tess_create_info = create_info.pTessellationState;
 
+    VkShaderStageFlags all_stages = 0;
+
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+        const auto &stage_ci = create_info.pStages[i];
+        const VkShaderStageFlagBits stage = stage_ci.stage;
         // TODO might need to filter out more than just fragment shaders here
-        if (create_info.pStages[i].stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-            auto module_state = state_data.Get<SHADER_MODULE_STATE>(create_info.pStages[i].module);
-            if (!module_state) {
-                // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
-                // module is part of a library and the state must be created
-                const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pStages[i].pNext);
-                if (shader_ci) {
-                    // don't need to worry about GroupDecoration in GPL
-                    auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
-                    module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, 0);
-                }
-            }
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            continue;
+        }
+        all_stages |= stage;
 
-            // Check if a shader module identifier is used to reference the shader module.
-            if (!module_state) {
-                if (const auto shader_stage_id =
-                        vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
-                    shader_stage_id) {
-                    module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
-                }
-            }
-
-            if (module_state) {
-                const auto *stage_ci = &create_info.pStages[i];
-                switch (create_info.pStages[i].stage) {
-                    case VK_SHADER_STAGE_VERTEX_BIT:
-                        vertex_shader = std::move(module_state);
-                        vertex_shader_ci = stage_ci;
-                        break;
-                    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-                        tessc_shader = std::move(module_state);
-                        tessc_shader_ci = stage_ci;
-                        break;
-                    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-                        tesse_shader = std::move(module_state);
-                        tesse_shader_ci = stage_ci;
-                        break;
-                    case VK_SHADER_STAGE_GEOMETRY_BIT:
-                        geometry_shader = std::move(module_state);
-                        geometry_shader_ci = stage_ci;
-                        break;
-                    case VK_SHADER_STAGE_TASK_BIT_EXT:
-                        task_shader = std::move(module_state);
-                        task_shader_ci = stage_ci;
-                        break;
-                    case VK_SHADER_STAGE_MESH_BIT_EXT:
-                        mesh_shader = std::move(module_state);
-                        mesh_shader_ci = stage_ci;
-                        break;
-                    default:
-                        // TODO is this an error?
-                        break;
-                }
+        auto module_state = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
+        if (!module_state) {
+            // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
+            // module is part of a library and the state must be created
+            const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
+            if (shader_ci) {
+                // don't need to worry about GroupDecoration in GPL
+                auto spirv_module = std::make_shared<SPIRV_MODULE_STATE>(shader_ci->codeSize, shader_ci->pCode);
+                module_state = std::make_shared<SHADER_MODULE_STATE>(VK_NULL_HANDLE, spirv_module, 0);
             }
         }
+
+        // Check if a shader module identifier is used to reference the shader module.
+        if (!module_state) {
+            if (const auto shader_stage_id = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+                shader_stage_id) {
+                module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
+            }
+        }
+
+        if (module_state) {
+            switch (stage) {
+                case VK_SHADER_STAGE_VERTEX_BIT:
+                    vertex_shader = std::move(module_state);
+                    vertex_shader_ci = &stage_ci;
+                    break;
+                case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+                    tessc_shader = std::move(module_state);
+                    tessc_shader_ci = &stage_ci;
+                    break;
+                case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+                    tesse_shader = std::move(module_state);
+                    tesse_shader_ci = &stage_ci;
+                    break;
+                case VK_SHADER_STAGE_GEOMETRY_BIT:
+                    geometry_shader = std::move(module_state);
+                    geometry_shader_ci = &stage_ci;
+                    break;
+                case VK_SHADER_STAGE_TASK_BIT_EXT:
+                    task_shader = std::move(module_state);
+                    task_shader_ci = &stage_ci;
+                    break;
+                case VK_SHADER_STAGE_MESH_BIT_EXT:
+                    mesh_shader = std::move(module_state);
+                    mesh_shader_ci = &stage_ci;
+                    break;
+                default:
+                    // TODO is this an error?
+                    break;
+            }
+        }
+    }
+
+    if (all_stages & VK_SHADER_STAGE_MESH_BIT_EXT) {
+        last_stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+    } else if (all_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
+        last_stage = VK_SHADER_STAGE_TASK_BIT_EXT;
+    } else if (all_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
+        last_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    } else if (all_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+        last_stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    } else if (all_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+        last_stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    } else if (all_stages & VK_SHADER_STAGE_VERTEX_BIT) {
+        last_stage = VK_SHADER_STAGE_VERTEX_BIT;
     }
 }
 

@@ -962,8 +962,7 @@ class CoreChecks : public ValidationStateTracker {
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
     bool ValidateShaderStageInputOutputLimits(const SPIRV_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                              const StageCreateInfo& create_info, const EntryPoint& entrypoint,
-                                              const Location& loc) const;
+                                              const EntryPoint& entrypoint, const Location& loc) const;
     bool ValidateShaderStorageImageFormatsVariables(const SPIRV_MODULE_STATE& module_state, const Instruction* insn,
                                                     const Location& loc) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const StageCreateInfo& create_info,

@@ -1758,6 +1758,25 @@ bool CoreChecks::ValidateTransformFeedback(const SPIRV_MODULE_STATE &module_stat
                                            const StageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 
+    if (create_info.pipeline) {
+        const bool is_xfb_execution_mode = entrypoint.execution_mode.Has(ExecutionModeSet::xfb_bit);
+        if (is_xfb_execution_mode) {
+            if ((create_info.pipeline->create_info_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-02322", module_state.handle(), loc,
+                                 "SPIR-V has OpExecutionMode of Xfb and using mesh shaders (%s).",
+                                 string_VkShaderStageFlags(create_info.pipeline->create_info_shaders).c_str());
+            }
+
+            if (create_info.pipeline->pre_raster_state &&
+                (entrypoint.stage != create_info.pipeline->pre_raster_state->last_stage)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
+                                 "SPIR-V has OpExecutionMode of Xfb in %s, but %s is the last last pre-rasterization shader stage.",
+                                 string_VkShaderStageFlagBits(entrypoint.stage),
+                                 string_VkShaderStageFlagBits(create_info.pipeline->pre_raster_state->last_stage));
+            }
+        }
+    }
+
     if (!enabled_features.transform_feedback_features.transformFeedback) {
         return skip;  // most apps will not use transform feedback, so only check if enabled
     }
@@ -2238,7 +2257,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const StageCreateInfo &stage_create
     }
 
     skip |= ValidateTransformFeedback(module_state, entrypoint, stage_create_info, loc);
-    skip |= ValidateShaderStageInputOutputLimits(module_state, stage, stage_create_info, entrypoint, loc);
+    skip |= ValidateShaderStageInputOutputLimits(module_state, stage, entrypoint, loc);
     skip |= ValidateAtomicsTypes(module_state, loc);
     skip |= ValidateShaderStageGroupNonUniform(module_state, stage, loc);
     skip |= ValidateShaderClock(module_state, loc);
