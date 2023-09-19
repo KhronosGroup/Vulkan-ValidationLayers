@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <bitset>
+#include <shared_mutex>
 
 #include <vulkan/utility/vk_format_utils.h>
 
@@ -51,8 +52,6 @@
 #define VVL_PRETTY_FUNCTION __FILE__ ":" STRINGIFY(__LINE__)
 #endif
 #endif
-
-#ifdef __cplusplus
 
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};
@@ -532,9 +531,6 @@ bool IsValueIn(const T &v, const std::initializer_list<T> &list) {
     return IsValueIn<T, decltype(list)>(v, list);
 }
 
-extern "C" {
-#endif
-
 #define VK_LAYER_API_VERSION VK_HEADER_VERSION_COMPLETE
 
 typedef enum VkStringErrorFlagBits {
@@ -548,13 +544,6 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 bool white_list(const char *item, const std::set<std::string> &whitelist);
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-#include <shared_mutex>
 
 // Aliases to avoid excessive typing. We can't easily auto these away because
 // there are virtual methods in ValidationObject which return lock guards
@@ -801,5 +790,3 @@ template <typename>
 inline constexpr bool dependent_false_v = false;
 
 }  // namespace vvl
-
-#endif
