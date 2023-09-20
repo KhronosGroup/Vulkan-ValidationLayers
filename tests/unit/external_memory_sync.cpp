@@ -199,7 +199,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
 
     // Create an image with one of the handle types
     external_image_info.handleTypes = handle_type;
-    vk_testing::Image image(*m_device, image_info, vk_testing::NoMemT{});
+    vkt::Image image(*m_device, image_info, vkt::NoMemT{});
 
     // Create export memory with a different handle type
     auto dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfo>();
@@ -232,8 +232,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto external_buffer_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
-    const auto buffer_info =
-        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
@@ -243,7 +242,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
     external_buffer_info.handleTypes = handle_type;
-    vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::no_mem);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     // Check if dedicated allocation is required
     bool dedicated_allocation = false;
@@ -260,8 +259,8 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type | not_supported_type;
 
-    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(),
-                                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(),
+                                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     VkResult result = buffer.memory().try_init(*m_device, alloc_info);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "vkAllocateMemory failed (probably due to unsupported handle type). Unable to reach vkBindBufferMemory to "
@@ -283,8 +282,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto external_buffer_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
-    const auto buffer_info =
-        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_types = FindSupportedExternalMemoryHandleTypes(buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
@@ -295,7 +293,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
     external_buffer_info.handleTypes = handle_type;
-    vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::no_mem);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     // Check if dedicated allocation is required
     bool dedicated_allocation = false;
@@ -350,7 +348,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
 
     // Create an image with supported handle type
     external_image_info.handleTypes = handle_type;
-    vk_testing::Image image(*m_device, image_info, vk_testing::no_mem);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     // Create memory object which additionally includes unsupported handle type
     const auto not_supported_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(~exportable_types);
@@ -401,7 +399,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
     }
 
     external_image_info.handleTypes = handle_type;
-    vk_testing::Image image(*m_device, image_info, vk_testing::no_mem);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     bool dedicated_allocation = false;
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(exportable_types, [&](VkExternalMemoryHandleTypeFlagBits handle_type) {
@@ -447,7 +445,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
 
     // Create a buffer with one of the handle types
     external_info.handleTypes = handle_type;
-    vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::NoMemT{});
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::NoMemT{});
 
     // Check if dedicated allocation is required
     const bool dedicated_allocation = HandleTypeNeedsDedicatedAllocation(buffer_info, handle_type2);
@@ -459,9 +457,9 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     export_memory_info.handleTypes = handle_type2;
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
-    const auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(
-        *m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    const auto memory = vk_testing::DeviceMemory(*m_device, alloc_info);
+    const auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs,
+                                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02726");
     vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 0);
@@ -528,11 +526,11 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
     stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
     auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&stci);
 
-    vk_testing::Semaphore export_semaphore(*m_device, sci);
+    vkt::Semaphore export_semaphore(*m_device, sci);
 
     // Create a semaphore to import payload into
     stci.pNext = nullptr;
-    vk_testing::Semaphore import_semaphore(*m_device, sci);
+    vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
@@ -589,7 +587,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&stci);
 
-    vk_testing::Semaphore timeline_sem(*m_device, sci);
+    vkt::Semaphore timeline_sem(*m_device, sci);
 
     // binary semaphore works fine.
     auto esci = vku::InitStruct<VkExportSemaphoreCreateInfo>();
@@ -597,10 +595,10 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     stci.pNext = &esci;
 
     stci.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
-    vk_testing::Semaphore binary_sem(*m_device, sci);
+    vkt::Semaphore binary_sem(*m_device, sci);
 
     // Create a semaphore to import payload into
-    vk_testing::Semaphore import_semaphore(*m_device);
+    vkt::Semaphore import_semaphore(*m_device);
 
     int fd_handle = -1;
 
@@ -672,11 +670,11 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
     auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
-    vk_testing::Fence export_fence(*m_device, fci);
+    vkt::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
     fci.pNext = nullptr;
-    vk_testing::Fence import_fence(*m_device, fci);
+    vkt::Fence import_fence(*m_device, fci);
 
     // Export fence payload to an opaque handle
     ExternalHandle ext_fence{};
@@ -748,11 +746,11 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
     auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
-    vk_testing::Fence export_fence(*m_device, fci);
+    vkt::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
     fci.pNext = nullptr;
-    vk_testing::Fence import_fence(*m_device, fci);
+    vkt::Fence import_fence(*m_device, fci);
 
     ExternalHandle ext_handle{};
 
@@ -825,11 +823,11 @@ TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     auto efci = vku::InitStruct<VkExportFenceCreateInfoKHR>();
     efci.handleTypes = handle_type;
     auto fci = vku::InitStruct<VkFenceCreateInfo>(&efci);
-    vk_testing::Fence export_fence(*m_device, fci);
+    vkt::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
     fci.pNext = nullptr;
-    vk_testing::Fence import_fence(*m_device, fci);
+    vkt::Fence import_fence(*m_device, fci);
 
     int fd_handle = -1;
 
@@ -892,11 +890,11 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     esci.handleTypes = handle_type;
     auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&esci);
 
-    vk_testing::Semaphore export_semaphore(*m_device, sci);
+    vkt::Semaphore export_semaphore(*m_device, sci);
 
     // Create a semaphore to import payload into
     sci.pNext = nullptr;
-    vk_testing::Semaphore import_semaphore(*m_device, sci);
+    vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
@@ -990,10 +988,10 @@ TEST_F(NegativeExternalMemorySync, Semaphore) {
     esci.handleTypes = handle_type;
     auto sci = vku::InitStruct<VkSemaphoreCreateInfo>(&esci);
 
-    vk_testing::Semaphore export_semaphore(*m_device, sci);
+    vkt::Semaphore export_semaphore(*m_device, sci);
 
     // Create a semaphore for importing
-    vk_testing::Semaphore import_semaphore(*m_device);
+    vkt::Semaphore import_semaphore(*m_device);
 
     ExternalHandle ext_handle{};
 
@@ -1089,7 +1087,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     }
 
     // Allocation info
-    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export_reqs, mem_flags);
+    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export_reqs, mem_flags);
 
     // Add export allocation info to pNext chain
     auto export_info = vku::InitStruct<VkExportMemoryAllocateInfoKHR>();
@@ -1106,7 +1104,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     }
 
     // Allocate memory to be exported
-    vk_testing::DeviceMemory memory_buffer_export;
+    vkt::DeviceMemory memory_buffer_export;
     memory_buffer_export.init(*m_device, alloc_info);
 
     // Bind exported memory
@@ -1125,7 +1123,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     image_info.arrayLayers = 1;
     image_info.mipLevels = 1;
 
-    vk_testing::Image image_export(*m_device, image_info, vk_testing::no_mem);
+    vkt::Image image_export(*m_device, image_info, vkt::no_mem);
 
     const bool image_dedicated_allocation = HandleTypeNeedsDedicatedAllocation(image_info, handle_type);
     auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfo>();
@@ -1185,9 +1183,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
 #endif
 
     // Import memory
-    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
+    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
-    vk_testing::DeviceMemory memory_buffer_import;
+    vkt::DeviceMemory memory_buffer_import;
     memory_buffer_import.init(*m_device, alloc_info);
     ASSERT_TRUE(memory_buffer_import.initialized());
 
@@ -1195,9 +1193,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     if (image_import_reqs.memoryTypeBits == 0) {
         GTEST_SKIP() << "no suitable memory found, skipping test";
     }
-    alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_import_reqs, mem_flags);
+    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_image;
-    vk_testing::DeviceMemory memory_image_import;
+    vkt::DeviceMemory memory_image_import;
     memory_image_import.init(*m_device, alloc_info);
 
     // Bind imported memory with different handleType
@@ -1430,7 +1428,7 @@ TEST_F(NegativeExternalMemorySync, D3D12FenceSubmitInfo) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     // VkD3D12FenceSubmitInfoKHR::waitSemaphoreValuesCount == 1 is different from VkSubmitInfo::waitSemaphoreCount == 0
     {
@@ -1477,7 +1475,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
         alloc_info.allocationSize = 32;
         alloc_info.memoryTypeIndex = 0;
-        vk_testing::DeviceMemory memory;
+        vkt::DeviceMemory memory;
         memory.init(*m_device, alloc_info);
 
         auto get_handle_info = vku::InitStruct<VkMemoryGetFdInfoKHR>();
@@ -1496,7 +1494,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         auto alloc_info = vku::InitStruct<VkMemoryAllocateInfo>(&export_info);
         alloc_info.allocationSize = 1024;
         alloc_info.memoryTypeIndex = 0;
-        vk_testing::DeviceMemory memory;
+        vkt::DeviceMemory memory;
         memory.init(*m_device, alloc_info);
 
         auto get_handle_info = vku::InitStruct<VkMemoryGetFdInfoKHR>();
@@ -1516,7 +1514,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         alloc_info.allocationSize = 1024;
         alloc_info.memoryTypeIndex = 0;
 
-        vk_testing::DeviceMemory memory;
+        vkt::DeviceMemory memory;
         memory.init(*m_device, alloc_info);
         auto get_handle_info = vku::InitStruct<VkMemoryGetFdInfoKHR>();
         get_handle_info.memory = memory;
@@ -1616,7 +1614,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
     {
         alloc_info_with_import.allocationSize = payload_size;
         alloc_info_with_import.memoryTypeIndex = payload_memory_type;
-        vk_testing::DeviceMemory successfully_imported_memory;
+        vkt::DeviceMemory successfully_imported_memory;
         successfully_imported_memory.init(*m_device, alloc_info_with_import);
     }
 }
@@ -1732,8 +1730,7 @@ TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto external_buffer_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
-    const auto buffer_info =
-        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
         buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
     if (!exportable_dedicated_types) {
@@ -1747,7 +1744,7 @@ TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00639");
     // pNext chain contains VkExportMemoryAllocateInfo but not VkMemoryDedicatedAllocateInfo
-    vk_testing::Buffer buffer(*m_device, buffer_info, 0, &export_memory_info);
+    vkt::Buffer buffer(*m_device, buffer_info, 0, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1788,7 +1785,7 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00639");
     // pNext chain contains VkExportMemoryAllocateInfo but not VkMemoryDedicatedAllocateInfo
-    vk_testing::Image image(*m_device, image_info, 0, &export_memory_info);
+    vkt::Image image(*m_device, image_info, 0, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
 

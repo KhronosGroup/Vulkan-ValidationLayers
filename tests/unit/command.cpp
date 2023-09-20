@@ -27,8 +27,8 @@ TEST_F(NegativeCommand, CommandPoolConsistency) {
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
-    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_1(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBuffer cb;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
@@ -63,7 +63,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -73,7 +73,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
     image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
 
@@ -4290,18 +4290,18 @@ TEST_F(NegativeCommand, ClearImage) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    vk_testing::Image color_image_no_transfer;
+    vkt::Image color_image_no_transfer;
     color_image_no_transfer.init(*m_device, image_create_info);
 
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vk_testing::Image color_image;
+    vkt::Image color_image;
     color_image.init(*m_device, image_create_info);
 
-    const VkImageSubresourceRange color_range = vk_testing::Image::subresource_range(image_create_info, VK_IMAGE_ASPECT_COLOR_BIT);
+    const VkImageSubresourceRange color_range = vkt::Image::subresource_range(image_create_info, VK_IMAGE_ASPECT_COLOR_BIT);
 
     // Depth/Stencil image
     VkClearDepthStencilValue clear_value = {0};
-    VkImageCreateInfo ds_image_create_info = vk_testing::Image::create_info();
+    VkImageCreateInfo ds_image_create_info = vkt::Image::create_info();
     ds_image_create_info.imageType = VK_IMAGE_TYPE_2D;
     ds_image_create_info.format = VK_FORMAT_D16_UNORM;
     ds_image_create_info.extent.width = 64;
@@ -4309,10 +4309,10 @@ TEST_F(NegativeCommand, ClearImage) {
     ds_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     ds_image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    vk_testing::Image ds_image;
+    vkt::Image ds_image;
     ds_image.init(*m_device, ds_image_create_info);
 
-    const VkImageSubresourceRange ds_range = vk_testing::Image::subresource_range(ds_image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
+    const VkImageSubresourceRange ds_range = vkt::Image::subresource_range(ds_image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-image-00007");
 
@@ -4469,23 +4469,23 @@ TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     pool_create_info.flags = 0;
 
     pool_create_info.queueFamilyIndex = queue_index_a;
-    vk_testing::CommandPool command_pool_a(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_a(*m_device, pool_create_info);
     ASSERT_TRUE(command_pool_a.initialized());
 
     pool_create_info.queueFamilyIndex = queue_index_b;
-    vk_testing::CommandPool command_pool_b(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_b(*m_device, pool_create_info);
     ASSERT_TRUE(command_pool_b.initialized());
 
     auto command_buffer_allocate_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.commandPool = command_pool_a.handle();
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vk_testing::CommandBuffer command_buffer_primary(*m_device, command_buffer_allocate_info);
+    vkt::CommandBuffer command_buffer_primary(*m_device, command_buffer_allocate_info);
     ASSERT_TRUE(command_buffer_primary.initialized());
 
     command_buffer_allocate_info.commandPool = command_pool_b.handle();
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-    vk_testing::CommandBuffer command_buffer_secondary(*m_device, command_buffer_allocate_info);
+    vkt::CommandBuffer command_buffer_secondary(*m_device, command_buffer_allocate_info);
 
     auto cmdbuff_ii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
     cmdbuff_ii.renderPass = m_renderPass;
@@ -4638,7 +4638,7 @@ TEST_F(NegativeCommand, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
-    vk_testing::CommandBuffer secondary_command_buffer(*m_device, command_buffer_allocate_info);
+    vkt::CommandBuffer secondary_command_buffer(*m_device, command_buffer_allocate_info);
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
     command_buffer_inheritance_info.framebuffer = m_framebuffer;
@@ -5081,7 +5081,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(VkDrawIndirectCommand);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    vk_testing::Buffer draw_buffer;
+    vkt::Buffer draw_buffer;
     draw_buffer.init_no_mem(*m_device, buffer_create_info);
     ASSERT_TRUE(draw_buffer.initialized());
 
@@ -5098,7 +5098,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
 
     draw_buffer.allocate_and_bind_memory(*m_device);
 
-    vk_testing::Buffer count_buffer_unbound;
+    vkt::Buffer count_buffer_unbound;
     count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
     ASSERT_TRUE(count_buffer_unbound.initialized());
 
@@ -5191,7 +5191,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
-    vk_testing::Buffer draw_buffer_unbound;
+    vkt::Buffer draw_buffer_unbound;
     draw_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
     ASSERT_TRUE(draw_buffer_unbound.initialized());
 
@@ -5200,7 +5200,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    vk_testing::Buffer count_buffer_unbound;
+    vkt::Buffer count_buffer_unbound;
     count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
     ASSERT_TRUE(count_buffer_unbound.initialized());
 
@@ -5593,13 +5593,13 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     auto sampler_ci = vku::InitStruct<VkSamplerCreateInfo>();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     ASSERT_TRUE(sampler.initialized());
 
     auto reduction_mode_ci = vku::InitStruct<VkSamplerReductionModeCreateInfo>();
     reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
     sampler_ci.pNext = &reduction_mode_ci;
-    vk_testing::Sampler sampler_reduction(*m_device, sampler_ci);
+    vkt::Sampler sampler_reduction(*m_device, sampler_ci);
 
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -5662,7 +5662,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = vk_testing::Image::create_info();
+    auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = format;
     image_ci.extent.width = 128;
@@ -5682,7 +5682,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     auto sampler_ci = vku::InitStruct<VkSamplerCreateInfo>();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     ASSERT_TRUE(sampler.initialized());
 
     static const char fs_src[] = R"glsl(
@@ -5775,7 +5775,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     ds_pool_ci.flags = 0;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
     ASSERT_TRUE(ds_pool.initialized());
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -5840,8 +5840,8 @@ TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto buffer_ci =
-        vk_testing::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
-    vk_testing::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = vku::InitStructHelper();
     conditional_rendering_begin.buffer = buffer.handle();
@@ -5937,7 +5937,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dep;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -5950,7 +5950,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
     ASSERT_TRUE(framebuffer.initialized());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -6070,7 +6070,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
     rpci.pSubpasses = subpasses;
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependencies;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
     ASSERT_TRUE(render_pass.initialized());
 
     VkImageObj image(m_device);
@@ -6079,7 +6079,7 @@ TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
 
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass.handle(), 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
     ASSERT_TRUE(framebuffer.initialized());
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -6128,9 +6128,9 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
     };
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
-    vk_testing::RenderPass render_pass_1(*m_device, rpci);
+    vkt::RenderPass render_pass_1(*m_device, rpci);
     rpci.subpassCount = 2;
-    vk_testing::RenderPass render_pass_2(*m_device, rpci);
+    vkt::RenderPass render_pass_2(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -6138,7 +6138,7 @@ TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
 
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1.handle(), 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -6551,7 +6551,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     rp_ci.subpassCount = 1;
     rp_ci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass(*m_device, rp_ci);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
 
     auto depth_state_info = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     depth_state_info.depthTestEnable = VK_TRUE;
@@ -6604,7 +6604,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     framebuffer_ci.attachmentCount = 1;
     framebuffer_ci.pAttachments = &image_view;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
     ASSERT_TRUE(framebuffer.initialized());
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = render_pass.handle();
@@ -7119,12 +7119,12 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     ivci.components.g = VK_COMPONENT_SWIZZLE_G;
     ivci.components.b = VK_COMPONENT_SWIZZLE_B;
     ivci.components.a = VK_COMPONENT_SWIZZLE_A;
-    vk_testing::ImageView render_target_view(*m_device, ivci);
+    vkt::ImageView render_target_view(*m_device, ivci);
     VkFramebufferCreateInfo fb_info = m_framebuffer_info;
     fb_info.layers = 2;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &render_target_view.handle();
-    vk_testing::Framebuffer framebuffer(*m_device, fb_info);
+    vkt::Framebuffer framebuffer(*m_device, fb_info);
     m_renderPassBeginInfo.framebuffer = framebuffer.handle();
 
     // Create secondary command buffer
@@ -7133,7 +7133,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     secondary_cmd_buffer_alloc_info.commandBufferCount = 1;
 
-    vk_testing::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
+    vkt::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
     VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info = vku::InitStructHelper();
     secondary_cmd_buffer_inheritance_info.renderPass = m_renderPass;
     secondary_cmd_buffer_inheritance_info.framebuffer = framebuffer.handle();

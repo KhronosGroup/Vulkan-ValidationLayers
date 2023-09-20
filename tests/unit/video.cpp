@@ -2239,7 +2239,7 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
     image_view_ci.components = config.DpbFormatProps()->componentMapping;
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vk_testing::ImageView image_view(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     res.imageViewBinding = image_view;
 
@@ -3087,7 +3087,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
     image_view_ci.components = config.PictureFormatProps()->componentMapping;
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vk_testing::ImageView image_view(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     VkVideoPictureResourceInfoKHR dst_res = context.DecodeOutput()->Picture();
     dst_res.imageViewBinding = image_view;
@@ -4093,7 +4093,7 @@ TEST_F(VkVideoLayerTest, CreateImageViewInvalidViewType) {
     image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    vk_testing::Image image;
+    vkt::Image image;
     image.init(*m_device, image_ci);
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
@@ -4128,7 +4128,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, create_info);
 
     VkCommandPoolObj cmd_pool(m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &cmd_pool);
@@ -4224,7 +4224,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, create_info);
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
@@ -4253,7 +4253,7 @@ TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
     auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, create_info);
 
     uint32_t status;
     VkQueryResultFlags flags;
@@ -4281,7 +4281,7 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
     auto create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, create_info);
+    vkt::QueryPool query_pool(*m_device, create_info);
 
     VkQueryResultFlags flags;
 
@@ -4443,7 +4443,7 @@ TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
     VkBufferCreateInfo buffer_create_info =
         vku::InitStruct<VkBufferCreateInfo>(nullptr, static_cast<VkBufferCreateFlags>(0), static_cast<VkDeviceSize>(4096),
                                           static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
-    vk_testing::Buffer buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
     VkMemoryRequirements buf_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buf_mem_reqs);
 
@@ -4451,7 +4451,7 @@ TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buf_mem_reqs.size;
     ASSERT_TRUE(m_device->phy().set_memory_type(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-    vk_testing::DeviceMemory memory(*m_device, alloc_info);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
 
     // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called
     auto bind_info = vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>();

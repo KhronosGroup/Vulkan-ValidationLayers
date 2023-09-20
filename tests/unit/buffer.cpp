@@ -247,7 +247,7 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_view_ci.buffer = buffer;
     buff_view_ci.format = VK_FORMAT_R8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buff_view_ci);
     m_errorMonitor->VerifyFound();
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }

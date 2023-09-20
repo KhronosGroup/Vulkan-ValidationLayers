@@ -534,12 +534,12 @@ class NegativeShaderCompute : public ShaderComputeTest {};
 class PositiveShaderCompute : public ShaderComputeTest {};
 
 class ShaderObjectTest : public VkLayerTest {
-    vk_testing::Buffer vertexBuffer;
+    vkt::Buffer vertexBuffer;
 
   public:
     void InitBasicShaderObject(void *pNextFeatures = nullptr, APIVersion targetApiVersion = VK_API_VERSION_1_1, bool coreFeatures = true);
-    void BindVertFragShader(const vk_testing::Shader &vertShader, const vk_testing::Shader &fragShader);
-    void BindCompShader(const vk_testing::Shader &compShader);
+    void BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader);
+    void BindCompShader(const vkt::Shader &compShader);
     void SetDefaultDynamicStates(const std::vector<VkDynamicState>& exclude = {}, bool tessellation = false, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 };
 class NegativeShaderObject : public ShaderObjectTest {};
@@ -853,13 +853,13 @@ class ThreadTimeoutHelper {
 
 void ReleaseNullFence(ThreadTestData *);
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device, const VkRenderPassCreateInfo &create_info,
+void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device,
-                                  const VkRenderPassCreateInfo &create_info, bool rp2_supported);
-void PositiveTestRenderPass2KHRCreate(const vk_testing::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
-void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vk_testing::Device &device,
-                              const VkRenderPassCreateInfo2KHR &create_info, const std::initializer_list<const char *> &vuids);
+void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
+                                  bool rp2_supported);
+void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
+void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
+                              const std::initializer_list<const char *> &vuids);
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 

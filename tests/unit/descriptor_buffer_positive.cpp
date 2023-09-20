@@ -42,18 +42,18 @@ TEST_F(PositiveDescriptorBuffer, BasicUsage) {
 
     {
         buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        vk_testing::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
     }
 
     {
         buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        vk_testing::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
     }
 
     {
         buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                           VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        vk_testing::Buffer buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
     }
 }
 
@@ -69,7 +69,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     auto allocate_flag_info = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
+    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &allocate_flag_info);
 
     auto buffer_binding_info = vku::InitStruct<VkDescriptorBufferBindingInfoEXT>();
     buffer_binding_info.address = buffer.address();

@@ -359,7 +359,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = size32(attachments);
     rpci.pAttachments = attachments;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.flags = 0;
@@ -369,7 +369,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer;
@@ -1462,7 +1462,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     VkImageView imageview_s = image_s_a.targetView(format);
 
-    vk_testing::Sampler sampler_s, sampler_c;
+    vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_s.init(*m_device, sampler_ci);
     sampler_c.init(*m_device, sampler_ci);
@@ -1474,7 +1474,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     buffer_a.init(*m_device, buffer_a.create_info(2048, buffer_usage, nullptr), mem_prop);
     buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
 
-    vk_testing::BufferView bufferview;
+    vkt::BufferView bufferview;
     auto bvci = vku::InitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -2008,7 +2008,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -2057,7 +2057,7 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
 
     VkRenderpassObj rp_ds(m_device, format_ds, true), rp_dp(m_device, format_dp, true), rp_st(m_device, format_st, true);
 
-    vk_testing::Framebuffer fb_ds, fb_dp, fb_st;
+    vkt::Framebuffer fb_ds, fb_dp, fb_st;
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, image_ds.BindInfo(), 16, 16, 1};
     fb_ds.init(*m_device, fbci);
@@ -2231,10 +2231,10 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
                                                    &subpassDescription,
                                                    1u,
                                                    &subpassDependency};
-    vk_testing::RenderPass rp(*m_device, renderPassInfo);
+    vkt::RenderPass rp(*m_device, renderPassInfo);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 2, attachments, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     image_input.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -2250,7 +2250,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
-    vk_testing::RenderPass rp_no_load_store;
+    vkt::RenderPass rp_no_load_store;
     if (load_store_op_none) {
         attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
         attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
@@ -2326,16 +2326,16 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
                                                    &subpassDescription,
                                                    0u,
                                                    0};
-    vk_testing::RenderPass rp(*m_device, renderPassInfo);
+    vkt::RenderPass rp(*m_device, renderPassInfo);
 
     VkImageView fb_attachments[] = {image_color.targetView(color_format),
                                     image_ds.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)};
     const VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0u, rp.handle(), 2u, fb_attachments, 32, 32, 1u,
     };
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     fb_attachments[0] = image_color2.targetView(color_format);
-    vk_testing::Framebuffer fb1(*m_device, fbci);
+    vkt::Framebuffer fb1(*m_device, fbci);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.gp_ci_.renderPass = rp.handle();
@@ -2441,8 +2441,8 @@ struct CreateRenderPassHelper {
     std::vector<VkSubpassDescription> subpasses;
     std::vector<SubpassDescriptionStore> subpass_description_store;
     VkRenderPassCreateInfo render_pass_create_info;
-    std::shared_ptr<vk_testing::RenderPass> render_pass;
-    std::shared_ptr<vk_testing::Framebuffer> framebuffer;
+    std::shared_ptr<vkt::RenderPass> render_pass;
+    std::shared_ptr<vkt::Framebuffer> framebuffer;
     VkRenderPassBeginInfo render_pass_begin;
     std::vector<VkClearValue> clear_colors;
 
@@ -2607,12 +2607,12 @@ struct CreateRenderPassHelper {
         InitSubpassDescription();
         InitSubpasses();
         InitRenderPassInfo();
-        render_pass = std::make_shared<vk_testing::RenderPass>();
+        render_pass = std::make_shared<vkt::RenderPass>();
         render_pass->init(*dev, render_pass_create_info);
     }
 
     void InitFramebuffer() {
-        framebuffer = std::make_shared<vk_testing::Framebuffer>();
+        framebuffer = std::make_shared<vkt::Framebuffer>();
         VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                         0,
                                         0u,
@@ -2669,7 +2669,7 @@ struct SyncTestPipeline {
     VkShaderObj vs;
     VkShaderObj fs;
     VkSamplerCreateInfo sampler_info;
-    vk_testing::Sampler sampler;
+    vkt::Sampler sampler;
     VkImageView view_input = VK_NULL_HANDLE;
     SyncTestPipeline(VkLayerTest& test_, VkRenderPass rp_)
         : test(test_),
@@ -2838,7 +2838,7 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
     rp_helper_negative.InitBeginInfo();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     CreatePipelineHelper g_pipe(*this);
     rp_helper_positive.InitPipelineHelper(g_pipe);
@@ -3058,7 +3058,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     fbci.layers = 1;
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -3069,10 +3069,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     // run the renderpass with no dependencies
     {
-        vk_testing::RenderPass rp(*m_device, renderpass_info);
+        vkt::RenderPass rp(*m_device, renderpass_info);
 
         fbci.renderPass = rp.handle();
-        vk_testing::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -3087,7 +3087,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         g_pipe_12.InitState();
         g_pipe_12.LateBindPipelineInfo();
 
-        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
@@ -3150,10 +3150,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.pDependencies = subpass_dependencies.data();
 
     {
-        vk_testing::RenderPass rp(*m_device, renderpass_info);
+        vkt::RenderPass rp(*m_device, renderpass_info);
 
         fbci.renderPass = rp.handle();
-        vk_testing::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -3168,7 +3168,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         g_pipe_12.InitState();
         g_pipe_12.LateBindPipelineInfo();
 
-        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
@@ -3233,10 +3233,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.dependencyCount = subpass_dependencies.size();
     renderpass_info.pDependencies = subpass_dependencies.data();
     {
-        vk_testing::RenderPass rp(*m_device, renderpass_info);
+        vkt::RenderPass rp(*m_device, renderpass_info);
 
         fbci.renderPass = rp.handle();
-        vk_testing::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, fbci);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp.handle();
@@ -3251,7 +3251,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         g_pipe_12.InitState();
         g_pipe_12.LateBindPipelineInfo();
 
-        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
@@ -3675,7 +3675,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
     vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     VkPipelineStageFlagBits2KHR stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
 
@@ -3692,7 +3692,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
         qpci.queryType = VK_QUERY_TYPE_TIMESTAMP;
         qpci.queryCount = 1;
 
-        vk_testing::QueryPool query_pool(*m_device, qpci);
+        vkt::QueryPool query_pool(*m_device, qpci);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
         vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
@@ -3798,7 +3798,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     bvci.offset = 0;
     bvci.range = VK_WHOLE_SIZE;
 
-    auto texel_bufferview = std::make_unique<vk_testing::BufferView>();
+    auto texel_bufferview = std::make_unique<vkt::BufferView>();
     texel_bufferview->init(*m_device, bvci);
 
     auto index_buffer_create_info = vku::InitStruct<VkBufferCreateInfo>();
@@ -3810,7 +3810,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     VkImageObj sampled_image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     sampled_image.Init(image_ci);
-    auto sampled_view = std::make_unique<vk_testing::ImageView>();
+    auto sampled_view = std::make_unique<vkt::ImageView>();
     auto imageview_ci = sampled_image.BasicViewCreatInfo();
     sampled_view->init(*m_device, imageview_ci);
 
@@ -3818,11 +3818,11 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     combined_image.Init(image_ci);
     imageview_ci = combined_image.BasicViewCreatInfo();
-    auto combined_view = std::make_unique<vk_testing::ImageView>();
+    auto combined_view = std::make_unique<vkt::ImageView>();
     combined_view->init(*m_device, imageview_ci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     VkDescriptorImageInfo image_info[3] = {};
     image_info[0].sampler = sampler.handle();
@@ -3982,7 +3982,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     rp_ci.dependencyCount = 1;
     rp_ci.pDependencies = &subpass_dependency;
 
-    vk_testing::RenderPass render_pass(*m_device, rp_ci);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
 
     VkClearValue clear_value = {};
     clear_value.color = {{0, 0, 0, 0}};
@@ -4012,7 +4012,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     iv_ci.subresourceRange.levelCount = 1;
     iv_ci.subresourceRange.baseArrayLayer = 0;
     iv_ci.subresourceRange.layerCount = 1;
-    vk_testing::ImageView image_view1(*m_device, iv_ci);
+    vkt::ImageView image_view1(*m_device, iv_ci);
 
     VkImageView framebuffer_attachments[1] = {image_view1.handle()};
 
@@ -4024,7 +4024,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     fb_ci.height = 32;
     fb_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
 
     auto rp_bi = vku::InitStruct<VkRenderPassBeginInfo>();
     rp_bi.renderPass = render_pass.handle();
@@ -4193,7 +4193,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
 
     VkImageView imageview_s = image_s_a.targetView(format);
 
-    vk_testing::Sampler sampler_s, sampler_c;
+    vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_s.init(*m_device, sampler_ci);
     sampler_c.init(*m_device, sampler_ci);
@@ -4205,7 +4205,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     buffer_a.init(*m_device, buffer_a.create_info(2048, buffer_usage, nullptr), mem_prop);
     buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
 
-    vk_testing::BufferView bufferview;
+    vkt::BufferView bufferview;
     auto bvci = vku::InitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -4359,8 +4359,8 @@ struct QSTestContext {
     VkCommandBuffer h_cbb = VK_NULL_HANDLE;
     VkCommandBuffer h_cbc = VK_NULL_HANDLE;
 
-    vk_testing::Semaphore semaphore;
-    vk_testing::Event event;
+    vkt::Semaphore semaphore;
+    vkt::Event event;
 
     VkCommandBufferObj* current_cb = nullptr;
 
@@ -4748,7 +4748,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
         GTEST_SKIP() << "Test requires a valid queue object.";
     }
 
-    vk_testing::Fence fence;
+    vkt::Fence fence;
     fence.init(*m_device, VkFenceObj::create_info());
     VkFence fence_handle = fence.handle();
     VkResult wait_result;
@@ -5356,8 +5356,8 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit2) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
-    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
@@ -5429,8 +5429,8 @@ TEST_F(NegativeSyncVal, PresentDoesNotWaitForSubmit) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
-    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;

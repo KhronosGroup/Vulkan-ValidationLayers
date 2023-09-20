@@ -326,13 +326,13 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     rpci.pAttachments = &attach_desc;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpasses;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkFramebufferCreateInfo &fbci = m_framebuffer_info;
     fbci.renderPass = rp.handle();
     fbci.attachmentCount = 1;
     fbci.pAttachments = m_depthStencil->BindInfo();
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     // Enable dynamic color write enable
     pipe.gp_ci_.renderPass = rp.handle();

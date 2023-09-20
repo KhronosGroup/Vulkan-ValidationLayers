@@ -143,7 +143,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image image_from_swapchain(*m_device, image_create_info, vk_testing::no_mem);
+    vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs = {};
     vk::GetImageMemoryRequirements(device(), image_from_swapchain.handle(), &mem_reqs);
@@ -155,7 +155,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
         GTEST_SKIP() << "Driver seems to not be returning an valid allocation size and need to end test";
     }
 
-    vk_testing::DeviceMemory mem;
+    vkt::DeviceMemory mem;
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     // some devices don't give us good memory requirements for the swapchain image
     if (pass) {
@@ -345,7 +345,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image peer_image(*m_device, image_create_info, vk_testing::no_mem);
+    vkt::Image peer_image(*m_device, image_create_info, vkt::no_mem);
 
     auto bind_devicegroup_info = vku::InitStruct<VkBindImageMemoryDeviceGroupInfo>();
     bind_devicegroup_info.deviceIndexCount = 1;
@@ -579,7 +579,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-03265");
     uint32_t image_i;
@@ -624,7 +624,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore2KHR) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     auto acquire_info = vku::InitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;
@@ -749,7 +749,7 @@ TEST_F(NegativeWsi, SwapchainNotSupported) {
     device_create_info.enabledExtensionCount = m_device_extension_names.size();
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    vk_testing::Device test_device(gpu());
+    vkt::Device test_device(gpu());
     test_device.init(device_create_info);
 
     // Initialize extensions manually because we don't use InitState() in this test
@@ -1392,8 +1392,8 @@ TEST_F(NegativeWsi, DeviceMask) {
     vk::CmdSetDeviceMask(m_commandBuffer->handle(), 0);
     m_errorMonitor->VerifyFound();
 
-    vk_testing::Semaphore semaphore(*m_device), semaphore2(*m_device);
-    vk_testing::Fence fence(*m_device);
+    vkt::Semaphore semaphore(*m_device), semaphore2(*m_device);
+    vkt::Fence fence(*m_device);
 
     // Test VkAcquireNextImageInfoKHR
     uint32_t imageIndex;
@@ -1605,7 +1605,7 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     dev_grp_cmd_buf_info.deviceMask = 0x1;
     auto cmd_buf_info = vku::InitStruct<VkCommandBufferBeginInfo>(&dev_grp_cmd_buf_info);
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     auto device_group_submit_info = vku::InitStruct<VkDeviceGroupSubmitInfo>();
     device_group_submit_info.commandBufferCount = 1;
@@ -1670,7 +1670,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.signalSemaphoreCount = 1;
@@ -1710,7 +1710,7 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
 
     uint32_t current_buffer;
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>();
-    vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
+    vkt::Semaphore image_acquired(*m_device, semaphore_create_info);
     ASSERT_TRUE(image_acquired.initialized());
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);
 
@@ -2397,7 +2397,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
 
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
@@ -2497,7 +2497,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image image_from_swapchain(*m_device, image_create_info, vk_testing::no_mem);
+    vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
 
     auto bind_info = vku::InitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image_from_swapchain.handle();
@@ -2612,8 +2612,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
 
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
-    vk_testing::Semaphore acquire_semaphore(*m_device);
-    vk_testing::Semaphore submit_semaphore(*m_device);
+    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore submit_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
@@ -3130,7 +3130,7 @@ TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01430");
 
-    vk_testing::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore acquire_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     uint32_t image_index = 0;
@@ -3278,8 +3278,8 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     uint32_t image_index{0};
     const auto images = GetSwapchainImages(m_swapchain);
 
-    vk_testing::Fence fence(*m_device);
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Fence fence(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
     ASSERT_VK_SUCCESS(err);
@@ -3332,8 +3332,8 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     uint32_t image_index{0};
     const auto images = GetSwapchainImages(m_swapchain);
 
-    vk_testing::Fence fence(*m_device);
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Fence fence(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
     ASSERT_VK_SUCCESS(err);
@@ -3402,7 +3402,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     VkSwapchainKHR swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     auto acquire_info = vku::InitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;

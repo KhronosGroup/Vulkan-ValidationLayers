@@ -1204,7 +1204,7 @@ TEST_F(NegativeRayTracing, EventSync1AccessAccelerationStructureRayQueryDisabled
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const vk_testing::Event event(*m_device);
+    const vkt::Event event(*m_device);
 
     auto memory_barrier = vku::InitStruct<VkMemoryBarrier>();
     memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
@@ -1335,7 +1335,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             ds_layout_ci.bindingCount = dslb_vec.size();
             ds_layout_ci.pBindings = dslb_vec.data();
 
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
             ASSERT_TRUE(ds_layout.initialized());
 
             VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1346,7 +1346,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1382,7 +1382,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             ds_layout_ci.bindingCount = dslb_vec.size();
             ds_layout_ci.pBindings = dslb_vec.data();
 
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
             ASSERT_TRUE(ds_layout.initialized());
 
             VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1391,7 +1391,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1426,7 +1426,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             ds_layout_ci.bindingCount = dslb_vec.size();
             ds_layout_ci.pBindings = dslb_vec.data();
 
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
             ASSERT_TRUE(ds_layout.initialized());
 
             VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1437,7 +1437,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
-            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1473,7 +1473,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             ds_layout_ci.bindingCount = dslb_vec.size();
             ds_layout_ci.pBindings = dslb_vec.data();
 
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
             ASSERT_TRUE(ds_layout.initialized());
 
             VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1482,7 +1482,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
             m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1519,7 +1519,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
             query_pool_ci.queryCount = 1;
 
             query_pool_ci.queryType = query_type;
-            vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+            vkt::QueryPool query_pool(*m_device, query_pool_ci);
             ASSERT_TRUE(query_pool.initialized());
 
             m_commandBuffer->begin();
@@ -1551,7 +1551,7 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
         VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
         query_pool_ci.queryCount = 1;
         query_pool_ci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -1642,7 +1642,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     memory_alloc.allocationSize = memory_requirements.size;
     ASSERT_TRUE(
         m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
@@ -1780,7 +1780,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     memory_alloc.allocationSize = memory_requirements.size;
     ASSERT_TRUE(
         m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
@@ -1842,7 +1842,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     memory_alloc.allocationSize = memory_requirements.size;
     ASSERT_TRUE(
         m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
@@ -1895,7 +1895,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     memory_alloc.allocationSize = memory_requirements.size;
     ASSERT_TRUE(
         m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
@@ -2133,7 +2133,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
-    vk_testing::DeviceMemory mem(*m_device, alloc_info);
+    vkt::DeviceMemory mem(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
 
     auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
@@ -2807,7 +2807,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 8192;
-    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test overlapping scratch buffers
     {
@@ -3189,7 +3189,7 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
-    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Create buffers, with correct and incorrect usage
     constexpr size_t N = 3;
@@ -3293,7 +3293,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3337,7 +3337,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3388,7 +3388,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3417,7 +3417,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3447,7 +3447,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3481,7 +3481,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
         query_pool_ci.queryCount = 1;
 
         query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        vkt::QueryPool query_pool(*m_device, query_pool_ci);
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
@@ -3536,7 +3536,7 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     ASSERT_TRUE(ds_layout.initialized());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -3544,7 +3544,7 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02381");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     m_errorMonitor->VerifyFound();
 }
 

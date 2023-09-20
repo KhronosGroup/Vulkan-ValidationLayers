@@ -993,14 +993,14 @@ TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference-synchronization2-06910");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-attachment-06922");
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     }
     {
         safe_VkRenderPassCreateInfo2 rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference2-synchronization2-06910");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06922");
-        vk_testing::RenderPass rp2_core(*m_device, *rpci2.ptr(), false);
+        vkt::RenderPass rp2_core(*m_device, *rpci2.ptr(), false);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1072,7 +1072,7 @@ TEST_F(NegativeRenderPass, MixedAttachmentSamplesAMD) {
 
     {
         // creating and destroying a RenderPass1 should work;
-        vk_testing::RenderPass(*m_device, rpci);
+        vkt::RenderPass(*m_device, rpci);
     }
 
     // Expect an error message for invalid sample counts
@@ -1176,7 +1176,7 @@ TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     dsvci.subresourceRange.baseMipLevel = 0;
     dsvci.subresourceRange.levelCount = 1;
     dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vk_testing::ImageView dsv(*m_device, dsvci);
+    vkt::ImageView dsv(*m_device, dsvci);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
     VkAttachmentDescription description = {0,
@@ -1195,15 +1195,15 @@ TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
                                     nullptr};
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
-    vk_testing::RenderPass rp1(*m_device, rpci);
+    vkt::RenderPass rp1(*m_device, rpci);
 
     subpass.pDepthStencilAttachment = nullptr;
-    vk_testing::RenderPass rp2(*m_device, rpci);
+    vkt::RenderPass rp2(*m_device, rpci);
 
     // Create a framebuffer
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp1.handle(), 1u, &dsv.handle(), 128u, 128u, 1u);
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     auto rp_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp2.handle(), fb.handle(), VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
@@ -1251,7 +1251,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     iavci.subresourceRange.baseMipLevel = 0;
     iavci.subresourceRange.levelCount = 1;
     iavci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView iav(*m_device, iavci);
+    vkt::ImageView iav(*m_device, iavci);
 
     // Create an input depth attachment view
     VkImageObj iadi(m_device);
@@ -1276,7 +1276,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     cavci.subresourceRange.baseMipLevel = 0;
     cavci.subresourceRange.levelCount = 1;
     cavci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView cav(*m_device, cavci);
+    vkt::ImageView cav(*m_device, cavci);
 
     // Create a renderPass with those attachments
     VkAttachmentDescription descriptions[] = {
@@ -1305,9 +1305,9 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
                                                          2u, clearValues);
 
     auto test_layout_helper = [this, &rpci, &rp_begin, rp2Supported, &fbci](const char *rp1_vuid, const char *rp2_vuid) {
-        vk_testing::RenderPass rp_invalid(*m_device, rpci);
+        vkt::RenderPass rp_invalid(*m_device, rpci);
         fbci.renderPass = rp_invalid.handle();
-        vk_testing::Framebuffer fb_invalid(*m_device, fbci);
+        vkt::Framebuffer fb_invalid(*m_device, fbci);
         rp_begin.renderPass = rp_invalid.handle();
         rp_begin.framebuffer = fb_invalid.handle();
         TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported, rp1_vuid,
@@ -1367,7 +1367,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
             128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_TILING_OPTIMAL);
-        vk_testing::ImageView image_view_no_fb_loop;
+        vkt::ImageView image_view_no_fb_loop;
         auto image_view_ci = no_fb_loop_attachment.BasicViewCreatInfo();
         image_view_no_fb_loop.init(*m_device, image_view_ci);
         views[0] = image_view_no_fb_loop.handle();
@@ -1385,7 +1385,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
             128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT, VK_IMAGE_TILING_OPTIMAL);
         image_view_ci.image = no_usage_sampled_attachment.handle();
-        vk_testing::ImageView image_view_no_usage_sampled;
+        vkt::ImageView image_view_no_usage_sampled;
         image_view_no_usage_sampled.init(*m_device, image_view_ci);
         descriptions[1].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
         views[1] = image_view_no_usage_sampled.handle();
@@ -1456,7 +1456,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         rpci.pAttachments = &depth_stencil_attachment_desc;
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass_desc;
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
 
         auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
         fbci.renderPass = rp;
@@ -1466,7 +1466,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         fbci.height = input_image.height();
         fbci.layers = 1;
 
-        vk_testing::Framebuffer fb(*m_device, fbci);
+        vkt::Framebuffer fb(*m_device, fbci);
 
         // Begin render pass and trigger errors
         auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>();
@@ -1537,7 +1537,7 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass_desc;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     };
 
@@ -1581,7 +1581,7 @@ TEST_F(NegativeRenderPass, BeginClearOpMismatch) {
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>();
     rp_begin.renderPass = renderPass();
@@ -1626,7 +1626,7 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
     dsvci.subresourceRange.baseMipLevel = 0;
     dsvci.subresourceRange.levelCount = 1;
     dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vk_testing::ImageView dsv(*m_device, dsvci);
+    vkt::ImageView dsv(*m_device, dsvci);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
     VkAttachmentDescription description = {0,
@@ -1645,12 +1645,12 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
                                     nullptr};
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     // Create a framebuffer
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &dsv.handle(), 128u, 128u, 1u);
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     VkSampleLocationEXT sample_location = {0.5, 0.5};
 
@@ -1698,7 +1698,7 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     m_commandBuffer->begin();
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
@@ -1776,7 +1776,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpassDescription;
     rpci.pAttachments = attachmentDescriptions;
-    vk_testing::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci, true);
     ASSERT_TRUE(rp.initialized());
 
     // Depth resolve attachment, mismatched image usage
@@ -1818,7 +1818,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00880");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02634");
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1845,7 +1845,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &attachment, 1u, &subpass, 0u, nullptr);
 
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
@@ -1857,10 +1857,10 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
                                              VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                                 VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                              VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     auto fci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &view.handle(), 32u, 32u, 1u);
-    vk_testing::Framebuffer fb(*m_device, fci);
+    vkt::Framebuffer fb(*m_device, fci);
 
     auto cbai = vku::InitStruct<VkCommandBufferAllocateInfo>();
     cbai.commandPool = m_commandPool->handle();
@@ -1973,7 +1973,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
     fb_info.layers = 1;
     VkFramebuffer fb;
     {
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
 
         fb_info.renderPass = rp.handle();
         // Set mis-matching attachmentCount
@@ -1991,7 +1991,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         subpass.pDepthStencilAttachment = &attach;
         subpass.pColorAttachments = NULL;
 
-        vk_testing::RenderPass rp_ds(*m_device, rpci);
+        vkt::RenderPass rp_ds(*m_device, rpci);
         // Set correct attachment count, but attachment has COLOR usage bit set
         fb_info.attachmentCount = 1;
         fb_info.renderPass = rp_ds.handle();
@@ -2032,7 +2032,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
         subpass.pDepthStencilAttachment = NULL;
         subpass.pColorAttachments = &attach;
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
 
         // Cause error due to mis-matched formats between rp & fb
         //  rp attachment 0 now has RGBA8 but corresponding fb attach is BGRA8
@@ -2045,7 +2045,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         // Create new renderpass with alternate sample count from fb
         attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
         attach_desc.samples = VK_SAMPLE_COUNT_4_BIT;
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
 
         // Cause error due to mis-matched sample count between rp & fb
         fb_info.renderPass = rp.handle();
@@ -2070,12 +2070,12 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         // Set level count to 2 (only 1 is allowed for FB attachment)
         ivci.subresourceRange.levelCount = 2;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        vk_testing::ImageView view(*m_device, ivci);
+        vkt::ImageView view(*m_device, ivci);
 
         // Re-create renderpass to have matching sample count
         attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
         subpass.colorAttachmentCount = 1;
-        vk_testing::RenderPass rp(*m_device, rpci);
+        vkt::RenderPass rp(*m_device, rpci);
 
         subpass.colorAttachmentCount = 0;
 
@@ -2130,7 +2130,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
         rpci_fragment_density_map.attachmentCount = 1;
         rpci_fragment_density_map.pAttachments = &attach_desc_fragment_density_map;
-        vk_testing::RenderPass rp_fragment_density_map(*m_device, rpci_fragment_density_map);
+        vkt::RenderPass rp_fragment_density_map(*m_device, rpci_fragment_density_map);
 
         // Create view attachment
         auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
@@ -2169,7 +2169,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
             ASSERT_TRUE(image2.initialized());
 
             ivci.image = image2.handle();
-            vk_testing::ImageView view_fragment_density_map(*m_device, ivci);
+            vkt::ImageView view_fragment_density_map(*m_device, ivci);
 
             fbci.pAttachments = &view_fragment_density_map.handle();
 
@@ -2186,7 +2186,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
             ASSERT_TRUE(image3.initialized());
 
             ivci.image = image3.handle();
-            vk_testing::ImageView view_fragment_density_map(*m_device, ivci);
+            vkt::ImageView view_fragment_density_map(*m_device, ivci);
 
             fbci.pAttachments = &view_fragment_density_map.handle();
 
@@ -2215,7 +2215,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
         ivci.components.g = VK_COMPONENT_SWIZZLE_R;
         ivci.components.b = VK_COMPONENT_SWIZZLE_A;
         ivci.components.a = VK_COMPONENT_SWIZZLE_B;
-        vk_testing::ImageView view(*m_device, ivci);
+        vkt::ImageView view(*m_device, ivci);
 
         fb_info.pAttachments = &view.handle();
         fb_info.height = 100;
@@ -2237,7 +2237,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
 
         VkFramebufferCreateInfo fb_info_mv = fb_info;
         {
-            vk_testing::RenderPass rp_mv(*m_device, rpci_mv);
+            vkt::RenderPass rp_mv(*m_device, rpci_mv);
 
             fb_info_mv.layers = 2;
             fb_info_mv.attachmentCount = 0;
@@ -2256,7 +2256,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
             rpci_mv.pAttachments = &attach_desc_mv;
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments = &attach;
-            vk_testing::RenderPass rp_mv(*m_device, rpci_mv);
+            vkt::RenderPass rp_mv(*m_device, rpci_mv);
 
             // Create an image with 1 layer
             VkImageObj image(m_device);
@@ -2271,7 +2271,7 @@ TEST_F(NegativeRenderPass, Framebuffer) {
             ivci.subresourceRange.baseMipLevel = 0;
             ivci.subresourceRange.levelCount = 1;
             ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            vk_testing::ImageView view(*m_device, ivci);
+            vkt::ImageView view(*m_device, ivci);
 
             fb_info_mv.renderPass = rp_mv.handle();
             fb_info_mv.layers = 1;
@@ -2363,7 +2363,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     attachment_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     std::array attachment_descs = {attachment_desc, attachment_desc};
     rp_ci.pAttachments = attachment_descs.data();
-    vk_testing::RenderPass render_pass(*m_device, rp_ci);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
 
     auto fb_ci = vku::InitStruct<VkFramebufferCreateInfo>();
     fb_ci.width = 100;
@@ -2441,7 +2441,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -2514,12 +2514,12 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     rpci.pSubpasses = &subpass;
 
     // Create rp1 with FDM pNext and rp2 without FDM pNext
-    vk_testing::RenderPass rp1(*m_device, rpci);
+    vkt::RenderPass rp1(*m_device, rpci);
     ASSERT_TRUE(rp1.initialized());
 
     rpci.pNext = nullptr;
     rpci.attachmentCount = 1;
-    vk_testing::RenderPass rp2(*m_device, rpci);
+    vkt::RenderPass rp2(*m_device, rpci);
     ASSERT_TRUE(rp2.initialized());
 
     // Create image views
@@ -2538,7 +2538,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     fbci.height = 128;
     fbci.layers = 1;
 
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     ASSERT_TRUE(fb.initialized());
 
     auto rp_begin = vku::InitStruct<VkRenderPassBeginInfo>();
@@ -2592,7 +2592,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     auto createView = vku::InitStruct<VkImageViewCreateInfo>();
@@ -2606,7 +2606,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     createView.flags = 0;
 
-    vk_testing::ImageView iv(*m_device, createView);
+    vkt::ImageView iv(*m_device, createView);
 
     auto fb_info = vku::InitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = rp.handle();
@@ -2617,7 +2617,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     fb_info.layers = 1;
 
     // Create the framebuffer then destory the view it uses.
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
     ASSERT_TRUE(fb.initialized());
     iv.destroy();
 
@@ -3222,7 +3222,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3249,11 +3249,11 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vk_testing::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view(*m_device, ivci);
     VkImageView image_view_handle = image_view.handle();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.width = width;
@@ -3263,7 +3263,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     fbci.attachmentCount = 1;
     fbci.pAttachments = &image_view_handle;
 
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer.handle();
@@ -3365,10 +3365,10 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     image_view_ci.subresourceRange.levelCount = 1;
     image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView image_view(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     VkDescriptorImageInfo image_info = {};
     image_info.sampler = sampler.handle();
@@ -3727,7 +3727,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     subpass.pDepthStencilAttachment = nullptr;
     rpci.attachmentCount = 1;
     // Create a usable renderpass
-    vk_testing::RenderPass test_rp(*m_device, rpci);
+    vkt::RenderPass test_rp(*m_device, rpci);
 
     auto ms_state = vku::InitStruct<VkPipelineMultisampleStateCreateInfo>();
     ms_state.flags = 0;
@@ -3800,7 +3800,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     two_count_image.init(&image_create_info);
 
     auto image_view_ci = two_count_image.BasicViewCreatInfo();
-    vk_testing::ImageView two_count_image_view(*m_device, image_view_ci);
+    vkt::ImageView two_count_image_view(*m_device, image_view_ci);
 
     color_attachment.imageView = two_count_image_view.handle();
     m_commandBuffer->begin();
@@ -3814,7 +3814,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     VkImageObj one_count_image(m_device);
     one_count_image.init(&image_create_info);
     auto one_count_image_view_ci = one_count_image.BasicViewCreatInfo();
-    vk_testing::ImageView one_count_image_view(*m_device, one_count_image_view_ci);
+    vkt::ImageView one_count_image_view(*m_device, one_count_image_view_ci);
     color_attachment.imageView = one_count_image_view.handle();
     // Attachments with a sample count of VK_SAMPLE_COUNT_1_BIT must have been created with
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
@@ -3827,7 +3827,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
     good_one_count_image.init(&image_create_info);
     auto good_one_count_image_view_ci = good_one_count_image.BasicViewCreatInfo();
-    vk_testing::ImageView good_one_count_image_view(*m_device, good_one_count_image_view_ci);
+    vkt::ImageView good_one_count_image_view(*m_device, good_one_count_image_view_ci);
     color_attachment.imageView = good_one_count_image_view.handle();
     color_attachment.resolveImageView = good_one_count_image_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -3917,7 +3917,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         VkImageObj unsampleable_image(m_device);
         unsampleable_image.init(&image_create_info);
         auto unsampleable_image_view_ci = unsampleable_image.BasicViewCreatInfo();
-        vk_testing::ImageView unsampleable_image_view(*m_device, unsampleable_image_view_ci);
+        vkt::ImageView unsampleable_image_view(*m_device, unsampleable_image_view_ci);
         begin_rendering_info.pNext = &ms_render_to_ss;
         ms_render_to_ss.rasterizationSamples = unsampleable_count;
         color_attachment.resolveImageView = VK_NULL_HANDLE;
@@ -3932,7 +3932,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         rpci.attachmentCount = 1;
         attach_desc[0].format = unsampleable_format;
 
-        vk_testing::RenderPass unsampleable_rp(*m_device, rpci);
+        vkt::RenderPass unsampleable_rp(*m_device, rpci);
         auto unsampleable_fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, unsampleable_rp.handle(), 1u,
                                                                         &unsampleable_image_view.handle(), 64u, 64u, 1u);
 
@@ -3958,12 +3958,12 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
             rpci.attachmentCount = 1;
             attach_desc[0].format = unsampleable_format;
             attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-            vk_testing::RenderPass imageless_rp(*m_device, rpci);
+            vkt::RenderPass imageless_rp(*m_device, rpci);
             auto imageless_fbci =
                 vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, imageless_rp.handle(), 1u, nullptr, 64u, 64u, 1u);
             imageless_fbci.pNext = &framebufferAttachmentsCreateInfo;
             imageless_fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
-            vk_testing::Framebuffer imageless_fb(*m_device, imageless_fbci);
+            vkt::Framebuffer imageless_fb(*m_device, imageless_fbci);
 
             auto renderPassAttachmentBeginInfo = vku::InitStruct<VkRenderPassAttachmentBeginInfo>();
             renderPassAttachmentBeginInfo.attachmentCount = 1;
@@ -3986,7 +3986,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     subpass.pDepthStencilAttachment = nullptr;
     rpci.attachmentCount = 1;
     // Create a usable renderpass
-    vk_testing::RenderPass test_rp2(*m_device, rpci);
+    vkt::RenderPass test_rp2(*m_device, rpci);
     auto fbci =
         vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp2.handle(), 1u, &one_count_image_view.handle(), 64u, 64u, 1u);
     VkFramebuffer fb;
@@ -4006,7 +4006,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     vk::CreateImage(device(), &image_create_info, nullptr, &bad_flag_image);
     m_errorMonitor->VerifyFound();
 
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
     auto device_create_info = vku::InitStruct<VkDeviceCreateInfo>();
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
@@ -4097,13 +4097,13 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
 
-    vk_testing::RenderPass render_pass1(*m_device, rpci);
+    vkt::RenderPass render_pass1(*m_device, rpci);
     rpci.dependencyCount = 0;
-    vk_testing::RenderPass render_pass2(*m_device, rpci);
+    vkt::RenderPass render_pass2(*m_device, rpci);
     rpci.dependencyCount = 1;
     dependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    vk_testing::RenderPass render_pass3(*m_device, rpci);
+    vkt::RenderPass render_pass3(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -4116,7 +4116,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     fb_ci.width = width;
     fb_ci.height = height;
     fb_ci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
 
     VkClearValue clear_values[2] = {};
     clear_values[0].color = {{0, 0, 0, 0}};
@@ -4206,12 +4206,12 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     rpci.correlatedViewMaskCount = 1;
     rpci.pCorrelatedViewMasks = &correlated_view_mask;
 
-    vk_testing::RenderPass render_pass1(*m_device, rpci);
+    vkt::RenderPass render_pass1(*m_device, rpci);
     rpci.correlatedViewMaskCount = 0;
-    vk_testing::RenderPass render_pass2(*m_device, rpci);
+    vkt::RenderPass render_pass2(*m_device, rpci);
     rpci.correlatedViewMaskCount = 1;
     correlated_view_mask = 0x2;
-    vk_testing::RenderPass render_pass3(*m_device, rpci);
+    vkt::RenderPass render_pass3(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -4224,7 +4224,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     fb_ci.width = width;
     fb_ci.height = height;
     fb_ci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
 
     VkClearValue clear_values[2] = {};
     clear_values[0].color = {{0, 0, 0, 0}};
@@ -4614,14 +4614,14 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
-            vk_testing::RenderPass rp2(*m_device, rpci2, true);
+            vkt::RenderPass rp2(*m_device, rpci2, true);
             m_errorMonitor->VerifyFound();
         }
 
         {
             depth_stencil_ref.layout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-attachment-06251");
-            vk_testing::RenderPass rp2(*m_device, rpci2, true);
+            vkt::RenderPass rp2(*m_device, rpci2, true);
             m_errorMonitor->VerifyFound();
         }
     }

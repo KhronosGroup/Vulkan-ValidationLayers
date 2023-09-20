@@ -28,7 +28,7 @@
 #include "generated/vk_extension_helper.h"
 #include "test_common.h"
 
-namespace vk_testing {
+namespace vkt {
 
 template <class Dst, class Src>
 std::vector<Dst> MakeVkHandles(const std::vector<Src> &v) {
@@ -326,7 +326,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     void unmap() const;
 	const auto &get_memory_allocate_info() { return memory_allocate_info_; }
 
-        static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
+        static VkMemoryAllocateInfo get_resource_alloc_info(const vkt::Device &dev, const VkMemoryRequirements &reqs,
                                                             VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
 
       private:
@@ -690,8 +690,8 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
 
     const VkDevice &dev() const { return device(); }
 
-    [[nodiscard]] vk_testing::Buffer create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
-                                                           bool buffer_device_address = false) const;
+    [[nodiscard]] vkt::Buffer create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
+                                                    bool buffer_device_address = false) const;
 
   private:
     VkAccelerationStructureInfoNV info_;
@@ -1207,7 +1207,7 @@ struct GraphicsPipelineLibraryStage {
 struct GraphicsPipelineFromLibraries {
     vvl::span<VkPipeline> libs;
     VkPipelineLibraryCreateInfoKHR link_info;
-    vk_testing::Pipeline pipe;
+    vkt::Pipeline pipe;
 
     GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkPipelineLayout layout)
         : GraphicsPipelineFromLibraries(libs) {
@@ -1236,5 +1236,4 @@ struct GraphicsPipelineFromLibraries {
     }
 };
 
-}  // namespace vk_testing
-
+}  // namespace vkt

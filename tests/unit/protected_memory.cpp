@@ -602,12 +602,12 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
         auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         lib_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
-        vk_testing::Pipeline lib(*m_device, lib_ci);
+        vkt::Pipeline lib(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406");
         lib_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
-        vk_testing::Pipeline lib2(*m_device, lib_ci);
+        vkt::Pipeline lib2(*m_device, lib_ci);
         m_errorMonitor->VerifyFound();
 
         CreatePipelineHelper protected_pre_raster_lib(*this);
@@ -620,7 +620,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         auto protected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
         lib_ci.flags = 0;
-        vk_testing::Pipeline lib3(*m_device, protected_lib_ci);
+        vkt::Pipeline lib3(*m_device, protected_lib_ci);
         m_errorMonitor->VerifyFound();
 
         CreatePipelineHelper unprotected_pre_raster_lib(*this);
@@ -632,7 +632,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
         libraries[0] = unprotected_pre_raster_lib.pipeline_;
         auto unprotected_lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
-        vk_testing::Pipeline lib4(*m_device, unprotected_lib_ci);
+        vkt::Pipeline lib4(*m_device, unprotected_lib_ci);
         m_errorMonitor->VerifyFound();
     }
 
@@ -701,7 +701,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -898,10 +898,10 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
                                       VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo render_pass_create_info = {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dependency};
-    vk_testing::RenderPass render_pass(*m_device, render_pass_create_info);
+    vkt::RenderPass render_pass(*m_device, render_pass_create_info);
     VkFramebufferCreateInfo framebuffer_create_info = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass, 2, image_views, 8, 8, 1};
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_create_info);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_create_info);
 
     // Various structs used for commands
     VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -956,7 +956,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Use protected resources in unprotected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 0, 1024);

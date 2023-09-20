@@ -32,7 +32,7 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     // validation was disabled via the features extension, so no errors should be forthcoming.
     VkEventCreateInfo event_info = vku::InitStructHelper();
     event_info.flags = 1;
-    vk_testing::Event event(*m_device, event_info);
+    vkt::Event event(*m_device, event_info);
 }
 
 TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
@@ -85,7 +85,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -217,8 +217,8 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     GetPhysicalDeviceFeatures2(features2);
 
     // We're not creating a valid m_device, but the phy wrapper is useful
-    vk_testing::PhysicalDevice physical_device(gpu());
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
@@ -342,7 +342,7 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
     vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
 }
 
@@ -502,7 +502,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 
     const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
                                               VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
-    vk_testing::CommandBuffer mock_cmdbuff(*DeviceObj(), cbai);
+    vkt::CommandBuffer mock_cmdbuff(*DeviceObj(), cbai);
     const VkCommandBufferBeginInfo cbbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                         VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
     mock_cmdbuff.begin(&cbbi);
@@ -1022,7 +1022,7 @@ TEST_F(VkPositiveLayerTest, FreeDescriptorSetsNull) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                 nullptr};

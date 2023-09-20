@@ -136,7 +136,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     sampler_info.maxLod = 0.0f;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     static const uint64_t data_value = 0x70AD;
     err = vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
@@ -215,7 +215,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, bvci);
 }
 
 TEST_F(VkLayerTest, CustomStypeStructStringArray) {
@@ -270,7 +270,7 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, bvci);
 }
 
 TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
@@ -321,7 +321,7 @@ TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, bvci);
 }
 
 TEST_F(VkLayerTest, DuplicateMessageLimit) {
@@ -855,8 +855,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
-    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_1(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool_1.handle();
@@ -983,8 +983,8 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
-    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_1(*m_device, pool_create_info);
+    vkt::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
     command_buffer_allocate_info.commandPool = command_pool_1.handle();
@@ -1160,7 +1160,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags array entry
     // Expected to trigger an error with StatelessValidation::ValidateFlagsArray
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     // `stage_flags` is set to a value which, currently, is not a defined stage flag
     // `VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM` works well for this
     VkPipelineStageFlags stage_flags = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
@@ -1214,7 +1214,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -1255,11 +1255,11 @@ TEST_F(VkLayerTest, LeakABuffer) {
     }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
-    auto features = vk_testing::PhysicalDevice(gpu()).features();
+    auto features = vkt::PhysicalDevice(gpu()).features();
     if (!features.sparseBinding) {
         GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
     }
@@ -1436,7 +1436,7 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper();
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&pd_features2);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
@@ -1492,8 +1492,8 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-06532");
     }
 
-    vk_testing::PhysicalDevice physical_device(gpu());
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1532,8 +1532,8 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    vk_testing::PhysicalDevice physical_device(gpu());
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1625,8 +1625,8 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
 
     variable_features.variablePointersStorageBuffer = VK_FALSE;
 
-    vk_testing::PhysicalDevice physical_device(gpu());
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -1681,7 +1681,7 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     VkQueryPoolCreateInfo query_pool_create_info = vku::InitStructHelper();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 5;
-    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    vkt::QueryPool query_pool(*m_device, query_pool_create_info);
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 5);
 
@@ -1703,7 +1703,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-01149");
@@ -1716,7 +1716,7 @@ TEST_F(VkLayerTest, StageMaskHost) {
 
     m_commandBuffer->end();
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     ASSERT_TRUE(semaphore.initialized());
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
@@ -1777,7 +1777,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
@@ -1812,9 +1812,9 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    vk_testing::PhysicalDevice physical_device(gpu_);
+    vkt::PhysicalDevice physical_device(gpu_);
     VkPhysicalDeviceFeatures features = physical_device.features();
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
@@ -1839,12 +1839,12 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vk_testing::Event event(*m_device, event_create_info);
+    vkt::Event event(*m_device, event_create_info);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk_testing::CommandPool command_pool(*m_device, pool_create_info);
+    vkt::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
@@ -1906,7 +1906,7 @@ TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
     vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, nullptr);
@@ -1936,7 +1936,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
-    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+    vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
@@ -2087,10 +2087,10 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     VkDescriptorSet descriptor_set = descriptor_set_obj.GetDescriptorSetHandle();
 
     VkFenceCreateInfo fence_create_info = vku::InitStructHelper();
-    vk_testing::Fence fence(*m_device, fence_create_info);
+    vkt::Fence fence(*m_device, fence_create_info);
 
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vk_testing::Event event(*m_device, event_create_info);
+    vkt::Event event(*m_device, event_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {
@@ -2276,7 +2276,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
 
     VkDeviceCreateInfo create_info = vku::InitStructHelper();
     create_info.pNext = &create_device_pnext;
@@ -2321,7 +2321,7 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    vkt::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.pNext = &pd_features2;
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -2470,7 +2470,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptor
     rpci.attachmentCount = 2;
     rpci.pAttachments = attach_desc2;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkClearValue clear_values[2] = {m_renderPassClearValues[0], m_renderPassClearValues[0]};
 
@@ -2672,7 +2672,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     ici.pNext = &export_metal_object_create_info;
     VkImageObj export_image_obj(m_device);
     export_image_obj.Init(ici);
-    vk_testing::BufferView export_buffer_view;
+    vkt::BufferView export_buffer_view;
     buff_view_ci.pNext = &export_metal_object_create_info;
     export_buffer_view.init(*m_device, buff_view_ci);
     auto metal_texture_info = vku::InitStruct<VkExportMetalTextureInfoEXT>();
@@ -2695,7 +2695,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     metal_texture_info.image = VK_NULL_HANDLE;
     auto image_view_ci = image_obj.BasicViewCreatInfo();
-    vk_testing::ImageView image_view_no_struct(*m_device, image_view_ci);
+    vkt::ImageView image_view_no_struct(*m_device, image_view_ci);
     metal_texture_info.imageView = image_view_no_struct.handle();
     // ImageView not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06796");
@@ -2703,7 +2703,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
 
     buff_view_ci.pNext = nullptr;
-    vk_testing::BufferView buffer_view_no_struct;
+    vkt::BufferView buffer_view_no_struct;
     buffer_view_no_struct.init(*m_device, buff_view_ci);
     metal_texture_info.imageView = VK_NULL_HANDLE;
     metal_texture_info.bufferView = buffer_view_no_struct.handle();
@@ -2732,7 +2732,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     image_view_ci.pNext = &export_metal_object_create_info;
     export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
-    vk_testing::ImageView single_plane_export_image_view(*m_device, image_view_ci);
+    vkt::ImageView single_plane_export_image_view(*m_device, image_view_ci);
     metal_texture_info.image = VK_NULL_HANDLE;
     metal_texture_info.imageView = single_plane_export_image_view.handle();
     // metal_texture_info.plane not plane_0 for single plane imageView
@@ -2756,7 +2756,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
 
     sem_info.pNext = nullptr;
-    vk_testing::Semaphore semaphore_no_struct;
+    vkt::Semaphore semaphore_no_struct;
     semaphore_no_struct.init(*m_device, sem_info);
     metal_shared_event_info.semaphore = semaphore_no_struct.handle();
     export_metal_objects_info.pNext = &metal_shared_event_info;
@@ -2767,7 +2767,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     if (portability_features.events) {
         event_info.pNext = nullptr;
-        vk_testing::Event event_no_struct(*m_device, event_info);
+        vkt::Event event_no_struct(*m_device, event_info);
         metal_shared_event_info.event = event_no_struct.handle();
         metal_shared_event_info.semaphore = VK_NULL_HANDLE;
         // Event not created with struct in pNext
@@ -2818,7 +2818,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
             ivci.image = mp_image_obj.handle();
             ivci.format = mp_format;
             ivci.pNext = &ycbcr_info;
-            vk_testing::ImageView mp_image_view(*m_device, ivci);
+            vkt::ImageView mp_image_view(*m_device, ivci);
             metal_texture_info.image = VK_NULL_HANDLE;
             metal_texture_info.imageView = mp_image_view.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802");
@@ -2837,7 +2837,7 @@ TEST_F(VkLayerTest, InvalidExtEnum) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     m_errorMonitor->VerifyFound();
 }
 

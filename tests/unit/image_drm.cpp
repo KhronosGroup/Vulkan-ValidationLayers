@@ -246,7 +246,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     VkImageObj image(m_device);
     image.Init(32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
 
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, mp_format);
+    vkt::SamplerYcbcrConversion conversion(*m_device, mp_format);
     auto conversion_info = conversion.ConversionInfo();
     VkImageViewCreateInfo ivci = vku::InitStructHelper(&conversion_info);
     ivci.image = image.handle();
@@ -340,7 +340,7 @@ TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vk_testing::Image image(*m_device, image_info);
+    vkt::Image image(*m_device, image_info);
 
     auto props = vku::InitStruct<VkImageDrmFormatModifierPropertiesEXT>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272");

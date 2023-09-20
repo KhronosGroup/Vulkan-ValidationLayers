@@ -105,7 +105,7 @@ TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
     sampler_info.anisotropyEnable = VK_FALSE;
     sampler_info.maxAnisotropy = 4.0f;
 
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -256,7 +256,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding ds_binding = {};
     ds_binding.binding = 0;
@@ -268,7 +268,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_layout_info.bindingCount = 1;
     ds_layout_info.pBindings = &ds_binding;
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
 
     auto ds_layouts = std::vector<VkDescriptorSetLayout>(ds_pool_ci.maxSets, ds_layout.handle());
 
@@ -1108,7 +1108,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     rpinf.subpassCount = 1;
     rpinf.pSubpasses = &subpass;
 
-    vk_testing::RenderPass rp(*m_device, rpinf);
+    vkt::RenderPass rp(*m_device, rpinf);
 
     std::unique_ptr<VkImageObj> image = CreateImage(FMT, WIDTH, HEIGHT);
     image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -1205,7 +1205,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     rpinf.subpassCount = 1;
     rpinf.pSubpasses = &subpass;
 
-    vk_testing::RenderPass rp(*m_device, rpinf);
+    vkt::RenderPass rp(*m_device, rpinf);
 
     std::vector<std::unique_ptr<VkImageObj>> images;
     std::vector<VkFramebuffer> framebuffers;
@@ -1247,7 +1247,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     descriptor_pool_create_info.maxSets = 1;
     descriptor_pool_create_info.poolSizeCount = 2;
     descriptor_pool_create_info.pPoolSizes = pool_sizes;
-    vk_testing::DescriptorPool pool(*m_device, descriptor_pool_create_info);
+    vkt::DescriptorPool pool(*m_device, descriptor_pool_create_info);
 
     VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
     VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -1426,12 +1426,12 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
         0, nullptr,
     };
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     auto imageView = images[1]->targetView(FMT);
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, WIDTH, HEIGHT, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     VkRenderPassBeginInfo rpbi =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {WIDTH, HEIGHT}}, 0u, nullptr);

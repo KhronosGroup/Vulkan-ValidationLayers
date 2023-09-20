@@ -30,7 +30,7 @@ TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     // Create an array of DSLs, one larger than the physical limit
     const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
@@ -81,7 +81,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.maxLod = 0.f;
     sampler_info.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
     ASSERT_TRUE(sampler.initialized());
 
     // just make all the immutable samplers point to the same sampler
@@ -107,7 +107,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
 
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     ASSERT_TRUE(ds_layout.initialized());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -115,7 +115,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
     const char *max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&ds_layout});
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&ds_layout});
     m_errorMonitor->VerifyFound();
 }
 
@@ -1050,7 +1050,7 @@ TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();

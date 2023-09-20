@@ -67,7 +67,7 @@ TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     }
 
     // Should be able to bind memory with no error
-    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     vk::BindBufferMemory(m_device->device(), buffer.handle(), memory, 0);
 
     AHardwareBuffer_release(ahb);
@@ -150,7 +150,7 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     vk::BindImageMemory(m_device->device(), ds_image.handle(), memory, 0);
 
     AHardwareBuffer_release(ahb);
@@ -213,7 +213,7 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     vk::BindBufferMemory(m_device->device(), buffer.handle(), memory, 0);
 
     AHardwareBuffer_release(ahb);
@@ -257,7 +257,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_info);
+    vkt::DeviceMemory memory(*m_device, memory_info);
     vk::BindBufferMemory(device(), buffer.handle(), memory, 0);
 
     // Export memory to AHB
@@ -322,7 +322,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_info);
+    vkt::DeviceMemory memory(*m_device, memory_info);
     vk::BindImageMemory(device(), image.handle(), memory, 0);
 
     // Export memory to AHB
@@ -437,7 +437,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     vk::BindImageMemory(m_device->device(), image.handle(), memory, 0);
 
     AHardwareBuffer_release(ahb);
@@ -543,7 +543,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
     vk::BindImageMemory(m_device->device(), image.handle(), memory, 0);
 
     AHardwareBuffer_release(ahb);

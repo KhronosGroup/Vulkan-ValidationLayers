@@ -303,7 +303,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper(nullptr);
     mem_alloc.allocationSize = 1024;
 
-    vk_testing::DeviceMemory mem;
+    vkt::DeviceMemory mem;
     mem.init(*m_device, mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -407,10 +407,10 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
-    vk_testing::DeviceMemory image_mem;
+    vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -478,7 +478,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    VkImageCreateInfo create_info = vk_testing::Image::create_info();
+    VkImageCreateInfo create_info = vkt::Image::create_info();
     create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     create_info.imageType = VK_IMAGE_TYPE_3D;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -493,9 +493,9 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
     const auto image_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory image_mem;
+    vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
 
     uint32_t requirements_count = 0u;

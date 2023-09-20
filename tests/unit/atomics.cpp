@@ -1279,7 +1279,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     image.Init(image_ci);
     VkImageView image_view = image.targetView(image_format);
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
@@ -1287,7 +1287,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     bvci.buffer = buffer.handle();
     bvci.format = buffer_view_format;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, bvci);
 
     char const *fsSource = R"glsl(
         #version 450

@@ -110,7 +110,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
     formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
+    vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     // Try to create a Sampler with non-matching filters without feature bit set
     VkSamplerYcbcrConversionInfo sampler_ycbcr_info = vku::InitStructHelper();
@@ -174,11 +174,11 @@ TEST_F(NegativeYcbcr, Swizzle) {
     // make sure zero and one are allowed for components.a
     {
         sycci.components.a = VK_COMPONENT_SWIZZLE_ONE;
-        vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
+        vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
     }
     {
         sycci.components.a = VK_COMPONENT_SWIZZLE_ZERO;
-        vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
+        vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
     }
 
     // test components.r
@@ -210,7 +210,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
         sycci.components = identity;
         sycci.components.r = VK_COMPONENT_SWIZZLE_B;
         sycci.components.b = VK_COMPONENT_SWIZZLE_R;
-        vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
+        vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
     }
 
     // Non RGB Identity model
@@ -248,13 +248,13 @@ TEST_F(NegativeYcbcr, Swizzle) {
         sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_R;
-        vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
+        vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
     }
 
     // Create a valid conversion with guaranteed support
     sycci.format = mp_format;
     sycci.components = identity;
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci, false);
+    vkt::SamplerYcbcrConversion conversion(*m_device, sycci, false);
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -659,7 +659,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
         VkComponentMapping{VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                            VK_COMPONENT_SWIZZLE_IDENTITY},
         VK_CHROMA_LOCATION_COSITED_EVEN, VK_CHROMA_LOCATION_COSITED_EVEN, VK_FILTER_NEAREST, VK_FALSE);
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -684,7 +684,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     image_view_create_info.subresourceRange.baseMipLevel = 0;
     image_view_create_info.subresourceRange.levelCount = 1;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView image_view(*m_device, image_view_create_info);
+    vkt::ImageView image_view(*m_device, image_view_create_info);
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
 
@@ -936,7 +936,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
     // Try to bind memory to an object with an invalid memoryOffset
 
-    vk_testing::Image image;
+    vkt::Image image;
     image.init_no_mem(*m_device, image_create_info);
     ASSERT_TRUE(image.initialized());
     VkMemoryRequirements image_mem_reqs = {};
@@ -945,12 +945,12 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     // Leave some extra space for alignment wiggle room
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
     ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
-    vk_testing::DeviceMemory image_mem(*m_device, image_alloc_info);
+    vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
     ASSERT_TRUE(image_mem.initialized());
 
     // Keep values outside scope so multiple tests cases can reuse
-    vk_testing::Image mp_image;
-    vk_testing::DeviceMemory mp_image_mem[2];
+    vkt::Image mp_image;
+    vkt::DeviceMemory mp_image_mem[2];
     VkMemoryRequirements2 mp_image_mem_reqs2[2];
     VkMemoryAllocateInfo mp_image_alloc_info[2];
     if (mp_disjoint_support) {
@@ -1119,7 +1119,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mem_req2.memoryRequirements.memoryTypeBits;
         if (image2_unsupported_mem_type_bits != 0) {
             ASSERT_TRUE(m_device->phy().set_memory_type(image2_unsupported_mem_type_bits, &image_alloc_info, 0));
-            vk_testing::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
+            vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             ASSERT_TRUE(image_mem_tmp.initialized());
             bind_image_info.memory = image_mem_tmp.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
@@ -1131,7 +1131,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
         if (image_unsupported_mem_type_bits != 0) {
             ASSERT_TRUE(m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0));
-            vk_testing::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
+            vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             ASSERT_TRUE(image_mem_tmp.initialized());
             bind_image_info.memory = image_mem_tmp.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
@@ -1155,7 +1155,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         if (mp_image_unsupported_mem_type_bits != 0) {
             mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
             ASSERT_TRUE(m_device->phy().set_memory_type(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0));
-            vk_testing::DeviceMemory mp_image_mem_tmp(*m_device, mp_image_alloc_info[0]);
+            vkt::DeviceMemory mp_image_mem_tmp(*m_device, mp_image_alloc_info[0]);
             ASSERT_TRUE(mp_image_mem_tmp.initialized());
 
             VkBindImageMemoryInfo bind_image_infos[2];
@@ -1196,7 +1196,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     sampler_conversion_ci.chromaFilter = VK_FILTER_NEAREST;
     sampler_conversion_ci.forceExplicitReconstruction = false;
 
-    vk_testing::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
+    vkt::SamplerYcbcrConversion sampler_conversion(*m_device, sampler_conversion_ci, false);
 
     auto sampler_ycbcr_conversion_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
     sampler_ycbcr_conversion_info.conversion = sampler_conversion.handle();
@@ -1243,7 +1243,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
 
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion;
@@ -1402,7 +1402,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
         ycbcr_create_info.forceExplicitReconstruction = false;
 
-        vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
+        vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
         VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
         ycbcr_info.conversion = conversion;
 
@@ -1451,7 +1451,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
 
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
+    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, DeviceValidationVersion() < VK_API_VERSION_1_1);
 
     auto ycbcr_info = vku::InitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion.handle();
@@ -1462,7 +1462,7 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &ycbcr_info;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     ASSERT_TRUE(sampler.initialized());
 
     OneOffDescriptorSet descriptor_set(

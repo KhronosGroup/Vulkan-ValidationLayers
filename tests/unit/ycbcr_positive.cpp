@@ -343,7 +343,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR);
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR);
     auto conversion_info = conversion.ConversionInfo();
     VkImageViewCreateInfo ivci = vku::InitStructHelper(&conversion_info);
     ivci.image = mpimage.handle();
@@ -353,11 +353,11 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &conversion_info;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet descriptor_set(
         m_device, {

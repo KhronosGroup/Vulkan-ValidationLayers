@@ -17,8 +17,8 @@ namespace nv {
 namespace rt {
 
 // DEPRECATED: This is part of the legacy ray tracing framework, now only used in the old nvidia ray tracing extension tests.
-void GetSimpleGeometryForAccelerationStructureTests(const vk_testing::Device& device, vk_testing::Buffer* vbo,
-                                                    vk_testing::Buffer* ibo, VkGeometryNV* geometry, VkDeviceSize offset = 0,
+void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device& device, vkt::Buffer* vbo, vkt::Buffer* ibo,
+                                                    VkGeometryNV* geometry, VkDeviceSize offset = 0,
                                                     bool buffer_device_address = false);
 }  // namespace rt
 }  // namespace nv

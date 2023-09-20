@@ -73,7 +73,7 @@ GeometryKHR &GeometryKHR::SetStride(VkDeviceSize stride) {
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vk_testing::Buffer &&vertex_buffer, uint32_t max_vertex,
+GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer &&vertex_buffer, uint32_t max_vertex,
                                                          VkFormat vertex_format /*= VK_FORMAT_R32G32B32_SFLOAT*/,
                                                          VkDeviceSize stride /*= 3 * sizeof(float)*/) {
     triangles_.device_vertex_buffer = std::move(vertex_buffer);
@@ -94,7 +94,7 @@ GeometryKHR &GeometryKHR::SetTrianglesHostVertexBuffer(std::unique_ptr<float[]> 
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vk_testing::Buffer &&index_buffer,
+GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer &&index_buffer,
                                                         VkIndexType index_type /*= VK_INDEX_TYPE_UINT32*/) {
     triangles_.device_index_buffer = std::move(index_buffer);
     vk_obj_.geometry.triangles.indexType = index_type;
@@ -114,7 +114,7 @@ GeometryKHR &GeometryKHR::SetTrianglesIndexType(VkIndexType index_type) {
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vk_testing::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
+GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.device_buffer = std::move(buffer);
     vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.address(vk_api_version_);
     vk_obj_.geometry.aabbs.stride = stride;
@@ -129,8 +129,7 @@ GeometryKHR &GeometryKHR::SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vk_testing::Device &device,
-                                                          VkAccelerationStructureKHR bottom_level_as) {
+GeometryKHR &GeometryKHR::SetInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR bottom_level_as) {
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
     assert(vkGetAccelerationStructureDeviceAddressKHR);
@@ -200,7 +199,7 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetFlags(VkAccelerationStruc
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBuffer(vk_testing::Buffer &&buffer) {
+AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBuffer(vkt::Buffer &&buffer) {
     device_buffer_ = std::move(buffer);
     return *this;
 }
@@ -234,7 +233,7 @@ VkDeviceAddress AccelerationStructureKHR::GetBufferDeviceAddress() const {
     return device_buffer_.address(vk_api_version_);
 }
 
-void AccelerationStructureKHR::Build(const vk_testing::Device &device) {
+void AccelerationStructureKHR::Build(const vkt::Device &device) {
     assert(handle() == VK_NULL_HANDLE);
 
     // Create a buffer to store acceleration structure
@@ -278,7 +277,7 @@ BuildGeometryInfoKHR::BuildGeometryInfoKHR(APIVersion vk_api_version)
       geometries_(),
       src_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
       dst_as_(std::make_shared<AccelerationStructureKHR>(vk_api_version)),
-      device_scratch_(std::make_shared<vk_testing::Buffer>()) {}
+      device_scratch_(std::make_shared<vkt::Buffer>()) {}
 
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetGeometries(std::vector<GeometryKHR> &&geometries) {
     geometries_ = std::move(geometries);
@@ -319,7 +318,7 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDstAS(std::shared_ptr<Acceleratio
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(std::shared_ptr<vk_testing::Buffer> scratch_buffer) {
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer) {
     device_scratch_ = std::move(scratch_buffer);
     return *this;
 }
@@ -350,8 +349,7 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null
     return *this;
 }
 
-void BuildGeometryInfoKHR::BuildCmdBuffer(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
-                                          bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::BuildCmdBuffer(const vkt::Device &device, VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     if (blas_) {
         blas_->BuildCmdBuffer(device, cmd_buffer, use_ppGeometries);
     }
@@ -359,7 +357,7 @@ void BuildGeometryInfoKHR::BuildCmdBuffer(const vk_testing::Device &device, VkCo
     VkCmdBuildAccelerationStructuresKHR(device, cmd_buffer, true);
 }
 
-void BuildGeometryInfoKHR::BuildCmdBufferIndirect(const vk_testing::Device &device, VkCommandBuffer cmd_buffer) {
+void BuildGeometryInfoKHR::BuildCmdBufferIndirect(const vkt::Device &device, VkCommandBuffer cmd_buffer) {
     if (blas_) {
         blas_->BuildCmdBufferIndirect(device, cmd_buffer);
     }
@@ -367,7 +365,7 @@ void BuildGeometryInfoKHR::BuildCmdBufferIndirect(const vk_testing::Device &devi
     VkCmdBuildAccelerationStructuresIndirectKHR(device, cmd_buffer);
 }
 
-void BuildGeometryInfoKHR::BuildHost(VkInstance instance, const vk_testing::Device &device) {
+void BuildGeometryInfoKHR::BuildHost(VkInstance instance, const vkt::Device &device) {
     if (blas_) {
         blas_->BuildHost(instance, device);
     }
@@ -375,7 +373,7 @@ void BuildGeometryInfoKHR::BuildHost(VkInstance instance, const vk_testing::Devi
     VkBuildAccelerationStructuresKHR(instance, device);
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vkt::Device &device, VkCommandBuffer cmd_buffer,
                                                                bool use_ppGeometries /*= true*/) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
@@ -416,8 +414,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vk_testing:
     vk_info_.pGeometries = nullptr;
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(const vk_testing::Device &device,
-                                                                       VkCommandBuffer cmd_buffer) {
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(const vkt::Device &device, VkCommandBuffer cmd_buffer) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
 
@@ -442,7 +439,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(const vk_
     vk_info_.pGeometries = nullptr;
 }
 
-void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR(VkInstance instance, const vk_testing::Device &device) {
+void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR(VkInstance instance, const vkt::Device &device) {
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
@@ -506,8 +503,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(VkDev
     return size_info;
 }
 
-void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is_on_device_build,
-                                       bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::BuildCommon(const vkt::Device &device, bool is_on_device_build, bool use_ppGeometries /*= true*/) {
     assert(vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR ||
            vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
 
@@ -573,7 +569,7 @@ void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is
     }
 }
 
-void BuildAccelerationStructuresKHR(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
+void BuildAccelerationStructuresKHR(const vkt::Device &device, VkCommandBuffer cmd_buffer,
                                     std::vector<BuildGeometryInfoKHR> &infos) {
     size_t total_geomertry_count = 0;
 
@@ -630,7 +626,7 @@ void BuildAccelerationStructuresKHR(const vk_testing::Device &device, VkCommandB
 }
 
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(APIVersion vk_api_version, const vk_testing::Device &device) {
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(APIVersion vk_api_version, const vkt::Device &device) {
     GeometryKHR triangle_geometry(vk_api_version);
 
     triangle_geometry.SetType(GeometryKHR::Type::Triangle);
@@ -642,10 +638,10 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(APIVersion vk_api_version, const 
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    vk_testing::Buffer vertex_buffer(device, 1024, buffer_usage,
-                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vk_testing::Buffer index_buffer(device, 1024, buffer_usage,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer vertex_buffer(device, 1024, buffer_usage,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer index_buffer(device, 1024, buffer_usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
     triangle_geometry.SetPrimitiveCount(1);
@@ -690,7 +686,7 @@ GeometryKHR GeometrySimpleOnHostTriangleInfo(APIVersion vk_api_version) {
     return triangle_geometry;
 }
 
-GeometryKHR GeometrySimpleOnDeviceAABBInfo(APIVersion vk_api_version, const vk_testing::Device &device) {
+GeometryKHR GeometrySimpleOnDeviceAABBInfo(APIVersion vk_api_version, const vkt::Device &device) {
     GeometryKHR aabb_geometry(vk_api_version);
 
     aabb_geometry.SetType(GeometryKHR::Type::AABB);
@@ -699,7 +695,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(APIVersion vk_api_version, const vk_t
     const std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
 
     const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();
-    vk_testing::Buffer aabb_buffer;
+    vkt::Buffer aabb_buffer;
     auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
@@ -737,7 +733,7 @@ GeometryKHR GeometrySimpleOnHostAABBInfo(APIVersion vk_api_version) {
     return aabb_geometry;
 }
 
-GeometryKHR GeometrySimpleDeviceInstance(APIVersion vk_api_version, const vk_testing::Device &device,
+GeometryKHR GeometrySimpleDeviceInstance(APIVersion vk_api_version, const vkt::Device &device,
                                          VkAccelerationStructureKHR device_instance) {
     GeometryKHR instance_geometry(vk_api_version);
 
@@ -799,7 +795,7 @@ std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(APIV
     return as;
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(APIVersion vk_api_version, const vk_testing::Device &device,
+BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(APIVersion vk_api_version, const vkt::Device &device,
                                                                 GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     BuildGeometryInfoKHR out_build_info(vk_api_version);
 
@@ -835,7 +831,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(APIVersion vk_ap
     return out_build_info;
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(APIVersion vk_api_version, const vk_testing::Device &device,
+BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(APIVersion vk_api_version, const vkt::Device &device,
                                                               GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     BuildGeometryInfoKHR out_build_info(vk_api_version);
 
@@ -872,8 +868,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(APIVersion vk_api_
 }
 
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(
-    APIVersion vk_api_version, const vk_testing::Device &device,
-    std::shared_ptr<BuildGeometryInfoKHR> on_device_bottom_level_geometry) {
+    APIVersion vk_api_version, const vkt::Device &device, std::shared_ptr<BuildGeometryInfoKHR> on_device_bottom_level_geometry) {
     BuildGeometryInfoKHR out_build_info(vk_api_version);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
@@ -903,7 +898,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(
     return out_build_info;
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(APIVersion vk_api_version, const vk_testing::Device &device,
+BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(APIVersion vk_api_version, const vkt::Device &device,
                                                            std::shared_ptr<BuildGeometryInfoKHR> on_host_bottom_level_geometry) {
     BuildGeometryInfoKHR out_build_info(vk_api_version);
 

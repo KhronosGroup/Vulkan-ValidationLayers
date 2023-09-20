@@ -73,7 +73,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vk_testing::Buffer buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buf_info);
     ASSERT_TRUE(buffer.initialized());
 
@@ -86,7 +86,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    vk_testing::DeviceMemory buffer_mem(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
     ASSERT_TRUE(buffer_mem.initialized());
 
     ASSERT_VK_SUCCESS(vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
@@ -116,8 +116,8 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    vk_testing::Image image;
-    vk_testing::DeviceMemory image_mem;
+    vkt::Image image;
+    vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -536,11 +536,11 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_ci.flags = 0;
 
-    vk_testing::Image image;
+    vkt::Image image;
     image.init_no_mem(*m_device, image_ci);
 
-    vk_testing::DeviceMemory *image_memory = new vk_testing::DeviceMemory;
-    image_memory->init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
+    vkt::DeviceMemory *image_memory = new vkt::DeviceMemory;
+    image_memory->init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
     image.bind_memory(*image_memory, 0);
 
     VkImageViewCreateInfo ivci = {
@@ -553,7 +553,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
         {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
     };
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     VkFramebufferCreateInfo fci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 32, 32, 1};
@@ -577,7 +577,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     ASSERT_TRUE(image.initialized());
 
     VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -1160,12 +1160,12 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>();
     export_info.handleTypes = handle_type;
     auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
-    vk_testing::Semaphore export_semaphore(*m_device, create_info);
+    vkt::Semaphore export_semaphore(*m_device, create_info);
     int fd = -1;
     ASSERT_VK_SUCCESS(export_semaphore.export_handle(fd, handle_type));
 
     // Create a new semaphore and put it to work
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();
@@ -1201,12 +1201,12 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     auto export_info = vku::InitStruct<VkExportSemaphoreCreateInfo>();
     export_info.handleTypes = handle_type;
     auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&export_info);
-    vk_testing::Semaphore export_semaphore(*m_device, create_info);
+    vkt::Semaphore export_semaphore(*m_device, create_info);
     HANDLE handle = NULL;
     ASSERT_VK_SUCCESS(export_semaphore.export_handle(handle, handle_type));
 
     // Create a new semaphore and put it to work
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphore.handle();

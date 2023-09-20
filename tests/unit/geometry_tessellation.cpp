@@ -973,7 +973,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
         ds_pool_ci.poolSizeCount = 1;
         ds_pool_ci.pPoolSizes = &ds_type_count;
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
         dsl_binding.binding = 0;
@@ -986,7 +986,7 @@ TEST_F(NegativeGeometryTessellation, PatchControlPoints)
         ds_layout_ci.bindingCount = 1;
         ds_layout_ci.pBindings = &dsl_binding;
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorSet descriptorSet;
     err = vk::AllocateDescriptorSets(m_device->device(), ds_pool.handle(),
@@ -997,7 +997,7 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
         pipeline_layout_ci.pNext = NULL;
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     ASSERT_VK_SUCCESS(err);
 
     VkPipelineShaderStageCreateInfo shaderStages[3];

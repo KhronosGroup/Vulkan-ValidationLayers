@@ -141,7 +141,7 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
 
     rpci.pAttachments = attach_desc;
 
-    vk_testing::RenderPass renderpass(*m_device, rpci);
+    vkt::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -212,7 +212,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
 
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipeline.AddShader(&vs);
@@ -543,7 +543,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass renderpass(*m_device, rpci);
+    vkt::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
     auto render_target_view = m_renderTargets[0]->targetView(m_renderTargets[0]->format());
@@ -554,7 +554,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     framebuffer_info.layers = 1;
     framebuffer_info.attachmentCount = 1;
     framebuffer_info.pAttachments = &render_target_view;
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_info);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -658,12 +658,12 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     rpci.pAttachments = attach_desc;
 
     // renderpass has 1xMSAA colorAttachent and 4xMSAA inputAttachment
-    vk_testing::RenderPass renderpass(*m_device, rpci);
+    vkt::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
     // renderpass2 has 1xMSAA colorAttachent and 1xMSAA inputAttachment
     attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    vk_testing::RenderPass renderpass2(*m_device, rpci);
+    vkt::RenderPass renderpass2(*m_device, rpci);
     ASSERT_TRUE(renderpass2.initialized());
 
     // shader uses gl_SamplePosition which causes the SPIR-V to include SampleRateShading capability
@@ -1158,7 +1158,7 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     };
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp.handle());
 
@@ -1278,7 +1278,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
-        vk_testing::RenderPass rp(*m_device, rpi);
+        vkt::RenderPass rp(*m_device, rpi);
 
         auto ds = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         auto cmi = vku::InitStruct<VkPipelineCoverageModulationStateCreateInfoNV>();
@@ -1368,7 +1368,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pDepthStencilAttachment-01418");
         }
-        vk_testing::RenderPass rp(*m_device, rpi);
+        vkt::RenderPass rp(*m_device, rpi);
 
         if (test_case.color_samples == test_case.depth_samples) {
         } else {
@@ -1510,7 +1510,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
 
-        vk_testing::RenderPass rp(*m_device, rpi);
+        vkt::RenderPass rp(*m_device, rpi);
         ASSERT_TRUE(rp.initialized());
 
         VkPipelineDepthStencilStateCreateInfo dss = vku::InitStructHelper();
@@ -1606,7 +1606,7 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
         cbi.attachmentCount = cba.size();
         cbi.pAttachments = cba.data();
 
-        vk_testing::RenderPass rp(*m_device, rpi);
+        vkt::RenderPass rp(*m_device, rpi);
         ASSERT_TRUE(rp.initialized());
 
         VkPipelineCoverageToColorStateCreateInfoNV cci = vku::InitStructHelper();
@@ -2207,11 +2207,11 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
-    vk_testing::Sampler sampler_filter(*m_device, sampler_ci);
+    vkt::Sampler sampler_filter(*m_device, sampler_ci);
 
     sampler_ci.minFilter = VK_FILTER_NEAREST;
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // turned off feature bit for test
-    vk_testing::Sampler sampler_mipmap(*m_device, sampler_ci);
+    vkt::Sampler sampler_mipmap(*m_device, sampler_ci);
 
     VkDescriptorImageInfo combined_sampler_info = {sampler_filter.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkDescriptorImageInfo seperate_sampled_image_info = {VK_NULL_HANDLE, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
@@ -2464,7 +2464,7 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    vk_testing::Pipeline test_pipeline(*m_device, compute_create_info);
+    vkt::Pipeline test_pipeline(*m_device, compute_create_info);
 
     {
         compute_create_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -2479,7 +2479,7 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
         compute_create_info.basePipelineHandle = test_pipeline.handle();
         compute_create_info.basePipelineIndex = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-07986");
-        vk_testing::Pipeline pipeline(*m_device, compute_create_info);
+        vkt::Pipeline pipeline(*m_device, compute_create_info);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2594,7 +2594,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &subpass_dependency;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
     ASSERT_TRUE(render_pass.initialized());
 
     VkImageObj image(m_device);
@@ -2609,7 +2609,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     framebuffer_info.height = 32;
     framebuffer_info.layers = 1;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_info);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_info);
     ASSERT_TRUE(framebuffer.initialized());
 
     auto multisample_prop = vku::InitStruct<VkMultisamplePropertiesEXT>();
@@ -2837,7 +2837,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
         helper.gp_ci_.pDepthStencilState = &ds_ci;
@@ -2896,7 +2896,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
     cb_ci.pAttachments = &cb_as;
     VkRenderPass render_pass_handle = VK_NULL_HANDLE;
 
-    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vk_testing::RenderPass &render_pass) {
+    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass &render_pass) {
         VkAttachmentDescription attachments[2] = {};
         attachments[0].flags = 0;
         attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2948,7 +2948,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         helper.gp_ci_.renderPass = render_pass_handle;
     };
 
-    vk_testing::RenderPass render_pass_no_flags;
+    vkt::RenderPass render_pass_no_flags;
     create_render_pass(0, render_pass_no_flags);
     render_pass_handle = render_pass_no_flags.handle();
 
@@ -3003,7 +3003,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
 
         cb_ci.flags = 0;
         ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
-        vk_testing::RenderPass render_pass;
+        vkt::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
         CreatePipelineHelper::OneshotTest(*this, set_stages_pipeline_createinfo, kErrorBit,
@@ -3270,7 +3270,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         rp_ci.pAttachments = attach_desc;
 
-        vk_testing::RenderPass render_pass(*m_device, rp_ci);
+        vkt::RenderPass render_pass(*m_device, rp_ci);
 
         // Check if the colorAttachmentRead capability enable, renderpass should be null
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {

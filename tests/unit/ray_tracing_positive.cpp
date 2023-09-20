@@ -230,7 +230,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
-    vk_testing::DeviceMemory mem(*m_device, alloc_info);
+    vkt::DeviceMemory mem(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
 
     auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
@@ -508,7 +508,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 8192 * build_info_count;
-    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test using non overlapping memory chunks from the same buffer in multiple builds
     // The scratch buffer is used in multiple builds but bound at different offsets, so no validation error should be issued
@@ -569,7 +569,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 8192;
-    vk_testing::DeviceMemory common_scratch_memory(*m_device, alloc_info);
+    vkt::DeviceMemory common_scratch_memory(*m_device, alloc_info);
 
     VkCommandBufferObj cmd_buffer_frame_0(m_device, m_commandPool);
     VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);

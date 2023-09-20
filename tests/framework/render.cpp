@@ -85,7 +85,7 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
                                                const uint32_t impl_version) {
 
     if (available_layers_.empty()) {
-        available_layers_ = vk_testing::GetGlobalLayers();
+        available_layers_ = vkt::GetGlobalLayers();
     }
 
     for (const auto &layer : available_layers_) {
@@ -105,7 +105,7 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
 
     if (available_extensions_.empty()) {
-        available_extensions_ = vk_testing::GetGlobalExtensions();
+        available_extensions_ = vkt::GetGlobalExtensions();
     }
 
     const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
@@ -124,7 +124,7 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
         return false;
     }
 
-    const vk_testing::PhysicalDevice device_obj(gpu_);
+    const vkt::PhysicalDevice device_obj(gpu_);
 
     const auto enabled_layers = instance_layers_;  // assumes instance_layers_ contains enabled layers
 
@@ -1035,7 +1035,7 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = VK_NULL_HANDLE;
 }
 
-VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device(obj), id(id) {
+VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vkt::Device(obj), id(id) {
     init();
 
     props = phy().properties();
@@ -1044,7 +1044,7 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device
 
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, vector<const char *> &extension_names,
                          VkPhysicalDeviceFeatures *features, void *create_device_pnext)
-    : vk_testing::Device(obj), id(id) {
+    : vkt::Device(obj), id(id) {
     init(extension_names, features, create_device_pnext);
 
     props = phy().properties();
@@ -1125,8 +1125,8 @@ int VkDescriptorSetObj::AppendBuffer(VkDescriptorType type, VkConstantBufferObj 
     m_layout_bindings.push_back(binding);
     m_type_counts[type] += binding.descriptorCount;
 
-    m_writes.push_back(vk_testing::Device::write_descriptor_set(vk_testing::DescriptorSet(), m_nextSlot, 0, type, 1,
-                                                                &constantBuffer.m_descriptorBufferInfo));
+    m_writes.push_back(
+        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), m_nextSlot, 0, type, 1, &constantBuffer.m_descriptorBufferInfo));
 
     return m_nextSlot++;
 }
@@ -1145,8 +1145,8 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
     tmp.sampler = sampler->handle();
     m_imageSamplerDescriptors.push_back(tmp);
 
-    m_writes.push_back(vk_testing::Device::write_descriptor_set(vk_testing::DescriptorSet(), m_nextSlot, 0,
-                                                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &tmp));
+    m_writes.push_back(
+        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), m_nextSlot, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &tmp));
 
     return m_nextSlot++;
 }
@@ -1174,7 +1174,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     layout.pBindings = m_layout_bindings.data();
 
     m_layout.init(*m_device, layout);
-    vector<const vk_testing::DescriptorSetLayout *> layouts;
+    vector<const vkt::DescriptorSetLayout *> layouts;
     layouts.push_back(&m_layout);
 
     // create VkPipelineLayout
@@ -1432,7 +1432,7 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
 VkImageCreateInfo VkImageObj::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,
                                                 uint32_t const layers, VkFormat const format, VkFlags const usage,
                                                 VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
-    VkImageCreateInfo imageCreateInfo = vk_testing::Image::create_info();
+    VkImageCreateInfo imageCreateInfo = vkt::Image::create_info();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
     imageCreateInfo.extent.width = width;
@@ -1506,9 +1506,9 @@ void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryProp
 
     Layout(imageCreateInfo.initialLayout);
     if (memory)
-        vk_testing::Image::init(*m_device, imageCreateInfo, reqs);
+        vkt::Image::init(*m_device, imageCreateInfo, reqs);
     else
-        vk_testing::Image::init_no_mem(*m_device, imageCreateInfo);
+        vkt::Image::init_no_mem(*m_device, imageCreateInfo);
 }
 
 void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
@@ -1571,7 +1571,7 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     }
     Layout(create_info->initialLayout);
 
-    vk_testing::Image::init(*m_device, *create_info, 0);
+    vkt::Image::init(*m_device, *create_info, 0);
     m_mipLevels = create_info->mipLevels;
     m_arrayLayers = create_info->arrayLayers;
 
@@ -1588,8 +1588,8 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     SetLayout(image_aspect, VK_IMAGE_LAYOUT_GENERAL);
 }
 
-void VkImageObj::init_no_mem(const vk_testing::Device &dev, const VkImageCreateInfo &info) {
-    vk_testing::Image::init_no_mem(dev, info);
+void VkImageObj::init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &info) {
+    vkt::Image::init_no_mem(dev, info);
     Layout(info.initialLayout);
     m_mipLevels = info.mipLevels;
     m_arrayLayers = info.arrayLayers;
@@ -1925,7 +1925,7 @@ VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const
     pl_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
     pl_ci.pPushConstantRanges = push_constant_ranges.data();
 
-    auto descriptor_layouts_unwrapped = MakeTestbindingHandles<const vk_testing::DescriptorSetLayout>(descriptor_layouts);
+    auto descriptor_layouts_unwrapped = MakeTestbindingHandles<const vkt::DescriptorSetLayout>(descriptor_layouts);
 
     init(*device, pl_ci, descriptor_layouts_unwrapped);
 }
@@ -2137,7 +2137,7 @@ void VkCommandBufferObj::Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCom
     }
     assert(m_queue);
 
-    auto create_info = vk_testing::CommandBuffer::create_info(pool->handle());
+    auto create_info = vkt::CommandBuffer::create_info(pool->handle());
     create_info.level = level;
     init(*device, create_info);
 }
@@ -2386,7 +2386,7 @@ void VkCommandBufferObj::BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkD
 }
 
 void VkCommandPoolObj::Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
-    init(*device, vk_testing::CommandPool::create_info(queue_family_index, flags));
+    init(*device, vkt::CommandPool::create_info(queue_family_index, flags));
 }
 
 VkCommandPoolObj::VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {

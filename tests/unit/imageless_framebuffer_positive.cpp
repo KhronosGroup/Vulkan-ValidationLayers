@@ -45,7 +45,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     rp_ci.pSubpasses = &subpass;
     rp_ci.attachmentCount = 1;
     rp_ci.pAttachments = &attachment_description;
-    vk_testing::RenderPass render_pass(*m_device, rp_ci);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
 
     auto fb_attachment_image_info = vku::InitStruct<VkFramebufferAttachmentImageInfoKHR>();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -66,14 +66,14 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     fb_ci.attachmentCount = 1;
 
     fb_ci.pAttachments  = nullptr;
-    vk_testing::Framebuffer framebuffer_null(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
 
     VkImageView image_views[2] = {
     m_renderTargets[0]->targetView(VK_FORMAT_B8G8R8A8_UNORM),
     CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)
     };
     fb_ci.pAttachments = image_views;
-    vk_testing::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
+    vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 }
 
 TEST_F(PositiveImagelessFramebuffer, Image3D) {
@@ -112,7 +112,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     rp_ci.attachmentCount = 1;
     rp_ci.pAttachments = &attachment;
 
-    vk_testing::RenderPass render_pass;
+    vkt::RenderPass render_pass;
     render_pass.init(*m_device, rp_ci);
 
     auto image_ci = vku::InitStruct<VkImageCreateInfo>();
@@ -154,7 +154,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkClearValue clear_value = {};
     clear_value.color = {{0u, 0u, 0u, 0u}};

@@ -455,7 +455,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp(*m_device, rpci, true /*khr*/);
+    vkt::RenderPass rp(*m_device, rpci, true /*khr*/);
 
     VkImageObj image(m_device);
     image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -479,7 +479,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
 
     // Set viewMask to non-zero - requires multiview
     subpass.viewMask = 0x10;
-    vk_testing::RenderPass rp_mv(*m_device, rpci, true /*khr*/);
+    vkt::RenderPass rp_mv(*m_device, rpci, true /*khr*/);
 
     fb_info.renderPass = rp_mv.handle();
 
@@ -773,7 +773,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
     rpci.pAttachments = &attach;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -846,7 +846,7 @@ TEST_F(NegativeFragmentShadingRate, DeviceFeatureCombinations) {
     GetPhysicalDeviceFeatures2(fsr_query_features);
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -968,7 +968,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci, true);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -984,7 +984,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     fb_info.layers = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04548");
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1047,7 +1047,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci, true);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -1068,7 +1068,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     fb_info.layers = 1;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04539");
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
@@ -1092,7 +1092,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
         m_errorMonitor->VerifyFound();
 
         subpass.viewMask = 0x4;
-        vk_testing::RenderPass rp2(*m_device, rpci, true);
+        vkt::RenderPass rp2(*m_device, rpci, true);
         ASSERT_TRUE(rp2.initialized());
         subpass.viewMask = 0;
 
@@ -1268,7 +1268,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rcpi_no_fsr.subpassCount = 1;
     rcpi_no_fsr.pSubpasses = &subpass_no_fsr;
 
-    vk_testing::RenderPass rp_no_fsr(*m_device, rcpi_no_fsr, true);
+    vkt::RenderPass rp_no_fsr(*m_device, rcpi_no_fsr, true);
 
     // Create 2 render passes with fragment shading rate attachments with
     // differing shadingRateAttachmentTexelSize values
@@ -1307,7 +1307,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rpci_fsr_1.attachmentCount = 1;
     rpci_fsr_1.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp_fsr_1(*m_device, rpci_fsr_1, true);
+    vkt::RenderPass rp_fsr_1(*m_device, rpci_fsr_1, true);
     ASSERT_TRUE(rp_fsr_1.initialized());
 
     VkRenderPassCreateInfo2KHR rpci_fsr_2 = vku::InitStructHelper();
@@ -1316,7 +1316,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     rpci_fsr_2.attachmentCount = 1;
     rpci_fsr_2.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp_fsr_2(*m_device, rpci_fsr_2, true);
+    vkt::RenderPass rp_fsr_2(*m_device, rpci_fsr_2, true);
     ASSERT_TRUE(rp_fsr_2.initialized());
 
     VkImageObj image(m_device);
@@ -1332,7 +1332,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     fb_info.height = 32;
     fb_info.layers = 1;
 
-    vk_testing::Framebuffer framebuffer_fsr(*m_device, fb_info);
+    vkt::Framebuffer framebuffer_fsr(*m_device, fb_info);
 
     // Create a frame buffer with a render pass without FSR attachment
     VkFramebufferCreateInfo fb_info_0 = vku::InitStructHelper();
@@ -1343,7 +1343,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     fb_info_0.height = 32;
     fb_info_0.layers = 1;
 
-    vk_testing::Framebuffer framebuffer_no_fsr(*m_device, fb_info_0);
+    vkt::Framebuffer framebuffer_no_fsr(*m_device, fb_info_0);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -2032,7 +2032,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
                                                        attachments.data(), 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
     // Create rp2[0] without Multiview (zero viewMask), rp2[1] with Multiview
-    vk_testing::RenderPass rp2[2];
+    vkt::RenderPass rp2[2];
     rp2[0].init(*m_device, rpci, true);
 
     subpass.viewMask = 0x3u;
@@ -2105,42 +2105,42 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView iv0(*m_device, ivci);
+    vkt::ImageView iv0(*m_device, ivci);
     ASSERT_TRUE(iv0.initialized());
     iv[0] = iv0.handle();
 
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ivci.image = input_image.handle();
-    vk_testing::ImageView iv1(*m_device, ivci);
+    vkt::ImageView iv1(*m_device, ivci);
     ASSERT_TRUE(iv1.initialized());
     iv[1] = iv1.handle();
 
     ivci.image = color_image1.handle();
-    vk_testing::ImageView iv2(*m_device, ivci);
+    vkt::ImageView iv2(*m_device, ivci);
     ASSERT_TRUE(iv2.initialized());
     iv[2] = iv2.handle();
 
     ivci.image = color_image2.handle();
-    vk_testing::ImageView iv3(*m_device, ivci);
+    vkt::ImageView iv3(*m_device, ivci);
     ASSERT_TRUE(iv3.initialized());
     iv[3] = iv3.handle();
 
     ivci.format = ds_format;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     ivci.image = depth_image.handle();
-    vk_testing::ImageView iv4(*m_device, ivci);
+    vkt::ImageView iv4(*m_device, ivci);
     ASSERT_TRUE(iv4.initialized());
     iv[4] = iv4.handle();
 
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.image = resolve_image.handle();
-    vk_testing::ImageView iv5(*m_device, ivci);
+    vkt::ImageView iv5(*m_device, ivci);
     ASSERT_TRUE(iv5.initialized());
     iv[5] = iv5.handle();
 
     ivci.image = preserve_image.handle();
-    vk_testing::ImageView iv6(*m_device, ivci);
+    vkt::ImageView iv6(*m_device, ivci);
     ASSERT_TRUE(iv6.initialized());
     iv[6] = iv6.handle();
 
@@ -2153,10 +2153,10 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     fbci.attachmentCount = 7;
     fbci.pAttachments = iv;
 
-    vk_testing::Framebuffer fb1(*m_device, fbci);
+    vkt::Framebuffer fb1(*m_device, fbci);
 
     fbci.renderPass = rp2[1].handle();
-    vk_testing::Framebuffer fb2(*m_device, fbci);
+    vkt::Framebuffer fb2(*m_device, fbci);
 
     // define renderpass begin info
     auto rpbi1 =
@@ -2343,7 +2343,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         ivci.subresourceRange.layerCount = 6;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02086");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01003");
-        vk_testing::ImageView view(*m_device, ivci);
+        vkt::ImageView view(*m_device, ivci);
         m_errorMonitor->VerifyFound();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         ivci.subresourceRange.layerCount = 1;
@@ -2353,12 +2353,12 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     {
         ivci.format = VK_FORMAT_R8_UNORM;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02087");
-        vk_testing::ImageView view(*m_device, ivci);
+        vkt::ImageView view(*m_device, ivci);
         m_errorMonitor->VerifyFound();
         ivci.format = VK_FORMAT_R8_UINT;
     }
 
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     // Test pipeline creation
     VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
@@ -2590,7 +2590,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
@@ -2631,9 +2631,9 @@ TEST_F(NegativeFragmentShadingRate, StageUsage) {
     auto query_pool_create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device);
-    const vk_testing::Event event2(*m_device);
+    const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vkt::Event event(*m_device);
+    const vkt::Event event2(*m_device);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07316");
@@ -2666,9 +2666,9 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     auto query_pool_create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device);
-    const vk_testing::Event event2(*m_device);
+    const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vkt::Event event(*m_device);
+    const vkt::Event event2(*m_device);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07316");

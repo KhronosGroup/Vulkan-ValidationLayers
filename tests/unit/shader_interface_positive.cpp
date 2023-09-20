@@ -525,7 +525,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -634,7 +634,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDescription;
 
-    vk_testing::RenderPass renderPass(*m_device, renderPassInfo);
+    vkt::RenderPass renderPass(*m_device, renderPassInfo);
 
     // use static array of 2 and index into element 1 to read
     {
@@ -783,7 +783,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDescription;
 
-    vk_testing::RenderPass renderPass(*m_device, renderPassInfo);
+    vkt::RenderPass renderPass(*m_device, renderPassInfo);
 
     // Depth and Stencil use same index, but valid because differnet image aspect masks
     const char *fs_source = R"(

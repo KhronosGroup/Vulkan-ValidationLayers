@@ -291,7 +291,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -300,7 +300,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
     pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
-    vk_testing::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
+    vkt::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe_small_range(*this);
     g_pipe_small_range.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -430,7 +430,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     auto pipeline_layout_info = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
     VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
@@ -445,7 +445,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
 
     // Make sure Vertex is ok when used
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    vk_testing::PipelineLayout pipeline_layout_good(*m_device, pipeline_layout_info);
+    vkt::PipelineLayout pipeline_layout_good(*m_device, pipeline_layout_info);
     pipe.gp_ci_.layout = pipeline_layout_good.handle();
     pipe.CreateGraphicsPipeline();
 }

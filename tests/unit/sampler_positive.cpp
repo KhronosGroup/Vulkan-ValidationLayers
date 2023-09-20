@@ -31,7 +31,7 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 }
 
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature12) {
@@ -52,7 +52,7 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature12) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 }
 
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithFeature) {
@@ -79,5 +79,5 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithFeature) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 }
