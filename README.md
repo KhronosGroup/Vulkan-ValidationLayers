@@ -1,15 +1,19 @@
-# Vulkan Validation Layers (VVL)
+# Vulkan Validation Layer (VVL)
 
 ## Introduction
 
 Vulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error checking is done inside
 a Vulkan driver. Applications have full control and responsibility for correct operation. Any errors in
-how Vulkan is used can result in a crash. This project provides Vulkan validation layers that can be enabled
+how Vulkan is used can result in a crash. This project provides Vulkan validation layer that can be enabled
 to assist development by enabling developers to verify their applications correct use of the Vulkan API.
+
+## Using the Validation Layer
+* [./docs/khronos_validation_layer.md](khronos_validation_layer.md) - Documentation about the Validation Layer settings.
+* [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md) - Instructions for configuring the Validation Layer at runtime.
 
 ## Community Assistance
 
-Before submitting an issue to the validation layers or reaching out to the developers it may be prudent to reach out to the community first.
+Before submitting an issue to the validation layer or reaching out to the developers it may be prudent to reach out to the community first.
 These resources can be helpful to refine your issue, work out an application/driver bug, etc.
 
 - Discord: https://discord.com/invite/vulkan
@@ -21,12 +25,11 @@ These resources can be helpful to refine your issue, work out an application/dri
 * @KhronosGroup/VVL-CODEOWNERS
 * VVL-CODEOWNERS can also be found on aforementioned Slack channel for direct contact.
 
-## Info
-* [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
-* [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md) - Instructions for configuring the Validation Layers at runtime.
+## Contributing to the Validation Layer Development
+* [BUILD.md](BUILD.md) - Instructions for building the Validation Layer
 * [CONTRIBUTING.md](CONTRIBUTING.md) - Information needed to make a contribution.
     * [./docs](./docs/) - Details of the Validation Layer source code. **For those wanting to make contributions**
-    * [./tests](./tests) - Information about testing the Validation Layers.
+    * [./tests](./tests) - Information about testing the Validation Layer.
     * [GOVERNANCE.md](GOVERNANCE.md) - Repository management details.
 
 ## Version Tagging Scheme
