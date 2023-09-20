@@ -1064,9 +1064,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     auto external_buffer_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
     external_buffer_info.handleTypes = handle_type;
 
-    auto buffer_info = VkBufferObj::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto buffer_info = vkt::Buffer::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
-    VkBufferObj buffer_export;
+    vkt::Buffer buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
     const VkMemoryRequirements buffer_export_reqs = buffer_export.memory_requirements();
 
@@ -1077,7 +1077,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
         static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_buffer_types));
     external_buffer_info.handleTypes = wrong_buffer_handle_type;
 
-    VkBufferObj buffer_import;
+    vkt::Buffer buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
     const VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
     assert(buffer_import_reqs.memoryTypeBits != 0);  // according to spec at least one bit is set
@@ -1555,16 +1555,16 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         }
     }
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     {
         auto external_info = vku::InitStruct<VkExternalMemoryBufferCreateInfo>();
         external_info.handleTypes = handle_type;
-        auto create_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        auto create_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         create_info.pNext = &external_info;
         buffer.init_no_mem(*m_device, create_info);
     }
 
-    VkDeviceMemoryObj memory;
+    vkt::DeviceMemory memory;
     VkDeviceSize payload_size = 0;
     uint32_t payload_memory_type = 0;
     {
@@ -1573,7 +1573,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         dedicated_info.buffer = buffer;
         auto export_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
         export_info.handleTypes = handle_type;
-        auto alloc_info = VkDeviceMemoryObj::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+        auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
         memory.init(*m_device, alloc_info);
         buffer.bind_memory(memory, 0);
         payload_size = alloc_info.allocationSize;
@@ -1667,7 +1667,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         image.init_no_mem(*m_device, create_info);
     }
 
-    VkDeviceMemoryObj memory;
+    vkt::DeviceMemory memory;
     VkDeviceSize payload_size = 0;
     uint32_t payload_memory_type = 0;
     {
@@ -1676,7 +1676,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         dedicated_info.image = image;
         auto export_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
         export_info.handleTypes = handle_type;
-        auto alloc_info = VkDeviceMemoryObj::get_resource_alloc_info(*m_device, image.memory_requirements(), 0, &export_info);
+        auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0, &export_info);
         memory.init(*m_device, alloc_info);
         image.bind_memory(memory, 0);
         payload_size = alloc_info.allocationSize;

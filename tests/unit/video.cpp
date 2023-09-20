@@ -4288,7 +4288,7 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = sizeof(uint32_t);
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     m_commandBuffer->begin();
 

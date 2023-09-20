@@ -47,7 +47,7 @@ TEST_F(NegativeImage, UsageBits) {
     CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-image-04441");
 
     // Initialize buffer with TRANSFER_DST usage
-    VkBufferObj buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 128;
     region.bufferImageHeight = 128;
@@ -105,7 +105,7 @@ TEST_F(NegativeImage, CopyBufferToCompressedImage) {
 
     VkImageObj width_image(m_device);
     VkImageObj height_image(m_device);
-    VkBufferObj buffer(*m_device, 8 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer(*m_device, 8 * 4 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
@@ -273,7 +273,7 @@ TEST_F(NegativeImage, SampleCounts) {
     // Create src buffer and dst image with sampleCount = 4 and attempt to copy
     // buffer to image
     {
-        VkBufferObj src_buffer(*m_device, 128 * 128 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        vkt::Buffer src_buffer(*m_device, 128 * 128 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         VkImageObj dst_image(m_device);
@@ -291,7 +291,7 @@ TEST_F(NegativeImage, SampleCounts) {
     // Create dst buffer and src image with sampleCount = 4 and attempt to copy
     // image to buffer
     {
-        VkBufferObj dst_buffer(*m_device, 128 * 128 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        vkt::Buffer dst_buffer(*m_device, 128 * 128 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         vkt::Image src_image;
@@ -1275,7 +1275,7 @@ TEST_F(NegativeImage, MinImageTransferGranularity) {
 
     // Now do some buffer/image copies
     VkDeviceSize buffer_size = 8 * granularity.height * granularity.width * granularity.depth;
-    VkBufferObj buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;

@@ -70,7 +70,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     auto bci = vku::InitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 1024;
-    VkBufferObj buffer(*m_device, bci);
+    vkt::Buffer buffer(*m_device, bci);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -305,7 +305,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->BindIndexBuffer(&index_buffer, 2, VK_INDEX_TYPE_UINT16);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-None-08606");
@@ -315,7 +315,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
     VkBufferCreateInfo ci = vku::InitStructHelper();
     ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     ci.size = 1024;
-    VkBufferObj buffer(*m_device, ci);
+    vkt::Buffer buffer(*m_device, ci);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-None-08606");
     vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 1, 0);
     m_errorMonitor->VerifyFound();
@@ -1861,11 +1861,11 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj storage_buffer(*m_device, bci, mem_props);
+    vkt::Buffer storage_buffer(*m_device, bci, mem_props);
 
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 20;
-    VkBufferObj uniform_buffer(*m_device, bci, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, bci, mem_props);
 
     OneOffDescriptorSet::Bindings binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},

@@ -79,7 +79,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
         buffCI.queueFamilyIndexCount = 2;
         qfi[0] = 1;
         qfi[1] = 2;
-        VkBufferObj ib;
+        vkt::Buffer ib;
         ib.init(*m_device, buffCI);
 
         m_commandBuffer->begin();

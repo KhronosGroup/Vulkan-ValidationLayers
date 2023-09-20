@@ -59,7 +59,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer0;
+    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -214,7 +214,7 @@ TEST_F(NegativeDebugPrintf, BasicUsage) {
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
-        VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
         ptr[0] = 0;
         ptr[1] = 1;
@@ -436,7 +436,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer0;
+    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -621,7 +621,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
         m_errorMonitor->VerifyFound();
 
-        VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
         ptr[0] = 0;
         ptr[1] = 1;
@@ -763,7 +763,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
+    vkt::Buffer vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
     OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
@@ -917,7 +917,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
+    vkt::Buffer vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
     OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
@@ -1082,7 +1082,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer0;
+    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1253,7 +1253,7 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
 
-        VkBufferObj buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
         ptr[0] = 0;
         ptr[1] = 1;

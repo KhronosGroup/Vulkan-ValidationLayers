@@ -41,7 +41,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer(*m_device, buff_ci);
+    vkt::Buffer buffer(*m_device, buff_ci);
 
     VkDescriptorBufferInfo buff_info = {};
     buff_info.buffer = buffer.handle();
@@ -153,7 +153,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -203,7 +203,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -630,7 +630,7 @@ TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlo
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = m_device->props.limits.minUniformBufferOffsetAlignment;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBufferObj buffer(*m_device, buff_ci);
+    vkt::Buffer buffer(*m_device, buff_ci);
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;

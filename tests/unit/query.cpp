@@ -1160,7 +1160,7 @@ TEST_F(NegativeQuery, Sizes) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferObj buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs = {};
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
     const VkDeviceSize buffer_size = mem_reqs.size;
@@ -1350,7 +1350,7 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkBufferObj buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
@@ -1401,7 +1401,7 @@ TEST_F(NegativeQuery, PerformanceQueryIntel) {
     auto performance_api_info_intel = vku::InitStruct<VkInitializePerformanceApiInfoINTEL>();
     vk::InitializePerformanceApiINTEL(m_device->device(), &performance_api_info_intel);
 
-    VkBufferObj buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL;
@@ -2492,7 +2492,7 @@ TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 1024;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryPool-parameter");
     vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), bad_query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
@@ -2570,7 +2570,7 @@ TEST_F(NegativeQuery, ActiveCmdCopyQueryPoolResults) {
     query_pool_create_info.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    VkBufferObj buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);

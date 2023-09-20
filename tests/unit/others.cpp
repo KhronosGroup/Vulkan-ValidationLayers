@@ -210,7 +210,7 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -264,7 +264,7 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init(*m_device, buffer_create_info);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
@@ -316,7 +316,7 @@ TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
@@ -1975,7 +1975,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer(*m_device, buff_create_info);
+    vkt::Buffer buffer(*m_device, buff_create_info);
 
     m_commandBuffer->reset();
     m_commandBuffer->begin();
@@ -2604,7 +2604,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;

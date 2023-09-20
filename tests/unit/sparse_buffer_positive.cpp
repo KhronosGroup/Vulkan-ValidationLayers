@@ -39,9 +39,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
-    VkBufferObj buffer_sparse2;
+    vkt::Buffer buffer_sparse2;
     buffer_sparse2.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -139,15 +139,15 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        VkDeviceMemoryObj::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkDeviceMemoryObj buffer_mem(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind_1 = {};
     buffer_memory_bind_1.size = buffer_mem_reqs.size;
@@ -165,7 +165,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
@@ -209,7 +209,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -218,7 +218,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        VkDeviceMemoryObj::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;                          // srcOffset is the start of buffer_mem_1, or 0 in this space.
@@ -226,8 +226,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
                                                       // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment;
 
-    VkDeviceMemoryObj buffer_mem_1(*m_device, buffer_mem_alloc);
-    VkDeviceMemoryObj buffer_mem_2(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem_1(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem_2(*m_device, buffer_mem_alloc);
 
     std::array<VkSparseMemoryBind, 2> buffer_memory_binds = {};
     buffer_memory_binds[0].size = buffer_mem_reqs.alignment;
@@ -248,7 +248,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
@@ -292,7 +292,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -304,10 +304,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        VkDeviceMemoryObj::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkDeviceMemoryObj buffer_mem_1(*m_device, buffer_mem_alloc);
-    VkDeviceMemoryObj buffer_mem_2(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem_1(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem_2(*m_device, buffer_mem_alloc);
 
     std::array<VkSparseMemoryBind, 2> buffer_memory_binds = {};
     buffer_memory_binds[0].size = buffer_mem_reqs.alignment;
@@ -328,7 +328,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete

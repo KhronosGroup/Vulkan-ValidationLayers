@@ -477,7 +477,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    VkBufferObj vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     char const *vsSource = R"glsl(
         #version 450 core

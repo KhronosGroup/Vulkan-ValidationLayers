@@ -82,8 +82,8 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     // to prevent VUID-VkBufferViewCreateInfo-buffer-02751
     const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
 
-    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkBufferCreateInfo buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -121,7 +121,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     // This is the worst case scenario for adding an element in the current buffer_address_map: inserted range will have to be split
     // for every range currently in the map.
     constexpr size_t N = 1400;
-    std::vector<VkBufferObj> buffers(N);
+    std::vector<vkt::Buffer> buffers(N);
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buffer_ci.size = 4096;
@@ -130,7 +130,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     VkDeviceAddress ref_address = 0;
 
     for (size_t i = 0; i < N; ++i) {
-        VkBufferObj &buffer = buffers[i];
+        vkt::Buffer &buffer = buffers[i];
         buffer_ci.size = (i + 1) * 4096;
         buffer.init_no_mem(*m_device, buffer_ci);
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
@@ -172,14 +172,14 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     // Create buffers. They have consecutive device address ranges, so no overlaps: no split will be needed when inserting, it
     // should be fast.
     constexpr size_t N = 1400;  // 100 * 4096;
-    std::vector<VkBufferObj> buffers(N);
+    std::vector<vkt::Buffer> buffers(N);
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     for (size_t i = 0; i < N; ++i) {
-        VkBufferObj &buffer = buffers[i];
+        vkt::Buffer &buffer = buffers[i];
         buffer.init_no_mem(*m_device, buffer_ci);
         // Consecutive offsets
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), i * buffer_ci.size);
@@ -204,7 +204,7 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t buffer_size = 32;
-    VkBufferObj buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -234,7 +234,7 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
@@ -264,7 +264,7 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     auto buffer_usage_flags = vku::InitStruct<VkBufferUsageFlags2CreateInfoKHR>();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;

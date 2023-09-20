@@ -143,7 +143,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();
@@ -257,7 +257,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.buffer = buffer.handle();

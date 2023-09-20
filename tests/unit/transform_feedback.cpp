@@ -97,7 +97,7 @@ TEST_F(NegativeTransformFeedback, FeatureEnabled) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
-        VkBufferObj buffer(*m_device, info);
+        vkt::Buffer buffer(*m_device, info);
         VkDeviceSize offsets[1]{};
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindTransformFeedbackBuffersEXT-transformFeedback-02355");
@@ -164,7 +164,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 8;
-        VkBufferObj const buffer_obj(*m_device, info);
+        vkt::Buffer const buffer_obj(*m_device, info);
 
         // Request a firstBinding that is too large.
         {
@@ -206,7 +206,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 8;
-        VkBufferObj const buffer_obj(*m_device, info);
+        vkt::Buffer const buffer_obj(*m_device, info);
 
         // Request an offset that is too large.
         {
@@ -265,7 +265,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         info.size = 4;
-        VkBufferObj const buffer_obj(*m_device, info);
+        vkt::Buffer const buffer_obj(*m_device, info);
 
         VkDeviceSize const offsets[1]{};
 
@@ -342,7 +342,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
         info.size = 4;
-        VkBufferObj const buffer_obj(*m_device, info);
+        vkt::Buffer const buffer_obj(*m_device, info);
 
         VkDeviceSize const offsets[1]{1};
 
@@ -365,7 +365,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         auto info = vku::InitStruct<VkBufferCreateInfo>();
         info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         info.size = 4;
-        VkBufferObj const buffer_obj(*m_device, info);
+        vkt::Buffer const buffer_obj(*m_device, info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372");
         vk::CmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), nullptr);
@@ -438,7 +438,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
                 auto info = vku::InitStruct<VkBufferCreateInfo>();
                 info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
                 info.size = 4;
-                VkBufferObj const buffer_obj(*m_device, info);
+                vkt::Buffer const buffer_obj(*m_device, info);
 
                 VkDeviceSize const offsets[1]{1};
 
@@ -461,7 +461,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
                 auto info = vku::InitStruct<VkBufferCreateInfo>();
                 info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
                 info.size = 4;
-                VkBufferObj const buffer_obj(*m_device, info);
+                vkt::Buffer const buffer_obj(*m_device, info);
 
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");
                 vk::CmdEndTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, &buffer_obj.handle(), nullptr);
@@ -590,7 +590,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 1024;
-    VkBufferObj counter_buffer(*m_device, buffer_create_info);
+    vkt::Buffer counter_buffer(*m_device, buffer_create_info);
 
     {
         CreatePipelineHelper pipeline(*this);
@@ -627,7 +627,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     VkDeviceObj test_device(0, gpu(), device_extension_names);
     VkCommandPoolObj commandPool(&test_device, 0);
     VkCommandBufferObj commandBuffer(&test_device, &commandPool);
-    VkBufferObj counter_buffer2;
+    vkt::Buffer counter_buffer2;
     counter_buffer2.init(test_device, buffer_create_info);
 
     VkPipelineLayoutObj pipelineLayout(&test_device);
@@ -1219,7 +1219,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
     auto info = vku::InitStruct<VkBufferCreateInfo>();
     info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
     info.size = 4;
-    VkBufferObj const buffer_obj(*m_device, info);
+    vkt::Buffer const buffer_obj(*m_device, info);
     VkDeviceSize const offsets[1]{1};
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-renderpass");

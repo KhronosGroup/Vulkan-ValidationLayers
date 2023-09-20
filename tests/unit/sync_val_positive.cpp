@@ -134,7 +134,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     constexpr uint32_t height = 128;
     constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
 
-    VkBufferObj buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkImageObj image(m_device);
     image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
 

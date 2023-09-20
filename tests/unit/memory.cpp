@@ -1463,8 +1463,8 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
-    auto buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    VkBufferObj buffer;
+    auto buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_info);
     auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
     auto buffer_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
@@ -1473,7 +1473,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vkt::DeviceMemory dedicated_buffer_memory;
     dedicated_buffer_memory.init(*m_device, buffer_alloc_info);
 
-    VkBufferObj wrong_buffer;
+    vkt::Buffer wrong_buffer;
     wrong_buffer.init_no_mem(*m_device, buffer_info);
 
     // Bind with wrong buffer
@@ -2371,8 +2371,8 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
         GTEST_SKIP() << "Test requires a physical device group with more than 1 device";
     }
 
-    VkBufferObj buffer;
-    auto buffer_info = VkBufferObj::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer;
+    auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer.init_no_mem(*m_device, buffer_info);
 
     VkMemoryRequirements buffer_mem_reqs;

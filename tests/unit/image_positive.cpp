@@ -143,9 +143,9 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto buffer = std::unique_ptr<VkBufferObj>(new VkBufferObj());
+    auto buffer = std::unique_ptr<vkt::Buffer>(new vkt::Buffer());
     VkDeviceSize buff_size = 256;
-    buffer->init_no_mem(*DeviceObj(), VkBufferObj::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+    buffer->init_no_mem(*DeviceObj(), vkt::Buffer::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -642,8 +642,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    VkFenceObj fence;
-    fence.init(*m_device, VkFenceObj::create_info());
+    vkt::Fence fence;
+    fence.init(*m_device, vkt::Fence::create_info());
     m_commandBuffer->QueueCommandBuffer(fence);
 
     VkPresentInfoKHR present = vku::InitStructHelper();

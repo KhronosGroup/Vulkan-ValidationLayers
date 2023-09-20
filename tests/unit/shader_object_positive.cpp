@@ -361,7 +361,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 
     VkShaderEXT shaders[] = {vertShader.handle(), fragShader.handle()};
 
-    VkBufferObj buffer(*m_device, sizeof(float) * 4u, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     auto imageInfo = vku::InitStruct<VkImageCreateInfo>();
@@ -659,7 +659,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
 
-    VkBufferObj storageBuffer(*m_device, sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    vkt::Buffer storageBuffer(*m_device, sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDescriptorPoolSize ds_type_count = {};
@@ -1148,7 +1148,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     const vkt::Shader vertShader(*m_device, vert_create_info);
     const vkt::Shader fragShader(*m_device, frag_create_info);
 
-    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 
@@ -1412,7 +1412,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
     const vkt::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src));
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
 
-    VkBufferObj indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());

@@ -206,7 +206,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = sizeof(uint32_t) * 3;
     buffer_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    VkBufferObj indexBuffer(*m_device, buffer_ci);
+    vkt::Buffer indexBuffer(*m_device, buffer_ci);
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

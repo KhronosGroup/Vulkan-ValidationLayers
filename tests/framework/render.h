@@ -295,12 +295,6 @@ class VkRenderFramework : public VkTestFramework {
 class VkDescriptorSetObj;
 class VkConstantBufferObj;
 class VkPipelineObj;
-typedef vkt::Event VkEventObj;
-typedef vkt::Fence VkFenceObj;
-typedef vkt::Semaphore VkSemaphoreObj;
-typedef vkt::Buffer VkBufferObj;
-typedef vkt::AccelerationStructure VkAccelerationStructureObj;
-using VkDeviceMemoryObj = vkt::DeviceMemory;
 class VkCommandPoolObj : public vkt::CommandPool {
   public:
     VkCommandPoolObj() : vkt::CommandPool(){};
@@ -324,7 +318,7 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
                          VkDepthStencilObj *depth_stencil_obj, float depth_clear_value, uint32_t stencil_clear_value);
     void PrepareAttachments(const std::vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
-    void BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
+    void BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
     void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
@@ -341,7 +335,7 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
     void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                      uint32_t firstInstance);
     void QueueCommandBuffer(bool check_success = true);
-    void QueueCommandBuffer(const VkFenceObj &fence, bool check_success = true, bool submit_2 = false);
+    void QueueCommandBuffer(const vkt::Fence &fence, bool check_success = true, bool submit_2 = false);
     void SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports);
     void SetStencilReference(VkStencilFaceFlags faceMask, uint32_t reference);
     void UpdateBuffer(VkBuffer buffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData);
@@ -353,10 +347,10 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
                          const VkImageSubresourceRange *pRanges);
     void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
                                 uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
-    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer);
-    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData);
-    void SetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
-    void ResetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
+    void BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer);
+    void BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer, VkBuffer instanceData);
+    void SetEvent(vkt::Event &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
+    void ResetEvent(vkt::Event &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
     void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
                     VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
@@ -370,7 +364,7 @@ class VkCommandBufferObj : public vkt::CommandBuffer {
     VkQueueObj *m_queue;
 };
 
-class VkConstantBufferObj : public VkBufferObj {
+class VkConstantBufferObj : public vkt::Buffer {
   public:
     VkConstantBufferObj(VkDeviceObj *device,
                         VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);

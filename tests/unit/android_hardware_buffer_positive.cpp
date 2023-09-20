@@ -51,7 +51,7 @@ TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     buffer_create_info.size = 512;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
@@ -176,7 +176,7 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     buffer_create_info.size = 8192;  // greater than the 4k AHB usually are
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     // Try to get memory requirements prior to binding memory
@@ -240,7 +240,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkMemoryRequirements mem_reqs;

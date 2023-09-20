@@ -264,7 +264,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj dynamic_uniform_buffer(*m_device, buffCI);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI);
 
     VkDescriptorBufferInfo buffInfo[5] = {};
     for (int i = 0; i < 5; ++i) {
@@ -404,11 +404,11 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     bci.size = 2048;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer0;
+    vkt::Buffer buffer0;
     buffer0.init(*m_device, bci);
     CreatePipelineHelper pipe(*this);
     {  // Scope 2nd buffer to cause early destruction
-        VkBufferObj buffer1;
+        vkt::Buffer buffer1;
         bci.size = 1024;
         buffer1.init(*m_device, bci);
 
@@ -488,7 +488,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
         buffCI.queueFamilyIndexCount = 1;
         buffCI.pQueueFamilyIndices = &qfi;
 
-        VkBufferObj buffer(*m_device, buffCI);
+        vkt::Buffer buffer(*m_device, buffCI);
 
         // Create PSO to be used for draw-time errors below
         char const *fsSource = R"glsl(
@@ -547,7 +547,7 @@ TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
         buffCI.queueFamilyIndexCount = 1;
         buffCI.pQueueFamilyIndices = &qfi;
 
-        VkBufferObj buffer(*m_device, buffCI);
+        vkt::Buffer buffer(*m_device, buffCI);
 
         // Create PSO to be used for draw-time errors below
         char const *fsSource = R"glsl(
@@ -1232,7 +1232,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj dynamic_uniform_buffer(*m_device, buffCI);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI);
 
     // Correctly update descriptor to avoid "NOT_UPDATED" error
     descriptor_set.WriteDescriptorBufferInfo(0, dynamic_uniform_buffer.handle(), 0, 1024,
@@ -1316,7 +1316,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_ci.queueFamilyIndexCount = 1;
     buffer_ci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     // test various uses of offsets and size
     // The non-dynamic binds are there to make sure pDynamicOffsets are matched correctly at bind time
@@ -1520,7 +1520,7 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_ci.queueFamilyIndexCount = 1;
     buffer_ci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1643,7 +1643,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     bci.size = 8;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer(*m_device, bci);
+    vkt::Buffer buffer(*m_device, bci);
     VkDescriptorBufferInfo buffer_info;
     buffer_info.buffer = buffer.handle();
     buffer_info.offset = 0;
@@ -1880,7 +1880,7 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
     auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     auto buff_view_ci = vku::InitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.buffer = buffer.handle();
@@ -2410,7 +2410,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
     TEST_DESCRIPTION("Try to update a descriptor that has yet to be allocated");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, sizeof(uint32_t)};
 
@@ -3518,7 +3518,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer.handle();
@@ -4459,7 +4459,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         buffer_ci.size = 32;
         buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-        VkBufferObj buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
@@ -4543,7 +4543,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         buffer_ci.size = 32;
         buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-        VkBufferObj buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
@@ -4631,7 +4631,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         buffer_ci.size = 32;
         buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-        VkBufferObj buffer(*m_device, buffer_ci);
+        vkt::Buffer buffer(*m_device, buffer_ci);
 
         VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
         vkt::Sampler sampler(*m_device, sci);
