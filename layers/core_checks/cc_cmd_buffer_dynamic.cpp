@@ -70,8 +70,6 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
                                           vuid.dynamic_stencil_test_enable_07847);
         skip |=
             ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_STENCIL_OP, objlist, loc, vuid.dynamic_stencil_op_07848);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, objlist, loc,
-                                          vuid.vertex_input_binding_stride_04913);
     }
 
     // VK_EXT_extended_dynamic_state2
@@ -161,6 +159,15 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_boun
 
     // VK_EXT_vertex_input_dynamic_state
     {
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, objlist, loc,
+                                              vuid.vertex_input_04912);
+        } else if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+                   pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, objlist, loc,
+                                              vuid.vertex_input_binding_stride_04913);
+        }
         skip |=
             ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, objlist, loc, vuid.vertex_input_04914);
     }
