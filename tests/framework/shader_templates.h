@@ -143,6 +143,16 @@ static char const kFragmentColorOutputGlsl[] = R"glsl(
     void main() {}
 )glsl";
 
+[[maybe_unused]] static char const kRayTracingPayloadMinimalGlsl[] = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : enable
+        layout(location = 0) rayPayloadInEXT float hitValue;
+
+        void main() {
+            hitValue = 1.0;
+        }
+    )glsl";
+
 [[maybe_unused]] static const char *kRayTracingNVMinimalGlsl = R"glsl(
     #version 460
     #extension GL_NV_ray_tracing : require
@@ -298,3 +308,29 @@ static char const kShaderTileImageDepthStencilReadSpv[] = R"(
                OpReturn
                OpFunctionEnd
         )";
+
+[[maybe_unused]] static const char kRayGenGlsl[] = R"glsl(
+        #version 460 core
+        #extension GL_EXT_ray_tracing : enable
+        layout(set = 0, binding = 0, rgba8) uniform image2D image;
+        layout(set = 0, binding = 1) uniform accelerationStructureEXT as;
+
+        layout(location = 0) rayPayloadEXT float payload;
+
+        void main()
+        {
+           vec4 col = vec4(0, 0, 0, 1);
+
+           vec3 origin = vec3(float(gl_LaunchIDEXT.x)/float(gl_LaunchSizeEXT.x), float(gl_LaunchIDEXT.y)/float(gl_LaunchSizeEXT.y), 1.0);
+           vec3 dir = vec3(0.0, 0.0, -1.0);
+
+           payload = 0.5;
+           traceRayEXT(as, gl_RayFlagsCullBackFacingTrianglesEXT, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0);
+
+           col.y = payload;
+
+           imageStore(image, ivec2(gl_LaunchIDEXT.xy), col);
+        }
+    )glsl";
+
+[[maybe_unused]] static char const *kMissGlsl = kRayTracingPayloadMinimalGlsl;

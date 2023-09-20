@@ -423,54 +423,10 @@ void RayTracingPipelineHelper::InitPipelineLayoutInfo() {
 }
 
 void RayTracingPipelineHelper::InitShaderInfoKHR() {
-    static const char rayGenShaderText[] = R"glsl(
-        #version 460 core
-        #extension GL_EXT_ray_tracing : enable
-        layout(set = 0, binding = 0, rgba8) uniform image2D image;
-        layout(set = 0, binding = 1) uniform accelerationStructureEXT as;
-
-        layout(location = 0) rayPayloadEXT float payload;
-
-        void main()
-        {
-           vec4 col = vec4(0, 0, 0, 1);
-
-           vec3 origin = vec3(float(gl_LaunchIDEXT.x)/float(gl_LaunchSizeEXT.x), float(gl_LaunchIDEXT.y)/float(gl_LaunchSizeEXT.y), 1.0);
-           vec3 dir = vec3(0.0, 0.0, -1.0);
-
-           payload = 0.5;
-           traceRayEXT(as, gl_RayFlagsCullBackFacingTrianglesEXT, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0);
-
-           col.y = payload;
-
-           imageStore(image, ivec2(gl_LaunchIDEXT.xy), col);
-        }
-    )glsl";
-
-    static char const closestHitShaderText[] = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : enable
-        layout(location = 0) rayPayloadInEXT float hitValue;
-
-        void main() {
-            hitValue = 1.0;
-        }
-    )glsl";
-
-    static char const missShaderText[] = R"glsl(
-        #version 460 core
-        #extension GL_EXT_ray_tracing : enable
-        layout(location = 0) rayPayloadInEXT float hitValue;
-
-        void main() {
-            hitValue = 0.0;
-        }
-    )glsl";
-
-    rgs_ = std::make_unique<VkShaderObj>(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    chs_ =
-        std::make_unique<VkShaderObj>(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    mis_ = std::make_unique<VkShaderObj>(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    rgs_ = std::make_unique<VkShaderObj>(&layer_test_, kRayGenGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    chs_ = std::make_unique<VkShaderObj>(&layer_test_, kRayTracingPayloadMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+                                         SPV_ENV_VULKAN_1_2);
+    mis_ = std::make_unique<VkShaderObj>(&layer_test_, kMissGlsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
 }
@@ -536,13 +492,22 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
     rp_ci_.pGroups = groups_.data();
 }
 
-void RayTracingPipelineHelper::InitKHRRayTracingPipelineInfo() {
+void RayTracingPipelineHelper::InitKHRRayTracingPipelineInfo(VkPipelineCreateFlags flags) {
     rp_ci_KHR_ = vku::InitStructHelper();
+    rp_ci_KHR_.flags = flags;
     rp_ci_KHR_.maxPipelineRayRecursionDepth = 0;
     rp_ci_KHR_.stageCount = shader_stages_.size();
     rp_ci_KHR_.pStages = shader_stages_.data();
     rp_ci_KHR_.groupCount = groups_KHR_.size();
     rp_ci_KHR_.pGroups = groups_KHR_.data();
+}
+
+void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
+    libraries_.emplace_back(library.pipeline_);
+    rp_library_ci_ = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    rp_library_ci_.libraryCount = size32(libraries_);
+    rp_library_ci_.pLibraries = libraries_.data();
+    rp_ci_KHR_.pLibraryInfo = &rp_library_ci_;
 }
 
 void RayTracingPipelineHelper::InitPipelineCacheInfo() {
@@ -558,6 +523,21 @@ void RayTracingPipelineHelper::InitInfo(bool isKHR) {
     InitPipelineLayoutInfo();
     isKHR ? InitShaderInfoKHR() : InitShaderInfo();
     isKHR ? InitKHRRayTracingPipelineInfo() : InitNVRayTracingPipelineInfo();
+    InitPipelineCacheInfo();
+}
+
+void RayTracingPipelineHelper::InitLibraryInfoKHR(VkPipelineCreateFlags flags) {
+    InitShaderGroupsKHR();
+    InitDescriptorSetInfoKHR();
+    InitPipelineLayoutInfo();
+    InitShaderInfoKHR();
+    InitKHRRayTracingPipelineInfo(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | flags);
+    auto ray_tracing_pipeline_props = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    layer_test_.GetPhysicalDeviceProperties2(ray_tracing_pipeline_props);
+    rp_i_ci_ = vku::InitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    rp_i_ci_->maxPipelineRayPayloadSize = sizeof(float);  // Set according to payload defined in kRayGenShaderText
+    rp_i_ci_->maxPipelineRayHitAttributeSize = ray_tracing_pipeline_props.maxRayHitAttributeSize;
+    rp_ci_KHR_.pLibraryInterface = &rp_i_ci_.value();
     InitPipelineCacheInfo();
 }
 
@@ -604,9 +584,8 @@ VkResult RayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool do_late_bind
     if (do_late_bind) {
         LateBindPipelineInfo(true /*isKHR*/);
     }
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        (PFN_vkCreateRayTracingPipelinesKHR)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesKHR");
-    return vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
+
+    return vk::CreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
 }
 
 void SetDefaultDynamicStates(VkCommandBuffer cmdBuffer) {

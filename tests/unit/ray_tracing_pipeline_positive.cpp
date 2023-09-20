@@ -181,3 +181,72 @@ TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
     auto ignore_update = [](RayTracingPipelineHelper &helper) {};
     RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }
+
+TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
+    TEST_DESCRIPTION(
+        "Regression test for issue 6282: make sure that when validating vkGetRayTracingCaptureReplayShaderGroupHandlesKHR on a "
+        "pipeline created using pipeline libraries, the total shader group count is computed using info from the libraries.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    auto rt_pipeline_features = vku::InitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
+    auto gpl_features = vku::InitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&rt_pipeline_features);
+    gpl_features.graphicsPipelineLibrary = VK_TRUE;
+    auto pipeline_group_handle_features = vku::InitStruct<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(&gpl_features);
+    pipeline_group_handle_features.pipelineLibraryGroupHandles = VK_TRUE;
+    auto features2 = vku::InitStruct<VkPhysicalDeviceFeatures2KHR>(&pipeline_group_handle_features);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    features2 = GetPhysicalDeviceFeatures2(pipeline_group_handle_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "graphicsPipelineLibrary feature not supported, skipping test";
+    }
+    if (!pipeline_group_handle_features.pipelineLibraryGroupHandles) {
+        GTEST_SKIP() << "pipelineLibraryGroupHandles feature not supported, skipping test";
+    }
+    if (!rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
+        GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not supported, skipping test";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    RayTracingPipelineHelper rt_pipeline_lib(*this);
+    rt_pipeline_lib.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
+    rt_pipeline_lib.InitState();
+    ASSERT_VK_SUCCESS(rt_pipeline_lib.CreateKHRRayTracingPipeline());
+
+    RayTracingPipelineHelper rt_pipe(*this);
+    rt_pipe.InitLibraryInfoKHR(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
+    rt_pipe.rp_ci_KHR_.stageCount = 0;
+    rt_pipe.rp_ci_KHR_.groupCount = 0;
+    rt_pipe.AddLibrary(rt_pipeline_lib);
+    rt_pipe.InitState();
+    ASSERT_VK_SUCCESS(rt_pipe.CreateKHRRayTracingPipeline());
+
+    VkBufferCreateInfo buf_info = vku::InitStruct<VkBufferCreateInfo>();
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.size = 4096;
+    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStruct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = 4096;
+    vkt::DeviceMemory mem(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
+
+    // dataSize must be at least groupCount * VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
+    auto ray_tracing_properties = vku::InitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    GetPhysicalDeviceProperties2(ray_tracing_properties);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 3,
+                                                        3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize, &buffer);
+}
