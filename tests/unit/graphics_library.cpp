@@ -1852,3 +1852,77 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
+    TEST_DESCRIPTION("set VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY in non-Vertex Input state so it is ignored");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    InitBasicGraphicsLibrary();
+    if (::testing::Test::IsSkipped()) return;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
+        pre_raster_lib.InitState();
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
+    dynamic_create_info.pDynamicStates = dynamic_states;
+    dynamic_create_info.dynamicStateCount = 1;
+
+    auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.pDynamicState = &dynamic_create_info;
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
+    vk::CmdSetPrimitiveTopology(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08608");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
