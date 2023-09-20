@@ -31,16 +31,16 @@ TEST_F(NegativeGraphicsLibrary, DSLs) {
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &dsl_binding;
 
-    vk_testing::DescriptorSetLayout dsl(*m_device, dsl_ci);
+    vkt::DescriptorSetLayout dsl(*m_device, dsl_ci);
 
-    std::vector<const vk_testing::DescriptorSetLayout*> dsls = {&dsl, nullptr};
+    std::vector<const vkt::DescriptorSetLayout *> dsls = {&dsl, nullptr};
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }
 
@@ -67,16 +67,16 @@ TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &dsl_binding;
 
-    vk_testing::DescriptorSetLayout dsl(*m_device, dsl_ci);
+    vkt::DescriptorSetLayout dsl(*m_device, dsl_ci);
 
-    std::vector<const vk_testing::DescriptorSetLayout *> dsls = {&dsl, nullptr};
+    std::vector<const vkt::DescriptorSetLayout *> dsls = {&dsl, nullptr};
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }
 
@@ -89,7 +89,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         pre_raster_lib.InitState();
@@ -99,7 +99,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         frag_shader_lib.InitState();
         frag_shader_lib.CreateGraphicsPipeline();
@@ -115,7 +115,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615");
     auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
-    vk_testing::Pipeline lib(*m_device, lib_ci);
+    vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -128,7 +128,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
         pre_raster_lib.InitState();
@@ -138,7 +138,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = 1;
@@ -232,7 +232,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSState) {
 
     CreatePipelineHelper frag_shader_lib(*this);
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
     frag_shader_lib.InitState();
 
@@ -267,7 +267,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
         pre_raster_lib.InitState();
 
@@ -302,7 +302,7 @@ TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.pNext = &pipeline_rendering_info;
@@ -337,7 +337,7 @@ TEST_F(NegativeGraphicsLibrary, DepthStencilStateIgnored) {
 
     CreatePipelineHelper frag_shader_lib(*this);
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
     frag_shader_lib.InitState();
 
@@ -378,7 +378,7 @@ TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
 
@@ -482,7 +482,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
     {
         CreatePipelineHelper pipe(*this);
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pipe.InitState();
 
@@ -518,7 +518,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
     link_info.pLibraries = libraries;
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     {
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
@@ -571,7 +571,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
@@ -581,7 +581,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = 1;
@@ -620,7 +620,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
@@ -630,7 +630,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto link_info = vku::InitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = 1;
@@ -668,7 +668,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
@@ -678,7 +678,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         frag_shader_lib.InitState();
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
@@ -695,7 +695,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
 
     auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06758");
-    vk_testing::Pipeline lib(*m_device, lib_ci);
+    vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -709,7 +709,7 @@ TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
 
     CreatePipelineHelper pipe(*this);
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     pipe.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pipe.InitState();
 
@@ -726,7 +726,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto sampler_info = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
     ASSERT_TRUE(sampler.initialized());
     const auto sampler_handle = sampler.handle();
 
@@ -774,7 +774,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
             }
         )glsl";
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
@@ -784,7 +784,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         frag_shader_lib.InitState();
 
@@ -808,7 +808,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
 
     auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pipeline_layout_null.handle();
-    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
     m_commandBuffer->begin();
@@ -951,7 +951,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -963,7 +963,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
         frag_shader_lib.gp_ci_.layout = layout;
@@ -1034,7 +1034,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
 
         VkPipelineLayoutObj pipeline_layout(m_device, {&fs_ds.layout_});
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
-        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         CreatePipelineHelper vs_lib(*this);
         vs_lib.InitPreRasterLibInfo(&stage.stage_ci);
         vs_lib.InitState();
@@ -1044,7 +1044,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         m_errorMonitor->VerifyFound();
 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         CreatePipelineHelper fs_lib(*this);
         fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         fs_lib.InitState();
@@ -1060,7 +1060,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
 
         VkPipelineLayoutObj pipeline_layout(m_device, {&vs_ds.layout_});
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
-        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         CreatePipelineHelper vs_lib(*this);
         vs_lib.InitPreRasterLibInfo(&stage.stage_ci);
         vs_lib.InitState();
@@ -1068,7 +1068,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
         vs_lib.CreateGraphicsPipeline(false);
 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         CreatePipelineHelper fs_lib(*this);
         fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         fs_lib.InitState();
@@ -1091,10 +1091,10 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     char const *tcs_src = R"glsl(
         #version 450
@@ -1105,7 +1105,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         }
     )glsl";
     const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tcs_src);
-    vk_testing::GraphicsPipelineLibraryStage tcs_stage(tcs_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    vkt::GraphicsPipelineLibraryStage tcs_stage(tcs_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 
     char const *tes_src = R"glsl(
         #version 450
@@ -1116,7 +1116,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         }
     )glsl";
     const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tes_src);
-    vk_testing::GraphicsPipelineLibraryStage tes_stage(tes_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    vkt::GraphicsPipelineLibraryStage tes_stage(tes_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     auto iasci = vku::InitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     iasci.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
@@ -1198,7 +1198,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08889");
-        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1275,7 +1275,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
-        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1310,7 +1310,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
 
         auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646");
-        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1407,7 +1407,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
             }
         )glsl";
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.InitState();
         pre_raster_lib.gp_ci_.layout = pipeline_layout_lib.handle();
@@ -1417,7 +1417,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         frag_shader_lib.InitState();
 
@@ -1442,7 +1442,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
 
     auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pipeline_layout.handle();
-    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
     m_commandBuffer->begin();
@@ -1590,7 +1590,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     auto pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     // no VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855");
-    vk_testing::Pipeline exe_pipe(*m_device, pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, pipe_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1668,7 +1668,7 @@ TEST_F(NegativeGraphicsLibrary, Layouts) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage stage_ci(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage stage_ci(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
         pre_raster_lib.InitPreRasterLibInfo(&stage_ci.stage_ci);
         pre_raster_lib.InitState();
@@ -1678,7 +1678,7 @@ TEST_F(NegativeGraphicsLibrary, Layouts) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage stage_ci(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage stage_ci(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         frag_shader_lib.InitFragmentLibInfo(&stage_ci.stage_ci);
         frag_shader_lib.InitState();
@@ -1697,7 +1697,7 @@ TEST_F(NegativeGraphicsLibrary, Layouts) {
 
     auto lib_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
-    vk_testing::Pipeline lib(*m_device, lib_ci);
+    vkt::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1733,7 +1733,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
         pre_raster_lib.InitPreRasterLibInfo(&stage.stage_ci);
         pre_raster_lib.InitState();
@@ -1744,7 +1744,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-        vk_testing::GraphicsPipelineLibraryStage stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        vkt::GraphicsPipelineLibraryStage stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         frag_shader_lib.InitFragmentLibInfo(&stage.stage_ci);
         frag_shader_lib.InitState();
@@ -1768,7 +1768,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
                                          "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
-    vk_testing::Pipeline exe_pipe(*m_device, exe_ci);
+    vkt::Pipeline exe_pipe(*m_device, exe_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1786,7 +1786,7 @@ TEST_F(NegativeGraphicsLibrary, NullLibrary) {
 
     CreatePipelineHelper pre_raster_lib(*this);
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.InitState();
     pre_raster_lib.CreateGraphicsPipeline();
@@ -1808,7 +1808,7 @@ TEST_F(NegativeGraphicsLibrary, NullLibrary) {
     auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
-    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1826,7 +1826,7 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
 
     CreatePipelineHelper pre_raster_lib(*this);
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.InitState();
     pre_raster_lib.CreateGraphicsPipeline();
@@ -1849,6 +1849,6 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
     auto exe_pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
-    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
 }

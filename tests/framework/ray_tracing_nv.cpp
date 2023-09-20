@@ -14,9 +14,8 @@
 namespace nv {
 namespace rt {
 
-void GetSimpleGeometryForAccelerationStructureTests(const vk_testing::Device &device, vk_testing::Buffer *vbo,
-                                                    vk_testing::Buffer *ibo, VkGeometryNV *geometry, VkDeviceSize offset,
-                                                    bool buffer_device_address) {
+void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, vkt::Buffer *vbo, vkt::Buffer *ibo,
+                                                    VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
     VkBufferUsageFlags usage =
         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     auto alloc_flags = vku::InitStruct<VkMemoryAllocateFlagsInfo>();

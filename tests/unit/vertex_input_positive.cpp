@@ -388,7 +388,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
     rpci.pAttachments = attach_desc;
-    vk_testing::RenderPass renderpass(*m_device, rpci);
+    vkt::RenderPass renderpass(*m_device, rpci);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
 

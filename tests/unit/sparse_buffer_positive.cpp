@@ -28,16 +28,16 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     }
 
     // 2 semaphores needed since we need to bind twice before copying
-    vk_testing::Semaphore semaphore(*m_device);
-    vk_testing::Semaphore semaphore2(*m_device);
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore2(*m_device);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
     copy_info.dstOffset = 0;
     copy_info.size = 256;
 
-    VkBufferCreateInfo b_info = vk_testing::Buffer::create_info(
-        copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferCreateInfo b_info =
+        vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -47,11 +47,11 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
-    vk_testing::DeviceMemory buffer_mem2;
+    vkt::DeviceMemory buffer_mem2;
     buffer_mem2.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -119,7 +119,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     constexpr VkDeviceSize copy_size = 16;
     // Consecutive ranges
@@ -137,7 +137,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     copy_info_list[2].size = copy_size;
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -204,10 +204,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkBufferCreateInfo buffer_ci =
-        vk_testing::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
@@ -287,10 +287,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkBufferCreateInfo buffer_ci =
-        vk_testing::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);

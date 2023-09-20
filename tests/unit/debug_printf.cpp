@@ -515,7 +515,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(false));
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(&pre_raster_stage.stage_ci);
@@ -549,7 +549,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
+    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
     ASSERT_TRUE(pipe);
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -676,7 +676,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
             }
         )glsl";
         const auto vs_i64_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source_int64);
-        vk_testing::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        vkt::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
         CreatePipelineHelper pre_raster_i64(*this);
         pre_raster_i64.InitPreRasterLibInfo(&pre_raster_i64_stage.stage_ci);
@@ -693,7 +693,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
             frag_out.pipeline_,
         };
 
-        vk_testing::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64, pipeline_layout.handle());
+        vkt::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64, pipeline_layout.handle());
         ASSERT_TRUE(pipe2);
 
         m_commandBuffer->begin(&begin_info);
@@ -822,7 +822,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -847,7 +847,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         }
     )glsl";
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(&fs_stage.stage_ci);
@@ -864,7 +864,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
+    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
     ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
@@ -981,7 +981,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     auto dyn_state = vku::InitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -1006,7 +1006,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         }
     )glsl";
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(&fs_stage.stage_ci);
@@ -1023,7 +1023,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
+    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
     ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
@@ -1168,7 +1168,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
     messages.push_back("First printf with a % and no value");
     messages.push_back("Second printf with a value -135");
 
-    const vk_testing::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source), &descriptor_set.layout_.handle());
+    const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source),
+                         &descriptor_set.layout_.handle());
 
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
@@ -1316,8 +1317,8 @@ TEST_F(NegativeDebugPrintf, BasicUsageShaderObjects) {
             "    }\n"
             "    gl_Position = vec4(0.0, 0.0, 0.0, 0.0);\n"
             "}\n";
-        vk_testing::Shader vs_int64(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                    GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source_int64), &descriptor_set.layout_.handle());
+        vkt::Shader vs_int64(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source_int64),
+                             &descriptor_set.layout_.handle());
 
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1430,10 +1431,10 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
         }
     )glsl";
 
-    const vk_testing::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
-                                GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
-    const vk_testing::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                                GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
+                         GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
+                         GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, "main", nullptr, SPV_ENV_VULKAN_1_3));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());

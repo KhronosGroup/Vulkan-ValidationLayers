@@ -54,7 +54,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     rpci.pSubpasses = &subpass;
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -68,7 +68,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto render_pass_begin = vku::InitStruct<VkRenderPassBeginInfo>();
     render_pass_begin.renderPass = render_pass;
@@ -152,7 +152,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     rpci.pSubpasses = &subpass;
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -166,7 +166,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto render_pass_begin = vku::InitStruct<VkRenderPassBeginInfo>();
     render_pass_begin.renderPass = render_pass;

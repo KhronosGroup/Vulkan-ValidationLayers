@@ -267,7 +267,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    vk_testing::Buffer buffer0;
+    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
 
@@ -335,7 +335,7 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
     auto allocate_flag_info = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vk_testing::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
+    vkt::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();
@@ -367,7 +367,7 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
-    vk_testing::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
 
     auto signal_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     signal_info.semaphore = semaphore;

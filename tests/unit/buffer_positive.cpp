@@ -115,7 +115,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 100 * 4096 * 4096;
-    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Create buffers. They have the same starting offset, but a growing size.
     // This is the worst case scenario for adding an element in the current buffer_address_map: inserted range will have to be split
@@ -167,7 +167,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 100 * 4096 * 4096;
-    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Create buffers. They have consecutive device address ranges, so no overlaps: no split will be needed when inserting, it
     // should be fast.

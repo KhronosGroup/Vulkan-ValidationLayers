@@ -37,14 +37,14 @@ TEST_F(PositiveCommand, SecondaryCommandBufferBarrier) {
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi =
@@ -193,7 +193,7 @@ TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
     VkResult res = vk::CreateCommandPool(m_device->handle(), &cmd_pool_info, NULL, &secondary_cmd_pool);
     ASSERT_VK_SUCCESS(res);
 
-    VkCommandBufferAllocateInfo cmdalloc = vk_testing::CommandBuffer::create_info(secondary_cmd_pool);
+    VkCommandBufferAllocateInfo cmdalloc = vkt::CommandBuffer::create_info(secondary_cmd_pool);
     cmdalloc.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
     VkCommandBuffer secondary_cmds;
@@ -548,7 +548,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
@@ -558,7 +558,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fci);
+    vkt::Framebuffer fb(*m_device, fci);
 
     // Explicitly create a command buffer to bind the FB to so that we can then
     //  destroy the command pool in order to implicitly free command buffer
@@ -642,7 +642,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass;
 
-        vk_testing::RenderPass render_pass(*m_device, rpci);
+        vkt::RenderPass render_pass(*m_device, rpci);
 
         VkFramebufferCreateInfo fbci = vku::InitStructHelper();
         fbci.renderPass = render_pass.handle();
@@ -652,7 +652,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         fbci.height = image_ci.extent.height;
         fbci.layers = image_ci.extent.depth;
 
-        vk_testing::Framebuffer framebuffer(*m_device, fbci);
+        vkt::Framebuffer framebuffer(*m_device, fbci);
 
         VkClearAttachment color_attachment;
         color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -692,7 +692,7 @@ TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     secondary.begin();
     vk::CmdSetEvent(secondary.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -720,7 +720,7 @@ TEST_F(PositiveCommand, EventsInSecondaryCommandBuffers) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
     }
 
-    vk_testing::Event ev(*m_device);
+    vkt::Event ev(*m_device);
     VkEvent ev_handle = ev.handle();
     VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb = secondary_cb.handle();

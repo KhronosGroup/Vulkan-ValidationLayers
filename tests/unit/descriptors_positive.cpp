@@ -62,7 +62,7 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
@@ -92,7 +92,7 @@ TEST_F(PositiveDescriptors, PoolSizeCountZero) {
     auto ds_pool_ci = vku::InitStruct<VkDescriptorPoolCreateInfo>();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 0;
-    vk_testing::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool_one(*m_device, ds_pool_ci);
 }
 
 TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
@@ -201,7 +201,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         buff_view_ci.buffer = buffer.handle();
         buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
-        vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
+        vkt::BufferView buffer_view(*m_device, buff_view_ci);
 
         OneOffDescriptorSet descriptor_set(m_device,
                                            {
@@ -238,7 +238,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                                  });
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
@@ -271,7 +271,7 @@ TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = 256;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vk_testing::Buffer buffer(*m_device, buff_ci);
+    vkt::Buffer buffer(*m_device, buff_ci);
 
     // Only update the descriptor at binding 2
     VkDescriptorBufferInfo buff_info = {};
@@ -410,7 +410,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     ds_pool_ci.poolSizeCount = 2;
     ds_pool_ci.pPoolSizes = pool_sizes;
 
-    vk_testing::DescriptorPool pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding bindings[2] = {};
     bindings[0].binding = 0;
@@ -428,7 +428,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     create_info.bindingCount = 2;
     create_info.pBindings = bindings;
 
-    vk_testing::DescriptorSetLayout set_layout(*m_device, create_info);
+    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
     VkDescriptorSetLayout set_layout_handle = set_layout.handle();
 
     VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
@@ -510,7 +510,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     ds_pool_ci.poolSizeCount = pool_sizes.size();
     ds_pool_ci.pPoolSizes = pool_sizes.data();
 
-    vk_testing::DescriptorPool pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = {};
     bindings[0].binding = 0;
@@ -528,7 +528,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     create_info.bindingCount = bindings.size();
     create_info.pBindings = bindings.data();
 
-    vk_testing::DescriptorSetLayout set_layout(*m_device, create_info);
+    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
 
     std::array<VkDescriptorSetLayout, 2> layouts = {set_layout.handle(), set_layout.handle()};
 
@@ -600,7 +600,7 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     auto image_create_info = vku::InitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -627,11 +627,11 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view(*m_device, ivci);
     VkImageView image_view_handle = image_view.handle();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.width = width;
@@ -641,7 +641,7 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     fbci.attachmentCount = 1;
     fbci.pAttachments = &image_view_handle;
 
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer.handle();
@@ -743,10 +743,10 @@ TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
     image_view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vk_testing::ImageView image_view(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
@@ -853,7 +853,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     VkImageView view_input = image_input.targetView(format);
 
     // Create render pass with a subpass that has input attachment.
-    vk_testing::RenderPass render_pass;
+    vkt::RenderPass render_pass;
     {
         VkAttachmentDescription input_attachment = {};
         input_attachment.format = format;
@@ -889,7 +889,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     fbci.width = width;
     fbci.height = height;
     fbci.layers = 1;
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     ASSERT_TRUE(fb.initialized());
 
     char const *fsSource = R"glsl(
@@ -951,7 +951,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         descriptor_pool_ci.maxSets = 2;
         descriptor_pool_ci.poolSizeCount = 1;
         descriptor_pool_ci.pPoolSizes = &pool_size;
-        vk_testing::DescriptorPool pool(*m_device, descriptor_pool_ci);
+        vkt::DescriptorPool pool(*m_device, descriptor_pool_ci);
 
         const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                       nullptr};
@@ -959,7 +959,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         set_layout_ci.flags = 0;
         set_layout_ci.bindingCount = 1;
         set_layout_ci.pBindings = &binding;
-        vk_testing::DescriptorSetLayout set_layout(*m_device, set_layout_ci);
+        vkt::DescriptorSetLayout set_layout(*m_device, set_layout_ci);
 
         VkDescriptorSet set_A = VK_NULL_HANDLE;
         VkDescriptorSet set_B = VK_NULL_HANDLE;
@@ -978,14 +978,14 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
         buffer_ci.size = 1024;
         buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         VkShaderObj fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_ci.setLayoutCount = 1;
         pipeline_layout_ci.pSetLayouts = &set_layout.handle();
-        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+        vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
         CreatePipelineHelper pipe(*this);
         pipe.InitState();
@@ -1049,7 +1049,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         }
 
         // Update set A. It should not cause VU 03047 error.
-        vk_testing::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         update_set(set_A, buffer2);
 
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
@@ -1091,7 +1091,7 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = buffer_format;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buff_view_ci);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},

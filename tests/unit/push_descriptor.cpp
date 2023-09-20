@@ -167,7 +167,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     pipeline_layout_ci.pushConstantRangeCount = 0;
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
     auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();
@@ -295,7 +295,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -378,14 +378,14 @@ TEST_F(NegativePushDescriptor, AllocateSet) {
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorPoolSize pool_size = {binding.descriptorType, binding.descriptorCount};
     auto dspci = vku::InitStruct<VkDescriptorPoolCreateInfo>();
     dspci.poolSizeCount = 1;
     dspci.pPoolSizes = &pool_size;
     dspci.maxSets = 1;
-    vk_testing::DescriptorPool pool(*m_device, dspci);
+    vkt::DescriptorPool pool(*m_device, dspci);
 
     auto ds_alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
     ds_alloc_info.descriptorPool = pool.handle();
@@ -687,8 +687,8 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
     // references its data), and the DescriptorSet() can be temporary, because the value is ignored
     VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
 
-    VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
-        vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+    VkWriteDescriptorSet descriptor_write =
+        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
@@ -785,8 +785,8 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
 
     // Use an invalid alignment.
     VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), min_alignment - 1, VK_WHOLE_SIZE};
-    VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
-        vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+    VkWriteDescriptorSet descriptor_write =
+        vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00327");

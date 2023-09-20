@@ -58,7 +58,7 @@ TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     // With the samplerAnisotropy disable, the sampler must not enable it.
     sampler_info.anisotropyEnable = VK_TRUE;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -395,7 +395,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
             }
         }
 
-        vk_testing::Sampler sampler(*m_device, sci);
+        vkt::Sampler sampler(*m_device, sci);
 
         VkImageObj mpimage(m_device);
         mpimage.Init(128, 128, 1, test_struct.format, VK_IMAGE_USAGE_SAMPLED_BIT, test_struct.tiling);
@@ -482,7 +482,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
 
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    vk_testing::Sampler sampler(*m_device, sci);
+    vkt::Sampler sampler(*m_device, sci);
 
     VkImageView view = test_image.targetView(image_info.format);
 
@@ -575,7 +575,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
-    vk_testing::SamplerYcbcrConversion conversions[2];
+    vkt::SamplerYcbcrConversion conversions[2];
     conversions[0].init(*m_device, ycbcr_create_info, false);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
     conversions[1].init(*m_device, ycbcr_create_info, false);
@@ -588,12 +588,12 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     sci.pNext = &ycbcr_info;
     // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
-    vk_testing::Sampler samplers[2];
+    vkt::Sampler samplers[2];
     samplers[0].init(*m_device, sci);
     ycbcr_info.conversion = conversions[1].handle();  // Need two samplers with different conversions
     samplers[1].init(*m_device, sci);
 
-    vk_testing::Sampler BadSampler;
+    vkt::Sampler BadSampler;
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
     BadSampler.init(*m_device, sci);
@@ -629,7 +629,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 
     VkSampler vksamplers[2] = {samplers[0].handle(), samplers[1].handle()};
     // Use the image and sampler together in a descriptor set
@@ -769,7 +769,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
 
     custom_color_cinfo.format = VK_FORMAT_R8G8B8A8_UINT;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &dsl_binding};
@@ -822,7 +822,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     sampler_info.pNext = &custom_color_cinfo;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -833,7 +833,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     auto image_view_create_info = image.BasicViewCreatInfo();
-    vk_testing::ImageView view(*m_device, image_view_create_info);
+    vkt::ImageView view(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
     img_info.sampler = sampler.handle();
@@ -952,7 +952,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
     sampler_ci.maxLod = 0;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_fail, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, view_pass, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -1062,8 +1062,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
     sampler_ci.maxLod = 0;
-    vk_testing::Sampler sampler_a(*m_device, sampler_ci);
-    vk_testing::Sampler sampler_b(*m_device, sampler_ci);
+    vkt::Sampler sampler_a(*m_device, sampler_ci);
+    vkt::Sampler sampler_b(*m_device, sampler_ci);
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler_a.handle(), VK_DESCRIPTOR_TYPE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
@@ -1135,9 +1135,9 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_FALSE;
     sampler_ci.maxLod = 0;
-    vk_testing::Sampler sampler_good(*m_device, sampler_ci);
+    vkt::Sampler sampler_good(*m_device, sampler_ci);
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
-    vk_testing::Sampler sampler_bad(*m_device, sampler_ci);
+    vkt::Sampler sampler_bad(*m_device, sampler_ci);
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler_good.handle(), VK_DESCRIPTOR_TYPE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
@@ -1211,7 +1211,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
     sampler_ci.maxLod = 0;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
@@ -1313,7 +1313,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
     sampler_ci.maxLod = 0;
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_pass, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 2);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1405,7 +1405,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437");
-    vk_testing::Sampler sampler(*m_device, sampler_create_info);
+    vkt::Sampler sampler(*m_device, sampler_create_info);
     m_errorMonitor->VerifyFound();
 }
 

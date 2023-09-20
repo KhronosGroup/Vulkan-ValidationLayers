@@ -202,8 +202,8 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
 
-        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
-            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+        const VkWriteDescriptorSet descriptor_write =
+            vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
         // Note: pushing to desciptor set number 2.
         vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
@@ -216,8 +216,8 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &ds_layout, &push_ds_layout});
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
-            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+        const VkWriteDescriptorSet descriptor_write =
+            vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
         char const *fsSource = R"glsl(
             #version 450
@@ -278,7 +278,7 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
         };
         const auto dslci =
             vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, 0u, size32(non_sampler_bindings), non_sampler_bindings);
-        vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
+        vkt::DescriptorSetLayout dsl(*m_device, dslci);
     }
 
     // push descriptors
@@ -295,7 +295,7 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
         const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(
             nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR),
             size32(non_sampler_bindings), non_sampler_bindings);
-        vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
+        vkt::DescriptorSetLayout dsl(*m_device, dslci);
     }
 }
 
@@ -311,7 +311,7 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
     VkSampler sampler_handle = sampler.handle();
 
     VkImageObj image(m_device);
@@ -421,13 +421,13 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &ds_binding;
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
 
     auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
     pipeline_layout_ci.pushConstantRangeCount = 0;
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     // Valid, from spec:
     // "Each element of pDescriptorWrites is interpreted as in VkWriteDescriptorSet, except the dstSet member is ignored"

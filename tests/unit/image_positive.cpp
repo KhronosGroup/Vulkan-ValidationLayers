@@ -165,7 +165,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     const auto buffer_memory_requirements = buffer->memory_requirements();
     const auto image_memory_requirements = image.memory_requirements();
 
-    vk_testing::DeviceMemory mem;
+    vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype =
@@ -236,7 +236,7 @@ TEST_F(PositiveImage, BasicUsage) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
 }
 
 TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
@@ -405,7 +405,7 @@ TEST_F(PositiveImage, MultpilePNext) {
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = 0;
 
-    vk_testing::Image(*m_device, image_create_info);
+    vkt::Image(*m_device, image_create_info);
 }
 
 TEST_F(PositiveImage, FramebufferFrom3DImage) {
@@ -445,7 +445,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     dsvci.subresourceRange.layerCount = 4;
     dsvci.subresourceRange.baseArrayLayer = 0;
     dsvci.subresourceRange.levelCount = 1;
-    vk_testing::ImageView view(*m_device, dsvci);
+    vkt::ImageView view(*m_device, dsvci);
 
     VkFramebufferCreateInfo fci = vku::InitStructHelper();
     fci.renderPass = m_renderPass;
@@ -454,13 +454,13 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     fci.width = 32;
     fci.height = 32;
     fci.layers = 4;
-    vk_testing::Framebuffer fb(*m_device, fci);
+    vkt::Framebuffer fb(*m_device, fci);
 }
 
 TEST_F(PositiveImage, SubresourceLayout) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto image_ci = vk_testing::Image::create_info();
+    auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent.width = 64;
     image_ci.extent.height = 64;
@@ -469,7 +469,7 @@ TEST_F(PositiveImage, SubresourceLayout) {
     image_ci.format = VK_FORMAT_R8_UINT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    vk_testing::Image image;
+    vkt::Image image;
     image.init(*m_device, image_ci);
 
     m_commandBuffer->begin();
@@ -555,7 +555,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     };
     VkRenderPassCreateInfo renderPassCreateInfo = {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachmentDescription, 1, subpasses, 0, nullptr};
-    vk_testing::RenderPass renderPass(*m_device, renderPassCreateInfo);
+    vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
     auto image_swapchain_create_info = vku::InitStruct<VkImageSwapchainCreateInfoKHR>();
@@ -603,7 +603,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     uint32_t current_buffer;
-    vk_testing::Semaphore image_acquired(*m_device);
+    vkt::Semaphore image_acquired(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
     VkImageView imageView = image.targetView(attachmentFormat);
@@ -628,7 +628,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
                                                      attachmentWidth,
                                                      attachmentHeight,
                                                      1};
-    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+    vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
                                                                         nullptr, 1, &imageView};
@@ -694,7 +694,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }
 
-    vk_testing::Image image(*m_device, image_ci);
+    vkt::Image image(*m_device, image_ci);
     ASSERT_TRUE(image.handle() != VK_NULL_HANDLE);
 
     // Since the format is compatible with all image's usage, there's no need to restrict usage
@@ -706,7 +706,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     iv_ci.subresourceRange.baseMipLevel = 0;
     iv_ci.subresourceRange.levelCount = 1;
     iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView view(*m_device, iv_ci);
+    vkt::ImageView view(*m_device, iv_ci);
     ASSERT_TRUE(view.handle() != VK_NULL_HANDLE);
 
     // Since usage is inherited from the image, we need to restrict the usage to a subset
@@ -714,7 +714,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     VkImageViewUsageCreateInfo ivu_ci = vku::InitStructHelper();
     ivu_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     iv_ci.pNext = &ivu_ci;
-    vk_testing::ImageView view2(*m_device, iv_ci);
+    vkt::ImageView view2(*m_device, iv_ci);
     ASSERT_TRUE(view2.handle() != VK_NULL_HANDLE);
 }
 
@@ -755,7 +755,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 
-    auto image_ci = vk_testing::Image::create_info();
+    auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
@@ -767,7 +767,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         compressionControl.flags = VK_IMAGE_COMPRESSION_DISABLED_EXT;
         image_ci.pNext = &compressionControl;
 
-        vk_testing::Image image(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
     }
 
     // Create with default image compression, without fixed rate
@@ -776,7 +776,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         compressionControl.flags = VK_IMAGE_COMPRESSION_DEFAULT_EXT;
         image_ci.pNext = &compressionControl;
 
-        vk_testing::Image image(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
     }
 
     // Create with fixed rate compression image
@@ -785,7 +785,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         compressionControl.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
         image_ci.pNext = &compressionControl;
 
-        vk_testing::Image image(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
     }
 
     // Create with fixed rate compression image
@@ -808,7 +808,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
         compressionControl.compressionControlPlaneCount = 1;
         image_ci.pNext = &compressionControl;
 
-        vk_testing::Image image(*m_device, image_ci);
+        vkt::Image image(*m_device, image_ci);
     }
 }
 
@@ -840,7 +840,7 @@ TEST_F(PositiveImage, Create3DImageView) {
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk_testing::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view(*m_device, ivci);
 }
 
 TEST_F(PositiveImage, SlicedCreateInfo) {
@@ -900,7 +900,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 0;
         ASSERT_TRUE(get_effective_depth() == 8);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -909,7 +909,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 0;
         ASSERT_TRUE(get_effective_depth() == 8);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -918,7 +918,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 0;
         ASSERT_TRUE(get_effective_depth() == 8);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -927,7 +927,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 0;
         ASSERT_TRUE(get_effective_depth() == 8);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -936,7 +936,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 1;
         ASSERT_TRUE(get_effective_depth() == 4);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -945,7 +945,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 2;
         ASSERT_TRUE(get_effective_depth() == 2);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -955,7 +955,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 5;
         ASSERT_TRUE(get_effective_depth() == 1);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 
     {
@@ -965,7 +965,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         ivci.subresourceRange.baseMipLevel = 5;
         ASSERT_TRUE(get_effective_depth() == 1);
 
-        vk_testing::ImageView image_view(*m_device, ivci);
+        vkt::ImageView image_view(*m_device, ivci);
     }
 }
 
@@ -1084,11 +1084,11 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     image_view_create_info.format = format;
     image_view_create_info.subresourceRange = view_range;
 
-    vk_testing::ImageView view(*m_device, image_view_create_info);
+    vkt::ImageView view(*m_device, image_view_create_info);
 
     // Create Sampler
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};
@@ -1121,8 +1121,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     };
     std::array<TestType, 2> test_list = {{kInternal, kExternal}};
 
-    auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageAspectFlags aspect_mask,
-                       VkImageLayout descriptor_layout) {
+    auto do_test = [&](VkImageObj *image, vkt::ImageView *view, VkImageAspectFlags aspect_mask, VkImageLayout descriptor_layout) {
         // Set up the descriptor
         img_info.imageView = view->handle();
         img_info.imageLayout = descriptor_layout;
@@ -1239,7 +1238,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     //    of the selected mip level of the 3D image, automatic layout transitions apply
     //    to the entire subresource referenced which is the entire mip level in this case.
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk_testing::ImageView view_2d, other_view;
+    vkt::ImageView view_2d, other_view;
     auto image_view_create_info = vku::InitStruct<VkImageViewCreateInfo>();
     image_view_create_info.image = image_3d.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1293,7 +1292,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
                                    deps.data()};
     // Create Sampler
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, sampler_ci);
 
     // Setup structure for descriptor update with sampler, for update in do_test below
     VkDescriptorImageInfo img_info = {};
@@ -1306,7 +1305,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &img_info;
 
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1329,7 +1328,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     };
     std::array<TestType, 2> test_list = {{kInternal, kExternal}};
 
-    auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageObj *o_image, vk_testing::ImageView *o_view,
+    auto do_test = [&](VkImageObj *image, vkt::ImageView *view, VkImageObj *o_image, vkt::ImageView *o_view,
                        VkImageAspectFlags aspect_mask, VkImageLayout descriptor_layout) {
         // Set up the descriptor
         img_info.imageView = o_view->handle();
@@ -1341,7 +1340,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
 
             VkFramebufferCreateInfo fbci = {
                 VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view->handle(), kWidth, kHeight, 1};
-            vk_testing::Framebuffer fb(*m_device, fbci);
+            vkt::Framebuffer fb(*m_device, fbci);
 
             cmd_buf.begin();
             image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;

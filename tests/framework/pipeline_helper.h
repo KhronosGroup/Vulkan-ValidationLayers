@@ -188,7 +188,7 @@ class RayTracingPipelineHelper {
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
-    vk_testing::PipelineLayout pipeline_layout_;
+    vkt::PipelineLayout pipeline_layout_;
     VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
     VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};

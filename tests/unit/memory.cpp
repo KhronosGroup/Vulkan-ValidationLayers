@@ -210,7 +210,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
-    vk_testing::DeviceMemory memory(*m_device, memory_info);
+    vkt::DeviceMemory memory(*m_device, memory_info);
 
     VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
     map_info.memory = memory;
@@ -266,7 +266,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
         GTEST_SKIP() << "No unmappable memory types found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, mem_alloc);
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
     void *mapped_address = nullptr;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00682");
@@ -304,7 +304,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
         GTEST_SKIP() << "No unmappable memory types found";
     }
 
-    vk_testing::DeviceMemory memory(*m_device, mem_alloc);
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
 
     VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
     map_info.memory = memory.handle();
@@ -393,7 +393,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto image_ci = vk_testing::Image::create_info();
+    auto image_ci = vkt::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 32;
@@ -412,7 +412,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     if (!m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)) {
         GTEST_SKIP() << "Failed to set memory type";
     }
-    vk_testing::DeviceMemory mem;
+    vkt::DeviceMemory mem;
     mem.init(*m_device, image_alloc_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceMemoryCommitment-memory-00690");
@@ -481,7 +481,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "for this object type are not compatible with the memory");
 
-    vk_testing::DeviceMemory mem(*m_device, mem_alloc);
+    vkt::DeviceMemory mem(*m_device, mem_alloc);
 
     vk::BindImageMemory(m_device->device(), image, mem.handle(), 0);
 
@@ -1466,11 +1466,11 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     auto buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkBufferObj buffer;
     buffer.init_no_mem(*m_device, buffer_info);
-    auto buffer_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
+    auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
     auto buffer_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     buffer_dedicated_info.buffer = buffer.handle();
     buffer_alloc_info.pNext = &buffer_dedicated_info;
-    vk_testing::DeviceMemory dedicated_buffer_memory;
+    vkt::DeviceMemory dedicated_buffer_memory;
     dedicated_buffer_memory.init(*m_device, buffer_alloc_info);
 
     VkBufferObj wrong_buffer;
@@ -1505,9 +1505,9 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 
     auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     image_dedicated_info.image = image.handle();
-    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
-    vk_testing::DeviceMemory dedicated_image_memory;
+    vkt::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with wrong image
@@ -1562,9 +1562,9 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
 
     auto image_dedicated_info = vku::InitStruct<VkMemoryDedicatedAllocateInfoKHR>();
     image_dedicated_info.image = image->handle();
-    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
+    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image->memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
-    vk_testing::DeviceMemory dedicated_image_memory;
+    vkt::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with different but identical image

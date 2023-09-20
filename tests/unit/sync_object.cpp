@@ -38,13 +38,13 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     rpci.dependencyCount = 0;
     rpci.pDependencies = nullptr;
 
-    vk_testing::RenderPass rp_noselfdep(*m_device, rpci);
+    vkt::RenderPass rp_noselfdep(*m_device, rpci);
     ASSERT_TRUE(rp_noselfdep.initialized());
 
     VkImageObj image(m_device);
@@ -52,11 +52,11 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     ASSERT_TRUE(fb.initialized());
 
     fbci.renderPass = rp_noselfdep.handle();
-    vk_testing::Framebuffer fb_noselfdep(*m_device, fbci);
+    vkt::Framebuffer fb_noselfdep(*m_device, fbci);
     ASSERT_TRUE(fb_noselfdep.initialized());
 
     m_commandBuffer->begin();
@@ -749,7 +749,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Check for error for trying to wait on pipeline stage not supported by this queue. Specifically since our queue is not a
     // compute queue, vk::CmdWaitEvents cannot have it's source stage mask be VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-06459");
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
     vk::CmdWaitEvents(bad_command_buffer.handle(), 1, &event.handle(), /*source stage mask*/ VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -1650,7 +1650,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     m_commandBuffer->begin();
     // try for vk::CmdWaitEvents
     {
-        vk_testing::Event event(*m_device);
+        vkt::Event event(*m_device);
 
         // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
         {
@@ -2074,7 +2074,7 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     features_13.synchronization2 = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features_13));
 
-    VkImageCreateInfo info = vk_testing::Image::create_info();
+    VkImageCreateInfo info = vkt::Image::create_info();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageObj image{m_device};
@@ -2100,7 +2100,7 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
 }
 
 TEST_F(NegativeSyncObject, SubmitSignaledFence) {
-    vk_testing::Fence testFence;
+    vkt::Fence testFence;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00063");
 
@@ -2146,7 +2146,7 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
         GTEST_SKIP() << "2 graphics queues are needed";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkQueue other = m_device->graphics_queues()[1]->handle();
 
@@ -2251,7 +2251,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueues) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
     VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkBufferMemoryBarrier buffer_memory_barrier = vku::InitStructHelper();
@@ -2530,7 +2530,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     auto timeline_semaphore_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 1;
@@ -2657,7 +2657,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     auto timeline_semaphore_submit_info = vku::InitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 1;
@@ -2792,7 +2792,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     auto signal_sem_info = vku::InitStruct<VkSemaphoreSubmitInfo>();
     signal_sem_info.value = semaphore_type_create_info.initialValue;
@@ -2882,7 +2882,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
     // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
 
     {
-        vk_testing::Semaphore semaphore[3];
+        vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);
         semaphore[2].init(*m_device, semaphore_create_info);
@@ -2919,7 +2919,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
     }
     if (m_device->queue_props[m_device->m_queue_obj->get_family_index()].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
-        vk_testing::Semaphore semaphore[3];
+        vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);
         semaphore[2].init(*m_device, semaphore_create_info);
@@ -2956,7 +2956,7 @@ TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
     }
 
     if (IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        vk_testing::Semaphore semaphore[3];
+        vkt::Semaphore semaphore[3];
         semaphore[0].init(*m_device, semaphore_create_info);
         semaphore[1].init(*m_device, semaphore_create_info);
         semaphore[2].init(*m_device, semaphore_create_info);
@@ -3153,7 +3153,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreType) {
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
     semaphore_signal_info.semaphore = semaphore.handle();
@@ -3321,7 +3321,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
 
     auto semaphore_create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    vk_testing::Semaphore semaphore[2];
+    vkt::Semaphore semaphore[2];
     semaphore[0].init(*m_device, semaphore_create_info);
     semaphore[1].init(*m_device, semaphore_create_info);
 
@@ -3376,9 +3376,9 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         // Regression test for value difference validations ran against binary semaphores
         semaphore_type_create_info.initialValue = 0;
-        vk_testing::Semaphore timeline_sem(*m_device, semaphore_create_info);
+        vkt::Semaphore timeline_sem(*m_device, semaphore_create_info);
 
-        vk_testing::Semaphore binary_sem(*m_device);
+        vkt::Semaphore binary_sem(*m_device);
 
         wait_info.semaphore = timeline_sem.handle();
         wait_info.value = 1;
@@ -3412,7 +3412,7 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
     GetPhysicalDeviceFeatures2(timelinefeatures);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     uint64_t value = 0xdeadbeef;
 
@@ -3428,7 +3428,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3450,7 +3450,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3475,7 +3475,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3503,7 +3503,7 @@ TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
 
     commandBuffer1.begin();
     vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -3539,7 +3539,7 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     cb1.begin();
     cb1.end();
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cb1.handle();
@@ -3575,7 +3575,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
 
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
 
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 

@@ -36,7 +36,7 @@ void ShaderObjectTest::InitBasicShaderObject(void *pNextFeatures, APIVersion tar
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 }
 
-void ShaderObjectTest::BindVertFragShader(const vk_testing::Shader &vertShader, const vk_testing::Shader &fragShader) {
+void ShaderObjectTest::BindVertFragShader(const vkt::Shader &vertShader, const vkt::Shader &fragShader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -44,7 +44,7 @@ void ShaderObjectTest::BindVertFragShader(const vk_testing::Shader &vertShader, 
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
 }
 
-void ShaderObjectTest::BindCompShader(const vk_testing::Shader &compShader) {
+void ShaderObjectTest::BindCompShader(const vkt::Shader &compShader) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
     const VkShaderEXT shaders[] = {compShader.handle()};
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, stages, shaders);
@@ -145,7 +145,7 @@ TEST_F(PositiveShaderObject, BindShaderObject) {
     if (::testing::Test::IsSkipped()) return;
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
-    const vk_testing::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl));
 
     m_commandBuffer->begin();
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &vertShader.handle());
@@ -160,11 +160,10 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -186,11 +185,10 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     size_t vertDataSize;
     vk::GetShaderBinaryDataEXT(*m_device, vertShader.handle(), &vertDataSize, nullptr);
@@ -202,8 +200,8 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     std::vector<uint8_t> fragData(fragDataSize);
     vk::GetShaderBinaryDataEXT(*m_device, fragShader.handle(), &fragDataSize, fragData.data());
 
-    vk_testing::Shader binaryVertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vertData);
-    vk_testing::Shader binaryFragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, fragData);
+    vkt::Shader binaryVertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vertData);
+    vkt::Shader binaryFragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, fragData);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -318,8 +316,8 @@ TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vk_testing::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
-    const vk_testing::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -358,8 +356,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     VkShaderStageFlagBits unusedShaderStages[] = {VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                   VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT};
 
-    const vk_testing::Shader vertShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], vert_src));
-    const vk_testing::Shader fragShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], frag_src));
+    const vkt::Shader vertShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], vert_src));
+    const vkt::Shader fragShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], frag_src));
 
     VkShaderEXT shaders[] = {vertShader.handle(), fragShader.handle()};
 
@@ -559,11 +557,11 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     spv[3] = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src);
     spv[4] = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
 
-    const vk_testing::Shader vertShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], vert_src));
-    const vk_testing::Shader tescShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], tesc_src));
-    const vk_testing::Shader teseShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], tese_src));
-    const vk_testing::Shader geomShader(*m_device, shaderStages[3], GLSLToSPV(shaderStages[3], geom_src));
-    const vk_testing::Shader fragShader(*m_device, shaderStages[4], GLSLToSPV(shaderStages[4], frag_src));
+    const vkt::Shader vertShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], vert_src));
+    const vkt::Shader tescShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], tesc_src));
+    const vkt::Shader teseShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], tese_src));
+    const vkt::Shader geomShader(*m_device, shaderStages[3], GLSLToSPV(shaderStages[3], geom_src));
+    const vkt::Shader fragShader(*m_device, shaderStages[4], GLSLToSPV(shaderStages[4], frag_src));
 
     VkShaderEXT shaders[5] = {vertShader.handle(), tescShader.handle(), teseShader.handle(), geomShader.handle(),
                               fragShader.handle()};
@@ -674,7 +672,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     ds_pool_ci.flags = 0;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
@@ -708,7 +706,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     VkDescriptorSetLayout descriptorSetLayout = descriptor_set_layout.handle();
 
-    const vk_testing::Shader compShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], comp_src), &descriptorSetLayout);
+    const vkt::Shader compShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], comp_src), &descriptorSetLayout);
 
     m_commandBuffer->begin();
 
@@ -785,11 +783,11 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    const vk_testing::Shader taskShader(*m_device, shaderStages[0],
-                                        GLSLToSPV(shaderStages[0], task_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
-    const vk_testing::Shader meshShader(*m_device, shaderStages[1],
-                                        GLSLToSPV(shaderStages[1], mesh_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
-    const vk_testing::Shader fragShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], frag_src));
+    const vkt::Shader taskShader(*m_device, shaderStages[0],
+                                 GLSLToSPV(shaderStages[0], task_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader meshShader(*m_device, shaderStages[1],
+                                 GLSLToSPV(shaderStages[1], mesh_src, "main", nullptr, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader fragShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], frag_src));
 
     VkShaderEXT shaders[3] = {taskShader.handle(), meshShader.handle(), fragShader.handle()};
 
@@ -1013,11 +1011,10 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1061,11 +1058,10 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1149,8 +1145,8 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     frag_create_info.setLayoutCount = 2u;
     frag_create_info.pSetLayouts = descriptor_set_layouts;
 
-    const vk_testing::Shader vertShader(*m_device, vert_create_info);
-    const vk_testing::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device, vert_create_info);
+    const vkt::Shader fragShader(*m_device, frag_create_info);
 
     VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -1163,7 +1159,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
     frag_descriptor_set.UpdateDescriptorSets();
@@ -1239,8 +1235,8 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     frag_create_info.pushConstantRangeCount = 2u;
     frag_create_info.pPushConstantRanges = push_constant_ranges;
 
-    const vk_testing::Shader vertShader(*m_device, vert_create_info);
-    const vk_testing::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device, vert_create_info);
+    const vkt::Shader fragShader(*m_device, frag_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1320,8 +1316,8 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     frag_create_info.pName = "main";
     frag_create_info.pSpecializationInfo = &specialization_info;
 
-    const vk_testing::Shader vertShader(*m_device, vert_create_info);
-    const vk_testing::Shader fragShader(*m_device, frag_create_info);
+    const vkt::Shader vertShader(*m_device, vert_create_info);
+    const vkt::Shader fragShader(*m_device, frag_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1408,13 +1404,13 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         }
     )glsl";
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src));
-    const vk_testing::Shader tescShader(*m_device, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tesc_src));
-    const vk_testing::Shader teseShader(*m_device, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tese_src));
-    const vk_testing::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src));
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src));
+    const vkt::Shader tescShader(*m_device, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tesc_src));
+    const vkt::Shader teseShader(*m_device, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tese_src));
+    const vkt::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
 
     VkBufferObj indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -1443,11 +1439,10 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
@@ -1488,10 +1483,9 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
         }
     )glsl";
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
 
     VkImageObj img1(m_device);
     img1.Init(m_width, m_height, 1, m_render_target_fmt,
@@ -1548,11 +1542,10 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
 
     InitDynamicRenderTarget(VK_FORMAT_R32_UINT);
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
     SetDefaultDynamicStates();
@@ -1572,11 +1565,10 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0u);
 
@@ -1634,11 +1626,11 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     const VkShaderStageFlagBits geomStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     const VkShaderStageFlagBits fragStage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    const vk_testing::Shader vertShader(*m_device, vertStage, GLSLToSPV(vertStage, kVertexMinimalGlsl));
-    const vk_testing::Shader tescShader(*m_device, tescStage, GLSLToSPV(tescStage, kTessellationControlMinimalGlsl));
-    const vk_testing::Shader teseShader(*m_device, teseStage, GLSLToSPV(teseStage, kTessellationEvalMinimalGlsl));
-    const vk_testing::Shader geomShader(*m_device, geomStage, GLSLToSPV(geomStage, kGeometryMinimalGlsl));
-    const vk_testing::Shader fragShader(*m_device, fragStage, GLSLToSPV(fragStage, kFragmentMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, vertStage, GLSLToSPV(vertStage, kVertexMinimalGlsl));
+    const vkt::Shader tescShader(*m_device, tescStage, GLSLToSPV(tescStage, kTessellationControlMinimalGlsl));
+    const vkt::Shader teseShader(*m_device, teseStage, GLSLToSPV(teseStage, kTessellationEvalMinimalGlsl));
+    const vkt::Shader geomShader(*m_device, geomStage, GLSLToSPV(geomStage, kGeometryMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, fragStage, GLSLToSPV(fragStage, kFragmentMinimalGlsl));
 
     const VkShaderEXT nullShader = VK_NULL_HANDLE;
 
@@ -1692,8 +1684,8 @@ TEST_F(PositiveShaderObject, TestVertexAttributeMatching) {
     )glsl";
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vk_testing::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
-    const vk_testing::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
+    const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());
@@ -1790,11 +1782,10 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
 
     InitDynamicRenderTarget();
 
-    const vk_testing::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vk_testing::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                        GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget());

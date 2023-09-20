@@ -21,7 +21,7 @@ TEST_F(MultiDeviceTest, CommonParentFillBuffer) {
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
-    vk_testing::Buffer buffer(*m_second_device, buffer_ci);
+    vkt::Buffer buffer(*m_second_device, buffer_ci);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commonparent");
@@ -58,7 +58,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
     m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
-    vk_testing::DeviceMemory memory(*m_second_device, mem_alloc);
+    vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
     bind_buffer_info.buffer = buffer.handle();
@@ -96,7 +96,7 @@ TEST_F(MultiDeviceTest, CommonParentBindImage) {
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
     m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
-    vk_testing::DeviceMemory memory(*m_second_device, mem_alloc);
+    vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image.handle();
@@ -144,7 +144,7 @@ TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
 
     auto pipeline_layout_ci = vku::InitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 0;
-    vk_testing::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     cs.InitFromGLSLTry(false, m_second_device);
@@ -152,7 +152,7 @@ TEST_F(MultiDeviceTest, CommonParentBindPipeline) {
     auto pipeline_ci = vku::InitStruct<VkComputePipelineCreateInfo>();
     pipeline_ci.layout = pipeline_layout.handle();
     pipeline_ci.stage = cs.GetStageCreateInfo();
-    vk_testing::Pipeline pipeline(*m_second_device, pipeline_ci);
+    vkt::Pipeline pipeline(*m_second_device, pipeline_ci);
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commonparent");

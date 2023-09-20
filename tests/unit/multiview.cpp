@@ -100,7 +100,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
 
-    vk_testing::RenderPass renderPass(*m_device, renderPassCreateInfo);
+    vkt::RenderPass renderPass(*m_device, renderPassCreateInfo);
     ASSERT_TRUE(renderPass.initialized());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -129,7 +129,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+    vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
     ASSERT_TRUE(framebuffer.initialized());
 
     // Start no RenderPass
@@ -328,7 +328,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
-        vk_testing::Pipeline pipelines[extra_subpass_count];
+        vkt::Pipeline pipelines[extra_subpass_count];
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             auto pipe_info = pipe.gp_ci_;
             pipe_info.subpass = i + 1;
@@ -382,7 +382,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.pushConstantRangeCount = 1;
         pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-        vk_testing::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vk_testing::DescriptorSetLayout *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vkt::DescriptorSetLayout *>{});
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -391,7 +391,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
-        vk_testing::Pipeline pipelines[extra_subpass_count];
+        vkt::Pipeline pipelines[extra_subpass_count];
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             auto pipe_info = pipe.gp_ci_;
             pipe_info.subpass = i + 1;
@@ -453,7 +453,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
 
-        vk_testing::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vk_testing::DescriptorSetLayout const *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const *>{});
 
         VkShaderObj const vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj const fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -465,7 +465,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
-        vk_testing::Pipeline pipelines[extra_subpass_count];
+        vkt::Pipeline pipelines[extra_subpass_count];
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             auto pipe_info = pipe.gp_ci_;
             pipe_info.subpass = i + 1;
@@ -540,7 +540,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
-        vk_testing::Pipeline pipelines[extra_subpass_count];
+        vkt::Pipeline pipelines[extra_subpass_count];
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             auto pipe_info = pipe.gp_ci_;
             pipe_info.subpass = i + 1;
@@ -620,7 +620,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
-        vk_testing::Pipeline pipelines[extra_subpass_count];
+        vkt::Pipeline pipelines[extra_subpass_count];
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             auto pipe_info = pipe.gp_ci_;
             pipe_info.subpass = i + 1;
@@ -706,7 +706,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
 
-    vk_testing::RenderPass render_pass;
+    vkt::RenderPass render_pass;
     render_pass.init(*m_device, renderPassCreateInfo);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -736,7 +736,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+    vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = render_pass.handle();
@@ -779,8 +779,8 @@ TEST_F(NegativeMultiview, Features) {
     // Set false to trigger VUs
     multiview_features.multiview = VK_FALSE;
 
-    vk_testing::PhysicalDevice physical_device(gpu());
-    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    vkt::PhysicalDevice physical_device(gpu());
+    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
     for (uint32_t i = 0; i < queue_info.size(); ++i) {
@@ -989,7 +989,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     // Create render passes with VK_VERSION_1_0 struct and vkCreateRenderPass call
     // Create rp[0] with Multiview pNext, rp[1] without Multiview pNext, rp[2] with Multiview pNext but another viewMask
-    std::array<vk_testing::RenderPass, 3> rp;
+    std::array<vkt::RenderPass, 3> rp;
     rp[0].init(*m_device, rpci);
     rpci.pNext = nullptr;
     rp[1].init(*m_device, rpci);
@@ -1000,7 +1000,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     // Create render passes with VK_VERSION_1_2 struct and vkCreateRenderPass2KHR call
     // Create rp2[0] with Multiview, rp2[1] without Multiview (zero viewMask), rp2[2] with Multiview but another viewMask
-    std::array<vk_testing::RenderPass, 3> rp2;
+    std::array<vkt::RenderPass, 3> rp2;
     if (rp2Supported) {
         rp2[0].init(*m_device, rpci2, true);
         subpass2.viewMask = 0x0u;
@@ -1025,7 +1025,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                        VK_COMPONENT_SWIZZLE_IDENTITY};
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-    vk_testing::ImageView iv(*m_device, ivci);
+    vkt::ImageView iv(*m_device, ivci);
 
     // Create framebuffers for rp[0] and rp2[0]
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
@@ -1036,8 +1036,8 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     fbci.height = 128;
     fbci.layers = 1;
 
-    vk_testing::Framebuffer fb(*m_device, fbci);
-    vk_testing::Framebuffer fb2;
+    vkt::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb2;
     if (rp2Supported) {
         fbci.renderPass = rp2[0].handle();
         fb2.init(*m_device, fbci);
@@ -1268,7 +1268,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
     ASSERT_TRUE(render_pass.initialized());
 
     if (features2.features.tessellationShader) {

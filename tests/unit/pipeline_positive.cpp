@@ -261,7 +261,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         VK_FALSE   // alphaToOneEnable
     };
 
-    vk_testing::PipelineLayout pipeline_layout;
+    vkt::PipelineLayout pipeline_layout;
     {
         VkPipelineLayoutCreateInfo pipeline_layout_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -304,7 +304,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             VK_NULL_HANDLE,
             0};
 
-        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
+        vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
 
         m_commandBuffer->begin();
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
@@ -328,7 +328,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             1,
             &scissor};
 
-        vk_testing::RenderPass render_pass;
+        vkt::RenderPass render_pass;
         {
             VkSubpassDescription subpass_desc = {};
 
@@ -368,7 +368,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             VK_NULL_HANDLE,
             0};
 
-        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
+        vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
 
     // try dynamic viewport and scissor
@@ -432,7 +432,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
                                                                    VK_NULL_HANDLE,
                                                                    0};
 
-        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
+        vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
 }
 
@@ -668,7 +668,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
 
     VkRenderPassCreateInfo const render_pass_info{
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachment_descriptions, 1, subpass_descriptions, 0, nullptr};
-    vk_testing::RenderPass render_pass(*m_device, render_pass_info);
+    vkt::RenderPass render_pass(*m_device, render_pass_info);
 
     const auto override_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -745,7 +745,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     rpci.pAttachments = &cAttachment;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     const VkPipelineLayoutObj pl(m_device);
 
@@ -791,7 +791,7 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     rpi.pAttachments = att;
     rpi.subpassCount = 1;
     rpi.pSubpasses = &sp;
-    vk_testing::RenderPass rp(*m_device, rpi);
+    vkt::RenderPass rp(*m_device, rpi);
     ASSERT_TRUE(rp.initialized());
 
     CreatePipelineHelper pipe(*this);
@@ -858,7 +858,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -913,14 +913,14 @@ TEST_F(PositivePipeline, ConditionalRendering) {
                                       VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT,
                                       (VkDependencyFlags)0};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dependency};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi =
@@ -1295,7 +1295,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
     cb_ci.pAttachments = &cb_as;
     VkRenderPass render_pass_handle = VK_NULL_HANDLE;
 
-    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vk_testing::RenderPass &render_pass) {
+    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass &render_pass) {
         VkAttachmentDescription attachments[2] = {};
         attachments[0].flags = 0;
         attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1352,7 +1352,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         cb_ci.flags = VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM;
         ds_ci.flags = 0;
 
-        vk_testing::RenderPass render_pass;
+        vkt::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
         CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit);
@@ -1363,7 +1363,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         cb_ci.flags = 0;
         ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM;
 
-        vk_testing::RenderPass render_pass;
+        vkt::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
         CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit);
@@ -1374,7 +1374,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         cb_ci.flags = 0;
         ds_ci.flags = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM;
 
-        vk_testing::RenderPass render_pass;
+        vkt::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
 

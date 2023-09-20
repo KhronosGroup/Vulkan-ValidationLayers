@@ -31,7 +31,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     }
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -39,9 +39,9 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     const auto buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -79,7 +79,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -87,9 +87,9 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     const auto buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -129,7 +129,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -137,9 +137,9 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     const auto buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -179,7 +179,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     }
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -187,9 +187,9 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     const auto buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -228,15 +228,15 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
     copy_info.dstOffset = 0;
     copy_info.size = 256;
 
-    VkBufferCreateInfo b_info = vk_testing::Buffer::create_info(
-        copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkBufferCreateInfo b_info =
+        vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -246,11 +246,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
-    vk_testing::DeviceMemory buffer_mem2;
+    vkt::DeviceMemory buffer_mem2;
     buffer_mem2.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
@@ -314,7 +314,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     constexpr VkDeviceSize copy_size = 16;
     std::array<VkBufferCopy, 4> copy_info_list = {};
@@ -335,7 +335,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     copy_info_list[3].size = copy_size;
 
     VkBufferCreateInfo b_info =
-        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
@@ -343,9 +343,9 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind_1 = {};
@@ -407,10 +407,10 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
         GTEST_SKIP() << "Required queue families not present";
     }
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
 
     VkBufferCreateInfo buffer_ci =
-        vk_testing::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+        vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     VkBufferObj buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
@@ -424,11 +424,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem_1;
+    vkt::DeviceMemory buffer_mem_1;
     buffer_mem_1.init(*m_device, buffer_mem_alloc);
-    vk_testing::DeviceMemory buffer_mem_2;
+    vkt::DeviceMemory buffer_mem_2;
     buffer_mem_2.init(*m_device, buffer_mem_alloc);
 
     std::array<VkSparseMemoryBind, 2> buffer_memory_binds = {};
@@ -571,9 +571,9 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_testing::DeviceMemory buffer_mem;
+    vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};

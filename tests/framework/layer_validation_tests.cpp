@@ -214,7 +214,7 @@ void ReleaseNullFence(ThreadTestData *data) {
     }
 }
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device, const VkRenderPassCreateInfo &create_info,
+void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
     if (rp1_vuid) {
         // If the second VUID is not provided, set it equal to the first VUID.  In this way,
@@ -225,7 +225,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device 
         }
 
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
-        vk_testing::RenderPass rp(device, create_info);
+        vkt::RenderPass rp(device, create_info);
         error_monitor->VerifyFound();
     }
 
@@ -237,7 +237,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device 
         // For API version < 1.2 where the extension was not enabled
         if (vkCreateRenderPass2KHR) {
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            vk_testing::RenderPass rp2_khr(device, *create_info2.ptr(), true);
+            vkt::RenderPass rp2_khr(device, *create_info2.ptr(), true);
             error_monitor->VerifyFound();
         }
 
@@ -246,30 +246,30 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device 
         // For API version >= 1.2, try core entrypoint
         if (vkCreateRenderPass2) {
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            vk_testing::RenderPass rp2_core(device, *create_info2.ptr(), false);
+            vkt::RenderPass rp2_core(device, *create_info2.ptr(), false);
             error_monitor->VerifyFound();
         }
     }
 }
 
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device,
-                                  const VkRenderPassCreateInfo &create_info, bool rp2_supported) {
-    vk_testing::RenderPass rp(device, create_info);
+void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
+                                  bool rp2_supported) {
+    vkt::RenderPass rp(device, create_info);
     if (rp2_supported) {
-        vk_testing::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr(), true);
+        vkt::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr(), true);
     }
 }
 
-void PositiveTestRenderPass2KHRCreate(const vk_testing::Device &device, const VkRenderPassCreateInfo2KHR &create_info) {
-    vk_testing::RenderPass rp(device, create_info, true);
+void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info) {
+    vkt::RenderPass rp(device, create_info, true);
 }
 
-void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vk_testing::Device &device,
-                              const VkRenderPassCreateInfo2KHR &create_info, const std::initializer_list<const char *> &vuids) {
+void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
+                              const std::initializer_list<const char *> &vuids) {
     for (auto vuid : vuids) {
         error_monitor.SetDesiredFailureMsg(kErrorBit, vuid);
     }
-    vk_testing::RenderPass rp(device, create_info, true);
+    vkt::RenderPass rp(device, create_info, true);
     error_monitor.VerifyFound();
 }
 
@@ -446,7 +446,7 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info
         test.Monitor().SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
     }
 
-    vk_testing::Sampler sampler(*test.DeviceObj(), *create_info);
+    vkt::Sampler sampler(*test.DeviceObj(), *create_info);
 
     if (code.length()) {
         test.Monitor().VerifyFound();
@@ -457,7 +457,7 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, 
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
-    vk_testing::Buffer buffer(*test.DeviceObj(), *create_info, vk_testing::no_mem);
+    vkt::Buffer buffer(*test.DeviceObj(), *create_info, vkt::no_mem);
     if (code.length()) {
         test.Monitor().VerifyFound();
     }
@@ -467,7 +467,7 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, co
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
-    vk_testing::Image image(*test.DeviceObj(), *create_info, vk_testing::no_mem);
+    vkt::Image image(*test.DeviceObj(), *create_info, vkt::no_mem);
     if (code.length()) {
         test.Monitor().VerifyFound();
     }
@@ -477,7 +477,7 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *creat
     if (codes.size()) {
         std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredFailureMsg(kErrorBit, s); });
     }
-    vk_testing::BufferView view(*test.DeviceObj(), *create_info);
+    vkt::BufferView view(*test.DeviceObj(), *create_info);
     if (codes.size()) {
         test.Monitor().VerifyFound();
     }
@@ -487,7 +487,7 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
-    vk_testing::ImageView view(*test.DeviceObj(), *create_info);
+    vkt::ImageView view(*test.DeviceObj(), *create_info);
     if (code.length()) {
         test.Monitor().VerifyFound();
     }
@@ -1393,7 +1393,7 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vk_testing::Fence(), positive);
+            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
         } else {
             qf->command_buffer->QueueCommandBuffer(positive);  // Check for success on positive tests only
         }
@@ -1444,7 +1444,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // the Fence resolves to VK_NULL_HANLE... i.e. no fence
-            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vk_testing::Fence(), positive);
+            qf->queue->submit({{qf->command_buffer, qf->command_buffer2}}, vkt::Fence(), positive);
         } else {
             qf->command_buffer->QueueCommandBuffer(positive);  // Check for success on positive tests only
         }

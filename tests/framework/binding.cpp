@@ -61,7 +61,7 @@ bool expect_failure(const char *expr, const char *file, unsigned int line) {
 
 }  // namespace
 
-namespace vk_testing {
+namespace vkt {
 
 VkPhysicalDeviceProperties PhysicalDevice::properties() const {
     VkPhysicalDeviceProperties info;
@@ -849,8 +849,8 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
     }
 }
-vk_testing::Buffer AccelerationStructure::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
-                                                                bool buffer_device_address /*= false*/) const {
+vkt::Buffer AccelerationStructure::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+                                                         bool buffer_device_address /*= false*/) const {
     VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
     VkBufferCreateInfo create_info = {};
     create_info.size = scratch_buffer_memory_requirements.size;
@@ -870,7 +870,7 @@ vk_testing::Buffer AccelerationStructure::create_scratch_buffer(const Device &de
         pNext = &alloc_flags;
     }
 
-    return vk_testing::Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
+    return vkt::Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
@@ -1194,4 +1194,4 @@ void SamplerYcbcrConversion::destroy() noexcept {
 
 SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }
 
-}  // namespace vk_testing
+}  // namespace vkt

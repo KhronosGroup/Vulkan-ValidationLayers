@@ -269,7 +269,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image image_from_swapchain(*m_device, image_create_info, vk_testing::no_mem);
+    vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
 
     auto bind_swapchain_info = vku::InitStruct<VkBindImageMemorySwapchainInfoKHR>();
     bind_swapchain_info.swapchain = m_swapchain;
@@ -375,7 +375,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image peer_image(*m_device, image_create_info, vk_testing::no_mem);
+    vkt::Image peer_image(*m_device, image_create_info, vkt::no_mem);
 
     auto bind_devicegroup_info = vku::InitStruct<VkBindImageMemoryDeviceGroupInfo>();
     std::array<uint32_t, 1> deviceIndices = {{0}};
@@ -397,7 +397,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
-    vk_testing::Fence fence;
+    vkt::Fence fence;
     fence.init(*m_device, VkFenceObj::create_info());
     VkFence fence_handle = fence.handle();
 
@@ -448,8 +448,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
-    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
@@ -565,7 +565,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
     const auto swapchainImages = GetSwapchainImages(m_swapchain);
-    const vk_testing::Fence fence(*m_device);
+    const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
     ASSERT_VK_SUCCESS(
         vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
@@ -582,11 +582,11 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     rpci.pAttachments = attach;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
-    vk_testing::RenderPass rp1(*m_device, rpci);
+    vkt::RenderPass rp1(*m_device, rpci);
     ASSERT_TRUE(rp1.initialized());
 
     attach[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    vk_testing::RenderPass rp2(*m_device, rpci);
+    vkt::RenderPass rp2(*m_device, rpci);
     ASSERT_TRUE(rp2.initialized());
 
     auto ivci = vku::InitStruct<VkImageViewCreateInfo>();
@@ -596,7 +596,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                        VK_COMPONENT_SWIZZLE_IDENTITY};
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk_testing::ImageView view(*m_device, ivci);
+    vkt::ImageView view(*m_device, ivci);
     ASSERT_TRUE(view.initialized());
     auto fci = vku::InitStruct<VkFramebufferCreateInfo>();
     fci.renderPass = rp1.handle();
@@ -605,10 +605,10 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     fci.width = 1;
     fci.height = 1;
     fci.layers = 1;
-    vk_testing::Framebuffer fb1(*m_device, fci);
+    vkt::Framebuffer fb1(*m_device, fci);
     ASSERT_TRUE(fb1.initialized());
     fci.renderPass = rp2.handle();
-    vk_testing::Framebuffer fb2(*m_device, fci);
+    vkt::Framebuffer fb2(*m_device, fci);
     ASSERT_TRUE(fb2.initialized());
     VkRenderPassBeginInfo rpbi =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp1.handle(), fb1.handle(), VkRect2D{{0, 0}, {1u, 1u}}, 0u, nullptr);
@@ -923,7 +923,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = format;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk_testing::ImageView image_view(*m_device, ivci);
+    vkt::ImageView image_view(*m_device, ivci);
 
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
     fbci.renderPass = render_pass.handle();
@@ -932,7 +932,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     fbci.width = 1;
     fbci.height = 1;
     fbci.layers = 1;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     VkCommandBufferObj cmdbuff(DeviceObj(), m_commandPool);
     cmdbuff.begin();
@@ -1080,7 +1080,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     image_swapchain_create_info.swapchain = m_swapchain;
 
     image_create_info.pNext = &image_swapchain_create_info;
-    std::vector<vk_testing::Image> images(m_surface_capabilities.minImageCount);
+    std::vector<vkt::Image> images(m_surface_capabilities.minImageCount);
 
     int i = 0;
     for (auto &image : images) {
@@ -1184,7 +1184,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
          VK_COMPONENT_SWIZZLE_IDENTITY},
         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
     };
-    vk_testing::ImageView image_view(*m_device, image_view_create_info);
+    vkt::ImageView image_view(*m_device, image_view_create_info);
 
     // A renderpass and framebuffer that contains a protected color image view
     VkAttachmentDescription attachments[1] = {{0, swapchain_create_info.imageFormat, VK_SAMPLE_COUNT_1_BIT,

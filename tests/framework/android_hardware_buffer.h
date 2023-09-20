@@ -22,7 +22,7 @@ constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
 
 // Helper to get the memory type index for AHB object that are being imported
 // returns false if can't set the values correctly
-inline bool SetAllocationInfoImportAHB(vk_testing::Device *device, VkAndroidHardwareBufferPropertiesANDROID ahb_props,
+inline bool SetAllocationInfoImportAHB(vkt::Device *device, VkAndroidHardwareBufferPropertiesANDROID ahb_props,
                                        VkMemoryAllocateInfo &info) {
     // Set index to match one of the bits in ahb_props that is also only Device Local
     // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB

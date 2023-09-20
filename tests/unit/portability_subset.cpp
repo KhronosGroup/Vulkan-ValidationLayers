@@ -22,11 +22,11 @@ TEST_F(NegativePortabilitySubset, Device) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    vk_testing::PhysicalDevice phys_device(gpu());
+    vkt::PhysicalDevice phys_device(gpu());
 
     // request all queues
     const std::vector<VkQueueFamilyProperties> queue_props = phys_device.queue_properties();
-    vk_testing::QueueCreateInfoArray queue_info(phys_device.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(phys_device.queue_properties());
 
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
@@ -497,7 +497,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
 
     constexpr VkFormat img_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
@@ -509,7 +509,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     auto image_view_create_info = image.BasicViewCreatInfo();
-    vk_testing::ImageView view(*m_device, image_view_create_info);
+    vkt::ImageView view(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
     img_info.sampler = sampler.handle();

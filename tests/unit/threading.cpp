@@ -33,7 +33,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
 
     commandBuffer.begin();
 
-    vk_testing::Event event(*m_device);
+    vkt::Event event(*m_device);
     VkResult err;
 
     err = vk::ResetEvent(device(), event.handle());

@@ -720,7 +720,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    vk_testing::Event event_obj(*m_device);
+    vkt::Event event_obj(*m_device);
     const auto event = event_obj.handle();
     ASSERT_TRUE(event_obj.initialized());
 
@@ -768,7 +768,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 
     m_commandBuffer->end();
 
-    vk_testing::Semaphore semaphore_obj(*m_device);
+    vkt::Semaphore semaphore_obj(*m_device);
     const auto semaphore = semaphore_obj.handle();
     ASSERT_TRUE(semaphore_obj.initialized());
 

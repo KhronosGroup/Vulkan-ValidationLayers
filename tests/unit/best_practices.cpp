@@ -518,7 +518,7 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = queue_family_index;
-    vk_testing::CommandPool command_pool(*m_device, pool_create_info);
+    vkt::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper();
@@ -608,9 +608,9 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_info);
 
-    vk_testing::DeviceMemory mem;
-    mem.init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
-                                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    vkt::DeviceMemory mem;
+    mem.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
+                                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
     vk::BindImageMemory(device(), image.handle(), mem.handle(), 0);
 
     m_errorMonitor->VerifyFound();
@@ -682,7 +682,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &sd;
-    vk_testing::RenderPass rp(*m_device, rp_info);
+    vkt::RenderPass rp(*m_device, rp_info);
 
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -706,7 +706,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     iv_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     iv_info.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
 
-    vk_testing::ImageView image_view(*m_device, iv_info);
+    vkt::ImageView image_view(*m_device, iv_info);
 
     VkFramebufferCreateInfo fb_info{};
     fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -716,7 +716,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     fb_info.height = 1080;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &image_view.handle();
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
 
     m_errorMonitor->VerifyFound();
 }
@@ -1139,7 +1139,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     // VK_KHR_get_physical_device_properties2 required to test vkGetPhysicalDeviceQueueFamilyProperties2KHR
     m_instance_extension_names.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-    const vk_testing::PhysicalDevice phys_device_obj(gpu_);
+    const vkt::PhysicalDevice phys_device_obj(gpu_);
 
     std::vector<VkQueueFamilyProperties> queue_family_props;
 
@@ -1166,7 +1166,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     queue_family_props2.resize(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
-    vk_testing::Device device(phys_device_obj.handle());
+    vkt::Device device(phys_device_obj.handle());
     device.init();
 }
 
@@ -1174,7 +1174,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties generates appropriate query warning");
 
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-    const vk_testing::PhysicalDevice phys_device_obj(gpu_);
+    const vkt::PhysicalDevice phys_device_obj(gpu_);
 
     std::vector<VkQueueFamilyProperties> queue_family_props(1);
     uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());
@@ -1184,7 +1184,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     m_errorMonitor->VerifyFound();
 
     // Now get information correctly
-    vk_testing::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties());
+    vkt::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties());
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
@@ -1553,7 +1553,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    vk_testing::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore(*m_device);
     VkSemaphore semaphore_handle = semaphore.handle();
 
     VkSubmitInfo signal_submit_info = vku::InitStructHelper();
@@ -1601,7 +1601,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding_samp = {};
     dsl_binding_samp.binding = 0;
@@ -1676,7 +1676,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &spd;
 
-    vk_testing::RenderPass rp(*m_device, rp_info);
+    vkt::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
@@ -1687,7 +1687,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &image_view;
 
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
 
     m_commandBuffer->begin();
 
@@ -1771,7 +1771,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &spd;
 
-    vk_testing::RenderPass rp(*m_device, rp_info);
+    vkt::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
@@ -1782,7 +1782,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &image_view;
 
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
 
     m_commandBuffer->begin();
 
@@ -1871,7 +1871,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &spd;
 
-    vk_testing::RenderPass rp1(*m_device, rp_info);
+    vkt::RenderPass rp1(*m_device, rp_info);
 
     // Setup second RenderPass
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;  // Loading even though was stored with dont care
@@ -1879,7 +1879,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    vk_testing::RenderPass rp2(*m_device, rp_info);
+    vkt::RenderPass rp2(*m_device, rp_info);
 
     // Setup Framebuffer
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
@@ -1890,7 +1890,7 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &image_view;
 
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
 
     m_commandBuffer->begin();
 
@@ -2047,7 +2047,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &spd;
 
-    vk_testing::RenderPass rp(*m_device, rp_info);
+    vkt::RenderPass rp(*m_device, rp_info);
 
     // Setup Framebuffer
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
@@ -2058,7 +2058,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &image_view;
 
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
 
     VkCommandPoolObj graphics_pool(m_device, graphics_queue->get_family_index());
 
@@ -2326,7 +2326,7 @@ TEST_F(VkBestPracticesLayerTest, DescriptorTypeNotInPool) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding_sampler = {};
     dsl_binding_sampler.binding = 0;

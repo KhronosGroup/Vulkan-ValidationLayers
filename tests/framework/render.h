@@ -34,7 +34,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using vk_testing::MakeVkHandles;
+using vkt::MakeVkHandles;
 
 static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
 
@@ -46,8 +46,8 @@ std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
     return handles;
 }
 
-typedef vk_testing::Queue VkQueueObj;
-class VkDeviceObj : public vk_testing::Device {
+typedef vkt::Queue VkQueueObj;
+class VkDeviceObj : public vkt::Device {
   public:
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
@@ -295,22 +295,22 @@ class VkRenderFramework : public VkTestFramework {
 class VkDescriptorSetObj;
 class VkConstantBufferObj;
 class VkPipelineObj;
-typedef vk_testing::Event VkEventObj;
-typedef vk_testing::Fence VkFenceObj;
-typedef vk_testing::Semaphore VkSemaphoreObj;
-typedef vk_testing::Buffer VkBufferObj;
-typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
-using VkDeviceMemoryObj = vk_testing::DeviceMemory;
-class VkCommandPoolObj : public vk_testing::CommandPool {
+typedef vkt::Event VkEventObj;
+typedef vkt::Fence VkFenceObj;
+typedef vkt::Semaphore VkSemaphoreObj;
+typedef vkt::Buffer VkBufferObj;
+typedef vkt::AccelerationStructure VkAccelerationStructureObj;
+using VkDeviceMemoryObj = vkt::DeviceMemory;
+class VkCommandPoolObj : public vkt::CommandPool {
   public:
-    VkCommandPoolObj() : vk_testing::CommandPool(){};
+    VkCommandPoolObj() : vkt::CommandPool(){};
     void Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
     VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
 };
 
-class VkCommandBufferObj : public vk_testing::CommandBuffer {
+class VkCommandBufferObj : public vkt::CommandBuffer {
   public:
-    VkCommandBufferObj() : vk_testing::CommandBuffer() {}
+    VkCommandBufferObj() : vkt::CommandBuffer() {}
     VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                        VkQueueObj *queue = nullptr);
     void Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
@@ -383,13 +383,13 @@ class VkConstantBufferObj : public VkBufferObj {
     VkDeviceObj *m_device;
 };
 
-class VkRenderpassObj : public vk_testing::RenderPass {
+class VkRenderpassObj : public vkt::RenderPass {
   public:
     VkRenderpassObj(VkDeviceObj *device, VkFormat format = VK_FORMAT_B8G8R8A8_UNORM);
     VkRenderpassObj(VkDeviceObj *device, VkFormat format, bool depthStencil);
 };
 
-class VkImageObj : public vk_testing::Image {
+class VkImageObj : public vkt::Image {
   public:
     VkImageObj(VkDeviceObj *dev);
     bool IsCompatible(VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
@@ -405,7 +405,7 @@ class VkImageObj : public vk_testing::Image {
     void Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs = 0, bool memory = true);
 
     void init(const VkImageCreateInfo *create_info);
-    void init_no_mem(const vk_testing::Device &dev, const VkImageCreateInfo &info);
+    void init_no_mem(const vkt::Device &dev, const VkImageCreateInfo &info);
 
     void InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags reqs = 0,
@@ -490,7 +490,7 @@ class VkImageObj : public vk_testing::Image {
   protected:
     VkDeviceObj *m_device;
 
-    vk_testing::ImageView m_targetView;
+    vkt::ImageView m_targetView;
     VkDescriptorImageInfo m_descriptorImageInfo;
     uint32_t m_mipLevels;
     uint32_t m_arrayLayers;
@@ -504,7 +504,7 @@ class VkTextureObj : public VkImageObj {
 
   protected:
     VkDeviceObj *m_device;
-    vk_testing::ImageView m_textureView;
+    vkt::ImageView m_textureView;
 };
 
 class VkDepthStencilObj : public VkImageObj {
@@ -520,12 +520,12 @@ class VkDepthStencilObj : public VkImageObj {
   protected:
     VkDeviceObj *m_device;
     bool m_initialized;
-    vk_testing::ImageView m_imageView;
+    vkt::ImageView m_imageView;
     VkFormat m_depth_stencil_fmt;
     VkImageView m_attachmentBindInfo;
 };
 
-class VkSamplerObj : public vk_testing::Sampler {
+class VkSamplerObj : public vkt::Sampler {
   public:
     VkSamplerObj(VkDeviceObj *device);
 
@@ -533,7 +533,7 @@ class VkSamplerObj : public vk_testing::Sampler {
     VkDeviceObj *m_device;
 };
 
-class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
+class VkDescriptorSetLayoutObj : public vkt::DescriptorSetLayout {
   public:
     VkDescriptorSetLayoutObj() = default;
     VkDescriptorSetLayoutObj(const VkDeviceObj *device,
@@ -548,7 +548,7 @@ class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
     }
 };
 
-class VkDescriptorSetObj : public vk_testing::DescriptorPool {
+class VkDescriptorSetObj : public vkt::DescriptorPool {
   public:
     VkDescriptorSetObj(VkDeviceObj *device);
     ~VkDescriptorSetObj() noexcept;
@@ -571,9 +571,9 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     std::vector<VkDescriptorImageInfo> m_imageSamplerDescriptors;
     std::vector<VkWriteDescriptorSet> m_writes;
 
-    vk_testing::DescriptorSetLayout m_layout;
-    vk_testing::PipelineLayout m_pipeline_layout;
-    vk_testing::DescriptorSet *m_set = NULL;
+    vkt::DescriptorSetLayout m_layout;
+    vkt::PipelineLayout m_pipeline_layout;
+    vkt::DescriptorSet *m_set = NULL;
 };
 
 // What is the incoming source to be turned into VkShaderModuleCreateInfo::pCode
@@ -585,7 +585,7 @@ typedef enum {
     SPV_SOURCE_ASM_TRY,
 } SpvSourceType;
 
-class VkShaderObj : public vk_testing::ShaderModule {
+class VkShaderObj : public vkt::ShaderModule {
   public:
     // optional arguments listed order of most likely to be changed manually by a test
     VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
@@ -675,7 +675,7 @@ class VkShaderObj : public vk_testing::ShaderModule {
     spv_target_env m_spv_env;
 };
 
-class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
+class VkPipelineLayoutObj : public vkt::PipelineLayout {
   public:
     VkPipelineLayoutObj() = default;
     VkPipelineLayoutObj(VkDeviceObj *device, const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts = {},
@@ -692,7 +692,7 @@ class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
     void Reset();
 };
 
-class VkPipelineObj : public vk_testing::Pipeline {
+class VkPipelineObj : public vkt::Pipeline {
   public:
     VkPipelineObj(VkDeviceObj *device);
     void AddShader(VkShaderObj *shaderObj);

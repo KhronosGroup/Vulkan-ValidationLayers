@@ -276,7 +276,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
 
     // Don't bind memory.
     {
-        vk_testing::Buffer buffer;
+        vkt::Buffer buffer;
         {
             auto info = vku::InitStruct<VkBufferCreateInfo>();
             info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
@@ -636,7 +636,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     VkSubpassDescription subpass = {};
     rp_info.pSubpasses = &subpass;
     rp_info.subpassCount = 1;
-    vk_testing::RenderPass renderpass(test_device, rp_info);
+    vkt::RenderPass renderpass(test_device, rp_info);
     ASSERT_TRUE(renderpass.handle());
 
     VkPipelineObj pipeline(&test_device);
@@ -651,7 +651,7 @@ TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     m_renderPassBeginInfo.renderPass = renderpass.handle();
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass.handle(), 0, nullptr, 256, 256, 1};
-    vk_testing::Framebuffer fb(test_device, fbci);
+    vkt::Framebuffer fb(test_device, fbci);
     ASSERT_TRUE(fb.initialized());
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_renderPassBeginInfo.renderPass = renderpass.handle();
@@ -1164,7 +1164,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dep;
 
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -1178,7 +1178,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     fbci.height = 32;
     fbci.layers = 1;
 
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp.handle();

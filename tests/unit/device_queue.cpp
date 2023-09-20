@@ -316,7 +316,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties();
     for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
         if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
             only_transfer_queueFamilyIndex = i;
@@ -353,7 +353,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
 TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
     ASSERT_NO_FATAL_FAILURE(Init());
-    const size_t queue_count = vk_testing::PhysicalDevice(gpu()).queue_properties().size();
+    const size_t queue_count = vkt::PhysicalDevice(gpu()).queue_properties().size();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     VkCommandPoolObj commandPool(m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();

@@ -169,7 +169,7 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
     qpci.queryCount = 2;
 
-    vk_testing::QueryPool query_pool;
+    vkt::QueryPool query_pool;
     query_pool.init(*m_device, qpci);
 
     m_commandBuffer->begin();
@@ -421,7 +421,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -471,7 +471,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -544,7 +544,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                            {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView depth_image_view(*m_device, depth_view_ci);
+    vkt::ImageView depth_image_view(*m_device, depth_view_ci);
 
     VkImageObj color_image(m_device);
     color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -560,7 +560,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView color_image_view(*m_device, color_view_ci);
+    vkt::ImageView color_image_view(*m_device, color_view_ci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

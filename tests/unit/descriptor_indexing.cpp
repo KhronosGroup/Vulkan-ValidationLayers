@@ -60,7 +60,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
     ds_layout_ci.bindingCount = 3;
     ds_layout_ci.pBindings = &binding[0];
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorPoolSize pool_sizes[3] = {
         {binding[0].descriptorType, binding[0].descriptorCount},
@@ -72,7 +72,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     dspci.poolSizeCount = 3;
     dspci.pPoolSizes = &pool_sizes[0];
     dspci.maxSets = 1;
-    vk_testing::DescriptorPool pool(*m_device, dspci);
+    vkt::DescriptorPool pool(*m_device, dspci);
 
     auto ds_alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
     ds_alloc_info.descriptorPool = pool.handle();
@@ -87,7 +87,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     buffCI.size = 1024;
     buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-    vk_testing::Buffer dynamic_uniform_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer dynamic_uniform_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkDescriptorBufferInfo buffInfo[2] = {};
     buffInfo[0].buffer = dynamic_uniform_buffer.handle();
@@ -109,7 +109,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     // Create a dummy pipeline, since VL inspects which bindings are actually used at draw time
     char const *fsSource = R"glsl(
@@ -209,7 +209,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
     ds_layout_ci.bindingCount = 3;
     ds_layout_ci.pBindings = &binding[0];
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3};
     auto dspci = vku::InitStruct<VkDescriptorPoolCreateInfo>();
@@ -217,7 +217,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     dspci.poolSizeCount = 1;
     dspci.pPoolSizes = &pool_sizes;
     dspci.maxSets = 3;
-    vk_testing::DescriptorPool pool(*m_device, dspci);
+    vkt::DescriptorPool pool(*m_device, dspci);
 
     auto ds_alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
     ds_alloc_info.descriptorPool = pool.handle();
@@ -326,14 +326,14 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
         ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
         ds_layout_ci.bindingCount = 0;
         flags_create_info.bindingCount = 0;
-        vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+        vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
         VkDescriptorPoolSize pool_size = {binding.descriptorType, binding.descriptorCount};
         auto dspci = vku::InitStruct<VkDescriptorPoolCreateInfo>();
         dspci.poolSizeCount = 1;
         dspci.pPoolSizes = &pool_size;
         dspci.maxSets = 1;
-        vk_testing::DescriptorPool pool(*m_device, dspci);
+        vkt::DescriptorPool pool(*m_device, dspci);
 
         auto ds_alloc_info = vku::InitStruct<VkDescriptorSetAllocateInfo>();
         ds_alloc_info.descriptorPool = pool.handle();
@@ -353,13 +353,13 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
         dspci.poolSizeCount = 1;
         dspci.pPoolSizes = &pool_size;
         dspci.maxSets = 2;
-        vk_testing::DescriptorPool pool(*m_device, dspci);
+        vkt::DescriptorPool pool(*m_device, dspci);
         {
             ds_layout_ci.flags = 0;
             ds_layout_ci.bindingCount = 1;
             flags_create_info.bindingCount = 1;
             flags[0] = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
             auto count_alloc_info = vku::InitStruct<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>();
             count_alloc_info.descriptorSetCount = 1;
@@ -382,7 +382,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             // Now update descriptor set with a size that falls within the descriptor set layout size but that is more than the
             // descriptor set size
             binding.descriptorCount = 3;
-            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
             auto count_alloc_info = vku::InitStruct<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>();
             count_alloc_info.descriptorSetCount = 1;

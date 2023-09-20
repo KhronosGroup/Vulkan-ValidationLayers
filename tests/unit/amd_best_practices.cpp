@@ -302,7 +302,7 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     ds_layout_info.bindingCount = 1;
     ds_layout_info.pBindings = &binding;
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -340,7 +340,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -667,7 +667,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     }
 
     uint32_t current_buffer;
-    vk_testing::Semaphore image_acquired(*m_device);
+    vkt::Semaphore image_acquired(*m_device);
     ASSERT_TRUE(image_acquired.initialized());
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);
 
@@ -695,8 +695,8 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     constexpr int fence_warn_limit = 5;
-    const auto fence_ci = vk_testing::Fence::create_info();
-    std::vector<vk_testing::Fence> test_fences(fence_warn_limit);
+    const auto fence_ci = vkt::Fence::create_info();
+    std::vector<vkt::Fence> test_fences(fence_warn_limit);
     for (int i = 0; i < fence_warn_limit - 1; ++i) {
         test_fences[i].init(*m_device, fence_ci);
     }
@@ -707,7 +707,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
 
     constexpr int semaphore_warn_limit = 12;
     const auto semaphore_ci = vku::InitStruct<VkSemaphoreCreateInfo>();
-    std::vector<vk_testing::Semaphore> test_semaphores(semaphore_warn_limit);
+    std::vector<vkt::Semaphore> test_semaphores(semaphore_warn_limit);
     for (int i = 0; i < semaphore_warn_limit - 1; ++i) {
         test_semaphores[i].init(*m_device, semaphore_ci);
     }

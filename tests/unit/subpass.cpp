@@ -363,11 +363,11 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
 
     auto rcpi = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, sd, 0u, nullptr);
 
-    vk_testing::RenderPass rp(*m_device, rcpi);
+    vkt::RenderPass rp(*m_device, rcpi);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 0u, nullptr, 16u, 16u, 1u);
 
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
 
@@ -468,14 +468,14 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 2u, subpasses, 1u, &dep);
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &imageView, 32u, 32u, 1u);
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -536,7 +536,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
                                VK_DEPENDENCY_BY_REGION_BIT};
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 2u, attach, 1u, subpasses, 1u, &dep);
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -548,7 +548,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     VkImageView iv_array[2] = {imageView, imageView2};
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 2u, iv_array, 32u, 32u, 1u);
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
@@ -618,7 +618,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
 
     const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
                                                             size32(subpasses), subpasses.data(), 0u, nullptr);
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
@@ -628,11 +628,11 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     fbci.width = 64;
     fbci.height = 64;
     fbci.layers = 1u;
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     ASSERT_TRUE(fb.initialized());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, sampler_info);
     ASSERT_TRUE(sampler.initialized());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -798,7 +798,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -812,7 +812,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     CreatePipelineHelper pipe1(*this);
     pipe1.gp_ci_.renderPass = render_pass.handle();
@@ -921,17 +921,17 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDependency2-srcStageMask-parameter");
-        vk_testing::RenderPass render_pass(*m_device, rpci);
+        vkt::RenderPass render_pass(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     }
 
     dependency.pNext = &mem_barrier;  // srcStageMask should be ignored now
-    { vk_testing::RenderPass render_pass(*m_device, rpci); }
+    { vkt::RenderPass render_pass(*m_device, rpci); }
 
     mem_barrier.srcStageMask = 0x8000000000000000ULL;  // not real value
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcStageMask-parameter");
-        vk_testing::RenderPass render_pass(*m_device, rpci);
+        vkt::RenderPass render_pass(*m_device, rpci);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1070,7 +1070,7 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
     // Current setup should be OK -- no attachment is both input and output in same subpass
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
 
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 }
 
 TEST_F(NegativeSubpass, InputAttachmentMissing) {
@@ -1162,7 +1162,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpassDescription;
 
-    vk_testing::RenderPass renderPass(*m_device, renderPassInfo);
+    vkt::RenderPass renderPass(*m_device, renderPassInfo);
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     // Make sure we are not just taking the first load and checking all loads on a variable
@@ -1277,7 +1277,7 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &sd;
     rpci.dependencyCount = 0;
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");

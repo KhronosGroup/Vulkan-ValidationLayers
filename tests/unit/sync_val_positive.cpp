@@ -71,7 +71,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attachment;
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     auto fbci = vku::InitStruct<VkFramebufferCreateInfo>();
     fbci.flags = 0;
@@ -81,7 +81,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     fbci.width = width;
     fbci.height = height;
     fbci.layers = layers;
-    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    vkt::Framebuffer framebuffer(*m_device, fbci);
 
     auto rpbi = vku::InitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer;
@@ -186,7 +186,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
-    vk_testing::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
     m_errorMonitor->SetBailout(&bailout);
@@ -244,7 +244,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
-    vk_testing::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
     m_errorMonitor->SetBailout(&bailout);
@@ -293,7 +293,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     auto semaphore_type_info = vku::InitStruct<VkSemaphoreTypeCreateInfo>();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     const auto create_info = vku::InitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
-    vk_testing::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, create_info);
 
     std::atomic<bool> bailout{false};
     m_errorMonitor->SetBailout(&bailout);
@@ -413,8 +413,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmit2AutomaticVisibility) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
-    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
@@ -495,8 +495,8 @@ TEST_F(PositiveSyncVal, PresentAfterSubmitAutomaticVisibility) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
-    const vk_testing::Semaphore acquire_semaphore(*m_device);
-    const vk_testing::Semaphore submit_semaphore(*m_device);
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;

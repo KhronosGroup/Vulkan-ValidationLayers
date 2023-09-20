@@ -35,9 +35,9 @@ TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     auto query_pool_create_info = vku::InitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    const vk_testing::Event event(*m_device);
-    const vk_testing::Event event2(*m_device);
+    const vkt::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vkt::Event event(*m_device);
+    const vkt::Event event2(*m_device);
 
     m_commandBuffer->begin();
     // Different API calls to cover three category of VUIDs: 07316, 07318, 07314
@@ -149,7 +149,7 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    vk_testing::RenderPass rp(*m_device, rpci, true);
+    vkt::RenderPass rp(*m_device, rpci, true);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -165,6 +165,6 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
 
-    vk_testing::Framebuffer fb(*m_device, fb_info);
+    vkt::Framebuffer fb(*m_device, fb_info);
     ASSERT_TRUE(fb.initialized());
 }

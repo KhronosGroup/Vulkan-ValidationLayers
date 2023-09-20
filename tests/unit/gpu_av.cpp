@@ -653,9 +653,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
+    vkt::BufferView uniform_buffer_view(*m_device, bvci);
     bvci.buffer = storage_texel_buffer.handle();
-    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
+    vkt::BufferView storage_buffer_view(*m_device, bvci);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -878,13 +878,13 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
         "      gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
         "}\n";
 
-    vk_testing::Shader *vso = nullptr;
-    vk_testing::Shader *fso = nullptr;
+    vkt::Shader *vso = nullptr;
+    vkt::Shader *fso = nullptr;
     if (shader_objects) {
-        vso = new vk_testing::Shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource),
-                                     &ds.layout_.handle());
-        fso = new vk_testing::Shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                     GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader), &ds.layout_.handle());
+        vso = new vkt::Shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource),
+                              &ds.layout_.handle());
+        fso = new vkt::Shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader),
+                              &ds.layout_.handle());
     }
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1069,7 +1069,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    vk_testing::Buffer buffer0;
+    vkt::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
 
@@ -1078,7 +1078,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
     auto allocate_flag_info = vku::InitStruct<VkMemoryAllocateFlagsInfo>();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vk_testing::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
+    vkt::Buffer buffer1(*m_device, bci, mem_props, &allocate_flag_info);
 
     // Get device address of buffer to write to
     auto pBuffer = buffer1.address();
@@ -1117,7 +1117,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         plci.setLayoutCount = 0;
         plci.pSetLayouts = nullptr;
 
-        vk_testing::PipelineLayout pipeline_layout(*m_device, plci);
+        vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
         char const *shader_source = R"glsl(
             #version 450
@@ -1256,7 +1256,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         plci.pPushConstantRanges = push_constant_ranges;
         plci.setLayoutCount = 0;
         plci.pSetLayouts = nullptr;
-        vk_testing::PipelineLayout mesh_pipeline_layout(*m_device, plci);
+        vkt::PipelineLayout mesh_pipeline_layout(*m_device, plci);
 
         char const *mesh_shader_source = R"glsl(
             #version 460
@@ -1366,7 +1366,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     count_buffer.memory().unmap();
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1474,7 +1474,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     VkBufferObj index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1543,7 +1543,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
@@ -1688,7 +1688,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     draw_buffer.memory().unmap();
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vku::InitStructHelper();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
@@ -2093,7 +2093,7 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2286,9 +2286,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
+    vkt::BufferView uniform_buffer_view(*m_device, bvci);
     bvci.buffer = storage_texel_buffer.handle();
-    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
+    vkt::BufferView storage_buffer_view(*m_device, bvci);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -2331,7 +2331,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
@@ -2368,7 +2368,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
+    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
     ASSERT_TRUE(pipe);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -2467,9 +2467,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
+    vkt::BufferView uniform_buffer_view(*m_device, bvci);
     bvci.buffer = storage_texel_buffer.handle();
-    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
+    vkt::BufferView storage_buffer_view(*m_device, bvci);
 
     OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
     OneOffDescriptorSet common_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -2514,7 +2514,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         }
     )glsl";
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vkt::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper vi(*this);
     vi.InitVertexInputLibInfo();
@@ -2556,7 +2556,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         }
     )glsl";
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
-    vk_testing::GraphicsPipelineLibraryStage fragment_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fragment_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper fragment(*this);
     fragment.InitFragmentLibInfo(&fragment_stage.stage_ci);
@@ -2573,7 +2573,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
+    vkt::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
     ASSERT_TRUE(pipe);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -2709,7 +2709,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSizeShaderObjects) {
     indirect_buffer.memory().unmap();
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    vk_testing::Shader shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));
+    vkt::Shader shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));
 
     m_commandBuffer->begin();
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &shader.handle());

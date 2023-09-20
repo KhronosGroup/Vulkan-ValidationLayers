@@ -171,7 +171,7 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView depth_image_view(*m_device, ivci);
+    vkt::ImageView depth_image_view(*m_device, ivci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -257,7 +257,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                            {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView depth_image_view(*m_device, depth_view_ci);
+    vkt::ImageView depth_image_view(*m_device, depth_view_ci);
 
     VkImageObj color_image(m_device);
     color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -273,7 +273,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView color_image_view(*m_device, color_view_ci);
+    vkt::ImageView color_image_view(*m_device, color_view_ci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -340,7 +340,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     ivci.components.g = VK_COMPONENT_SWIZZLE_G;
     ivci.components.b = VK_COMPONENT_SWIZZLE_B;
     ivci.components.a = VK_COMPONENT_SWIZZLE_A;
-    vk_testing::ImageView render_target_view(*m_device, ivci);
+    vkt::ImageView render_target_view(*m_device, ivci);
 
     // Create secondary command buffer
     auto secondary_cmd_buffer_alloc_info = vku::InitStruct<VkCommandBufferAllocateInfo>();
@@ -348,7 +348,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     secondary_cmd_buffer_alloc_info.commandBufferCount = 1;
 
-    vk_testing::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
+    vkt::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
     auto inheritance_rendering_info = vku::InitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &render_target_ci.format;
@@ -470,7 +470,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                                         {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                          VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
-    vk_testing::ImageView color_image_view(*m_device, color_ivci);
+    vkt::ImageView color_image_view(*m_device, color_ivci);
 
     // Create depth image
     const VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -488,11 +488,11 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                                                 {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
                                                 {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1}};
-    vk_testing::ImageView depth_image_view(*m_device, depth_stencil_ivci);
+    vkt::ImageView depth_image_view(*m_device, depth_stencil_ivci);
     depth_stencil_ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    vk_testing::ImageView stencil_image_view(*m_device, depth_stencil_ivci);
+    vkt::ImageView stencil_image_view(*m_device, depth_stencil_ivci);
     depth_stencil_ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    vk_testing::ImageView depth_stencil_image_view(*m_device, depth_stencil_ivci);
+    vkt::ImageView depth_stencil_image_view(*m_device, depth_stencil_ivci);
 
     // Dynamic rendering structs
     VkRect2D rect{{0, 0}, {32, 32}};
@@ -557,7 +557,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
     renderpass_ci.pSubpasses = subpass_descs.data();
     renderpass_ci.dependencyCount = 1;
     renderpass_ci.pDependencies = &subpass_dependency;
-    vk_testing::RenderPass renderpass(*m_device, renderpass_ci);
+    vkt::RenderPass renderpass(*m_device, renderpass_ci);
 
     std::array<VkImageView, 2> renderpass_image_views = {depth_stencil_image_view.handle(), color_image_view.handle()};
 
@@ -1957,7 +1957,7 @@ TEST_F(NegativeDynamicRendering, BufferBeginInfoLegacy) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
 
-    vk_testing::RenderPass rp1(*m_device, rpci);
+    vkt::RenderPass rp1(*m_device, rpci);
 
     cmd_buffer_inheritance_info.renderPass = rp1.handle();
     cmd_buffer_inheritance_info.subpass = 0x5;
@@ -1998,7 +1998,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBuffer) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
 
-    vk_testing::RenderPass rp1(*m_device, rpci);
+    vkt::RenderPass rp1(*m_device, rpci);
 
     cmd_buf_hinfo.renderPass = rp1.handle();
     cmd_buf_hinfo.subpass = 0x5;
@@ -2082,7 +2082,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    vk_testing::ImageView depth_image_view(*m_device, ivci);
+    vkt::ImageView depth_image_view(*m_device, ivci);
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2203,7 +2203,7 @@ TEST_F(NegativeDynamicRendering, InfoMismatchedSamples) {
     civ_ci.subresourceRange.levelCount = 1;
     civ_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk_testing::ImageView color_image_view(*m_device, civ_ci);
+    vkt::ImageView color_image_view(*m_device, civ_ci);
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_image_view.handle();
@@ -2224,7 +2224,7 @@ TEST_F(NegativeDynamicRendering, InfoMismatchedSamples) {
     div_ci.subresourceRange.levelCount = 1;
     div_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    vk_testing::ImageView depth_image_view(*m_device, div_ci);
+    vkt::ImageView depth_image_view(*m_device, div_ci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -3250,7 +3250,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     render_pass_ci.subpassCount = 1;
     render_pass_ci.pSubpasses = &subpass;
 
-    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();
@@ -3293,7 +3293,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     render_pass_ci.subpassCount = 2;
     render_pass_ci.pSubpasses = subpasses;
 
-    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     auto framebuffer_ci = vku::InitStruct<VkFramebufferCreateInfo>();
     framebuffer_ci.renderPass = render_pass.handle();
@@ -3301,7 +3301,7 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
     framebuffer_ci.height = 32;
     framebuffer_ci.layers = 1;
 
-    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();
@@ -3541,7 +3541,7 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
     library_create_info.pLibraries = &lib.pipeline_;
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentLibInfo(&fs_stage.stage_ci, &library_create_info);
@@ -3620,7 +3620,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper lib2(*this);
     lib2.cb_ci_ = color_blend_state_create_info;
@@ -3638,7 +3638,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
 
     auto pipe_ci = vku::InitStruct<VkGraphicsPipelineCreateInfo>(&library_create_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
-    vk_testing::Pipeline pipe(*m_device, pipe_ci);
+    vkt::Pipeline pipe(*m_device, pipe_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5616,7 +5616,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNonNullRenderPass) {
     };
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
-    vk_testing::RenderPass render_pass(*m_device, rpci);
+    vkt::RenderPass render_pass(*m_device, rpci);
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -6366,7 +6366,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
     };
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpass, 0, nullptr};
-    vk_testing::RenderPass rp(*m_device, rpci);
+    vkt::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
     VkImageObj image(m_device);
@@ -6374,7 +6374,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, 32, 32, 1};
-    vk_testing::Framebuffer fb(*m_device, fbci);
+    vkt::Framebuffer fb(*m_device, fbci);
     ASSERT_TRUE(fb.initialized());
 
     m_commandBuffer->begin();
