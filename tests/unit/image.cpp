@@ -4074,6 +4074,25 @@ TEST_F(NegativeImage, ImageFormatList) {
     CreateImageViewTest(*this, &imageViewInfo, {});
 }
 
+TEST_F(NegativeImage, ImageFormatListEnum) {
+    TEST_DESCRIPTION("VkImageFormatListCreateInfo with bad enum");
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkFormat formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VkFormat(0xBAD00000)};
+    VkImageFormatListCreateInfo formatList = vku::InitStructHelper(nullptr);
+    formatList.viewFormatCount = 2;
+    formatList.pViewFormats = formats;
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.pNext = &formatList;
+
+    CreateImageTest(*this, &image_ci, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
+}
+
 TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT");
 
