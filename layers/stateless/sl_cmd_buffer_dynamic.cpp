@@ -487,7 +487,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkComm
     }
 
     for (uint32_t order_i = 0; order_i < customSampleOrderCount; ++order_i) {
-        skip |= ValidateCoarseSampleOrderCustomNV(&pCustomSampleOrders[order_i]);
+        skip |= ValidateCoarseSampleOrderCustomNV(&pCustomSampleOrders[order_i],
+                                                  error_obj.location.dot(Field::pCustomSampleOrders, order_i));
     }
 
     return skip;

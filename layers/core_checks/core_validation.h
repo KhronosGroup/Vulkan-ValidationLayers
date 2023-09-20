@@ -1882,7 +1882,7 @@ class CoreChecks : public ValidationStateTracker {
                                       VkQueryControlFlags flags, const ErrorObject& error_obj) const override;
     void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                     VkQueryControlFlags flags) override;
-    void EnqueueVerifyEndQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj);
+    void EnqueueVerifyEndQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, Func command);
     bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                     const ErrorObject& error_obj) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;

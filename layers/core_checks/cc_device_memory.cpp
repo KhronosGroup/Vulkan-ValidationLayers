@@ -815,7 +815,7 @@ bool CoreChecks::ValidateMapMemory(const DEVICE_MEMORY_STATE &mem_info, VkDevice
                         "memory has already be mapped.");
     }
 
-    // Validate offset is not over allocaiton size
+    // Validate offset is not over allocation size
     const VkDeviceSize allocationSize = mem_info.alloc_info.allocationSize;
     if (offset >= allocationSize) {
         skip = LogError(map2 ? "VUID-VkMemoryMapInfoKHR-offset-07959" : "VUID-vkMapMemory-offset-00679", memory, offset_loc,
@@ -1117,7 +1117,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         if (disjoint_mem_req.size > alloc_info.allocationSize - bind_info.memoryOffset) {
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(
-                                objlist, "VUID-VkBindImageMemoryInfo-pNext-01621",
+                                "VUID-VkBindImageMemoryInfo-pNext-01621", objlist, loc,
                                 "allocationSize (0x%" PRIxLEAST64 ") minus memoryOffset (0x%" PRIxLEAST64 ") is 0x%" PRIxLEAST64
                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                 ", returned from a call to vkGetImageMemoryRequirements with disjoint image for aspect plane %s.",

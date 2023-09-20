@@ -1055,18 +1055,19 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                                          i);
                     }
 
-                    if (coarse_sample_order_struct &&
-                        coarse_sample_order_struct->sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV &&
-                        coarse_sample_order_struct->customSampleOrderCount != 0) {
-                        skip |= LogError("VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-02072", device,
-                                         viewport_loc.pNext(Struct::VkPipelineViewportCoarseSampleOrderStateCreateInfoNV,
-                                                            Field::sampleOrderType),
-                                         "is not VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV and customSampleOrderCount is not 0.");
-                    }
-
                     if (coarse_sample_order_struct) {
+                        const Location coarse_sample_loc =
+                            viewport_loc.pNext(Struct::VkPipelineViewportCoarseSampleOrderStateCreateInfoNV);
+                        if (coarse_sample_order_struct->sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV &&
+                            coarse_sample_order_struct->customSampleOrderCount != 0) {
+                            skip |= LogError("VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-02072",
+                                             device, coarse_sample_loc.dot(Field::sampleOrderType),
+                                             "is not VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV and customSampleOrderCount is not 0.");
+                        }
+
                         for (uint32_t order_i = 0; order_i < coarse_sample_order_struct->customSampleOrderCount; ++order_i) {
-                            skip |= ValidateCoarseSampleOrderCustomNV(&coarse_sample_order_struct->pCustomSampleOrders[order_i]);
+                            skip |= ValidateCoarseSampleOrderCustomNV(&coarse_sample_order_struct->pCustomSampleOrders[order_i],
+                                                                      coarse_sample_loc.dot(Field::pCustomSampleOrders, order_i));
                         }
                     }
 

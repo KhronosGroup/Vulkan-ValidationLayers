@@ -18,28 +18,9 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::ValidateApiVersion(uint32_t api_version, APIVersion effective_api_version) const {
-    bool skip = false;
-    uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
-    if (effective_api_version != api_version_nopatch) {
-        if ((api_version_nopatch < VK_API_VERSION_1_0) && (api_version != 0)) {
-            skip |= LogError(instance, "VUID-VkApplicationInfo-apiVersion-04010",
-                             "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
-                             "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                             api_version, effective_api_version.Major(), effective_api_version.Minor());
-        } else {
-            skip |= LogWarning(instance, kVUIDUndefined,
-                               "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
-                               "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                               api_version, effective_api_version.Major(), effective_api_version.Minor());
-        }
-    }
-    return skip;
-}
-
 template <typename ExtensionState>
 bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                                                const char *extension_name) const {
+                                                const char *extension_name, const Location &extension_loc) const {
     bool skip = false;
     if (!extension_name) {
         return skip;  // Robust to invalid char *
@@ -61,68 +42,9 @@ bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions
     // Report any missing requirements
     if (missing.size()) {
         std::string missing_joined_list = string_join(", ", missing);
-        skip |= LogError(instance, vuid, "Missing extension%s required by the %s extension %s: %s.",
+        skip |= LogError(vuid, instance, extension_loc, "Missing extension%s required by the %s extension %s: %s.",
                          ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
     }
-    return skip;
-}
-
-bool StatelessValidation::ValidateInstanceExtensions(const VkInstanceCreateInfo *pCreateInfo) const {
-    bool skip = false;
-    // Create and use a local instance extension object, as an actual instance has not been created yet
-    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    InstanceExtensions local_instance_extensions;
-    local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
-
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
-                                      pCreateInfo->ppEnabledExtensionNames[i]);
-    }
-    if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
-        !local_instance_extensions.vk_khr_portability_enumeration) {
-        skip |= LogError(instance, "VUID-VkInstanceCreateInfo-flags-06559",
-                         "vkCreateInstance(): pCreateInfo->flags has VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR set, but "
-                         "pCreateInfo->ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
-    }
-
-    return skip;
-}
-
-bool StatelessValidation::ValidateValidationFeatures(const VkInstanceCreateInfo *pCreateInfo,
-                                                     const VkValidationFeaturesEXT *validation_features) const {
-    bool skip = false;
-    bool debug_printf = false;
-    bool gpu_assisted = false;
-    bool reserve_slot = false;
-    for (uint32_t i = 0; i < validation_features->enabledValidationFeatureCount; i++) {
-        switch (validation_features->pEnabledValidationFeatures[i]) {
-            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
-                gpu_assisted = true;
-                break;
-
-            case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
-                debug_printf = true;
-                break;
-
-            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
-                reserve_slot = true;
-                break;
-
-            default:
-                break;
-        }
-    }
-    if (reserve_slot && !gpu_assisted) {
-        skip |= LogError(instance, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967",
-                         "If VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT is in pEnabledValidationFeatures, "
-                         "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT must also be in pEnabledValidationFeatures.");
-    }
-    if (gpu_assisted && debug_printf) {
-        skip |= LogError(instance, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968",
-                         "If VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is in pEnabledValidationFeatures, "
-                         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT must not also be in pEnabledValidationFeatures.");
-    }
-
     return skip;
 }
 
@@ -139,24 +61,91 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                                                                const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
                                                                const ErrorObject &error_obj) const {
     bool skip = false;
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     // Note: From the spec--
     //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
     //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
     uint32_t local_api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
                                      ? pCreateInfo->pApplicationInfo->apiVersion
                                      : VK_API_VERSION_1_0;
-    skip |= ValidateApiVersion(local_api_version, api_version);
-    skip |= ValidateInstanceExtensions(pCreateInfo);
+
+    uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(local_api_version), VK_VERSION_MINOR(local_api_version), 0);
+    if (api_version != api_version_nopatch) {
+        if ((api_version_nopatch < VK_API_VERSION_1_0) && (local_api_version != 0)) {
+            skip |= LogError("VUID-VkApplicationInfo-apiVersion-04010", instance,
+                             create_info_loc.dot(Field::pApplicationInfo).dot(Field::apiVersion),
+                             "is (0x%08x). "
+                             "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+                             local_api_version, api_version.Major(), api_version.Minor());
+        } else {
+            skip |= LogWarning(instance, kVUIDUndefined,
+                               "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
+                               "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+                               local_api_version, api_version.Major(), api_version.Minor());
+        }
+    }
+
+    // Create and use a local instance extension object, as an actual instance has not been created yet
+    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    InstanceExtensions local_instance_extensions;
+    local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        skip |=
+            ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
+                                  pCreateInfo->ppEnabledExtensionNames[i], create_info_loc.dot(Field::ppEnabledExtensionNames, i));
+    }
+    if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
+        !local_instance_extensions.vk_khr_portability_enumeration) {
+        skip |= LogError("VUID-VkInstanceCreateInfo-flags-06559", instance, create_info_loc.dot(Field::flags),
+                         "has VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR set, but "
+                         "ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
+    }
+
     const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features) skip |= ValidateValidationFeatures(pCreateInfo, validation_features);
+    if (validation_features) {
+        bool debug_printf = false;
+        bool gpu_assisted = false;
+        bool reserve_slot = false;
+        for (uint32_t i = 0; i < validation_features->enabledValidationFeatureCount; i++) {
+            switch (validation_features->pEnabledValidationFeatures[i]) {
+                case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
+                    gpu_assisted = true;
+                    break;
+
+                case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
+                    debug_printf = true;
+                    break;
+
+                case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
+                    reserve_slot = true;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        if (reserve_slot && !gpu_assisted) {
+            skip |= LogError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967", instance,
+                             create_info_loc.pNext(Struct::VkValidationFeaturesEXT, Field::pEnabledValidationFeatures),
+                             "includes both VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT and "
+                             "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT.");
+        }
+        if (gpu_assisted && debug_printf) {
+            skip |= LogError(
+                "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968", instance,
+                create_info_loc.pNext(Struct::VkValidationFeaturesEXT, Field::pEnabledValidationFeatures),
+                "includes both VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT and VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT.");
+        }
+    }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
     while (export_metal_object_info) {
         if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) &&
             (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT)) {
-            skip |= LogError(instance, "VUID-VkInstanceCreateInfo-pNext-06779",
-                             "vkCreateInstance(): The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
+            skip |= LogError("VUID-VkInstanceCreateInfo-pNext-06779", instance, error_obj.location,
+                             "The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
                              "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
                              "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT or "
                              "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT are allowed",
@@ -400,12 +389,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     bool portability_requested = false;
     bool fragmentmask_requested = false;
 
-    for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         skip |=
             ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
-                                      pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |=
+            ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
+                                  pCreateInfo->ppEnabledExtensionNames[i], create_info_loc.dot(Field::ppEnabledExtensionNames, i));
         if (portability_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
             portability_requested = true;
         }

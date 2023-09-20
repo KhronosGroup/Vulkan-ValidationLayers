@@ -498,7 +498,7 @@ class StatelessValidation : public ValidationObject {
 
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                               const char *extension_name) const;
+                               const char *extension_name, const Location &extension_loc) const;
 
     bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
                                       VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
@@ -539,16 +539,9 @@ class StatelessValidation : public ValidationObject {
                                                      VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
                                                      const RecordObject &record_obj) override;
 
-    bool ValidateInstanceExtensions(const VkInstanceCreateInfo *pCreateInfo) const;
-
-    bool ValidateValidationFeatures(const VkInstanceCreateInfo *pCreateInfo,
-                                    const VkValidationFeaturesEXT *validation_features) const;
-
-    bool ValidateApiVersion(uint32_t api_version, APIVersion effective_api_version) const;
-
     bool ValidateString(const Location &loc, const std::string &vuid, const char *validateString) const;
 
-    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const;
+    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order, const Location &order_loc) const;
 
     bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
                                      const Location &loc) const;
