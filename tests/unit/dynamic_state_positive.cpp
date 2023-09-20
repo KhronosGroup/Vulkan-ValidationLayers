@@ -559,23 +559,15 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create a pipeline with a dynamically set depth bias
-    const VkPipelineLayoutObj pl(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.AddShader(&vs);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
     raster_state.depthBiasEnable = VK_TRUE;
-    pipe.SetRasterization(&raster_state);
-    pipe.CreateVKPipeline(pl.handle(), m_renderPass);
+    pipe.rs_state_ci_ = raster_state;
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
 
@@ -588,7 +580,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0,
                 0);  // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here
     m_commandBuffer->EndRenderPass();
@@ -629,20 +621,13 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create a pipeline with a dynamically set depth bias
-    const VkPipelineLayoutObj pl(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.AddShader(&vs);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
     raster_state.depthBiasEnable = VK_TRUE;
-    pipe.SetRasterization(&raster_state);
-    pipe.CreateVKPipeline(pl.handle(), m_renderPass);
+    pipe.rs_state_ci_ = raster_state;
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
 
@@ -655,7 +640,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0,
                 0);  // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here
     m_commandBuffer->EndRenderPass();
@@ -706,21 +691,13 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create a pipeline with a dynamically set depth bias
-    const VkPipelineLayoutObj pl(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.AddShader(&vs);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>();
     raster_state.depthBiasEnable = VK_TRUE;
-    pipe.SetRasterization(&raster_state);
-    pipe.CreateVKPipeline(pl.handle(), m_renderPass);
-
+    pipe.rs_state_ci_ = raster_state;
+    pipe.CreateGraphicsPipeline();
     m_commandBuffer->begin();
 
     vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
@@ -732,7 +709,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
 
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here and in the follow-up calls
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     auto depth_bias_representation = vku::InitStruct<VkDepthBiasRepresentationInfoEXT>();

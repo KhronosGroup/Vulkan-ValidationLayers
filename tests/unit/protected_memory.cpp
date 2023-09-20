@@ -544,33 +544,35 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    VkGraphicsPipelineCreateInfo gp_ci;
-    pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
-    gp_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07369");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
-    gp_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+    pipe.CreateGraphicsPipeline();
+
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
-    VkPipelineObj protected_pipe(m_device);
-    protected_pipe.AddShader(&vs);
-    protected_pipe.AddDefaultColorAttachment();
-    gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
-    protected_pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+
+    CreatePipelineHelper protected_pipe(*this);
+    protected_pipe.InitState();
+    protected_pipe.shader_stages_ = {protected_pipe.vs_->GetStageCreateInfo()};
+    protected_pipe.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+    protected_pipe.CreateGraphicsPipeline();
+
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj unprotected_cmdbuf(m_device, &command_pool);
     unprotected_cmdbuf.begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
-    vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.handle());
+    vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.Handle());
     m_errorMonitor->VerifyFound();
 
     if (pipeline_libraries) {
@@ -641,6 +643,8 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     VkPipelineObj featureless_pipe(&test_device);
     featureless_pipe.AddShader(&vs2);
     featureless_pipe.AddDefaultColorAttachment();
+    VkGraphicsPipelineCreateInfo gp_ci;
+    featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
     auto ms_state = *gp_ci.pRasterizationState;
     ms_state.rasterizerDiscardEnable = VK_TRUE;
     featureless_pipe.SetRasterization(&ms_state);

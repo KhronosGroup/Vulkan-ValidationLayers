@@ -965,23 +965,17 @@ TEST_F(PositiveShaderSpirv, GeometryShaderPassthroughNV) {
         }
     )glsl";
 
-    const VkPipelineLayoutObj pl(m_device);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-
     VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.AddShader(&vs);
-
     VkShaderObj gs(this, gs_src, VK_SHADER_STAGE_GEOMETRY_BIT);
-    pipe.AddShader(&gs);
-
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.AddShader(&fs);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     // Create pipeline and make sure that the usage of NV_geometry_shader_passthrough
     // in the fragment shader does not cause any errors.
-    pipe.CreateVKPipeline(pl.handle(), renderPass());
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveShaderSpirv, SpecializeInt8) {

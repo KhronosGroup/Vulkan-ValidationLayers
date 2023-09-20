@@ -929,26 +929,16 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetMSAA(&pipe_ms_state_ci);
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Render triangle (the error should trigger on the attempt to draw).
     m_commandBuffer->Draw(3, 1, 0, 0);
@@ -2761,25 +2751,19 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
            color = subpassLoad(x);
         }
     )glsl";
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -3051,15 +3035,6 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = 1;
@@ -3070,7 +3045,12 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
     const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
 
     const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.cb_ci_ = vku::InitStruct<VkPipelineColorBlendStateCreateInfo>();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -3352,22 +3332,12 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
-        const VkPipelineLayoutObj pl(m_device);
-
-        VkPipelineObj pipe(m_device);
-        pipe.AddDefaultColorAttachment();
-
-        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-        pipe.AddShader(&vs);
-
-        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-        pipe.AddShader(&fs);
-
-        pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
+        CreatePipelineHelper pipe(*this);
+        pipe.InitState();
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
         const auto raster_state = vku::InitStruct<VkPipelineRasterizationStateCreateInfo>(&depth_bias_representation);
-        pipe.SetRasterization(&raster_state);
-
-        pipe.CreateVKPipeline(pl.handle(), m_renderPass);
+        pipe.rs_state_ci_ = raster_state;
+        pipe.CreateGraphicsPipeline();
     };
 
     auto depth_bias_representation = vku::InitStruct<VkDepthBiasRepresentationInfoEXT>();

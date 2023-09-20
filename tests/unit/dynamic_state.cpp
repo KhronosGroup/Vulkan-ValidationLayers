@@ -3627,36 +3627,28 @@ TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device);
+    CreatePipelineHelper pipeline_dyn_vp(*this);
+    pipeline_dyn_vp.InitState();
+    pipeline_dyn_vp.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipeline_dyn_vp.CreateGraphicsPipeline();
 
-    VkPipelineObj pipeline_dyn_vp(m_device);
-    pipeline_dyn_vp.AddShader(&vs);
-    pipeline_dyn_vp.AddShader(&fs);
-    pipeline_dyn_vp.AddDefaultColorAttachment();
-    pipeline_dyn_vp.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-    pipeline_dyn_vp.SetScissor(m_scissors);
-    ASSERT_VK_SUCCESS(pipeline_dyn_vp.CreateVKPipeline(pipeline_layout.handle(), m_renderPass));
-
-    VkPipelineObj pipeline_dyn_sc(m_device);
-    pipeline_dyn_sc.AddShader(&vs);
-    pipeline_dyn_sc.AddShader(&fs);
-    pipeline_dyn_sc.AddDefaultColorAttachment();
-    pipeline_dyn_sc.SetViewport(m_viewports);
-    pipeline_dyn_sc.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
-    ASSERT_VK_SUCCESS(pipeline_dyn_sc.CreateVKPipeline(pipeline_layout.handle(), m_renderPass));
+    CreatePipelineHelper pipeline_dyn_sc(*this);
+    pipeline_dyn_sc.InitState();
+    pipeline_dyn_sc.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipeline_dyn_sc.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_vp.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_vp.Handle());
     vk::CmdSetViewport(m_commandBuffer->handle(), 1, 1,
                        &m_viewports[0]);  // Forgetting to set needed 0th viewport (PSO viewportCount == 1)
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_sc.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_sc.Handle());
     vk::CmdSetScissor(m_commandBuffer->handle(), 1, 1,
                       &m_scissors[0]);  // Forgetting to set needed 0th scissor (PSO scissorCount == 1)
     m_commandBuffer->Draw(1, 0, 0, 0);

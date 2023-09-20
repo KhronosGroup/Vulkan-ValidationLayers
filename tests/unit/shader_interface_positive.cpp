@@ -326,28 +326,23 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
         "write mask is 0.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *fsSource = R"glsl(
         #version 450
         void main() {}
     )glsl";
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0, not written, but also masked */
-    pipe.AddDefaultColorAttachment(0);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = descriptorSet.GetPipelineLayout();
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
@@ -495,6 +490,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     TEST_DESCRIPTION("Positive test for a correctly matched input attachment");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *fsSource = R"glsl(
         #version 450
@@ -504,15 +500,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
            color = subpassLoad(x);
         }
     )glsl";
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -539,8 +527,12 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
     vk_testing::RenderPass rp(*m_device, rpci);
 
-    // should be OK. would go wrong here if it's going to...
-    pipe.CreateVKPipeline(pl.handle(), rp.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {

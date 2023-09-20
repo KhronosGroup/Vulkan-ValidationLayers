@@ -718,50 +718,23 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
                                              "UNASSIGNED-BestPractices-Zcull-LessGreaterRatio");
     };
 
-    const char *vsSource = R"glsl(
-        #version 450
-        void main() {}
-    )glsl";
+    auto depth_stencil_state_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
-
-    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-
-    VkGraphicsPipelineCreateInfo create_info = vku::InitStructHelper();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-    create_info.pDepthStencilState = &depth_stencil_state_ci;
-    pipe.CreateVKPipeline(pipeline_layout.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {};
-    viewport.width = 32;
-    viewport.height = 32;
-    viewport.minDepth = 1.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor = {};
-    scissor.extent.width = 32;
-    scissor.extent.height = 32;
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.ds_ci_ = depth_stencil_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
 
     auto cmd = m_commandBuffer->handle();
 
-    vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
-
-    vk::CmdSetViewport(cmd, 0, 1, &viewport);
-    vk::CmdSetScissor(cmd, 0, 1, &scissor);
 
     {
         SCOPED_TRACE("Unbalance");
