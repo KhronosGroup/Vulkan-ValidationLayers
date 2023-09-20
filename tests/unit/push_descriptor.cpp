@@ -267,7 +267,6 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -288,17 +287,13 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
            color = textureLod(tex, vec2(0.5, 0.5), 0.0);
         }
     )glsl";
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -328,11 +323,9 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         }
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                     &descriptor_write);
-        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
-        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
 
         if (i == 1) {
             // Test path where image layout in command buffer is known at draw time

@@ -297,26 +297,19 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
             gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;
         }
     )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.vp_state_ci_.viewportCount = 0;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+    pipe.CreateGraphicsPipeline();
 
-    VkPipelineObj pipe(m_device);
-    std::vector<VkRect2D> scissors = {{{0, 0}, {16, 16}}, {{1, 1}, {16, 16}}};
-    pipe.SetScissor(scissors);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-    const VkPipelineLayoutObj pl(m_device);
-    {
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        pipe.AddShader(&vs);
-        VkResult err = pipe.CreateVKPipeline(pl.handle(), renderPass());
-        ASSERT_VK_SUCCESS(err);
-    }
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkViewport viewports[] = {{0, 0, 16, 16, 0, 1}, {1, 1, 16, 16, 0, 1}};
     vk::CmdSetViewportWithCountEXT(m_commandBuffer->handle(), 2, viewports);

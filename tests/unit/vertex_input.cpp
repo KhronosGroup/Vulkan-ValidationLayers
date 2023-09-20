@@ -534,7 +534,6 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkPipelineLayoutObj pipeline_layout(m_device);
@@ -586,36 +585,34 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     )glsl";
 
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineObj pipe1(m_device);
-    pipe1.AddDefaultColorAttachment();
-    pipe1.AddShader(&vs);
-    pipe1.AddShader(&fs);
-    pipe1.AddVertexInputBindings(&input_binding, 1);
-    pipe1.AddVertexInputAttribs(&input_attribs[0], 3);
-    pipe1.SetViewport(m_viewports);
-    pipe1.SetScissor(m_scissors);
-    pipe1.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    auto vi_state = vku::InitStruct<VkPipelineVertexInputStateCreateInfo>();
+    vi_state.flags = 0;
+    vi_state.vertexBindingDescriptionCount = 1;
+    vi_state.pVertexBindingDescriptions = &input_binding;
+    vi_state.vertexAttributeDescriptionCount = 3;
+    vi_state.pVertexAttributeDescriptions = &input_attribs[0];
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitState();
+    pipe1.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe1.vi_ci_ = vi_state;
+    pipe1.CreateGraphicsPipeline();
 
     input_binding.stride = 6;
 
-    VkPipelineObj pipe2(m_device);
-    pipe2.AddDefaultColorAttachment();
-    pipe2.AddShader(&vs);
-    pipe2.AddShader(&fs);
-    pipe2.AddVertexInputBindings(&input_binding, 1);
-    pipe2.AddVertexInputAttribs(&input_attribs[0], 3);
-    pipe2.SetViewport(m_viewports);
-    pipe2.SetScissor(m_scissors);
-    pipe2.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitState();
+    pipe2.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe2.vi_ci_ = vi_state;
+    pipe2.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Test with invalid buffer offset
     VkDeviceSize offset = 1;
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 1
@@ -625,7 +622,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 
     // Test with invalid buffer stride
     offset = 0;
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");  // attribute 0
     // Attribute[1] is aligned properly even with a wrong stride

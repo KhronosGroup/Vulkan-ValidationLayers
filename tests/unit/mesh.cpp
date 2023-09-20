@@ -885,8 +885,6 @@ TEST_F(NegativeMesh, DrawCmds) {
     features2.features.multiDrawIndirect = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
@@ -930,8 +928,6 @@ TEST_F(NegativeMesh, DrawCmds) {
     )";
 
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -941,26 +937,18 @@ TEST_F(NegativeMesh, DrawCmds) {
     buffer_create_info.size = 64;
     VkBufferObj count_buffer(*m_device, buffer_create_info);
 
-    VkPipelineLayoutObj pipeline_layout(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&mesh_shader);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
 
-    VkPipelineObj pipe1(m_device);
-    pipe1.AddDefaultColorAttachment();
-    pipe1.AddShader(&vs);
-    pipe1.AddShader(&fs);
-    pipe1.SetViewport(m_viewports);
-    pipe1.SetScissor(m_scissors);
-    pipe1.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitState();
+    pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     uint32_t max_group_count_X = mesh_shader_properties.maxTaskWorkGroupCount[0];
     uint32_t max_group_count_Y = mesh_shader_properties.maxTaskWorkGroupCount[1];
@@ -1007,7 +995,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     m_commandBuffer->Draw(3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-stage-06480");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087");
     vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
@@ -1046,8 +1034,6 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
@@ -1095,25 +1081,20 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     )";
 
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
     VkBufferObj buffer(*m_device, buffer_create_info);
 
-    VkPipelineLayoutObj pipeline_layout(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&mesh_shader);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088");
     vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2,
@@ -1209,8 +1190,6 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     )glsl";
 
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_NV);
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -1220,33 +1199,25 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     buffer_create_info.size = 64;
     VkBufferObj count_buffer(*m_device, buffer_create_info);
 
-    VkPipelineLayoutObj pipeline_layout(m_device);
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&mesh_shader);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
 
-    VkPipelineObj pipe1(m_device);
-    pipe1.AddDefaultColorAttachment();
-    pipe1.AddShader(&vs);
-    pipe1.AddShader(&fs);
-    pipe1.SetViewport(m_viewports);
-    pipe1.SetScissor(m_scissors);
-    pipe1.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe1(*this);
+    pipe1.InitState();
+    pipe1.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(renderPassBeginInfo());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156");
     vk::CmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandNV) * 2, 1,
                                    sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksNV-stage-06480");
     vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);

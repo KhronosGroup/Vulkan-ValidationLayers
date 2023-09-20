@@ -375,24 +375,17 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     const VkPipelineLayoutObj pipeline_layout(m_device, {&set_layout, &set_layout});
     OneOffDescriptorSet set(m_device, {binding});
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {{0, 0}, {64, 64}};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout, m_renderPass);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Bind set 0.
     vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Core checks prevent SyncVal from running when error is found. This test has core checks disabled and also invalid
     // setup where a shader uses not bound set 1.

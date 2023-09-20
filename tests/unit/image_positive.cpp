@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 #include "generated/vk_extension_helper.h"
 
 #include "utils/vk_layer_utils.h"
@@ -1056,8 +1057,6 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1103,16 +1102,12 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
     descriptor_write.pImageInfo = &img_info;
 
     // Create PSO to be used for draw-time errors below
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     VkCommandBufferObj cmd_buf(m_device, m_commandPool);
 
@@ -1169,11 +1164,9 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
             }
 
             cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                       &descriptorSet, 0, NULL);
-            vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
-            vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
 
             cmd_buf.Draw(1, 0, 0, 0);
 
@@ -1316,16 +1309,13 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     vk_testing::RenderPass rp(*m_device, rpci);
 
     // Create PSO to be used for draw-time errors below
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), rp.handle());
-
-    VkViewport viewport = {0, 0, kWidth, kHeight, 0, 1};
-    VkRect2D scissor = {{0, 0}, {kWidth, kHeight}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.CreateGraphicsPipeline();
 
     VkCommandBufferObj cmd_buf(m_device, m_commandPool);
 
@@ -1380,11 +1370,9 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
 
             cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                       &descriptorSet, 0, NULL);
-            vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
-            vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
 
             cmd_buf.Draw(1, 0, 0, 0);
 

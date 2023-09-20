@@ -60,13 +60,7 @@ TEST_F(PositiveDynamicRendering, Draw) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -77,14 +71,12 @@ TEST_F(PositiveDynamicRendering, Draw) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -97,9 +89,7 @@ TEST_F(PositiveDynamicRendering, Draw) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
@@ -110,22 +100,9 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto depth_format = FindSupportedDepthOnlyFormat(gpu());
-    auto ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.SetDepthStencil(&ds_ci);
-    pipe.AddDefaultColorAttachment();
-
-    VkPipelineObj pipe2(m_device);
-    pipe2.AddShader(&vs);
-    pipe2.AddShader(&fs);
-    pipe2.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -137,18 +114,21 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
 
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    pipe2.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-    pipe2.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitState();
+    pipe2.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe2.gp_ci_.layout = pl.handle();
+    pipe2.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe2.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -161,17 +141,12 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
 
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    // NOTE: Setting dynamic state does not count as "using" the currently bound pipeline.
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
@@ -212,38 +187,26 @@ TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetDepthStencil(&ds_ci);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
-
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.layout = pl.handle();
-    create_info.renderPass = VK_NULL_HANDLE;
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
     auto pipeline_rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_D16_UNORM;  // D16_UNORM has guaranteed support
-    pipeline_rendering_info.pNext = create_info.pNext;
-    create_info.pNext = &pipeline_rendering_info;
 
-    const VkRenderPass render_pass = VK_NULL_HANDLE;
-    pipe.CreateVKPipeline(pl.handle(), render_pass, &create_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.ds_ci_ = ds_ci;
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
@@ -351,14 +314,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
@@ -368,14 +324,13 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -392,9 +347,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
@@ -402,9 +355,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR | VK_RENDERING_SUSPENDING_BIT_KHR;
     cb1.begin();
     cb1.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(cb1.handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(cb1.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(cb1.handle(), 3, 1, 0, 0);
     cb1.EndRendering();
     cb1.end();
@@ -412,9 +363,7 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR;
     cb2.begin();
     cb2.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(cb2.handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(cb2.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(cb2.handle(), 3, 1, 0, 0);
     cb2.EndRendering();
     cb2.end();
@@ -442,13 +391,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -458,10 +401,6 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     auto rendering_info = vku::InitStruct<VkPipelineRenderingCreateInfoKHR>();
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachmentFormats = &color_format;
-
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &rendering_info;
 
     VkAttachmentReference attachment = {};
     attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -484,7 +423,13 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
 
     vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
-    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.pNext = &rendering_info;
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
@@ -501,13 +446,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -534,10 +473,12 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
 
     vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    // if there isn't a VkPipelineRenderingCreateInfoKHR, the driver is supposed to use safe default values
-    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
@@ -760,13 +701,7 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentColorOutputGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -777,14 +712,12 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -799,9 +732,7 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     // Primary suspends render
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
 
@@ -810,9 +741,7 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR;
     secondary.begin();
     secondary.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(secondary.handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(secondary.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     secondary.Draw(3, 1, 0, 0);
     secondary.EndRendering();
     secondary.end();
@@ -844,13 +773,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -861,14 +784,12 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    auto create_info = vku::InitStruct<VkGraphicsPipelineCreateInfo>();
-    pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    create_info.pNext = &pipeline_rendering_info;
-
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    VkRect2D scissor = {{0, 0}, {16, 16}};
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -883,9 +804,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     // First primary with secondary that suspends render
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
 
@@ -893,9 +812,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT_KHR;
     secondary.begin();
     secondary.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(secondary.handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(secondary.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     secondary.Draw(3, 1, 0, 0);
     secondary.EndRendering();
     secondary.end();
@@ -910,9 +827,7 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT_KHR;
     cb.begin();
     cb.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdSetViewport(cb.handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(cb.handle(), 0, 1, &scissor);
+    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(cb.handle(), 3, 1, 0, 0);
     cb.EndRendering();
     cb.end();

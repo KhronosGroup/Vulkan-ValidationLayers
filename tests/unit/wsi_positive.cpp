@@ -898,24 +898,18 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
         GTEST_SKIP() << "We need VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT feature";
     }
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkRenderpassObj render_pass(m_device, format);
 
-    VkPipelineLayoutObj pipeline_layout(DeviceObj());
-    VkRenderpassObj render_pass(DeviceObj(), format);
-
-    VkPipelineObj pipeline(DeviceObj());
-    pipeline.AddShader(&vs);
-    pipeline.AddShader(&fs);
     VkPipelineColorBlendAttachmentState pcbas = {};
     pcbas.blendEnable = VK_TRUE;  // !!!
     pcbas.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    pipeline.AddColorAttachment(0, pcbas);
-    pipeline.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
-    pipeline.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
 
-    ASSERT_VK_SUCCESS(pipeline.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle()));
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.cb_attachments_[0] = pcbas;
+    pipe.CreateGraphicsPipeline();
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     const VkFenceObj fence(*m_device);
@@ -948,7 +942,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     rpbi.renderArea = {{0, 0}, {1, 1}};
     cmdbuff.BeginRenderPass(rpbi);
 
-    vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+    vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 }
 
 TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {

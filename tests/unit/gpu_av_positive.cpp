@@ -16,6 +16,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 class PositiveGpuAssistedLayer : public VkGpuAssistedLayerTest {};
 
@@ -257,7 +258,6 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
@@ -270,9 +270,6 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     vk_testing::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
-
-    VkViewport viewport = m_viewports[0];
-    VkRect2D scissors = m_scissors[0];
 
     auto submit_info = vku::InitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -317,20 +314,18 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     )glsl";
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    pipe.DisableRasterization();
-    auto subcase_err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(subcase_err);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -350,10 +345,8 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     data[1] = 4;
     buffer0.memory().unmap();
 
-    subcase_err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(subcase_err);
-    subcase_err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(subcase_err);
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
 }
 
 // Regression test for semaphore timeout with GPU-AV enabled:

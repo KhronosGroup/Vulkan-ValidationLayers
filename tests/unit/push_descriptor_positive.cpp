@@ -151,7 +151,6 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Create a descriptor to push
@@ -179,8 +178,8 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    VkPipelineObj pipe0(m_device);
-    VkPipelineObj pipe1(m_device);
+    CreatePipelineHelper pipe0(*this);
+    CreatePipelineHelper pipe1(*this);
     {
         // Note: the push descriptor set is set number 2.
         const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
@@ -195,17 +194,13 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-        VkPipelineObj &pipe = pipe0;
-        pipe.SetViewport(m_viewports);
-        pipe.SetScissor(m_scissors);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-        pipe.AddDefaultColorAttachment();
-        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        pipe0.InitState();
+        pipe0.shader_stages_[1] = fs.GetStageCreateInfo();
+        pipe0.gp_ci_.layout = pipeline_layout.handle();
+        pipe0.CreateGraphicsPipeline();
 
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
 
         const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
             vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
@@ -233,17 +228,13 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-        VkPipelineObj &pipe = pipe1;
-        pipe.SetViewport(m_viewports);
-        pipe.SetScissor(m_scissors);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-        pipe.AddDefaultColorAttachment();
-        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        pipe1.InitState();
+        pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
+        pipe1.gp_ci_.layout = pipeline_layout.handle();
+        pipe1.CreateGraphicsPipeline();
 
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
 
         // Note: now pushing to desciptor set number 3.
         vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 3, 1,

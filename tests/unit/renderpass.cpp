@@ -2424,9 +2424,6 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
     // Create a renderpass that will be incompatible with default renderpass
     VkAttachmentReference color_att = {};
     color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2445,17 +2442,12 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     rpci.pAttachments = &attach_desc;
     vk_testing::RenderPass rp(*m_device, rpci);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {{0, 0}, {64, 64}};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), rp.handle());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.CreateGraphicsPipeline();
 
     auto cbii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
     cbii.renderPass = rp.handle();
@@ -2464,7 +2456,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     cbbi.pInheritanceInfo = &cbii;
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
@@ -2497,10 +2489,6 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
                                                  });
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2558,18 +2546,11 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     rp_begin.framebuffer = fb.handle();
     rp_begin.renderArea = {{0, 0}, {128, 128}};
 
-    // Create a graphics pipeline with rp2
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {{0, 0}, {64, 64}};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), rp2.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp2.handle();
+    pipe.CreateGraphicsPipeline();
 
     // Begin renderpass and bind to pipeline
     auto cbii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
@@ -2579,7 +2560,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     cbbi.pInheritanceInfo = &cbii;
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).

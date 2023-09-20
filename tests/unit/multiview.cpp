@@ -938,10 +938,6 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
-
     // Set up VkRenderPassCreateInfo struct used with VK_VERSION_1_0
     VkAttachmentReference color_att = {};
     color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1052,51 +1048,31 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     rp_begin.renderArea = {{0, 0}, {128, 128}};
 
     // Create a graphics pipeline with rp[1]
-    VkPipelineObj pipe_1(m_device);
-    pipe_1.AddShader(&vs);
-    pipe_1.AddShader(&fs);
-    pipe_1.AddDefaultColorAttachment();
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe_1.SetViewport(m_viewports);
-    VkRect2D rect = {{0, 0}, {64, 64}};
-    m_scissors.push_back(rect);
-    pipe_1.SetScissor(m_scissors);
-    pipe_1.CreateVKPipeline(pipeline_layout.handle(), rp[1].handle());
+    CreatePipelineHelper pipe_1(*this);
+    pipe_1.InitState();
+    pipe_1.gp_ci_.layout = pipeline_layout.handle();
+    pipe_1.gp_ci_.renderPass = rp[1].handle();
+    pipe_1.CreateGraphicsPipeline();
 
     // Create a graphics pipeline with rp[2]
-    VkPipelineObj pipe_2(m_device);
-    pipe_2.AddShader(&vs);
-    pipe_2.AddShader(&fs);
-    pipe_2.AddDefaultColorAttachment();
-    m_viewports.push_back(viewport);
-    pipe_2.SetViewport(m_viewports);
-    m_scissors.push_back(rect);
-    pipe_2.SetScissor(m_scissors);
-    pipe_2.CreateVKPipeline(pipeline_layout.handle(), rp[2].handle());
+    CreatePipelineHelper pipe_2(*this);
+    pipe_2.InitState();
+    pipe_2.gp_ci_.layout = pipeline_layout.handle();
+    pipe_2.gp_ci_.renderPass = rp[2].handle();
+    pipe_2.CreateGraphicsPipeline();
 
-    VkPipelineObj pipe2_1(m_device);
-    VkPipelineObj pipe2_2(m_device);
+    CreatePipelineHelper pipe2_1(*this);
+    CreatePipelineHelper pipe2_2(*this);
     if (rp2Supported) {
-        // Create a graphics pipeline with rp2[1]
-        pipe2_1.AddShader(&vs);
-        pipe2_1.AddShader(&fs);
-        pipe2_1.AddDefaultColorAttachment();
-        m_viewports.push_back(viewport);
-        pipe2_1.SetViewport(m_viewports);
-        m_scissors.push_back(rect);
-        pipe2_1.SetScissor(m_scissors);
-        pipe2_1.CreateVKPipeline(pipeline_layout.handle(), rp2[1].handle());
+        pipe2_1.InitState();
+        pipe2_1.gp_ci_.layout = pipeline_layout.handle();
+        pipe2_1.gp_ci_.renderPass = rp[1].handle();
+        pipe2_1.CreateGraphicsPipeline();
 
-        // Create a graphics pipeline with rp2[2]
-        pipe2_2.AddShader(&vs);
-        pipe2_2.AddShader(&fs);
-        pipe2_2.AddDefaultColorAttachment();
-        m_viewports.push_back(viewport);
-        pipe2_2.SetViewport(m_viewports);
-        m_scissors.push_back(rect);
-        pipe2_2.SetScissor(m_scissors);
-        pipe2_2.CreateVKPipeline(pipeline_layout.handle(), rp2[2].handle());
+        pipe2_2.InitState();
+        pipe2_2.gp_ci_.layout = pipeline_layout.handle();
+        pipe2_2.gp_ci_.renderPass = rp[2].handle();
+        pipe2_2.CreateGraphicsPipeline();
     }
 
     auto cbii = vku::InitStruct<VkCommandBufferInheritanceInfo>();
@@ -1110,7 +1086,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
     // Bind rp[1]'s pipeline to command buffer
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (error on Multiview usage should trigger on draw)
@@ -1118,7 +1094,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     m_errorMonitor->VerifyFound();
 
     // Bind rp[2]'s pipeline to command buffer
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)
@@ -1138,7 +1114,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
         // Bind rp2[1]'s pipeline to command buffer
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_1.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_1.Handle());
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
         // Render triangle (error on Multiview usage should trigger on draw)
@@ -1146,7 +1122,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         m_errorMonitor->VerifyFound();
 
         // Bind rp2[2]'s pipeline to command buffer
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_2.handle());
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2_2.Handle());
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
         // Render triangle (error on non-matching viewMasks for Multiview usage should trigger on draw)

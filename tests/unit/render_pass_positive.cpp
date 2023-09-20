@@ -473,26 +473,14 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
     err = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
     ASSERT_VK_SUCCESS(err);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    m_viewports.push_back(viewport);
-    pipe.SetViewport(m_viewports);
-    VkRect2D rect = {{0, 0}, {64, 64}};
-    m_scissors.push_back(rect);
-    pipe.SetScissor(m_scissors);
-
-    const VkPipelineLayoutObj pl(m_device);
-    pipe.CreateVKPipeline(pl.handle(), rp);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.gp_ci_.renderPass = rp;
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // Destroy renderPass before pipeline is used in Draw
     //  We delay until after CmdBindPipeline to verify that invalid binding isn't
     //  created between CB & renderPass, which we used to do.
@@ -759,8 +747,6 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
            x = texture(depth, vec2(0));
         }
     )glsl";
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create descriptor set and friends.
@@ -792,18 +778,13 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_LESS;
 
-    m_viewports.push_back(VkViewport{0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f});
-    m_scissors.push_back(VkRect2D{{0, 0}, {64, 64}});
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetDepthStencil(&ds_ci);
-
-    pipe.CreateVKPipeline(pipeline_layout.handle(), rp.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.ds_ci_ = ds_ci;
+    pipe.CreateGraphicsPipeline();
 
     // Start pushing commands.
 
@@ -817,7 +798,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, NULL);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());

@@ -5504,35 +5504,30 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     CreatePipelineHelper::OneshotTest(*this, set_vpci, kErrorBit,
                                       vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726"}));
 
-    const VkPipelineLayoutObj pl(m_device);
-
     VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.SetViewport(vp);
-    pipe.SetScissor(sc);
-    pipe.CreateVKPipeline(pl.handle(), renderPass());
+    vpsi.viewportCount = vp_count;
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.vp_state_ci_ = vpci;
+    pipe.CreateGraphicsPipeline();
 
-    VkPipelineObj pipeDynWScale(m_device);
-    pipeDynWScale.AddDefaultColorAttachment();
-    pipeDynWScale.AddShader(&vs);
-    pipeDynWScale.AddShader(&fs);
-    pipeDynWScale.SetViewport(vp);
-    pipeDynWScale.SetScissor(sc);
-    pipeDynWScale.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
-    pipeDynWScale.CreateVKPipeline(pl.handle(), renderPass());
+    CreatePipelineHelper pipe_dynamic(*this);
+    pipe_dynamic.InitState();
+    pipe_dynamic.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe_dynamic.vp_state_ci_ = vpci;
+    pipe_dynamic.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
+    pipe_dynamic.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
 
     // Bind pipeline without dynamic w scaling enabled
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Bind pipeline that has dynamic w-scaling enabled
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeDynWScale.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_dynamic.Handle());
 
     const auto max_vps = m_device->props.limits.maxViewports;
 

@@ -52,7 +52,6 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
         GTEST_SKIP() << "Partially bound bindings not supported, skipping test";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
@@ -114,25 +113,21 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
                 gl_Position = vec4(readit.val);
         }
     )glsl";
-
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitState();
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
     auto begin_info = vku::InitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    VkViewport viewport = {0, 0, 16, 16, 0, 1};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    VkRect2D scissor = {{0, 0}, {16, 16}};
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 1, 0, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
