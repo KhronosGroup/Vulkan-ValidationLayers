@@ -71,11 +71,9 @@ def compile(filename, glslang_validator):
     # remove temp file
     os.remove(tmpfile)
 
-    # The disassembled SPIR-V first line has file path to the shader
-    # Because this might be absolute on the system, remove it
-    return (words, output.rstrip()[output.index('\n') + 1:])
+    return words
 
-def write(words, disassembled, filename, apiname, outfilename = None):
+def write(words, filename, apiname, outfilename = None):
     name = identifierize(os.path.basename(filename))
 
     literals = []
@@ -109,15 +107,10 @@ def write(words, disassembled, filename, apiname, outfilename = None):
 *
 ****************************************************************************/
 
-// disassembled SPIR-V
-#if 0
-%s
-#endif
-
 static const uint32_t %s[%d] = {
 %s
 };
-""" % (disassembled, name, len(words), "\n".join(literals))
+""" % (name, len(words), "\n".join(literals))
 
     if outfilename:
       out_file = outfilename
@@ -159,8 +152,8 @@ def main():
         sys.exit("Cannot find glslangValidator " + glslang_validator)
 
     for shader in generate_shaders:
-        words, disassembled = compile(shader, glslang_validator)
-        write(words, disassembled, shader, args.api, args.outfilename)
+        words = compile(shader, glslang_validator)
+        write(words, shader, args.api, args.outfilename)
 
 if __name__ == '__main__':
   main()
