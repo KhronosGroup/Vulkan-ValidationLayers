@@ -810,6 +810,7 @@ class ResourceAccessState : public SyncStageAccess {
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2KHR first_read_stages_;
     OrderingBarrier first_write_layout_ordering_;
+    bool first_access_closed_;
 
     static OrderingBarriers kOrderingRules;
 };
