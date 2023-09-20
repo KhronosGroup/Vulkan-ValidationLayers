@@ -156,7 +156,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     // Send non-zero bufferMemoryBarrierCount
     // Construct a valid BufferMemoryBarrier to avoid any parameter errors
     // First we need a valid buffer to reference
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     VkBufferMemoryBarrier bmb = vku::InitStructHelper();
     bmb.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -283,7 +283,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test(" used with no memory bound. Memory should be bound by calling vkBindImageMemory()",
               " used with no memory bound. Memory should be bound by calling vkBindBufferMemory()");
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     conc_test.buffer_barrier_.buffer = buffer.handle();
 
@@ -806,7 +806,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test(" used with no memory bound. Memory should be bound by calling vkBindImageMemory()",
               " used with no memory bound. Memory should be bound by calling vkBindBufferMemory()");
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     conc_test.buffer_barrier_.buffer = buffer.handle();
 
@@ -1414,7 +1414,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     sync2_features.synchronization2 = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkBufferObj buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32);
     auto barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
     barrier.buffer = buffer.handle();
     barrier.size = VK_WHOLE_SIZE;
@@ -1791,7 +1791,7 @@ TEST_F(NegativeSyncObject, BarrierQueues) {
         GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
     }
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     VkBufferMemoryBarrier bmb = vku::InitStructHelper();
     bmb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -2252,7 +2252,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueues) {
     }
 
     vkt::Event event(*m_device);
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkBufferMemoryBarrier buffer_memory_barrier = vku::InitStructHelper();
     buffer_memory_barrier.srcAccessMask = 0;

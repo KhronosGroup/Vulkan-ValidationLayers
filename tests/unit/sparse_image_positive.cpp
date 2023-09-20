@@ -61,8 +61,8 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     memory_info.allocationSize = memory_reqs.alignment;
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
-    VkDeviceMemoryObj memory_one(*m_device, memory_info);
-    VkDeviceMemoryObj memory_two(*m_device, memory_info);
+    vkt::DeviceMemory memory_one(*m_device, memory_info);
+    vkt::DeviceMemory memory_two(*m_device, memory_info);
 
     std::array<VkSparseMemoryBind, 2> binds = {};
     binds[0].memory = memory_one;
@@ -125,7 +125,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
-    VkDeviceMemoryObj memory(*m_device, memory_info);
+    vkt::DeviceMemory memory(*m_device, memory_info);
 
     VkSparseMemoryBind bind;
     bind.flags = 0;
@@ -240,7 +240,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     VkMemoryAllocateInfo metadata_memory_info = vku::InitStructHelper();
     metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
     m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
-    VkDeviceMemoryObj metadata_memory(*m_device, metadata_memory_info);
+    vkt::DeviceMemory metadata_memory(*m_device, metadata_memory_info);
 
     // Bind metadata
     VkSparseMemoryBind sparse_bind = {};

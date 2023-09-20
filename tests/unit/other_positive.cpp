@@ -704,7 +704,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         metalEventCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
 
         auto eventCreateInfo = vku::InitStruct<VkEventCreateInfo>(&metalEventCreateInfo);
-        VkEventObj event(*m_device, eventCreateInfo);
+        vkt::Event event(*m_device, eventCreateInfo);
         ASSERT_TRUE(event.initialized());
 
         auto eventInfo = vku::InitStruct<VkExportMetalSharedEventInfoEXT>();

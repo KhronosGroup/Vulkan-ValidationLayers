@@ -1734,9 +1734,9 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    VkBufferObj buffer_a(*m_device, 256, transfer_usage, mem_prop);
-    VkBufferObj buffer_b(*m_device, 256, transfer_usage, mem_prop);
-    VkBufferObj buffer_c(*m_device, 256, transfer_usage, mem_prop);
+    vkt::Buffer buffer_a(*m_device, 256, transfer_usage, mem_prop);
+    vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
+    vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
     VkBufferCopy region = {0, 0, 256};
     VkCommandPoolObj pool0(m_device, q0->get_family_index());
@@ -2066,7 +2066,7 @@ struct SemBufferRaceData {
     uint32_t iterations{10000};
     std::atomic<bool> bailout{false};
 
-    std::unique_ptr<VkBufferObj> thread_buffer;
+    std::unique_ptr<vkt::Buffer> thread_buffer;
 
     virtual VkResult Wait(uint64_t sem_value) = 0;
 
@@ -2318,7 +2318,7 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // HOST stage as source
-    VkBufferObj buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32);
     auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
     buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
     buffer_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;

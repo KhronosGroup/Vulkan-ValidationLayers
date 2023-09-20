@@ -141,7 +141,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 1024;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 

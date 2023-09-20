@@ -529,7 +529,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
 
     bool failcase_needs_depth = false;  // to mark cases that need depth attachment
 
-    VkBufferObj index_buffer;
+    vkt::Buffer index_buffer;
 
     switch (failCase) {
         case BsoFailLineWidth: {
@@ -1317,7 +1317,7 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    auto buffer_ci = VkBufferObj::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    auto buffer_ci = vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
     if (buffer_memory) {
         buffer_.init(*device_obj, buffer_ci, mem_prop);
     } else {
@@ -1340,7 +1340,7 @@ void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool i
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    auto buffer_ci = VkBufferObj::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    auto buffer_ci = vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
     if (buffer_memory) {
         buffer_.init(*device_obj, buffer_ci, mem_prop);
     } else {

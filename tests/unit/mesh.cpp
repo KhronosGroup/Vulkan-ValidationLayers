@@ -932,10 +932,10 @@ TEST_F(NegativeMesh, DrawCmds) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     buffer_create_info.size = 64;
-    VkBufferObj count_buffer(*m_device, buffer_create_info);
+    vkt::Buffer count_buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1085,7 +1085,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT);
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();
@@ -1105,7 +1105,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    VkBufferObj draw_buffer;
+    vkt::Buffer draw_buffer;
     draw_buffer.init_no_mem(*m_device, buffer_create_info);
     ASSERT_TRUE(draw_buffer.initialized());
     draw_buffer.allocate_and_bind_memory(*m_device);
@@ -1114,14 +1114,14 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     count_buffer_create_info.size = 64;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
-    VkBufferObj count_buffer(*m_device, count_buffer_create_info);
+    vkt::Buffer count_buffer(*m_device, count_buffer_create_info);
     ASSERT_TRUE(count_buffer.initialized());
 
-    VkBufferObj count_buffer_unbound;
+    vkt::Buffer count_buffer_unbound;
     count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);
     ASSERT_TRUE(count_buffer_unbound.initialized());
 
-    VkBufferObj count_buffer_wrong_usage;
+    vkt::Buffer count_buffer_wrong_usage;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     count_buffer_wrong_usage.init(*m_device, count_buffer_create_info);
 
@@ -1194,10 +1194,10 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 2 * sizeof(VkDrawMeshTasksIndirectCommandNV);
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     buffer_create_info.size = 64;
-    VkBufferObj count_buffer(*m_device, buffer_create_info);
+    vkt::Buffer count_buffer(*m_device, buffer_create_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitState();

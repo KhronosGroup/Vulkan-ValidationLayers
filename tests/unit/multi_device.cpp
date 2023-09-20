@@ -46,7 +46,7 @@ TEST_F(MultiDeviceTest, CommonParentBindBuffer) {
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_ci.queueFamilyIndexCount = 0;
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_ci);
 
     VkMemoryRequirements mem_reqs;

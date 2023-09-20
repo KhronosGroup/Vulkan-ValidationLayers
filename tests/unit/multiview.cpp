@@ -436,7 +436,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         auto bci = vku::InitStruct<VkBufferCreateInfo>();
         bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bci.size = 8;
-        VkBufferObj buffer(*m_device, bci);
+        vkt::Buffer buffer(*m_device, bci);
         VkDescriptorBufferInfo buffer_info;
         buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;

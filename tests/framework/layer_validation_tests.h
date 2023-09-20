@@ -737,7 +737,7 @@ class BarrierQueueFamilyBase {
     static const uint32_t kInvalidQueueFamily = vvl::kU32Max;
     Context *context_;
     VkImageObj image_;
-    VkBufferObj buffer_;
+    vkt::Buffer buffer_;
 };
 
 class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {

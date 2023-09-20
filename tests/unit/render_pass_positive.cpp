@@ -288,8 +288,8 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.framebuffer = fb.handle();
 
-    VkFenceObj fence;
-    fence.init(*m_device, VkFenceObj::create_info());
+    vkt::Fence fence;
+    fence.init(*m_device, vkt::Fence::create_info());
     ASSERT_TRUE(fence.initialized());
 
     m_commandBuffer->begin();
@@ -1151,7 +1151,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     fci.layers = 1;
     vkt::Framebuffer fb(*m_device, fci);
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkQueryPoolCreateInfo qpci = vku::InitStructHelper();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;

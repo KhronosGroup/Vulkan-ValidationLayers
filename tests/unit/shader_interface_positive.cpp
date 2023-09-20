@@ -951,14 +951,14 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
     auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
-    VkBufferObj uniform_buffer(*m_device, ub_ci);
+    vkt::Buffer uniform_buffer(*m_device, ub_ci);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
 
     VkBufferCreateInfo vb_ci = vku::InitStructHelper();
     vb_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vb_ci.size = 1024;
-    VkBufferObj buffer(*m_device, vb_ci);
+    vkt::Buffer buffer(*m_device, vb_ci);
     VkBuffer buffer_handle = buffer.handle();
     VkDeviceSize offset = 0;
 

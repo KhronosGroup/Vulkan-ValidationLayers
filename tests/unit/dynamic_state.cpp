@@ -469,7 +469,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
@@ -487,7 +487,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     m_errorMonitor->VerifyFound();
 
     {
-        VkBufferObj bufferWrongUsage(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+        vkt::Buffer bufferWrongUsage(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pBuffers-03359");
         VkBuffer buffers2[1] = {bufferWrongUsage.handle()};
         VkDeviceSize offsets2[1] = {};
@@ -531,7 +531,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffersWholeSize) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
 
     m_commandBuffer->begin();
-    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize size = VK_WHOLE_SIZE;
     VkDeviceSize offset = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pSizes-03358");
@@ -633,7 +633,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
@@ -5014,7 +5014,7 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0u;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &buffer.handle(), &offset);
 

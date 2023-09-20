@@ -81,12 +81,12 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     VkPipeline pipeline;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
-    VkBufferObj buffer_0;
+    vkt::Buffer buffer_0;
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
-    VkBufferObj buffer_1;
+    vkt::Buffer buffer_1;
     buffer_1.init(*m_device, buffer_ci);
 
     VkWriteDescriptorSet descriptor_writes[2];
@@ -187,12 +187,12 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     VkPipeline pipeline;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
-    VkBufferObj buffer_0;
+    vkt::Buffer buffer_0;
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
-    VkBufferObj buffer_1;
+    vkt::Buffer buffer_1;
     buffer_1.init(*m_device, buffer_ci);
 
     VkWriteDescriptorSet descriptor_writes[2];
@@ -463,12 +463,12 @@ TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
     VkPipeline pipeline;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
 
-    VkBufferObj buffer_0;
+    vkt::Buffer buffer_0;
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     buffer_0.init(*m_device, buffer_ci);
-    VkBufferObj buffer_1;
+    vkt::Buffer buffer_1;
     buffer_1.init(*m_device, buffer_ci);
 
     auto descriptor_write = vku::InitStruct<VkWriteDescriptorSet>();

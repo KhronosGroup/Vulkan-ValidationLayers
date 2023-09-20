@@ -398,7 +398,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     vkt::Fence fence;
-    fence.init(*m_device, VkFenceObj::create_info());
+    fence.init(*m_device, vkt::Fence::create_info());
     VkFence fence_handle = fence.handle();
 
     uint32_t image_index;
@@ -510,7 +510,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    const VkFenceObj fence(*m_device);
+    const vkt::Fence fence(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index = 0;
@@ -718,8 +718,8 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     const auto images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index;
-    VkFenceObj fence;
-    fence.init(*m_device, VkFenceObj::create_info());
+    vkt::Fence fence;
+    fence.init(*m_device, vkt::Fence::create_info());
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
@@ -912,7 +912,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     pipe.CreateGraphicsPipeline();
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-    const VkFenceObj fence(*m_device);
+    const vkt::Fence fence(*m_device);
 
     uint32_t image_index;
     ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));

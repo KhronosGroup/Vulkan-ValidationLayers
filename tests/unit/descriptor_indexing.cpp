@@ -229,7 +229,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     auto buff_create_info = vku::InitStruct<VkBufferCreateInfo>();
     buff_create_info.size = 1024;
     buff_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    VkBufferObj buffer(*m_device, buff_create_info);
+    vkt::Buffer buffer(*m_device, buff_create_info);
 
     VkDescriptorBufferInfo bufferInfo[3] = {};
     bufferInfo[0].buffer = buffer.handle();
@@ -397,7 +397,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             VkDescriptorSet ds;
             VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
             ASSERT_VK_SUCCESS(err);
-            VkBufferObj buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+            vkt::Buffer buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
             VkDescriptorBufferInfo buffer_info[3] = {};
             for (int i = 0; i < 3; i++) {
                 buffer_info[i].buffer = buffer.handle();

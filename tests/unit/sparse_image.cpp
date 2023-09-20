@@ -294,7 +294,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkImageObj image(m_device);
@@ -389,7 +389,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkImageObj image(m_device);

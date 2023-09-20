@@ -198,7 +198,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
 
     // vkCmdWaitEvents inside render pass
     {
-        VkEventObj event(*m_device);
+        vkt::Event event(*m_device);
         m_commandBuffer->begin();
         vk::CmdSetEvent(*m_commandBuffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
         vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -211,7 +211,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     // vkCmdWaitEvents2 inside render pass.
     // It's also a regression test for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4258
     {
-        VkEventObj event2(*m_device);
+        vkt::Event event2(*m_device);
         m_commandBuffer->begin();
         vk::CmdSetEvent2(*m_commandBuffer, event2, &dependency_info);
         vk::CmdBeginRenderPass(*m_commandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);

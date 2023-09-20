@@ -262,11 +262,11 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     // Create export and import buffers
     const VkExternalMemoryBufferCreateInfoKHR external_buffer_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR,
                                                                       nullptr, handle_type};
-    auto buffer_info = VkBufferObj::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto buffer_info = vkt::Buffer::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
-    VkBufferObj buffer_export;
+    vkt::Buffer buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
-    VkBufferObj buffer_import;
+    vkt::Buffer buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
 
     // Allocation info
@@ -318,14 +318,14 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     buffer_import.bind_memory(memory_import, 0);
 
     // Create test buffers and fill input buffer
-    VkBufferObj buffer_input(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer_input(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     auto input_mem = (uint8_t *)buffer_input.memory().map();
     for (uint32_t i = 0; i < buffer_size; i++) {
         input_mem[i] = (i & 0xFF);
     }
     buffer_input.memory().unmap();
-    VkBufferObj buffer_output(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer_output(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // Copy from input buffer to output buffer through the exported/imported memory

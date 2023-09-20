@@ -2226,11 +2226,11 @@ void VkCommandBufferObj::ClearDepthStencilImage(VkImage image, VkImageLayout ima
     vk::CmdClearDepthStencilImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
 }
 
-void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer) {
+void VkCommandBufferObj::BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer) {
     BuildAccelerationStructure(as, scratchBuffer, VK_NULL_HANDLE);
 }
 
-void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData) {
+void VkCommandBufferObj::BuildAccelerationStructure(vkt::AccelerationStructure *as, VkBuffer scratchBuffer, VkBuffer instanceData) {
     PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
         (PFN_vkCmdBuildAccelerationStructureNV)vk::GetDeviceProcAddr(as->dev(), "vkCmdBuildAccelerationStructureNV");
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
@@ -2342,11 +2342,11 @@ void VkCommandBufferObj::Draw(uint32_t vertexCount, uint32_t instanceCount, uint
 }
 
 void VkCommandBufferObj::QueueCommandBuffer(bool check_success) {
-    VkFenceObj null_fence;
+    vkt::Fence null_fence;
     QueueCommandBuffer(null_fence, check_success);
 }
 
-void VkCommandBufferObj::QueueCommandBuffer(const VkFenceObj &fence, bool check_success, bool submit_2) {
+void VkCommandBufferObj::QueueCommandBuffer(const vkt::Fence &fence, bool check_success, bool submit_2) {
     VkResult err = VK_SUCCESS;
 
     if (submit_2) {
@@ -2377,7 +2377,7 @@ void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
     }
 }
 
-void VkCommandBufferObj::BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
+void VkCommandBufferObj::BindIndexBuffer(vkt::Buffer *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
     vk::CmdBindIndexBuffer(handle(), indexBuffer->handle(), offset, indexType);
 }
 

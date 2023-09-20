@@ -88,7 +88,7 @@ TEST_F(PositiveQuery, BasicQuery) {
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj buffer(*m_device, bci, mem_props);
+    vkt::Buffer buffer(*m_device, bci, mem_props);
 
     VkQueryPoolCreateInfo query_pool_info = vku::InitStructHelper();
     query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
@@ -159,7 +159,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkBufferObj buffer(*m_device, bci, mem_props);
+    vkt::Buffer buffer(*m_device, bci, mem_props);
 
     constexpr uint32_t query_count = 2;
 
@@ -243,7 +243,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj buffer(*m_device, buff_create_info);
+    vkt::Buffer buffer(*m_device, buff_create_info);
 
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     hinfo.renderPass = VK_NULL_HANDLE;
@@ -310,7 +310,7 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj buffer(*m_device, buff_create_info);
+    vkt::Buffer buffer(*m_device, buff_create_info);
 
     {
         VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();

@@ -82,9 +82,9 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create a test buffer
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device,
-                       VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+                       vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
     // Use extension to get buffer memory requirements
     VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
@@ -153,8 +153,8 @@ TEST_F(PositiveMemory, BindMemory2) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create a test buffer
-    VkBufferObj buffer;
-    buffer.init_no_mem(*m_device, VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    vkt::Buffer buffer;
+    buffer.init_no_mem(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
     // Allocate buffer memory
     vkt::DeviceMemory buffer_memory;

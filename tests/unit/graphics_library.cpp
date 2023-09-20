@@ -755,7 +755,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
-    VkBufferObj uniform_buffer(*m_device, ub_ci);
+    vkt::Buffer uniform_buffer(*m_device, ub_ci);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
 
@@ -1386,7 +1386,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     auto ub_ci = vku::InitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     ub_ci.size = 1024;
-    VkBufferObj uniform_buffer(*m_device, ub_ci);
+    vkt::Buffer uniform_buffer(*m_device, ub_ci);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
     ds2.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);

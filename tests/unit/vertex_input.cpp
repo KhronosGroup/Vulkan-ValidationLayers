@@ -493,7 +493,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     // CmdBindVertexBuffers only has binding:1. It causes 04007 & 04008 desired fail.
@@ -640,7 +640,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkBufferObj vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};

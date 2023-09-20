@@ -33,7 +33,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -81,7 +81,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindResourceOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -131,7 +131,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeResourceOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -181,7 +181,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSizeMemoryOffset) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -238,9 +238,9 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
-    VkBufferObj buffer_sparse2;
+    vkt::Buffer buffer_sparse2;
     buffer_sparse2.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -272,7 +272,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
@@ -337,7 +337,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     VkBufferCreateInfo b_info =
         vkt::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, b_info);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -364,7 +364,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
@@ -412,7 +412,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     VkBufferCreateInfo buffer_ci =
         vkt::Buffer::create_info(4096 * 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
     buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    VkBufferObj buffer_sparse;
+    vkt::Buffer buffer_sparse;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -450,7 +450,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     bind_info.pSignalSemaphores = &semaphore.handle();
 
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index.value()]->handle();
-    VkFenceObj sparse_queue_fence(*m_device);
+    vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
     ASSERT_VK_SUCCESS(sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
@@ -525,7 +525,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkDeviceMemory bad_memory = CastToHandle<VkDeviceMemory, uintptr_t>(0xbaadbeef);
@@ -565,7 +565,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     buffer.init_no_mem(*m_device, buffer_create_info);
 
     VkMemoryRequirements buffer_mem_reqs;

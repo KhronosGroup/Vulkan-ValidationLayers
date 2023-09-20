@@ -486,7 +486,7 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     auto buffer_ci = vku::InitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 1024;
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -1281,7 +1281,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkBufferObj buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = buffer.handle();

@@ -156,7 +156,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-        VkBufferObj buffer(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, buffer_create_info);
 
         OneOffDescriptorSet descriptor_set(m_device, {
                                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -195,7 +195,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-        VkBufferObj buffer(*m_device, buffer_create_info);
+        vkt::Buffer buffer(*m_device, buffer_create_info);
 
         auto buff_view_ci = vku::InitStruct<VkBufferViewCreateInfo>();
         buff_view_ci.buffer = buffer.handle();
@@ -314,7 +314,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj dynamic_uniform_buffer_1, dynamic_uniform_buffer_2;
+    vkt::Buffer dynamic_uniform_buffer_1, dynamic_uniform_buffer_2;
     dynamic_uniform_buffer_1.init(*m_device, buffCI);
     buffCI.size = 1024;
     dynamic_uniform_buffer_2.init(*m_device, buffCI);
@@ -445,7 +445,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
-    VkBufferObj buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer.handle();
@@ -1085,7 +1085,7 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>(&buffer_usage_flags);
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;  // would be wrong, but ignored
-    VkBufferObj buffer(*m_device, buffer_create_info);
+    vkt::Buffer buffer(*m_device, buffer_create_info);
 
     auto buff_view_ci = vku::InitStruct<VkBufferViewCreateInfo>();
     buff_view_ci.buffer = buffer.handle();

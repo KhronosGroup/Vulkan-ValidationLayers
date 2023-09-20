@@ -732,7 +732,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    VkBufferObj vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vertex_buffer(*m_device, 64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;

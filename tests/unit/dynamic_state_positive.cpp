@@ -150,7 +150,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
-    VkBufferObj vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
@@ -210,7 +210,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
-    VkBufferObj vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
@@ -242,7 +242,7 @@ TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
 
     m_commandBuffer->begin();
-    VkBufferObj buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize size = VK_WHOLE_SIZE;
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, &size, nullptr);

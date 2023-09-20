@@ -37,8 +37,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj vbo;
-    VkBufferObj ibo;
+    vkt::Buffer vbo;
+    vkt::Buffer ibo;
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
@@ -75,16 +75,16 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationInva
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+    vkt::Buffer instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
 
-    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -118,8 +118,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj vbo;
-    VkBufferObj ibo;
+    vkt::Buffer vbo;
+    vkt::Buffer ibo;
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
@@ -147,7 +147,7 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
         uint64_t accelerationStructureHandle;
     };
 
-    VkAccelerationStructureObj bot_level_as_never_built(*m_device, bot_level_as_create_info);
+    vkt::AccelerationStructure bot_level_as_never_built(*m_device, bot_level_as_create_info);
 
     VkGeometryInstanceNV instance = {
         {
@@ -165,16 +165,16 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+    vkt::Buffer instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
 
-    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -208,8 +208,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj vbo;
-    VkBufferObj ibo;
+    vkt::Buffer vbo;
+    vkt::Buffer ibo;
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
@@ -239,11 +239,11 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
 
     uint64_t destroyed_bot_level_as_handle = 0;
     {
-        VkAccelerationStructureObj destroyed_bot_level_as(*m_device, bot_level_as_create_info);
+        vkt::AccelerationStructure destroyed_bot_level_as(*m_device, bot_level_as_create_info);
 
         destroyed_bot_level_as_handle = destroyed_bot_level_as.opaque_handle();
 
-        const VkBufferObj bot_level_as_scratch = destroyed_bot_level_as.create_scratch_buffer(*m_device);
+        const vkt::Buffer bot_level_as_scratch = destroyed_bot_level_as.create_scratch_buffer(*m_device);
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -276,16 +276,16 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationBott
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+    vkt::Buffer instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
 
-    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -318,8 +318,8 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkBufferObj vbo;
-    VkBufferObj ibo;
+    vkt::Buffer vbo;
+    vkt::Buffer ibo;
     VkGeometryNV geometry;
     nv::rt::GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometry);
 
@@ -356,16 +356,16 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
     };
 
     VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV);
-    VkBufferObj instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+    vkt::Buffer instance_buffer(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)&instance, static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
-    VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
+    vkt::AccelerationStructure top_level_as(*m_device, top_level_as_create_info);
 
-    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     struct ComputeOutput {
         uint32_t push_constant_value;
@@ -373,14 +373,14 @@ TEST_F(NegativeGpuAssistedRayTracingNV, BuildAccelerationStructureValidationRest
         uint32_t normal_descriptor_value;
     };
 
-    VkBufferObj push_descriptor_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    vkt::Buffer push_descriptor_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkBufferObj normal_descriptor_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    vkt::Buffer normal_descriptor_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceSize output_descriptor_buffer_size = static_cast<VkDeviceSize>(sizeof(ComputeOutput));
-    VkBufferObj output_descriptor_buffer(*m_device, output_descriptor_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    vkt::Buffer output_descriptor_buffer(*m_device, output_descriptor_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     const char *cs_source = R"glsl(

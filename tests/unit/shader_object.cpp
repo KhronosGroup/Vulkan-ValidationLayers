@@ -4604,7 +4604,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
     const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kComputeShaderGlsl),
                                  &descriptor_set.layout_.handle(), &pushConstRange);
 
-    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -6474,7 +6474,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
     const vkt::Shader vertShader(*m_device, vert_create_info);
     const vkt::Shader fragShader(*m_device, frag_create_info);
 
-    VkBufferObj buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 

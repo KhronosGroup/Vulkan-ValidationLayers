@@ -215,7 +215,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
         ASSERT_VK_SUCCESS(result);
     }
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage =
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
@@ -299,7 +299,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
-    VkBufferObj buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32);
 
     auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
     buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -371,7 +371,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
-    VkBufferObj buffer(*m_device, 32);
+    vkt::Buffer buffer(*m_device, 32);
 
     auto buffer_barrier = vku::InitStruct<VkBufferMemoryBarrier2>();
     buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -519,7 +519,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-        auto scratch_buffer = std::make_shared<VkBufferObj>();
+        auto scratch_buffer = std::make_shared<vkt::Buffer>();
         scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
         vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
         std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
@@ -579,13 +579,13 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
     std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
 
-    auto scratch_buffer_frame_0 = std::make_shared<VkBufferObj>();
-    auto scratch_buffer_frame_1 = std::make_shared<VkBufferObj>();
-    auto scratch_buffer_frame_2 = std::make_shared<VkBufferObj>();
+    auto scratch_buffer_frame_0 = std::make_shared<vkt::Buffer>();
+    auto scratch_buffer_frame_1 = std::make_shared<vkt::Buffer>();
+    auto scratch_buffer_frame_2 = std::make_shared<vkt::Buffer>();
 
-    VkFenceObj fence_frame_0(*m_device);
-    VkFenceObj fence_frame_1(*m_device);
-    VkFenceObj fence_frame_2(*m_device);
+    vkt::Fence fence_frame_0(*m_device);
+    vkt::Fence fence_frame_1(*m_device);
+    vkt::Fence fence_frame_2(*m_device);
 
     // Frame 0
     {
@@ -767,9 +767,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
     std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
     std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
 
-    VkFenceObj fence_frame_0(*m_device);
-    VkFenceObj fence_frame_1(*m_device);
-    VkFenceObj fence_frame_2(*m_device);
+    vkt::Fence fence_frame_0(*m_device);
+    vkt::Fence fence_frame_1(*m_device);
+    vkt::Fence fence_frame_2(*m_device);
 
     // Frame 0
     {

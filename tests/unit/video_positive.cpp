@@ -69,7 +69,7 @@ TEST_F(VkPositiveVideoLayerTest, MultipleCmdBufs) {
     cb2.EndVideoCoding(context.End());
     cb2.end();
 
-    VkFenceObj fence{};
+    vkt::Fence fence{};
     context.Queue().submit({&cb1, &cb2}, fence, true);
     m_device->wait();
 }

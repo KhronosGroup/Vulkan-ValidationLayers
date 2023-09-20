@@ -1293,7 +1293,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportBufferHandleType) {
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
     // Create buffer without VkExternalMemoryBufferCreateInfo
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 512;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -1516,7 +1516,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     VkExternalMemoryBufferCreateInfo ext_buf_info = vku::InitStructHelper();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
-    VkBufferObj buffer;
+    vkt::Buffer buffer;
     auto buffer_create_info = vku::InitStruct<VkBufferCreateInfo>(&ext_buf_info);
     buffer_create_info.size = 512;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;

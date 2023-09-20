@@ -87,7 +87,7 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
                                               },
                                               0);
 
-    VkBufferObj buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     ThreadTestData data;
     data.device = device();
