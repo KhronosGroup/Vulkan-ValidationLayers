@@ -192,6 +192,7 @@ class RayTracingPipelineHelper {
     VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
     VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
+    std::optional<VkRayTracingPipelineInterfaceCreateInfoKHR> rp_i_ci_;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
@@ -199,6 +200,8 @@ class RayTracingPipelineHelper {
     std::unique_ptr<VkShaderObj> rgs_;
     std::unique_ptr<VkShaderObj> chs_;
     std::unique_ptr<VkShaderObj> mis_;
+    std::vector<VkPipeline> libraries_;
+    VkPipelineLibraryCreateInfoKHR rp_library_ci_;
     VkLayerTest& layer_test_;
     RayTracingPipelineHelper(VkLayerTest& test);
     ~RayTracingPipelineHelper();
@@ -211,9 +214,11 @@ class RayTracingPipelineHelper {
     void InitShaderInfo();
     void InitShaderInfoKHR();
     void InitNVRayTracingPipelineInfo();
-    void InitKHRRayTracingPipelineInfo();
+    void InitKHRRayTracingPipelineInfo(VkPipelineCreateFlags flags = 0);
+    void AddLibrary(const RayTracingPipelineHelper &library);
     void InitPipelineCacheInfo();
     void InitInfo(bool isKHR = false);
+    void InitLibraryInfoKHR(VkPipelineCreateFlags flags = 0);
     void InitState();
     void InitPipelineCache();
     void LateBindPipelineInfo(bool isKHR = false);
