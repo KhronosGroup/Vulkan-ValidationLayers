@@ -3263,9 +3263,12 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
     const auto &recorded_accesses = recorded_use.first_accesses_;
     Size count = recorded_accesses.size();
     if (count) {
-        const auto &last_access = recorded_accesses.back();
-        bool do_write_last = IsWrite(*last_access.usage_info);
-        if (do_write_last) --count;
+        // First access is only closed if the last is a write
+        bool do_write_last = recorded_use.first_access_closed_;
+        if (do_write_last) {
+            // Note: We know count > 0 so this is alway safe.
+            --count;
+        }
 
         for (Size i = 0; i < count; ++count) {
             const auto &first = recorded_accesses[i];
@@ -3283,29 +3286,32 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
             }
         }
 
-        if (do_write_last && tag_range.includes(last_access.tag)) {
+        if (do_write_last) {
             // Writes are a bit special... both for the "most recent" access logic, and layout transition specific logic
-            OrderingBarrier barrier = GetOrderingRules(last_access.ordering_rule);
-            if (last_access.usage_info->stage_access_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
-                // Or in the layout first access scope as a barrier... IFF the usage is an ILT
-                // this was saved off in the "apply barriers" logic to simplify ILT access checks as they straddle
-                // the barrier that applies them
-                barrier |= recorded_use.first_write_layout_ordering_;
-            }
-            // Any read stages present in the recorded context (this) are most recent to the write, and thus mask those stages in
-            // the active context
-            if (recorded_use.first_read_stages_) {
-                // we need to ignore the first use read stage in the active context (so we add them to the ordering rule),
-                // reads in the active context are not "most recent" as all recorded context operations are *after* them
-                // This supresses only RAW checks for stages present in the recorded context, but not those only present in the
-                // active context.
-                barrier.exec_scope |= recorded_use.first_read_stages_;
-                // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
-                barrier.access_scope |= last_access.usage_info->stage_access_bit;
-            }
-            hazard = DetectHazard(*last_access.usage_info, barrier, queue_id);
-            if (hazard.IsHazard()) {
-                hazard.AddRecordedAccess(last_access);
+            const auto &last_access = recorded_accesses.back();
+            if (tag_range.includes(last_access.tag)) {
+                OrderingBarrier barrier = GetOrderingRules(last_access.ordering_rule);
+                if (last_access.usage_info->stage_access_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
+                    // Or in the layout first access scope as a barrier... IFF the usage is an ILT
+                    // this was saved off in the "apply barriers" logic to simplify ILT access checks as they straddle
+                    // the barrier that applies them
+                    barrier |= recorded_use.first_write_layout_ordering_;
+                }
+                // Any read stages present in the recorded context (this) are most recent to the write, and thus mask those stages
+                // in the active context
+                if (recorded_use.first_read_stages_) {
+                    // we need to ignore the first use read stage in the active context (so we add them to the ordering rule),
+                    // reads in the active context are not "most recent" as all recorded context operations are *after* them
+                    // This supresses only RAW checks for stages present in the recorded context, but not those only present in the
+                    // active context.
+                    barrier.exec_scope |= recorded_use.first_read_stages_;
+                    // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
+                    barrier.access_scope |= last_access.usage_info->stage_access_bit;
+                }
+                hazard = DetectHazard(*last_access.usage_info, barrier, queue_id);
+                if (hazard.IsHazard()) {
+                    hazard.AddRecordedAccess(last_access);
+                }
             }
         }
     }
@@ -3539,8 +3545,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     //       of the other first_accesses... )
     if (!skip_first && !(first_accesses_ == other.first_accesses_) && !other.first_accesses_.empty()) {
         FirstAccesses firsts(std::move(first_accesses_));
-        first_accesses_.clear();
-        first_read_stages_ = 0U;
+        ClearFirstUse();
         auto a = firsts.begin();
         auto a_end = firsts.end();
         for (auto &b : other.first_accesses_) {
@@ -3635,6 +3640,7 @@ void ResourceAccessState::ClearFirstUse() {
     first_accesses_.clear();
     first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
     first_write_layout_ordering_ = OrderingBarrier();
+    first_access_closed_ = false;
 }
 
 // Apply the memory barrier without updating the existing barriers.  The execution barrier
@@ -3859,7 +3865,8 @@ ResourceAccessState::ResourceAccessState()
       pending_layout_transition(false),
       first_accesses_(),
       first_read_stages_(VK_PIPELINE_STAGE_2_NONE),
-      first_write_layout_ordering_() {}
+      first_write_layout_ordering_(),
+      first_access_closed_(false) {}
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
 VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
@@ -3971,8 +3978,9 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
 void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, const SyncStageAccessInfoType &usage_info,
                                       SyncOrdering ordering_rule) {
     // Only record until we record a write.
-    if (first_accesses_.empty() || IsRead(*first_accesses_.back().usage_info)) {
-        const VkPipelineStageFlags2KHR usage_stage = IsRead(usage_info) ? usage_info.stage_mask : 0U;
+    if (!first_access_closed_) {
+        const bool is_read = IsRead(usage_info);
+        const VkPipelineStageFlags2KHR usage_stage = is_read ? usage_info.stage_mask : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
             // We always need to know what stages were found prior to write
@@ -3980,6 +3988,7 @@ void ResourceAccessState::UpdateFirst(const ResourceUsageTag tag, const SyncStag
             if (0 == (read_execution_barriers & usage_stage)) {
                 // If this stage isn't masked then we add it (since writes map to usage_stage 0, this also records writes)
                 first_accesses_.emplace_back(tag, usage_info, ordering_rule);
+                first_access_closed_ = !is_read;
             }
         }
     }
