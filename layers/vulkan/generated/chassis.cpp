@@ -769,8 +769,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
                                                              &(crtpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                           pAllocator, pPipelines);
+    auto usepCreateInfos = (!crtpl_state[LayerObjectTypeGpuAssisted].pCreateInfos)
+                               ? pCreateInfos
+                               : crtpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
+    if (crtpl_state[LayerObjectTypeDebugPrintf].pCreateInfos)
+        usepCreateInfos = crtpl_state[LayerObjectTypeDebugPrintf].pCreateInfos;
+
+    VkResult result = DispatchCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                           usepCreateInfos, pAllocator, pPipelines);
 
     RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesKHR, result);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
