@@ -5034,3 +5034,89 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDynamicState, MissingCmdSetVertexInput) {
+    TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto vertex_input_dynamic_state_features =
+        vku::InitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(&extended_dynamic_state_features);
+    GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+    if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &vertex_input_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04912");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-04914");
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, MissingCmdBindVertexBuffers2) {
+    TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = vku::InitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pStrides-04913");
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0u, 0u, nullptr, nullptr, nullptr, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-pStrides-04913");
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
