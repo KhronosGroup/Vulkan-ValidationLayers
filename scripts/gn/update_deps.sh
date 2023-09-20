@@ -20,6 +20,16 @@ cd "$(dirname $0)/../../"
 # Use update_deps.py to update source dependencies from /scripts/known_good.json
 scripts/update_deps.py --dir="external" --no-build
 
+cat << EOF > .gn
+buildconfig = "//build/config/BUILDCONFIG.gn"
+secondary_source = "//scripts/gn/secondary/"
+
+default_args = {
+    clang_use_chrome_plugins = false
+    use_custom_libcxx = false
+}
+EOF
+
 # Use gclient to update toolchain dependencies from /scripts/gn/DEPS (from chromium)
 cat << EOF > .gclient
 solutions = [
