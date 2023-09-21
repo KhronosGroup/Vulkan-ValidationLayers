@@ -174,3 +174,9 @@ aae202333dda8a6ca1422a773d02c4d7853f71b7
 
 # Outdent all clang-formatted strings in scripts
 f661d4b3eb04e0dce562ef2da08aca257e3afa69
+
+# Change vk_testing to vkt
+11ffac277d4069a973717507b39af4b8614cf80a
+
+# Use vkt alias over Vk*Obj
+0b4eb25ae1a0f15186f72e2686a35a4c2ae91a9e
