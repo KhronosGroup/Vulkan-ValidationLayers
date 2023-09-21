@@ -569,8 +569,8 @@ class AccelerationStructureDescriptor : public Descriptor {
     const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    const ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+    ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     bool is_khr() const { return is_khr_; }
@@ -606,7 +606,7 @@ class AccelerationStructureDescriptor : public Descriptor {
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> acc_state_nv_;
 };
 
 class MutableDescriptor : public Descriptor {
@@ -660,8 +660,8 @@ class MutableDescriptor : public Descriptor {
     const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    const ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
+    ACCELERATION_STRUCTURE_STATE_NV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
     // Returns true if there is a stored KHR acceleration structure and false if there is a stored NV acceleration structure.
     // Asserts that there is only one of the two.
     bool IsAccelerationStructureKHR() const {
@@ -701,7 +701,7 @@ class MutableDescriptor : public Descriptor {
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE_NV> acc_state_nv_;
 };
 
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below

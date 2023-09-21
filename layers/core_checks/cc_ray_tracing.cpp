@@ -88,7 +88,7 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const Location bind_info_loc = error_obj.location.dot(Field::pBindInfos, i);
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-        auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(info.accelerationStructure);
+        auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(info.accelerationStructure);
         if (!as_state) {
             continue;
         }
@@ -141,7 +141,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
                                                                  size_t dataSize, void *pData, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
+    auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(accelerationStructure);
     if (as_state != nullptr) {
         skip = VerifyBoundMemoryIsValid(as_state->MemState(), LogObjectList(accelerationStructure), as_state->Handle(),
                                         error_obj.location.dot(Field::accelerationStructure),
@@ -794,8 +794,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                          pInfo->geometryCount);
     }
 
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
-    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
+    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
+    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
     auto scratch_buffer_state = Get<BUFFER_STATE>(scratch);
 
     if (dst_as_state != nullptr && pInfo != nullptr) {
@@ -944,8 +944,8 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     bool skip = false;
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE>(dst);
-    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
+    auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(dst);
+    auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(src);
 
     if (dst_as_state != nullptr) {
         skip |= VerifyBoundMemoryIsValid(dst_as_state->MemState(), LogObjectList(commandBuffer, dst), dst_as_state->Handle(),
@@ -972,7 +972,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
 bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                const ErrorObject &error_obj) const {
-    auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
+    auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(accelerationStructure);
     bool skip = false;
     if (as_state) {
         skip |= ValidateObjectNotInUse(as_state.get(), error_obj.location,
@@ -1083,7 +1083,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     }
     for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
         if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
-            auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(pAccelerationStructures[i]);
+            auto as_state = Get<ACCELERATION_STRUCTURE_STATE_NV>(pAccelerationStructures[i]);
             if (!(as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
                 skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesNV-pAccelerationStructures-06215", commandBuffer,
                                  error_obj.location.dot(Field::pAccelerationStructures, i),

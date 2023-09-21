@@ -855,7 +855,8 @@ void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet
         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
     } else {
         acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+                        is_bindless);
     }
 }
 
@@ -871,7 +872,7 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
                             is_bindless);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
-            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
+            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
                             is_bindless);
         }
         return;
@@ -883,7 +884,8 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
     } else {
         acc_nv_ = acc_desc.acc_nv_;
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_), is_bindless);
+        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
+                        is_bindless);
     }
 }
 
@@ -956,7 +958,7 @@ void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, c
                                 is_bindless);
             } else {
                 acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
+                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
                                 is_bindless);
             }
             break;
@@ -1006,7 +1008,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, co
                             is_bindless);
         } else {
             acc_nv_ = acc_desc.GetAccelerationStructureNV();
-            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
+            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
                             is_bindless);
         }
     } else if (src.GetClass() == DescriptorClass::Mutable) {
@@ -1045,7 +1047,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, co
                                     is_bindless);
                 } else {
                     acc_nv_ = mutable_src.GetAccelerationStructureNV();
-                    ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
+                    ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<ACCELERATION_STRUCTURE_STATE_NV>(acc_nv_),
                                     is_bindless);
                 }
 
