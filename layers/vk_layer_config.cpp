@@ -112,13 +112,6 @@ std::string GetEnvironment(const char *variable) {
 }
 
 const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
-const char *GetLayerEnvVar(const char *option) {
-    // NOTE: new code should use GetEnvironment directly. This is a workaround for the problem
-    // described in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3048
-    static std::string result;
-    result = GetEnvironment(option);
-    return result.c_str();
-}
 
 const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
 
@@ -178,8 +171,6 @@ VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkF
     }
     return flags;
 }
-
-void setLayerOption(const char *option, const char *value) { layer_config.SetOption(option, value); }
 
 // Constructor for ConfigFile. Initialize layers to log error messages to stdout by default. If a vk_layer_settings file is present,
 // its settings will override the defaults.

@@ -65,7 +65,6 @@ enum VkLayerDbgActionBits {
 using VkLayerDbgActionFlags = VkFlags;
 
 const char *getLayerOption(const char *option);
-const char *GetLayerEnvVar(const char *option);
 const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 FILE *getLayerLogOutput(const char *option, const char *layer_name);
@@ -73,7 +72,6 @@ VkFlags GetLayerOptionFlags(const std::string &option,
                                             vvl::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
-void setLayerOption(const char *option, const char *val);
 void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
 void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
 void PrintMessageType(VkFlags vk_flags, char *msg_flags);
