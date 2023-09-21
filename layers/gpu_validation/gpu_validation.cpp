@@ -969,7 +969,7 @@ bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBloc
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
-                                   uint32_t *unique_shader_id) {
+                                   const uint32_t unique_shader_id) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
 
@@ -997,7 +997,7 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    *unique_shader_id = unique_shader_module_id++;
+
     // Instrument the user's shader
     {
         ValidatorOptions val_options;
@@ -1008,13 +1008,13 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
         Optimizer inst_passes(target_env);
         inst_passes.SetMessageConsumer(gpu_console_message_consumer);
         if (validate_descriptors) {
-            inst_passes.RegisterPass(CreateInstBindlessCheckPass(*unique_shader_id));
+            inst_passes.RegisterPass(CreateInstBindlessCheckPass(unique_shader_id));
         }
 
         if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
              IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
             shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
-            inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(*unique_shader_id));
+            inst_passes.RegisterPass(CreateInstBuffAddrCheckPass(unique_shader_id));
         }
         if (!inst_passes.Run(binaries[0].data(), binaries[0].size(), &binaries[0], opt_options)) {
             ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
@@ -1094,8 +1094,9 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   void *csm_state_data) {
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
     create_shader_module_api_state *csm_state = static_cast<create_shader_module_api_state *>(csm_state_data);
+    csm_state->unique_shader_id = unique_shader_module_id++;
     const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                       csm_state->instrumented_spirv, &csm_state->unique_shader_id);
+                                       csm_state->instrumented_spirv, csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_spirv.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_spirv.size() * sizeof(uint32_t);
@@ -1110,9 +1111,10 @@ void GpuAssisted::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
     GpuAssistedBase::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, csm_state_data);
     create_shader_object_api_state *csm_state = static_cast<create_shader_object_api_state *>(csm_state_data);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        csm_state->unique_shader_ids[i] = unique_shader_module_id++;
         const bool pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(pCreateInfos[i].pCode), pCreateInfos[i].codeSize / sizeof(uint32_t)),
-            csm_state->instrumented_spirv[i], &csm_state->unique_shader_ids[i]);
+            csm_state->instrumented_spirv[i], csm_state->unique_shader_ids[i]);
         if (pass) {
             csm_state->instrumented_create_info[i].pCode = csm_state->instrumented_spirv[i].data();
             csm_state->instrumented_create_info[i].codeSize = csm_state->instrumented_spirv[i].size() * sizeof(uint32_t);
