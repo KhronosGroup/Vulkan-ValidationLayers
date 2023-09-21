@@ -94,6 +94,7 @@ class APISpecific:
                     'VK_EXT_debug_report',
                     'VK_EXT_debug_utils',
                     'VK_EXT_validation_features'
+                    'VK_EXT_layer_settings'
                 ]
 
 
