@@ -13,7 +13,7 @@
 
 #include "utils/vk_layer_utils.h"
 
-namespace rt {
+namespace vkt {
 namespace as {
 
 GeometryKHR::GeometryKHR(APIVersion vk_api_version)
@@ -772,7 +772,8 @@ std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(A
     return as;
 }
 
-std::shared_ptr<rt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(APIVersion vk_api_version, VkDeviceSize size) {
+std::shared_ptr<vkt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(APIVersion vk_api_version,
+                                                                                      VkDeviceSize size) {
     auto as = std::make_shared<AccelerationStructureKHR>(vk_api_version);
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
@@ -932,4 +933,4 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(APIVersion vk_api_ver
 
 }  // namespace as
 
-}  // namespace rt
+}  // namespace vkt

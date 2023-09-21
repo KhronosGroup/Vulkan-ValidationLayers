@@ -106,13 +106,13 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
 
     m_commandBuffer->begin();
     // Build Bottom Level Acceleration Structure
-    auto bot_level_build_geometry = std::make_shared<rt::as::BuildGeometryInfoKHR>(
-        rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device));
+    auto bot_level_build_geometry = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device));
     bot_level_build_geometry->BuildCmdBuffer(*m_device, m_commandBuffer->handle());
 
     // Build Top Level Acceleration Structure
-    rt::as::BuildGeometryInfoKHR top_level_build_geometry =
-        rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
+    vkt::as::BuildGeometryInfoKHR top_level_build_geometry =
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
     top_level_build_geometry.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
 
     m_commandBuffer->end();
@@ -142,13 +142,13 @@ TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
 
     // Build Bottom Level Acceleration Structure
-    auto bot_level_build_geometry = std::make_shared<rt::as::BuildGeometryInfoKHR>(
-        rt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device));
+    auto bot_level_build_geometry = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device));
     bot_level_build_geometry->BuildHost(instance(), *m_device);
 
     // Build Top Level Acceleration Structure
-    rt::as::BuildGeometryInfoKHR top_level_build_geometry =
-        rt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
+    vkt::as::BuildGeometryInfoKHR top_level_build_geometry =
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
     top_level_build_geometry.BuildHost(instance(), *m_device);
 }
 
@@ -452,23 +452,23 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
 
     constexpr size_t build_info_count = 10;
 
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
     for (size_t i = 0; i < build_info_count; ++i) {
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
         build_infos.emplace_back(std::move(build_info));
     }
 
     m_commandBuffer->begin();
-    rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+    vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
 
     for (auto& build_info : build_infos) {
         build_info.SetSrcAS(build_info.GetDstAS());
         build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-        build_info.SetDstAS(rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096));
+        build_info.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096));
     }
 
-    rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+    vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
     m_commandBuffer->end();
 }
 
@@ -522,16 +522,16 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
         auto scratch_buffer = std::make_shared<vkt::Buffer>();
         scratch_buffer->init_no_mem(*m_device, scratch_buffer_ci);
         vk::BindBufferMemory(m_device->device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
-        std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
+        std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
         for (size_t i = 0; i < build_info_count; ++i) {
-            auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+            auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
             build_info.SetScratchBuffer(scratch_buffer);
             build_info.SetDeviceScratchOffset(i * 8192);
             build_infos.emplace_back(std::move(build_info));
         }
 
         m_commandBuffer->begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
         m_commandBuffer->end();
     }
 }
@@ -575,9 +575,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
     VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
     VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
 
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_0;
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_0;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_1;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_2;
 
     auto scratch_buffer_frame_0 = std::make_shared<vkt::Buffer>();
     auto scratch_buffer_frame_1 = std::make_shared<vkt::Buffer>();
@@ -603,11 +603,11 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_0->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(scratch_buffer_frame_0);
         build_infos_frame_0.emplace_back(std::move(build_info));
         cmd_buffer_frame_0.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();
@@ -644,11 +644,11 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_1->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(scratch_buffer_frame_1);
         build_infos_frame_1.emplace_back(std::move(build_info));
         cmd_buffer_frame_1.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();
@@ -700,11 +700,11 @@ TEST_F(PositiveRayTracing, AccelerationStructuresReuseScratchMemory) {
         vk::BindBufferMemory(m_device->device(), scratch_buffer_frame_2->handle(), common_scratch_memory.handle(), 0);
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_info.SetScratchBuffer(scratch_buffer_frame_2);
         build_infos_frame_2.emplace_back(std::move(build_info));
         cmd_buffer_frame_2.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();
@@ -763,9 +763,9 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
     VkCommandBufferObj cmd_buffer_frame_1(m_device, m_commandPool);
     VkCommandBufferObj cmd_buffer_frame_2(m_device, m_commandPool);
 
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_0;
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_1;
-    std::vector<rt::as::BuildGeometryInfoKHR> build_infos_frame_2;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_0;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_1;
+    std::vector<vkt::as::BuildGeometryInfoKHR> build_infos_frame_2;
 
     vkt::Fence fence_frame_0(*m_device);
     vkt::Fence fence_frame_1(*m_device);
@@ -776,11 +776,11 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         // Nothing to wait for, resources used in frame 0 will be released in frame 2
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
 
         build_infos_frame_0.emplace_back(std::move(build_info));
         cmd_buffer_frame_0.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_0.handle(), build_infos_frame_0);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();
@@ -806,10 +806,10 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         // Still nothing to wait for
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_infos_frame_1.emplace_back(std::move(build_info));
         cmd_buffer_frame_1.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_1.handle(), build_infos_frame_1);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();
@@ -837,10 +837,10 @@ TEST_F(PositiveRayTracing, AccelerationStructuresDedicatedScratchMemory) {
         build_infos_frame_0.clear();  // No validation error
 
         // Build a dummy acceleration structure
-        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        auto build_info = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
         build_infos_frame_2.emplace_back(std::move(build_info));
         cmd_buffer_frame_2.begin();
-        rt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
+        vkt::as::BuildAccelerationStructuresKHR(*m_device, cmd_buffer_frame_2.handle(), build_infos_frame_2);
 
         // Synchronize accesses to scratch buffer memory: next op will be a new acceleration structure build
         auto barrier = vku::InitStruct<VkBufferMemoryBarrier>();

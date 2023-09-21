@@ -15,8 +15,7 @@
 
 #include <memory>
 
-// ray tracing
-namespace rt {
+namespace vkt {
 // acceleration structure
 namespace as {
 
@@ -25,7 +24,7 @@ namespace as {
 // - VkAccelerationStructureCreateInfoKHR
 // - VkAccelerationStructureBuildGeometryInfoKHR
 
-// The rt::as::blueprint namespace (bottom of file) contains functions to readily create a valid instance of those classes.
+// The vkt::as::blueprint namespace (bottom of file) contains functions to readily create a valid instance of those classes.
 // Those instances are typically modified using the available public methods.
 // When done with modifications, call the Build() method to build the internal Vulkan objects.
 // Access them using relevant methods, eg: handle(), GetVkObj()...
@@ -207,7 +206,7 @@ void BuildAccelerationStructuresKHR(const vkt::Device& device, VkCommandBuffer c
 // Calling Build() on them without further modifications results in a usable and valid Vulkan object.
 // Typical usage probably is:
 // {
-//    rt::as::BuildGeometryInfoKHR as_build_info = BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+//    vkt::as::BuildGeometryInfoKHR as_build_info = BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 //
 //    // for instance:
 //    as_build_info.GetDstAS().SetBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -247,4 +246,4 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(APIVersion vk_api_ver
 }  // namespace blueprint
 
 }  // namespace as
-}  // namespace rt
+}  // namespace vkt
