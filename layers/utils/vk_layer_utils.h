@@ -544,6 +544,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 bool white_list(const char *item, const std::set<std::string> &whitelist);
+std::string GetTempFilePath();
 
 // Aliases to avoid excessive typing. We can't easily auto these away because
 // there are virtual methods in ValidationObject which return lock guards
